@@ -1,5 +1,4 @@
 # Graduation-Project
-# Graduation-Project
 # HealthCarePlus - A Journey to Smart Healthcare
 
 ## 📖 The Story: From Idea to Reality
