@@ -46,6 +46,10 @@ class Assets {
   /// assets/images/clock.svg
   static const String imagesClock = "assets/images/clock.svg";
 
+  /// Assets for imagesDoctor
+  /// assets/images/doctor.png
+  static const String imagesDoctor = "assets/images/doctor.png";
+
   /// Assets for imagesEducationVerification
   /// assets/images/education-verification.svg
   static const String imagesEducationVerification = "assets/images/education-verification.svg";
@@ -86,6 +90,10 @@ class Assets {
   /// assets/images/lock.svg
   static const String imagesLock = "assets/images/lock.svg";
 
+  /// Assets for imagesLogin
+  /// assets/images/login.png
+  static const String imagesLogin = "assets/images/login.png";
+
   /// Assets for imagesLogout
   /// assets/images/logout.svg
   static const String imagesLogout = "assets/images/logout.svg";
@@ -98,9 +106,17 @@ class Assets {
   /// assets/images/mobile.svg
   static const String imagesMobile = "assets/images/mobile.svg";
 
+  /// Assets for imagesPatient
+  /// assets/images/patient.png
+  static const String imagesPatient = "assets/images/patient.png";
+
   /// Assets for imagesPatients
   /// assets/images/patients.svg
   static const String imagesPatients = "assets/images/patients.svg";
+
+  /// Assets for imagesPedningAcceptDoctor
+  /// assets/images/pedning_accept_doctor.png
+  static const String imagesPedningAcceptDoctor = "assets/images/pedning_accept_doctor.png";
 
   /// Assets for imagesPreferences
   /// assets/images/preferences.svg
@@ -113,6 +129,14 @@ class Assets {
   /// Assets for imagesProfilePlus
   /// assets/images/profile_plus.svg
   static const String imagesProfilePlus = "assets/images/profile_plus.svg";
+
+  /// Assets for imagesRegisterDoctor
+  /// assets/images/register_doctor.png
+  static const String imagesRegisterDoctor = "assets/images/register_doctor.png";
+
+  /// Assets for imagesRegisterPatient
+  /// assets/images/register_patient.png
+  static const String imagesRegisterPatient = "assets/images/register_patient.png";
 
   /// Assets for imagesSchduleBooking
   /// assets/images/schdule_booking.svg
