@@ -1,9 +1,7 @@
-﻿using HealthCare_.Models.shared;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using static HealthCare_.Models.Enums.Enums;
+﻿
 
-namespace HealthCare_.Models.Patient
+
+namespace HealthCare_.Models.PatientModels
 {
     public class Reminder
     {

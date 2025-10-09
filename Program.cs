@@ -1,12 +1,11 @@
-﻿using HealthCare_.Interfaces;
-using HealthCare_.Models.Context;
-using HealthCare_.Models.shared;
-using HealthCare_.Services;
+﻿
+using HealthCare_.Services.DoctorDervice;
+using HealthCare_.Services.PatientService;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+
 using System.Diagnostics;
 using System.Text;
 

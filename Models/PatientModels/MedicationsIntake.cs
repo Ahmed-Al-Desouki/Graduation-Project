@@ -1,9 +1,5 @@
-﻿using HealthCare_.Models.Patient;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using static HealthCare_.Models.Enums.Enums;
-
-namespace HealthCare_.Models
+﻿
+namespace HealthCare_.Models.PatientModels
 {
     public class MedicationsIntake
     {

@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace HealthCare_.Models
+namespace HealthCare_.Models.SharedModels
 {
     public class ApplicationUser : IdentityUser<int>
     {

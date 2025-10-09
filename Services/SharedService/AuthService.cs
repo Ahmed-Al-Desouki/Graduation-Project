@@ -1,18 +1,16 @@
-﻿using HealthCare_.Models.shared;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+﻿
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using AuthModels = HealthCare_.Models.AuthModels;
 
-namespace HealthCare_.Services
+
+namespace HealthCare_.Services.SharedService
 {
     public interface IAuthService
     {
-        Task<(bool Succeeded, string[] Errors)> RegisterAsync(AuthModels.RegisterRequest request);
-        Task<(string Token, string Error)> LoginAsync(AuthModels.LoginRequest request);
+        Task<(bool Succeeded, string[] Errors)> RegisterAsync(RegisterRequest request);
+        Task<(string Token, string Error)> LoginAsync(LoginRequest request);
     }
 
     public class AuthService : IAuthService
@@ -26,7 +24,7 @@ namespace HealthCare_.Services
             _configuration = configuration;
         }
 
-        public async Task<(bool Succeeded, string[] Errors)> RegisterAsync(AuthModels.RegisterRequest request)
+        public async Task<(bool Succeeded, string[] Errors)> RegisterAsync(RegisterRequest request)
         {
             var existingUser = await _userManager.FindByEmailAsync(request.Email);
             if (existingUser != null)
@@ -59,7 +57,7 @@ namespace HealthCare_.Services
             return (true, Array.Empty<string>());
         }
 
-        public async Task<(string Token, string Error)> LoginAsync(AuthModels.LoginRequest request)
+        public async Task<(string Token, string Error)> LoginAsync(LoginRequest request)
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)

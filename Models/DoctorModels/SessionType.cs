@@ -1,7 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿
 
-namespace HealthCare_.Models.Doctor
+namespace HealthCare_.Models.DoctorModels
 {
     public class SessionType
     {

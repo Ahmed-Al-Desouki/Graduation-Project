@@ -1,7 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using static HealthCare_.Models.Enums.Enums;
+﻿
 
-namespace HealthCare_.Models
+namespace HealthCare_.Models.SharedModels
 {
     public class ExternalFile
     {
