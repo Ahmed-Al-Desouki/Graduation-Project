@@ -1,93 +1,119 @@
-using HealthCare_.Interfaces;
+﻿using HealthCare_.Interfaces;
 using HealthCare_.Models.Context;
+using HealthCare_.Models.shared;
 using HealthCare_.Services;
-using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.ClientModel.Primitives;
 using System.Diagnostics;
+using System.Text;
 
-namespace HealthCare
+var builder = WebApplication.CreateBuilder(args);
+
+// Database
+builder.Services.AddDbContext<HealthCarePlusContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
 {
-    public class Program
+    options.Password.RequiredLength = 6;
+    options.Password.RequireDigit = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<HealthCarePlusContext>()
+.AddDefaultTokenProviders();
+
+// JWT Authentication
+var jwtSecret = builder.Configuration["Jwt:Key"];
+var key = Encoding.ASCII.GetBytes(jwtSecret);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        public static void Main(string[] args)
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+// Services
+builder.Services.AddScoped<IAuthService, AuthService>(); // الحقن عبر Interface
+builder.Services.AddScoped<IPrescriptionService, PrescriptionServices>();
+builder.Services.AddScoped<IMedicationsIntakeService, MedicationsIntakeServices>();
+builder.Services.AddScoped<IReminderService, ReminderServices>();
+builder.Services.AddScoped<IDoctorService, DoctorServices>();
+builder.Services.AddScoped<IPatientService, PatientServices>();
+builder.Services.AddScoped<IAppointmentService, AppointmentServices>();
+builder.Services.AddScoped<IMedicalHistoryService, MedicalHistoryServices>();
+builder.Services.AddScoped<IMedicalRecordService, MedicalRecordServices>();
+builder.Services.AddScoped<IDoctorSlotService, DoctorSlotServices>();
+builder.Services.AddScoped<ISessionTypeService, SessionTypeServices>();
+builder.Services.AddScoped<IDoctorWeeklyScheduleService, DoctorWeeklyScheduleServices>();
+builder.Services.AddScoped<IReviewService, ReviewServices>();
+builder.Services.AddScoped<IPrescriptionMedService, PrescriptionMedServices>();
+builder.Services.AddScoped<IDosingScheduleService, DosingScheduleServices>();
+
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection("Cloudinary"));
+builder.Services.AddScoped<CloudinaryService>();
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthCare+ API", Version = "v1" });
+    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+});
+
+var app = builder.Build();
+
+// Middleware
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "HealthCare+ API v1");
+        c.RoutePrefix = string.Empty;
+    });
+
+    try
+    {
+        Process.Start(new ProcessStartInfo
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            builder.Services.AddDbContext<HealthCarePlusContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-            //Register Services with Dependency Injection
-            //builder.Services.AddScoped<IUserService, UserServices>();
-            //builder.Services.AddScoped<IPrescriptionService, PrescriptionServices>();
-            //builder.Services.AddScoped<IMedicationsIntakeService, MedicationsIntakeServices>();
-            //builder.Services.AddScoped<IReminderService, ReminderServices>();
-            //builder.Services.AddScoped<IDoctorService, DoctorServices>();
-            //builder.Services.AddScoped<IPatientService, PatientServices>();
-            //builder.Services.AddScoped<IAppointmentService, AppointmentServices>();
-            //builder.Services.AddScoped<IMedicalHistoryService, MedicalHistoryServices>();
-            //builder.Services.AddScoped<IMedicalRecordService, MedicalRecordServices>();
-            //builder.Services.AddScoped<IDoctorSlotService, DoctorSlotServices>();
-            //builder.Services.AddScoped<ISessionTypeService, SessionTypeServices>();
-            //builder.Services.AddScoped<IDoctorWeeklyScheduleService, DoctorWeeklyScheduleServices>();
-            //builder.Services.AddScoped<IReviewService, ReviewServices>();
-            //builder.Services.AddScoped<IAttachmentService, AttachmentServices>();
-            //builder.Services.AddScoped<IPrescriptionMedService, PrescriptionMedServices>();
-            //builder.Services.AddScoped<IDosingScheduleService, DosingScheduleServices>();
-
-
-            // Add services to the container.
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-            });
-
-            // Add CORS policy
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowAll", builder =>
-                {
-                    builder.AllowAnyOrigin()
-                           .AllowAnyMethod()
-                           .AllowAnyHeader();
-                });
-            });
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API v1");
-                    c.RoutePrefix = string.Empty; // Swagger UI opens at root (/)
-                });
-            }
-
-            // Use CORS before routing
-            app.UseCors("AllowAll");
-
-            app.UseHttpsRedirection();
-            app.UseAuthorization();
-            app.MapControllers();
-
-            // Open Swagger UI automatically in the default browser
-            if (app.Environment.IsDevelopment())
-            {
-                var swaggerUrl = "http://localhost:5240/"; // Use https if needed
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = swaggerUrl,
-                    UseShellExecute = true
-                });
-            }
-
-            app.Run();
-        }
+            FileName = "http://localhost:5240/",
+            UseShellExecute = true
+        });
     }
+    catch { }
 }
+
+app.UseCors("AllowAll");
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();

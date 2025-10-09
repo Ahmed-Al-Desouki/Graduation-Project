@@ -10,13 +10,8 @@ global using Microsoft.OpenApi.Models;
 global using HealthCare_.Models.Context;
 global using HealthCare_.Models;
 global using HealthCare_.Controllers;
-global using HealthCare_.Interfaces;
 global using HealthCare_.Services;
+global using HealthCare_.Interfaces;
+global using HealthCare_.Models.AuthModels;
+global using HealthCare_.Models.AuthModels;
 
-
-namespace HealthCare_
-{
-    public class CommonUsings
-    {
-    }
-}
