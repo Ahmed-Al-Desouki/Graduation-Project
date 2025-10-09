@@ -6,6 +6,10 @@ class Assets {
   /// assets/images/age.svg
   static const String imagesAge = "assets/images/age.svg";
 
+  /// Assets for imagesApple173SvgrepoCom
+  /// assets/images/apple-173-svgrepo-com.svg
+  static const String imagesApple173SvgrepoCom = "assets/images/apple-173-svgrepo-com.svg";
+
   /// Assets for imagesAward
   /// assets/images/award.svg
   static const String imagesAward = "assets/images/award.svg";
@@ -57,6 +61,10 @@ class Assets {
   /// Assets for imagesEmergency
   /// assets/images/emergency.svg
   static const String imagesEmergency = "assets/images/emergency.svg";
+
+  /// Assets for imagesGoogleColorSvgrepoCom
+  /// assets/images/google-color-svgrepo-com.svg
+  static const String imagesGoogleColorSvgrepoCom = "assets/images/google-color-svgrepo-com.svg";
 
   /// Assets for imagesHIPAACompliant
   /// assets/images/HIPAA_compliant.svg

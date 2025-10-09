@@ -78,6 +78,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
+  flutter_social_button:
+    dependency: "direct main"
+    description:
+      name: flutter_social_button
+      sha256: "9feee9f6304727f6a8d024aa7135bb6e4c97f10829c0ed84d85a3f2c4aa64cf7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.6+1"
   flutter_svg:
     dependency: "direct main"
     description:
@@ -91,6 +99,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  font_awesome_flutter:
+    dependency: transitive
+    description:
+      name: font_awesome_flutter
+      sha256: b738e35f8bb4957896c34957baf922f99c5d415b38ddc8b070d14b7fa95715d4
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.9.1"
   http:
     dependency: transitive
     description:

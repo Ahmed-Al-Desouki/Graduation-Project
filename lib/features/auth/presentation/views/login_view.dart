@@ -142,8 +142,7 @@ class LoginView extends StatelessWidget {
                           ),
                           SizedBox(height: 20),
                           Center(
-                            child: TextButton(
-                              onPressed: () {},
+                            child: GestureDetector(
                               child: Text(
                                 'Forgot Password?',
                                 style: AppStyles.styleRegular16Teal.copyWith(
@@ -154,18 +153,32 @@ class LoginView extends StatelessWidget {
                           ),
                           SizedBox(height: 20),
                           Center(
-                            child: SizedBox(
+                            child: Container(
                               width: 300,
                               height: 65,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF00BCD4),
+                                    Color(0xff66BB6A),
+                                  ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
                               child: ElevatedButton(
                                 onPressed: () {},
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF26A69A),
+                                  backgroundColor:
+                                      Colors
+                                          .transparent, // شفاف عشان gradient يظهر
+                                  shadowColor: Colors.transparent,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15),
                                   ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Sign In',
                                   style: TextStyle(
                                     fontSize: 20,
@@ -206,38 +219,73 @@ class LoginView extends StatelessWidget {
                     ),
                   ],
                 ),
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 20,
+                SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 40),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    height: 50,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(
+                          Assets.imagesGoogleColorSvgrepoCom,
+                          height: 20,
+                          width: 20,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Continue with Google',
+                          style: AppStyles.styleMedium16Dark,
+                        ),
+                      ],
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  height: 50,
                 ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 40),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
+                SizedBox(height: 15),
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 40),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    height: 50,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(
+                          Assets.imagesApple173SvgrepoCom,
+                          height: 20,
+                          width: 20,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Continue with Apple',
+                          style: AppStyles.styleMedium16Dark,
+                        ),
+                      ],
+                    ),
                   ),
-                  height: 50,
                 ),
                 SizedBox(height: 20),
                 Row(
@@ -260,7 +308,10 @@ class LoginView extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 40),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 20,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(15),
@@ -279,6 +330,7 @@ class LoginView extends StatelessWidget {
                             BlendMode.srcIn,
                           ),
                         ),
+                        SizedBox(width: 6),
                         Text('Secure', style: TextStyle(color: Colors.black54)),
                         Spacer(flex: 1),
                         SvgPicture.asset(
@@ -290,6 +342,7 @@ class LoginView extends StatelessWidget {
                             BlendMode.srcIn,
                           ),
                         ),
+                        SizedBox(width: 6),
                         Text(
                           'Encrypted',
                           style: TextStyle(color: Colors.black54),
@@ -304,6 +357,7 @@ class LoginView extends StatelessWidget {
                             BlendMode.srcIn,
                           ),
                         ),
+                        SizedBox(width: 6),
                         Text(
                           'HIPAA Compliant',
                           style: TextStyle(color: Colors.black54),
