@@ -7,20 +7,25 @@ class HeadersFieldInRegistration extends StatelessWidget {
     super.key,
     required this.imagePath,
     required this.title,
+    this.angle = 0.0,
   });
   final String imagePath;
   final String title;
+  final double? angle;
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        SvgPicture.asset(
-          imagePath,
-          width: 24,
-          height: 24,
-          colorFilter: const ColorFilter.mode(
-            Color(0xff667EEA),
-            BlendMode.srcIn,
+        Transform.rotate(
+          angle: angle!,
+          child: SvgPicture.asset(
+            imagePath,
+            width: 24,
+            height: 24,
+            colorFilter: const ColorFilter.mode(
+              Color(0xff667EEA),
+              BlendMode.srcIn,
+            ),
           ),
         ),
         const SizedBox(width: 8),

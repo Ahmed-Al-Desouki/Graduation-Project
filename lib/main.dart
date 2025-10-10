@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/features/auth/presentation/views/doctor_registration_view.dart';
+import 'package:graduation_project/features/auth/presentation/views/patient_registration_view.dart';
 
 void main() {
   runApp(const GraduationProject());
@@ -12,7 +13,7 @@ class GraduationProject extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(body: DoctorRegistrationView()),
+      home: Scaffold(body: PatientRegistrationView()),
     );
   }
 }

@@ -12,7 +12,8 @@ class CustomFormTextField extends StatefulWidget {
   final TextEditingController? controller;
   final Function(String)? onChanged;
   final bool obscureText;
-
+  final int? minLines;
+  final int? maxLines;
   const CustomFormTextField({
     super.key,
     required this.hintText,
@@ -22,6 +23,8 @@ class CustomFormTextField extends StatefulWidget {
     this.controller,
     this.onChanged,
     this.obscureText = false,
+    this.minLines,
+    this.maxLines,
   });
 
   @override
@@ -95,6 +98,8 @@ class _CustomFormTextFieldState extends State<CustomFormTextField> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3.0),
       child: TextFormField(
+        maxLines: widget.maxLines ?? 1,
+        minLines: widget.minLines,
         controller: widget.controller,
         obscureText: isPasswordField && !_isPasswordVisible,
         keyboardType: _getKeyboardType(),

@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:graduation_project/core/utils/app_styles.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/custom_list_tile_widget.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/custom_registration_appbar.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/custom_registration_header.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/personal_information_section_for_doctor.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/patient_medical_info_step.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/personal_information_section_for_patient.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/registration_progress.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/doctor_license_step.dart';
 
-class DoctorRegistrationViewBody extends StatefulWidget {
-  const DoctorRegistrationViewBody({super.key});
+class PatientRegistrationViewBody extends StatefulWidget {
+  const PatientRegistrationViewBody({super.key});
 
   @override
-  State<DoctorRegistrationViewBody> createState() =>
-      _DoctorRegistrationViewBodyState();
+  State<PatientRegistrationViewBody> createState() =>
+      _PatientRegistrationViewBodyState();
 }
 
-class _DoctorRegistrationViewBodyState
-    extends State<DoctorRegistrationViewBody> {
-  bool showLicenseStep = false;
+class _PatientRegistrationViewBodyState
+    extends State<PatientRegistrationViewBody> {
+  bool showMedicalInfoStep = false;
   bool isFormValid = false;
 
   final TextEditingController ageController = TextEditingController();
@@ -24,13 +27,17 @@ class _DoctorRegistrationViewBodyState
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController nationalIdController = TextEditingController();
   String? gender;
+
+  void toggleStep() {
+    setState(() {
+      showMedicalInfoStep = !showMedicalInfoStep;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
-
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -38,20 +45,20 @@ class _DoctorRegistrationViewBodyState
             clipBehavior: Clip.none,
             children: [
               const CustomAppBarRegistration(
-                title: 'Doctor Registration',
-                subtitle: "Join our medical community",
-                gradientColors: [Color(0xFF6A72DA), Color(0xFF754EA6)],
-                imagePath: Assets.imagesUserDoctor,
+                title: 'Patient Registration',
+                subtitle: "Join our Safety community",
+                gradientColors: [Color(0xFF3A85EE), Color(0xFF22C362)],
+                imagePath: Assets.imagesUserRegular,
               ),
               Positioned(
                 top: height * 0.245,
                 left: 16,
                 right: 16,
                 child: const RegistrationHeader(
-                  title: "Welcome, Doctor!",
+                  title: "Welcome to HealthCare+",
                   subtitle:
-                      "Create your professional medical profile to connect with patients and colleagues.",
-                  imagePath: Assets.imagesRegisterDoctor,
+                      "Join thousands of patients managing their health better",
+                  imagePath: Assets.imagesRegisterPatient,
                 ),
               ),
             ],
@@ -61,12 +68,12 @@ class _DoctorRegistrationViewBodyState
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: RegistrationProgress(
-              step: showLicenseStep ? 2 : 1,
-              totalSteps: 3,
-              gradientColors: const [Color(0xFF6A72DA), Color(0xFF754EA6)],
+              step: showMedicalInfoStep ? 2 : 1,
+              totalSteps: 2,
+              gradientColors: const [Color(0xFF3A85EE), Color(0xFF22C362)],
             ),
           ),
-
+          const SizedBox(height: 20),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 600),
             transitionBuilder: (child, animation) {
@@ -81,11 +88,21 @@ class _DoctorRegistrationViewBodyState
               );
             },
             child:
-                showLicenseStep
+                showMedicalInfoStep
                     ? Column(
-                      key: const ValueKey('license'),
+                      key: const ValueKey('MedicalInfo'),
                       children: [
-                        DoctorLicenseStep(onRegister: () {}),
+                        PatientMedicalInfoStep(
+                          onRegister: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Patient Registered Successfully!',
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                         const SizedBox(height: 25),
                         Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -99,7 +116,7 @@ class _DoctorRegistrationViewBodyState
                             ),
                             onPressed: () {
                               setState(() {
-                                showLicenseStep = false;
+                                showMedicalInfoStep = false;
                               });
                             },
                             child: const Text(
@@ -117,13 +134,76 @@ class _DoctorRegistrationViewBodyState
                     : Column(
                       key: const ValueKey('personal'),
                       children: [
-                        PersonalInformationSectionForDoctor(
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0),
+                          child: Container(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Why Register?",
+                              style: AppStyles.styleSemiBold14Dark,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: const [
+                            CustomListTile3Widget(
+                              infocolor: Color(0xff3B82F6),
+                              image: Assets.imagesCalendarDays,
+                              text: "Easy Booking",
+                              subText: "Schedule appointments instantly",
+                            ),
+                            CustomListTile3Widget(
+                              infocolor: Color(0xff22c55e),
+                              image: Assets.imagesProfilePlus,
+                              text: "Health Records",
+                              subText: "Access your medical history",
+                            ),
+                            CustomListTile3Widget(
+                              infocolor: Color(0xffA855F7),
+                              image: Assets.imagesMeds,
+                              text: "Prescriptions",
+                              subText: "Digital prescription management",
+                            ),
+                            CustomListTile3Widget(
+                              infocolor: Color(0xffF97316),
+                              image: Assets.imagesBell,
+                              text: "Reminders",
+                              subText: "Never miss appointments",
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0),
+                          child: Container(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Create Your Account',
+                              style: AppStyles.styleBold20Dark,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0),
+                          child: Container(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Fill in your details to get started",
+                              style: AppStyles.styleRegular14Gray,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        PersonalInformationSectionForPatient(
                           ageController: ageController,
                           birthDateController: birthDateController,
-                          nameController: nameController,
                           emailController: emailController,
+                          nameController: nameController,
                           passwordController: passwordController,
-                          nationalIdController: nationalIdController,
                           gender: gender,
                           onGenderChanged:
                               (val) => setState(() => gender = val),
@@ -133,7 +213,7 @@ class _DoctorRegistrationViewBodyState
                             });
                           },
                         ),
-                        const SizedBox(height: 25),
+                        const SizedBox(height: 20),
                         Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: AnimatedContainer(
@@ -152,7 +232,7 @@ class _DoctorRegistrationViewBodyState
                                   isFormValid
                                       ? () {
                                         setState(() {
-                                          showLicenseStep = true;
+                                          showMedicalInfoStep = true;
                                         });
                                       }
                                       : null,

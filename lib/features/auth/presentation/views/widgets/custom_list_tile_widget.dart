@@ -58,3 +58,52 @@ class CustomListTile2Widget extends StatelessWidget {
     );
   }
 }
+
+class CustomListTile3Widget extends StatelessWidget {
+  const CustomListTile3Widget({
+    super.key,
+    required this.infocolor,
+    required this.image,
+    required this.text,
+    required this.subText,
+  });
+  final Color infocolor;
+  final String image;
+  final String text;
+  final String subText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.42,
+      decoration: BoxDecoration(
+        color: infocolor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SvgPicture.asset(
+              width: 24,
+              height: 24,
+              image,
+              colorFilter: ColorFilter.mode(infocolor, BlendMode.srcIn),
+            ),
+            ListTile(
+              // minLeadingWidth: 0,
+              contentPadding: EdgeInsets.only(left: 0),
+              title: Text(text, style: AppStyles.styleMedium14Dark),
+              subtitle: Text(
+                subText,
+                style: AppStyles.styleRegular14Gray.copyWith(color: infocolor),
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

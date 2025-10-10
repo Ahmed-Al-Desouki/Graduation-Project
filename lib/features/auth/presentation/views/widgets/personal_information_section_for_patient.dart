@@ -1,14 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/custom_list_tile_widget.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/custom_form_text_field.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/headers_field_in_registration.dart';
 import 'package:intl/intl.dart';
 
-class PersonalInformationSection extends StatefulWidget {
+class PersonalInformationSectionForPatient extends StatefulWidget {
   final Function(bool)? onFormValidChanged;
   final Function(String?)? onGenderChanged;
   final TextEditingController ageController;
@@ -16,10 +13,9 @@ class PersonalInformationSection extends StatefulWidget {
   final TextEditingController nameController;
   final TextEditingController emailController;
   final TextEditingController passwordController;
-  final TextEditingController nationalIdController;
   String? gender;
 
-  PersonalInformationSection({
+  PersonalInformationSectionForPatient({
     super.key,
     this.onFormValidChanged,
     this.onGenderChanged,
@@ -28,29 +24,16 @@ class PersonalInformationSection extends StatefulWidget {
     required this.nameController,
     required this.emailController,
     required this.passwordController,
-    required this.nationalIdController,
     this.gender,
   });
 
   @override
-  State<PersonalInformationSection> createState() =>
+  State<PersonalInformationSectionForPatient> createState() =>
       _PersonalInformationSectionState();
 }
 
 class _PersonalInformationSectionState
-    extends State<PersonalInformationSection> {
-  File? _profileImage;
-
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() {
-        _profileImage = File(picked.path);
-      });
-    }
-  }
-
+    extends State<PersonalInformationSectionForPatient> {
   @override
   void initState() {
     super.initState();
@@ -66,8 +49,7 @@ class _PersonalInformationSectionState
         widget.passwordController.text.isNotEmpty &&
         widget.ageController.text.isNotEmpty &&
         widget.birthDateController.text.isNotEmpty &&
-        widget.gender != null &&
-        widget.nationalIdController.text.isNotEmpty;
+        widget.gender != null;
 
     widget.onFormValidChanged?.call(valid);
     return valid;
@@ -207,77 +189,52 @@ class _PersonalInformationSectionState
           ),
           const SizedBox(height: 30),
           HeadersFieldInRegistration(
-            imagePath: Assets.imagesIdentification,
-            title: "National ID Number",
+            imagePath: Assets.imagesMobile,
+            title: "Emergency Contact (Optional)",
+          ),
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: CustomFormTextField(
+                  hintText: "Full Name",
+                  imagePath: Assets.imagesUserRegular,
+                  fieldType: FieldType.name,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  // icon: const Icon(Icons.person),
+                  decoration: InputDecoration(
+                    labelText: "Relationship",
+                    labelStyle: AppStyles.styleRegular16Gray,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: "Dad", child: Text("Dad")),
+                    DropdownMenuItem(value: "Mother", child: Text("Mother")),
+                    DropdownMenuItem(value: "Brother", child: Text("Brother")),
+                    DropdownMenuItem(value: "Sister", child: Text("Sister")),
+                    DropdownMenuItem(value: "Spouse", child: Text("Spouse")),
+                    DropdownMenuItem(
+                      value: "Colleague",
+                      child: Text("Colleague"),
+                    ),
+                  ],
+                  onChanged: (value) {},
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           CustomFormTextField(
-            controller: widget.nationalIdController,
-            hintText: "National ID Number",
-            prefixIcon: Icons.credit_card,
+            hintText: "Phone Number",
+            imagePath: Assets.imagesMobile,
             fieldType: FieldType.nationalId,
-            onChanged:
-                (_) => setState(() {
-                  _isFormValid();
-                }),
           ),
-          const SizedBox(height: 20),
-          CustomListTileWidget(
-            infocolor: const Color(0xff3b82f6),
-            icon: Icons.info_outline,
-            text:
-                "Your National ID is required for verification purposes and will be kept secure.",
-          ),
-          const SizedBox(height: 30),
-          HeadersFieldInRegistration(
-            imagePath: Assets.imagesCamera,
-            title: "Profile Picture",
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: _pickImage,
-            child: Container(
-              width: double.infinity,
-              height: 150,
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xffd1d5db)),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child:
-                  _profileImage == null
-                      ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_a_photo_outlined,
-                              color: Colors.grey,
-                              size: 40,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              "Upload your professional photo\nJPG, PNG or GIF (max. 5MB)",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                      : ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          _profileImage!,
-                          width: double.infinity,
-                          height: 150,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-            ),
-          ),
-          const SizedBox(height: 30),
         ],
       ),
     );
