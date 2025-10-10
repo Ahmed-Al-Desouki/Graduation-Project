@@ -1,39 +1,74 @@
-﻿using HealthCare_.Interfaces;
-using Microsoft.AspNetCore.Mvc;
+﻿using HealthCare_.Models.DTOs.AuthModels;
 using HealthCare_.Services.SharedService;
+using Microsoft.AspNetCore.Mvc;
 
-[ApiController]
-[Route("api/[controller]")]
-public class AuthController : ControllerBase
+namespace HealthCare_.Controllers
 {
-    private readonly IAuthService _authService;
-
-    public AuthController(IAuthService authService)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
     {
-        _authService = authService;
-    }
+        private readonly IAuthService _authService;
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] HealthCare_.Models.AuthModels.RegisterRequest request)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
 
-        var (succeeded, errors) = await _authService.RegisterAsync(request);
-        if (!succeeded) return BadRequest(errors);
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-        return Ok(new { message = "User registered successfully" });
-    }
+            var (succeeded, errors) = await _authService.RegisterAsync(request);
+            if (!succeeded) return BadRequest(new { errors });
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] HealthCare_.Models.AuthModels.LoginRequest request)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+            return Ok(new { message = "User registered successfully" });
+        }
 
-        var (token, error) = await _authService.LoginAsync(request);
-        if (token == null) return Unauthorized(new { error });
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-        return Ok(new { token });
+            var (accessToken, refreshToken, error) = await _authService.LoginAsync(request);
+            if (accessToken == null) return Unauthorized(new { error });
+
+            return Ok(new
+            {
+                accessToken,
+                refreshToken
+            });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var (newAccessToken, newRefreshToken, error) = await _authService.RefreshTokenAsync(request);
+            if (newAccessToken == null) return Unauthorized(new { error });
+
+            return Ok(new
+            {
+                accessToken = newAccessToken,
+                refreshToken = newRefreshToken
+            });
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var (succeeded, error) = await _authService.LogoutAsync(request);
+            if (!succeeded) return BadRequest(new { error });
+
+            return Ok(new { message = "Logout successful" });
+        }
     }
 }

@@ -1,13 +1,15 @@
 ﻿
+using HealthCare_.Services.BackGround;
 using HealthCare_.Services.DoctorDervice;
 using HealthCare_.Services.PatientService;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 using System.Diagnostics;
 using System.Text;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +29,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
 .AddEntityFrameworkStores<HealthCarePlusContext>()
 .AddDefaultTokenProviders();
 
-// JWT Authentication
+// JWT
+
 var jwtSecret = builder.Configuration["Jwt:Key"];
 var key = Encoding.ASCII.GetBytes(jwtSecret);
 
@@ -50,7 +53,33 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ClockSkew = TimeSpan.Zero
     };
+
+    // IMPORTANT: check revoked access tokens on validation
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var db = context.HttpContext.RequestServices.GetService<HealthCarePlusContext>();
+            if (db == null) return;
+
+            var jti = context.Principal?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
+            if (!string.IsNullOrEmpty(jti))
+            {
+                var isRevoked = await db.RevokedTokens.AnyAsync(r => r.Jti == jti);
+                if (isRevoked)
+                {
+                    context.Fail("This token has been revoked.");
+                    return;
+                }
+            }
+        }
+    };
 });
+
+// register IHttpContextAccessor to controller
+builder.Services.AddHttpContextAccessor();
+
+
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>(); // الحقن عبر Interface
@@ -69,9 +98,15 @@ builder.Services.AddScoped<IReviewService, ReviewServices>();
 builder.Services.AddScoped<IPrescriptionMedService, PrescriptionMedServices>();
 builder.Services.AddScoped<IDosingScheduleService, DosingScheduleServices>();
 
+builder.Services.AddHostedService<RevokedTokensCleanupService>();
+
+// Cloudinary
+
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("Cloudinary"));
 builder.Services.AddScoped<CloudinaryService>();
+
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

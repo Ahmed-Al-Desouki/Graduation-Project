@@ -1,5 +1,7 @@
 ﻿
 
+using HealthCare_.Models.DTOs.Cloudinary;
+
 namespace HealthCare_.Controllers.SharedControllers
 {
     [Route("api/[controller]")]

@@ -1,6 +1,4 @@
-﻿
-
-namespace HealthCare_.Models.Context
+﻿namespace HealthCare_.Models.Context
 {
     public class HealthCarePlusContext : IdentityDbContext<ApplicationUser, IdentityRole<int>, int>
     {
@@ -22,6 +20,9 @@ namespace HealthCare_.Models.Context
         public DbSet<DosingSchedule> DosingSchedules { get; set; }
         public DbSet<Review> Reviews { get; set; }
         public DbSet<ExternalFile> ExternalFiles { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<RevokedToken> RevokedTokens { get; set; }
+        public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -32,6 +33,25 @@ namespace HealthCare_.Models.Context
             {
                 b.ToTable("Users");
                 b.Property(u => u.Id).HasColumnName("UserID");
+            });
+
+            // Configure RefreshToken entity
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(r => r.Id);
+                entity.HasIndex(r => r.Token).IsUnique();
+                entity.Property(r => r.Token).IsRequired();
+                entity.HasOne(r => r.User)
+                      .WithMany() // user can have many refresh tokens
+                      .HasForeignKey(r => r.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<RevokedToken>(entity =>
+            {
+                entity.HasKey(r => r.Id);
+                entity.HasIndex(r => r.Jti).IsUnique(false);
+                entity.Property(r => r.Jti).IsRequired();
             });
 
             // ------------------- Relationships -------------------

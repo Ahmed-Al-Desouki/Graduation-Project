@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using static HealthCare_.Models.Enums.Enums;
-namespace HealthCare_.Models.DTOs
+namespace HealthCare_.Models.DTOs.Cloudinary
 {
     public class UploadFileRequest
     {
