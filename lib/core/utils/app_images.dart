@@ -62,6 +62,10 @@ class Assets {
   /// assets/images/emergency.svg
   static const String imagesEmergency = "assets/images/emergency.svg";
 
+  /// Assets for imagesFilePlusFillSvgrepoCom
+  /// assets/images/file-plus-fill-svgrepo-com.svg
+  static const String imagesFilePlusFillSvgrepoCom = "assets/images/file-plus-fill-svgrepo-com.svg";
+
   /// Assets for imagesGoogleColorSvgrepoCom
   /// assets/images/google-color-svgrepo-com.svg
   static const String imagesGoogleColorSvgrepoCom = "assets/images/google-color-svgrepo-com.svg";
