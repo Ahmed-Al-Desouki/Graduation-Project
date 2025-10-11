@@ -158,6 +158,10 @@ class Assets {
   /// assets/images/secure.svg
   static const String imagesSecure = "assets/images/secure.svg";
 
+  /// Assets for imagesShieldHeartSolidFull
+  /// assets/images/shield-heart-solid-full.svg
+  static const String imagesShieldHeartSolidFull = "assets/images/shield-heart-solid-full.svg";
+
   /// Assets for imagesStethoscope
   /// assets/images/stethoscope.svg
   static const String imagesStethoscope = "assets/images/stethoscope.svg";
