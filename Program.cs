@@ -1,4 +1,4 @@
-﻿
+﻿using HealthCare_.Services.SharedService;
 using HealthCare_.Services.BackGround;
 using HealthCare_.Services.DoctorDervice;
 using HealthCare_.Services.PatientService;
@@ -6,10 +6,10 @@ using HealthCare_.Services.PatientService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using System.Diagnostics;
 using System.Text;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,9 +30,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
 .AddDefaultTokenProviders();
 
 // JWT
-
 var jwtSecret = builder.Configuration["Jwt:Key"];
-var key = Encoding.ASCII.GetBytes(jwtSecret);
+var key = Encoding.UTF8.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -41,7 +40,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = true; 
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -54,7 +53,7 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 
-    // IMPORTANT: check revoked access tokens on validation
+    // التحقق من revoked tokens
     options.Events = new JwtBearerEvents
     {
         OnTokenValidated = async context =>
@@ -76,51 +75,39 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// register IHttpContextAccessor to controller
+// HTTP Context
 builder.Services.AddHttpContextAccessor();
 
-
-
 // Services
-builder.Services.AddScoped<IAuthService, AuthService>(); // الحقن عبر Interface
-builder.Services.AddScoped<IPrescriptionService, PrescriptionServices>();
-builder.Services.AddScoped<IMedicationsIntakeService, MedicationsIntakeServices>();
-builder.Services.AddScoped<IReminderService, ReminderServices>();
-builder.Services.AddScoped<IDoctorService, DoctorServices>();
-builder.Services.AddScoped<IPatientService, PatientServices>();
-builder.Services.AddScoped<IAppointmentService, AppointmentServices>();
-builder.Services.AddScoped<IMedicalHistoryService, MedicalHistoryServices>();
-builder.Services.AddScoped<IMedicalRecordService, MedicalRecordServices>();
-builder.Services.AddScoped<IDoctorSlotService, DoctorSlotServices>();
-builder.Services.AddScoped<ISessionTypeService, SessionTypeServices>();
-builder.Services.AddScoped<IDoctorWeeklyScheduleService, DoctorWeeklyScheduleServices>();
-builder.Services.AddScoped<IReviewService, ReviewServices>();
-builder.Services.AddScoped<IPrescriptionMedService, PrescriptionMedServices>();
-builder.Services.AddScoped<IDosingScheduleService, DosingScheduleServices>();
-
+builder.Services.AddScoped<IAuthService, AuthService>();
+// ... باقي الخدمات مثل DoctorServices, PatientServices, إلخ
 builder.Services.AddHostedService<RevokedTokensCleanupService>();
 
 // Cloudinary
-
-builder.Services.Configure<CloudinarySettings>(
-    builder.Configuration.GetSection("Cloudinary"));
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.AddScoped<CloudinaryService>();
 
-
-
+// Controllers + Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthCare+ API", Version = "v1" });
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "HealthCare+ API", Version = "v1" });
     c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 });
 
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
+
+//builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
+//    options.SignIn.RequireConfirmedAccount = true; // اختياري: يطلب تأكيد الإيميل
+//})
+//.AddEntityFrameworkStores<HealthCarePlusContext>()
+//.AddDefaultTokenProviders(); // هنا: يفعّل TOTP وSMS
 
 var app = builder.Build();
 
@@ -138,7 +125,7 @@ if (app.Environment.IsDevelopment())
     {
         Process.Start(new ProcessStartInfo
         {
-            FileName = "http://localhost:5240/",
+            FileName = "http://localhost:5240", // HTTPS
             UseShellExecute = true
         });
     }
@@ -146,7 +133,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
-app.UseHttpsRedirection();
+app.UseHttpsRedirection(); 
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -1,11 +1,15 @@
-﻿namespace HealthCare_.Models.DTOs.AuthModels
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace HealthCare_.Models.DTOs.AuthModels
 {
     public class RefreshToken
     {
         [Key]
         public int Id { get; set; }
 
-        [Required]
+        [Required, MaxLength(1000)]
         public string Token { get; set; }
 
         [Required]
@@ -15,19 +19,33 @@
         public bool IsRevoked { get; set; } = false;
 
         [Required]
-        public DateTime Created { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? Revoked { get; set; }
 
-        // Link to access token's jti
         [Required]
         public string JwtId { get; set; }
 
-        // Relationship to user
         [Required]
         public int UserId { get; set; }
+
         [ForeignKey(nameof(UserId))]
         public ApplicationUser User { get; set; }
+
+        public int? ReplacedById { get; set; }
+        public RefreshToken? ReplacedBy { get; set; }
+
+        public int? UserSessionId { get; set; }
+
+        [ForeignKey(nameof(UserSessionId))]
+        public UserSession? UserSession { get; set; }
+
+        [MaxLength(500)]
+        public string DeviceInfo { get; set; }
+
+        [MaxLength(100)]
+        public string IpAddress { get; set; }
+
+        public DateTime? LastUsedAt { get; set; }
     }
 }
-

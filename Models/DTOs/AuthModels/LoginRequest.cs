@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace HealthCare_.Models.AuthModels
+namespace HealthCare_.Models.DTOs.AuthModels
 {
     public class LoginRequest
     {

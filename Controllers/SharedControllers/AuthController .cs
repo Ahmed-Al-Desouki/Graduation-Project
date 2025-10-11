@@ -1,5 +1,5 @@
 ﻿using HealthCare_.Models.DTOs.AuthModels;
-using HealthCare_.Services.SharedService;
+using HealthCare_.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthCare_.Controllers
@@ -27,13 +27,36 @@ namespace HealthCare_.Controllers
             return Ok(new { message = "User registered successfully" });
         }
 
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var deviceInfo = Request.Headers["User-Agent"].FirstOrDefault() ?? "unknown";
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var (accessToken, refreshToken, error) = await _authService.RefreshTokenAsync(request, deviceInfo, ipAddress);
+            if (accessToken == null)
+                return Unauthorized(new { error });
+
+            return Ok(new
+            {
+                accessToken,
+                refreshToken
+            });
+        }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var (accessToken, refreshToken, error) = await _authService.LoginAsync(request);
+            var deviceInfo = Request.Headers["User-Agent"].FirstOrDefault() ?? "unknown";
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var (accessToken, refreshToken, error) = await _authService.LoginAsync(request, deviceInfo, ipAddress);
             if (accessToken == null) return Unauthorized(new { error });
 
             return Ok(new
@@ -43,32 +66,15 @@ namespace HealthCare_.Controllers
             });
         }
 
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var (newAccessToken, newRefreshToken, error) = await _authService.RefreshTokenAsync(request);
-            if (newAccessToken == null) return Unauthorized(new { error });
-
-            return Ok(new
-            {
-                accessToken = newAccessToken,
-                refreshToken = newRefreshToken
-            });
-        }
-
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var (succeeded, error) = await _authService.LogoutAsync(request);
-            if (!succeeded) return BadRequest(new { error });
+            if (!succeeded)
+                return BadRequest(new { error });
 
             return Ok(new { message = "Logout successful" });
         }
     }
+
 }
