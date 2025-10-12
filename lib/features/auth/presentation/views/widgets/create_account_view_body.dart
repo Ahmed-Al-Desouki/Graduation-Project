@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/available_features.dart';
@@ -10,6 +9,7 @@ import 'package:graduation_project/features/auth/presentation/views/widgets/pati
 import 'package:graduation_project/features/auth/presentation/views/widgets/quick_access.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/trusted_by_thousands.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/ways_to_continue.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/your_data_safe.dart';
 
 class CreateAccountViewBody extends StatelessWidget {
   const CreateAccountViewBody({super.key});
@@ -68,73 +68,25 @@ class CreateAccountViewBody extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(15.0),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: SvgPicture.asset(
-                        Assets.imagesLock,
-                        height: 20,
-                        width: 20,
-                        colorFilter: const ColorFilter.mode(
-                          Color(0xFF16A34A),
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Text('HIPAA', style: AppStyles.styleRegular14Gray),
-                  ],
+                YourDataSafe(
+                  text: 'HIPAA',
+                  iconColor: Color(0xFF16A34A),
+                  containerColor: Color(0xFFDCFCE7),
+                  icon: Assets.imagesLock,
                 ),
                 SizedBox(width: 25),
-                Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(15.0),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFDBEAFE),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: SvgPicture.asset(
-                        Assets.imagesCertificate,
-                        height: 20,
-                        width: 20,
-                        colorFilter: const ColorFilter.mode(
-                          Color(0xFF2563EB),
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Text('SSL', style: AppStyles.styleRegular14Gray),
-                  ],
+                YourDataSafe(
+                  text: 'SSL',
+                  iconColor: Color(0xFF2563EB),
+                  containerColor: Color(0xFFDBEAFE),
+                  icon: Assets.imagesCertificate,
                 ),
                 SizedBox(width: 25),
-                Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(15.0),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFF3E8FF),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: SvgPicture.asset(
-                        Assets.imagesSecure,
-                        height: 20,
-                        width: 20,
-                        colorFilter: const ColorFilter.mode(
-                          Color(0xFF9333EA),
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    Text('Encrypted', style: AppStyles.styleRegular14Gray),
-                  ],
+                YourDataSafe(
+                  text: 'Encrypted',
+                  iconColor: Color(0xFF9333EA),
+                  containerColor: Color(0xFFF3E8FF),
+                  icon: Assets.imagesSecure,
                 ),
               ],
             ),
@@ -143,7 +95,17 @@ class CreateAccountViewBody extends StatelessWidget {
             SizedBox(height: 35),
             Text('Or continue with', style: AppStyles.styleRegular14Gray),
             SizedBox(height: 25),
-            WaysToContinue(),
+            WaysToContinue(
+              text: 'Continue with Google',
+              icon: Assets.imagesGoogleColorSvgrepoCom,
+              onTap: () {},
+            ),
+            SizedBox(height: 15),
+            WaysToContinue(
+              text: 'Continue with Apple',
+              icon: Assets.imagesApple173SvgrepoCom,
+              onTap: () {},
+            ),
             SizedBox(height: 30),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
