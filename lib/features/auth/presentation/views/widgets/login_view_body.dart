@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/features/auth/presentation/views/create_account_view.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/login_form_container.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/login_header.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/security_item.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/ways_to_continue.dart';
 
 class LoginViewBody extends StatelessWidget {
   const LoginViewBody({super.key});
@@ -17,40 +20,11 @@ class LoginViewBody extends StatelessWidget {
             padding: const EdgeInsets.only(top: 50),
             child: Column(
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.white,
-                  child: SvgPicture.asset(
-                    Assets.imagesHeartRate,
-                    height: 50,
-                    width: 50,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xff26A69A),
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'MedCare+',
-                  style: AppStyles.styleBold30.copyWith(fontSize: 40),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Your trusted healthcare companion',
-                  style: AppStyles.styleRegular16GrayDark.copyWith(
-                    fontSize: 18,
-                  ),
-                ),
-                SizedBox(height: 30),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: Image.asset(
-                    Assets.imagesLogin,
-                    height: 200,
-                    width: 200,
-                    fit: BoxFit.cover,
-                  ),
+                LoginHeader(
+                  title: 'MediCare+',
+                  subtitle: 'Your trusted healthcare companion',
+                  iconPath: Assets.imagesHeartRate,
+                  imagePath: Assets.imagesLogin,
                 ),
                 SizedBox(height: 20),
                 Text('Welcome👋', style: AppStyles.styleBold30),
@@ -62,136 +36,8 @@ class LoginViewBody extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 30),
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 25,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  height: 400,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 25,
-                      vertical: 25,
-                    ),
-                    child: Center(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Email Address',
-                            style: AppStyles.styleSemiBold14Dark,
-                          ),
-                          SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: TextField(
-                              decoration: InputDecoration(
-                                prefixIcon: Icon(
-                                  Icons.email,
-                                  color: Color(0xFF9CA3AF),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 20,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                hintText: 'Enter your email',
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 25),
-                          Text(
-                            'Password',
-                            style: AppStyles.styleSemiBold14Dark,
-                          ),
-                          SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: TextField(
-                              decoration: InputDecoration(
-                                prefixIcon: Icon(
-                                  Icons.lock,
-                                  color: Color(0xFF9CA3AF),
-                                ),
-                                suffixIcon: const Icon(
-                                  Icons.visibility,
-                                  color: Color(0xFF9CA3AF),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 20,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                hintText: 'Enter your password',
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          Center(
-                            child: GestureDetector(
-                              child: Text(
-                                'Forgot Password?',
-                                style: AppStyles.styleRegular16Teal.copyWith(
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          Center(
-                            child: Container(
-                              width: 300,
-                              height: 65,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF00BCD4),
-                                    Color(0xff66BB6A),
-                                  ],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                ),
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Sign In',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                LoginFormContainer(
+                  gradientColors: [Color(0xFF00BCD4), Color(0xff66BB6A)],
                 ),
                 Row(
                   children: [
@@ -219,72 +65,16 @@ class LoginViewBody extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 10),
-                GestureDetector(
+                WaysToContinue(
+                  text: 'Continue with Google',
+                  icon: Assets.imagesGoogleColorSvgrepoCom,
                   onTap: () {},
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 40),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    height: 50,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          Assets.imagesGoogleColorSvgrepoCom,
-                          height: 20,
-                          width: 20,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Continue with Google',
-                          style: AppStyles.styleMedium16Dark,
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
                 SizedBox(height: 15),
-                GestureDetector(
+                WaysToContinue(
+                  text: 'Continue with Apple',
+                  icon: Assets.imagesApple173SvgrepoCom,
                   onTap: () {},
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 40),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    height: 50,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          Assets.imagesApple173SvgrepoCom,
-                          height: 20,
-                          width: 20,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Continue with Apple',
-                          style: AppStyles.styleMedium16Dark,
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
                 SizedBox(height: 20),
                 Row(
@@ -294,8 +84,8 @@ class LoginViewBody extends StatelessWidget {
                       "Don't have an account? ",
                       style: AppStyles.styleMedium16Dark,
                     ),
-                    GestureDetector(
-                      onTap: () {
+                    TextButton(
+                      onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -329,46 +119,22 @@ class LoginViewBody extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 25),
                     child: Row(
                       children: [
-                        SvgPicture.asset(
-                          Assets.imagesSecure,
-                          height: 20,
-                          width: 20,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xff66BB6A),
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Text('Secure', style: TextStyle(color: Colors.black54)),
-                        Spacer(flex: 1),
-                        SvgPicture.asset(
-                          Assets.imagesLock,
-                          height: 20,
-                          width: 20,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xff26A69A),
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          'Encrypted',
-                          style: TextStyle(color: Colors.black54),
+                        SecurityItem(
+                          text: 'Secure',
+                          icon: Assets.imagesSecure,
+                          iconColor: Color(0xff66BB6A),
                         ),
                         Spacer(flex: 1),
-                        SvgPicture.asset(
-                          Assets.imagesHIPAACompliant,
-                          height: 20,
-                          width: 20,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xff66BB6A),
-                            BlendMode.srcIn,
-                          ),
+                        SecurityItem(
+                          text: 'Encrypted',
+                          icon: Assets.imagesLock,
+                          iconColor: Color(0xff26A69A),
                         ),
-                        SizedBox(width: 6),
-                        Text(
-                          'HIPAA Compliant',
-                          style: TextStyle(color: Colors.black54),
+                        Spacer(flex: 1),
+                        SecurityItem(
+                          text: 'HIPAA Compliant',
+                          icon: Assets.imagesHIPAACompliant,
+                          iconColor: Color(0xff66BB6A),
                         ),
                       ],
                     ),
