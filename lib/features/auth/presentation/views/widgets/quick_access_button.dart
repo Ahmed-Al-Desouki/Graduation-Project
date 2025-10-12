@@ -7,6 +7,7 @@ class QuickAccessButton extends StatefulWidget {
   final String? svg;
   final String label;
   final Color color;
+  final VoidCallback onTap;
 
   const QuickAccessButton({
     super.key,
@@ -14,6 +15,7 @@ class QuickAccessButton extends StatefulWidget {
     this.icon,
     required this.label,
     required this.color,
+    required this.onTap,
   });
 
   @override
@@ -32,11 +34,11 @@ class _QuickAccessButtonState extends State<QuickAccessButton> {
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: Duration(milliseconds: 200),
         transform: Matrix4.translationValues(0, lift, 0),
         curve: Curves.easeOut,
         child: InkWell(
-          onTap: () {},
+          onTap: widget.onTap,
           hoverColor: Colors.transparent,
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
@@ -60,14 +62,14 @@ class _QuickAccessButtonState extends State<QuickAccessButton> {
               children: [
                 widget.svg != null
                     ? SvgPicture.asset(
-                        widget.svg!,
-                        height: 35,
-                        width: 35,
-                        colorFilter: ColorFilter.mode(
-                          widget.color,
-                          BlendMode.srcIn,
-                        ),
-                      )
+                      widget.svg!,
+                      height: 35,
+                      width: 35,
+                      colorFilter: ColorFilter.mode(
+                        widget.color,
+                        BlendMode.srcIn,
+                      ),
+                    )
                     : Icon(widget.icon, color: widget.color, size: 35),
                 const SizedBox(height: 6),
                 Text(

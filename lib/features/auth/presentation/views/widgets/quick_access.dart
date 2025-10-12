@@ -21,26 +21,30 @@ class QuickAccess extends StatelessWidget {
         SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: const <Widget>[
+          children: <Widget>[
             QuickAccessButton(
               icon: Icons.search,
               label: 'Find\nDoctor',
               color: Colors.black87,
+              onTap: () {},
             ),
             QuickAccessButton(
               svg: Assets.imagesEmergency,
               label: 'Emergency',
               color: Colors.red,
+              onTap: () {},
             ),
             QuickAccessButton(
               svg: Assets.imagesHelp,
               label: 'Help',
               color: Colors.blue,
+              onTap: () {},
             ),
             QuickAccessButton(
               icon: Icons.call,
               label: 'Support',
               color: Colors.green,
+              onTap: () {},
             ),
           ],
         ),
