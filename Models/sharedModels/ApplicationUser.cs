@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 
+
 namespace HealthCare_.Models.SharedModels
 {
     public class ApplicationUser : IdentityUser<int>
@@ -11,9 +12,13 @@ namespace HealthCare_.Models.SharedModels
         public string Role { get; set; } 
         public string Address { get; set; }
         public string? ProfileImagePath { get; set; }
-        public bool TwoFactorEnabled { get; set; } = false; // مفعّل/غير مفعّل
-        public string? RecoveryCodes { get; set; } // رموز الاستعادة (JSON array)
-        public string? AuthenticatorKey { get; set; } // المفتاح السري لـ TOTP
+        // MFA Properties
+        public override bool TwoFactorEnabled { get; set; } = false;
+        public string? AuthenticatorKey { get; set; }
+        public string? RecoveryCodes { get; set; }
+        // Passkey Properties
+        public string? PasskeyCredentialId { get; set; }
+        public string? PasskeyPublicKey { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 

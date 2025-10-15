@@ -35,6 +35,10 @@
     [MaxLength(300)]
     public string? Notes { get; set; }
 
+    // Added for AES encryption
+    [MaxLength(500)]
+    public string Salt { get; set; } // Added
+
     public bool IsExpired() => DateTime.UtcNow >= ExpiresAt;
 
     public void RevokeSession(string? note = null)

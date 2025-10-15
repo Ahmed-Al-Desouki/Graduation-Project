@@ -1,36 +1,61 @@
-﻿using HealthCare_.Services.SharedService;
+﻿using HealthCare_.Interfaces;
+using HealthCare_.Models.Context;
+using HealthCare_.Models.SharedModels;
 using HealthCare_.Services.BackGround;
 using HealthCare_.Services.DoctorDervice;
 using HealthCare_.Services.PatientService;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Diagnostics;
 using System.Text;
+using Fido2NetLib;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add detailed logging
+builder.Services.AddLogging(logging =>
+{
+    logging.AddConsole();
+    logging.SetMinimumLevel(LogLevel.Debug);
+});
+
 // Database
 builder.Services.AddDbContext<HealthCarePlusContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
 
 // Identity
-builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
+builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
     options.Password.RequiredLength = 6;
     options.Password.RequireDigit = false;
     options.Password.RequireUppercase = false;
     options.Password.RequireNonAlphanumeric = false;
     options.User.RequireUniqueEmail = true;
+    options.SignIn.RequireConfirmedAccount = true;
 })
 .AddEntityFrameworkStores<HealthCarePlusContext>()
 .AddDefaultTokenProviders();
 
+// Add Memory Cache for challenge storage
+builder.Services.AddMemoryCache();
+
+// FIDO2 Configuration
+builder.Services.AddFido2(options =>
+{
+    options.ServerDomain = builder.Configuration["WebAuthn:RpId"] ?? "localhost";
+    options.ServerName = "HealthCare App";
+    options.Origins = new HashSet<string> { builder.Configuration["WebAuthn:Origin"] ?? "https://localhost:7092" };
+    options.TimestampDriftTolerance = 300000; // 5 minutes in milliseconds
+});
+builder.Services.AddScoped<IFido2, Fido2>();
+
 // JWT
-var jwtSecret = builder.Configuration["Jwt:Key"];
+var jwtSecret = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Missing Jwt:Key");
 var key = Encoding.UTF8.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(options =>
@@ -40,7 +65,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = true; 
+    options.RequireHttpsMetadata = true; // Enforce HTTPS in production
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -50,37 +75,46 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.Zero,
+        NameClaimType = "UserID",
+        RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
     };
 
-    // التحقق من revoked tokens
     options.Events = new JwtBearerEvents
     {
         OnTokenValidated = async context =>
         {
-            var db = context.HttpContext.RequestServices.GetService<HealthCarePlusContext>();
-            if (db == null) return;
-
-            var jti = context.Principal?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
-            if (!string.IsNullOrEmpty(jti))
-            {
-                var isRevoked = await db.RevokedTokens.AnyAsync(r => r.Jti == jti);
-                if (isRevoked)
-                {
-                    context.Fail("This token has been revoked.");
-                    return;
-                }
-            }
+            var logger = context.HttpContext.RequestServices.GetService<ILogger<Program>>();
+            logger?.LogInformation("Token validated successfully for UserID: {UserId}, Role: {Role}",
+                context.Principal?.FindFirst("UserID")?.Value,
+                context.Principal?.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role")?.Value);
+        },
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetService<ILogger<Program>>();
+            var token = context.HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "") ?? "No token";
+            logger?.LogError("Authentication failed. Exception: {Exception}, Full Token: {Token}", context.Exception, token);
+            return Task.CompletedTask;
+        },
+        OnMessageReceived = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetService<ILogger<Program>>();
+            var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+            logger?.LogDebug("Message received. Authorization Header: {AuthHeader}", authHeader);
+            return Task.CompletedTask;
         }
     };
 });
+
+builder.Services.AddScoped<RoleManager<ApplicationRole>>();
 
 // HTTP Context
 builder.Services.AddHttpContextAccessor();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
-// ... باقي الخدمات مثل DoctorServices, PatientServices, إلخ
+builder.Services.AddScoped<IDoctorService, DoctorServices>();
+builder.Services.AddScoped<IPatientService, PatientServices>();
 builder.Services.AddHostedService<RevokedTokensCleanupService>();
 
 // Cloudinary
@@ -92,22 +126,48 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "HealthCare+ API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthCare+ API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.\n\nExample: 'Bearer eyJhbGciOiJIUzI1Ni...'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
     c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 });
 
 // CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+    options.AddPolicy("AllowSwaggerUI", policy =>
+        policy.WithOrigins("http://localhost:5240", "https://localhost:7092", "http://localhost:3000")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials());
 });
 
-//builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
-//    options.SignIn.RequireConfirmedAccount = true; // اختياري: يطلب تأكيد الإيميل
-//})
-//.AddEntityFrameworkStores<HealthCarePlusContext>()
-//.AddDefaultTokenProviders(); // هنا: يفعّل TOTP وSMS
+// Authorization Policy
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+});
 
 var app = builder.Build();
 
@@ -125,16 +185,18 @@ if (app.Environment.IsDevelopment())
     {
         Process.Start(new ProcessStartInfo
         {
-            FileName = "http://localhost:5240", // HTTPS
+            FileName = "https://localhost:7092",
             UseShellExecute = true
         });
     }
     catch { }
 }
 
-app.UseCors("AllowAll");
-app.UseHttpsRedirection(); 
+app.UseCors("AllowSwaggerUI");
+app.UseHttpsRedirection();
+app.UseHsts(); // Added for production security
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();

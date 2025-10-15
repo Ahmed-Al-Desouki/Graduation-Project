@@ -45,6 +45,8 @@ namespace HealthCare_.Models.DTOs.AuthModels
 
         [MaxLength(100)]
         public string IpAddress { get; set; }
+        [MaxLength(500)]
+        public string? Salt { get; set; } 
 
         public DateTime? LastUsedAt { get; set; }
     }

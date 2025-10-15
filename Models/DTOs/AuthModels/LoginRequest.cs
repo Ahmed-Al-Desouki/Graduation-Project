@@ -12,5 +12,9 @@ namespace HealthCare_.Models.DTOs.AuthModels
         [Required(ErrorMessage = "Password is required")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters")]
         public string Password { get; set; }
+
+        public string? OtpCode { get; set; } // لـ MFA (TOTP)
+
+        public bool UsePasskey { get; set; } = false; // لتفعيل Passkey login
     }
 }
