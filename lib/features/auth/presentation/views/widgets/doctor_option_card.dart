@@ -37,7 +37,6 @@ class _DoctorOptionCardState extends State<DoctorOptionCard> {
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         child: AnimatedContainer(
-          margin: EdgeInsets.symmetric(horizontal: 25, vertical: 30),
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
           transform: Matrix4.translationValues(0.0, translateY, 0.0),
@@ -54,156 +53,135 @@ class _DoctorOptionCardState extends State<DoctorOptionCard> {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "I'm a Doctor",
-                          style: AppStyles.styleSemiBold18Dark.copyWith(
-                            fontSize: 25,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Manage patients,\nconsultations & practice',
-                          style: AppStyles.styleRegular14Gray,
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: 145),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(25),
-                      child: Image.asset(
-                        Assets.imagesDoctor,
-                        height: 80,
-                        width: 80,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ],
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child: Image.asset(
+                    Assets.imagesDoctor,
+                    height: 80,
+                    width: 80,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Text(
+                  "I'm a Doctor",
+                  style: AppStyles.styleSemiBold18Dark.copyWith(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Manage patients,\nconsultations & practice',
+                  textAlign: TextAlign.center,
+                  style: AppStyles.styleRegular14Gray,
                 ),
                 SizedBox(height: 15),
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 3,
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    color: Color(0xFFF3E8FF),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        Assets.imagesStethoscope,
+                        height: 20,
+                        width: 20,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF9333EA),
+                          BlendMode.srcIn,
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
-                        color: Color(0xFFF3E8FF),
+                      SizedBox(width: 5),
+                      Text(
+                        'Practice Management',
+                        style: AppStyles.styleMedium12Purple.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          SvgPicture.asset(
-                            Assets.imagesStethoscope,
-                            height: 20,
-                            width: 20,
-                            colorFilter: const ColorFilter.mode(
-                              Color(0xFF9333EA),
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                            'Practice Management',
-                            style: AppStyles.styleMedium12Purple.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 190),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: 18,
-                      color: Colors.black45,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                SizedBox(height: 17),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Column(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(10.0),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Color(0xFFF3E8FF),
-                          ),
-                          child: SvgPicture.asset(
-                            Assets.imagesPatients,
-                            height: 20,
-                            width: 20,
-                            colorFilter: const ColorFilter.mode(
-                              Color(0xFF9333EA),
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text('Patients', style: AppStyles.styleRegular14Gray),
-                      ],
-                    ),
-                    SizedBox(width: 80),
-                    Column(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(10.0),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Color(0xFFFFEDD5),
-                          ),
-                          child: SvgPicture.asset(
-                            Assets.imagesCalendarDays,
-                            height: 20,
-                            width: 20,
-                            colorFilter: const ColorFilter.mode(
-                              Color(0xFFEE712E),
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text('Schedule', style: AppStyles.styleRegular14Gray),
-                      ],
-                    ),
-                    SizedBox(width: 80),
-                    Column(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(10.0),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Color(0xFFDCFCE7),
-                          ),
-                          child: SvgPicture.asset(
-                            Assets.imagesChartLine,
-                            height: 20,
-                            width: 20,
-                            colorFilter: const ColorFilter.mode(
-                              Color(0xFF16A34A),
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text('Analytics', style: AppStyles.styleRegular14Gray),
-                      ],
-                    ),
-                  ],
-                ),
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     Column(
+                //       children: [
+                //         Container(
+                //           padding: EdgeInsets.all(10.0),
+                //           decoration: BoxDecoration(
+                //             borderRadius: BorderRadius.circular(10),
+                //             color: Color(0xFFF3E8FF),
+                //           ),
+                //           child: SvgPicture.asset(
+                //             Assets.imagesPatients,
+                //             height: 20,
+                //             width: 20,
+                //             colorFilter: const ColorFilter.mode(
+                //               Color(0xFF9333EA),
+                //               BlendMode.srcIn,
+                //             ),
+                //           ),
+                //         ),
+                //         SizedBox(height: 10),
+                //         Text('Patients', style: AppStyles.styleRegular14Gray),
+                //       ],
+                //     ),
+                //     SizedBox(width: 80),
+                //     Column(
+                //       children: [
+                //         Container(
+                //           padding: EdgeInsets.all(10.0),
+                //           decoration: BoxDecoration(
+                //             borderRadius: BorderRadius.circular(10),
+                //             color: Color(0xFFFFEDD5),
+                //           ),
+                //           child: SvgPicture.asset(
+                //             Assets.imagesCalendarDays,
+                //             height: 20,
+                //             width: 20,
+                //             colorFilter: const ColorFilter.mode(
+                //               Color(0xFFEE712E),
+                //               BlendMode.srcIn,
+                //             ),
+                //           ),
+                //         ),
+                //         SizedBox(height: 10),
+                //         Text('Schedule', style: AppStyles.styleRegular14Gray),
+                //       ],
+                //     ),
+                //     SizedBox(width: 80),
+                //     Column(
+                //       children: [
+                //         Container(
+                //           padding: EdgeInsets.all(10.0),
+                //           decoration: BoxDecoration(
+                //             borderRadius: BorderRadius.circular(10),
+                //             color: Color(0xFFDCFCE7),
+                //           ),
+                //           child: SvgPicture.asset(
+                //             Assets.imagesChartLine,
+                //             height: 20,
+                //             width: 20,
+                //             colorFilter: const ColorFilter.mode(
+                //               Color(0xFF16A34A),
+                //               BlendMode.srcIn,
+                //             ),
+                //           ),
+                //         ),
+                //         SizedBox(height: 10),
+                //         Text('Analytics', style: AppStyles.styleRegular14Gray),
+                //       ],
+                //     ),
+                //   ],
+                // ),
               ],
             ),
           ),
