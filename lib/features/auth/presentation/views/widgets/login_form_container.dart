@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/input_field.dart';
 
 class LoginFormContainer extends StatefulWidget {
@@ -32,13 +33,6 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
     return emailRegex.hasMatch(email);
-  }
-
-  bool _isValidPassword(String password) {
-    final passwordRegex = RegExp(
-      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
-    );
-    return passwordRegex.hasMatch(password);
   }
 
   @override
@@ -94,8 +88,8 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
                     if (value == null || value.isEmpty) {
                       return 'Password is required!';
                     }
-                    if (!_isValidPassword(value)) {
-                      return 'Password must contain:\n- at least 8 chars\n- 1 uppercase letter\n- 1 lowercase letter\n- 1 number\n- 1 special character -> (! @ # \$ % ^ & *)';
+                    if (value.length < 8) {
+                      return 'Invalid password!';
                     }
                     return null;
                   },
@@ -103,7 +97,16 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
                 const SizedBox(height: 20),
                 Center(
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return ForgotPassword();
+                        },
+                      ),
+                    );
+                    },
                     child: Text(
                       'Forgot Password?',
                       style: AppStyles.styleRegular16Teal.copyWith(
