@@ -112,6 +112,10 @@ class Assets {
   /// assets/images/login.png
   static const String imagesLogin = "assets/images/login.png";
 
+  /// Assets for imagesLogin
+  /// assets/images/logooo.jpg
+  static const String imagesLogooo = "assets/images/logooo.jpg";
+
   /// Assets for imagesLogout
   /// assets/images/logout.svg
   static const String imagesLogout = "assets/images/logout.svg";
