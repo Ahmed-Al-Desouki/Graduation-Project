@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
 class PatientOptionCard extends StatefulWidget {
@@ -31,7 +32,9 @@ class _PatientOptionCardState extends State<PatientOptionCard> {
         });
       },
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          AppRouter.router.go(AppRouter.kRegisterAsPatient);
+        },
         hoverColor: Colors.transparent,
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,

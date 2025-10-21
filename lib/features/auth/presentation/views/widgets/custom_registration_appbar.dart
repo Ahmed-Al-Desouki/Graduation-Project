@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
 class CustomAppBarRegistration extends StatelessWidget {
@@ -36,16 +37,19 @@ class CustomAppBarRegistration extends StatelessWidget {
             elevation: 0,
             centerTitle: true,
             title: Text(title, style: AppStyles.styleSemiBold18White),
-            leading: Container(
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(47, 255, 255, 255),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () {
-                  // Navigator.of(context).pop();
-                },
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 17.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(47, 255, 255, 255),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    AppRouter.router.go(AppRouter.kCreatAcount);
+                  },
+                ),
               ),
             ),
           ),

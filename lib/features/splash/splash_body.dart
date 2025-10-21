@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 
 class SplashBody extends StatefulWidget {
   const SplashBody({super.key});
@@ -63,7 +64,7 @@ class _SplashBodyState extends State<SplashBody>
     _controller.forward();
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
-        Navigator.of(context).pushReplacementNamed('/login');
+        AppRouter.router.go(AppRouter.kLogin);
       }
     });
   }

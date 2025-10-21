@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/input_field.dart';
 
@@ -135,7 +136,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   children: [
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                        AppRouter.router.go(AppRouter.kLogin);
                       },
                       child: Text(
                         'Back to Sign In',

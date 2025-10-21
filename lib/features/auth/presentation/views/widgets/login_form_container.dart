@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/input_field.dart';
@@ -98,14 +99,7 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
                 Center(
                   child: TextButton(
                     onPressed: () {
-                      Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return ForgotPassword();
-                        },
-                      ),
-                    );
+                      AppRouter.router.go(AppRouter.kForgotPassword);
                     },
                     child: Text(
                       'Forgot Password?',

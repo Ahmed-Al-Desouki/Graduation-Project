@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
 class CreateAccountHeader extends StatelessWidget {
@@ -44,7 +45,7 @@ class CreateAccountHeader extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () {
-                    // Navigator.of(context).pop();
+                    AppRouter.router.go(AppRouter.kLogin);
                   },
                 ),
               ),
