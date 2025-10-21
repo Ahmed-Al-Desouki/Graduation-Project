@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
-class RegistrationHeader extends StatelessWidget {
+class CustomRegistrationHeader extends StatelessWidget {
   final String title;
   final String subtitle;
   final String imagePath;
 
-  const RegistrationHeader({
+  const CustomRegistrationHeader({
     super.key,
     required this.title,
     required this.subtitle,

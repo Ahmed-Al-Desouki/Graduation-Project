@@ -9,12 +9,9 @@ import 'package:graduation_project/features/auth/presentation/views/widgets/cust
 import 'package:graduation_project/features/auth/presentation/views/widgets/headers_field_in_registration.dart';
 
 class PatientMedicalInfoStep extends StatefulWidget {
-  final VoidCallback onRegister; // ✅ أضف دي
+  final VoidCallback onRegister;
 
-  const PatientMedicalInfoStep({
-    super.key,
-    required this.onRegister, // ✅ خليها مطلوبة
-  });
+  const PatientMedicalInfoStep({super.key, required this.onRegister});
 
   @override
   State<PatientMedicalInfoStep> createState() => _PatientMedicalInfoStepState();

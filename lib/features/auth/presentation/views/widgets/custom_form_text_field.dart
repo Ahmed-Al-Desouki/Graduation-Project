@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
-enum FieldType { name, email, password, age, nationalId, medicalLicense }
+enum FieldType {
+  name,
+  email,
+  password,
+  age,
+  nationalId,
+  medicalLicense,
+  birthDate,
+}
 
 class CustomFormTextField extends StatefulWidget {
   final String hintText;
@@ -48,41 +56,57 @@ class _CustomFormTextFieldState extends State<CustomFormTextField> {
   }
 
   String? _validate(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'This field cannot be empty';
+    final String text = value?.trim() ?? "";
+    if (text.isEmpty) {
+      if (widget.fieldType == FieldType.birthDate) {
+        return 'Please select a birth date';
+      }
+      return 'This field is required';
     }
 
     switch (widget.fieldType) {
+      case FieldType.name:
+        if (RegExp(r'^[0-9]').hasMatch(text)) {
+          return 'Name cannot start with a number';
+        }
+        break;
+
       case FieldType.email:
         final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-        if (!emailRegex.hasMatch(value)) {
-          return 'Enter a valid email';
+        if (!emailRegex.hasMatch(text)) {
+          return 'Enter a valid email format';
+        }
+        if (!text.endsWith('@gmail.com')) {
+          return 'Email must be a @gmail.com address';
         }
         break;
 
       case FieldType.password:
-        if (value.length < 6) {
+        if (text.length < 6) {
           return 'Password must be at least 6 characters';
         }
         break;
 
       case FieldType.age:
-        final age = int.tryParse(value);
-        if (age == null || age < 18) {
+        final age = int.tryParse(text);
+        if (age == null) {
+          return 'Please enter a valid number';
+        }
+        if (age < 18) {
           return 'Age must be 18 or older';
         }
         break;
 
       case FieldType.nationalId:
-        if (value.length != 14) {
+        if (text.length != 14) {
           return 'National ID must be 14 digits';
+        }
+        if (int.tryParse(text) == null) {
+          return 'National ID must contain numbers only';
         }
         break;
 
-      case FieldType.medicalLicense:
-        if (value.length < 5) {
-          return 'License number too short';
-        }
+      case FieldType.birthDate:
         break;
 
       default:
@@ -105,6 +129,7 @@ class _CustomFormTextFieldState extends State<CustomFormTextField> {
         keyboardType: _getKeyboardType(),
         validator: _validate,
         onChanged: widget.onChanged,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: AppStyles.styleRegular16Gray,
@@ -159,6 +184,14 @@ class _CustomFormTextFieldState extends State<CustomFormTextField> {
           errorBorder: OutlineInputBorder(
             borderSide: const BorderSide(color: Colors.redAccent),
             borderRadius: BorderRadius.circular(12),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          errorStyle: const TextStyle(
+            color: Colors.redAccent,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
