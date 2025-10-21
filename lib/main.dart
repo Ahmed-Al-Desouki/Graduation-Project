@@ -3,7 +3,7 @@ import 'package:graduation_project/features/auth/presentation/views/login_view.d
 import 'package:graduation_project/features/splash/splash_body.dart';
 
 void main() {
-  runApp(const MyApp());
+runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
