@@ -1,5 +1,6 @@
 ﻿using HealthCare_.Models.AuthModels;
 using HealthCare_.Models.DoctorModels;
+using HealthCare_.Models.DTOs.Email;
 using HealthCare_.Models.PatientModels;
 using HealthCare_.Models.SharedModels;
 using Microsoft.AspNetCore.Identity;
@@ -31,7 +32,7 @@ namespace HealthCare_.Models.Context
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
         public DbSet<RevokedToken> RevokedTokens { get; set; } = null!;
         public DbSet<UserSession> UserSessions { get; set; } = null!;
-
+        public DbSet<EmailOTP> EmailOtps { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -58,8 +59,6 @@ namespace HealthCare_.Models.Context
 
                 // MFA & Passkey
                 entity.Property(u => u.TwoFactorEnabled).HasDefaultValue(false);
-                entity.Property(u => u.AuthenticatorKey).HasMaxLength(500);
-                entity.Property(u => u.RecoveryCodes).HasMaxLength(1000);
                 entity.Property(u => u.PasskeyCredentialId).HasMaxLength(500);
                 entity.Property(u => u.PasskeyPublicKey).HasMaxLength(2000);
                 entity.HasIndex(u => u.PasskeyCredentialId)

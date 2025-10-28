@@ -1,12 +1,13 @@
-﻿using HealthCare_.Services.BackGround;
+﻿using Fido2NetLib;
+using HealthCare_.Services;
+using HealthCare_.Services.BackGround;
 using HealthCare_.Services.DoctorDervice;
 using HealthCare_.Services.PatientService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Diagnostics;
 using System.Text;
-using Fido2NetLib;
-using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add detailed logging
@@ -108,7 +109,11 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDoctorService, DoctorServices>();
 builder.Services.AddScoped<IPatientService, PatientServices>();
 builder.Services.AddHostedService<RevokedTokensCleanupService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
+
+
+builder.Configuration.AddEnvironmentVariables();
 // Cloudinary
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.AddScoped<CloudinaryService>();

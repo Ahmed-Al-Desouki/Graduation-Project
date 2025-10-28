@@ -1,6 +1,4 @@
-﻿
-
-
+﻿using HealthCare_.Models.DTOs.Email;
 
 namespace HealthCare_.Services.SharedService
 {
@@ -19,6 +17,7 @@ namespace HealthCare_.Services.SharedService
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly ILogger<AuthService> _logger;
         private readonly CloudinaryService _cloudinary;
+        private readonly IEmailService _emailService;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -29,6 +28,7 @@ namespace HealthCare_.Services.SharedService
             IFido2 fido2,
             RoleManager<ApplicationRole> roleManager,
             CloudinaryService cloudinary,
+            IEmailService emailService,
             ILogger<AuthService> logger)
         {
             _userManager = userManager;
@@ -43,13 +43,13 @@ namespace HealthCare_.Services.SharedService
             _roleManager = roleManager;
             _cloudinary = cloudinary;
             _logger = logger;
+            _emailService = emailService;
 
             if (_jwtKey.Length != 44 || _refreshHmacKey.Length != 44 || _refreshAesKey.Length != 44)
                 throw new InvalidOperationException("JWT keys must be 44 characters (32 bytes Base64-encoded)");
-            _logger.LogInformation("AuthService initialized with keys: JwtKey={JwtKeyLength}, RefreshHmacKey={RefreshHmacKeyLength}, RefreshAesKey={RefreshAesKeyLength}",
-                _jwtKey.Length, _refreshHmacKey.Length, _refreshAesKey.Length);
         }
 
+        // ====================== REGISTER ======================
         public async Task<(bool Succeeded, string[] Errors)> RegisterAsync(RegisterRequest request)
         {
             _logger.LogInformation("RegisterAsync called for email: {Email}", request.Email);
@@ -74,7 +74,6 @@ namespace HealthCare_.Services.SharedService
 
             try
             {
-                // 1. رفع الصورة الحقيقية أو توليد افتراضية + رفعها
                 if (request.ProfileImageFile != null && request.ProfileImageFile.Length > 0)
                 {
                     var result = await _cloudinary.UploadFileAsync(request.ProfileImageFile);
@@ -91,13 +90,11 @@ namespace HealthCare_.Services.SharedService
                 }
                 else
                 {
-                    // توليد الصورة الافتراضية + رفعها
                     var (stream, publicId) = await GenerateAndUploadAvatarAsync(request.FullName);
                     uploadedPublicId = publicId;
-
                     createdFile = new ExternalFile
                     {
-                        FileUrl = stream.Url, // مش مهم هنا، هيتحفظ من Cloudinary
+                        FileUrl = stream.Url,
                         PublicId = publicId,
                         FileType = "image/png",
                         FileSize = stream.FileSize,
@@ -106,7 +103,6 @@ namespace HealthCare_.Services.SharedService
                     };
                 }
 
-                // 2. إنشاء المستخدم
                 var identityResult = await _userManager.CreateAsync(user, request.Password);
                 if (!identityResult.Succeeded)
                 {
@@ -115,23 +111,18 @@ namespace HealthCare_.Services.SharedService
                     return (false, identityResult.Errors.Select(e => e.Description).ToArray());
                 }
 
-                // 3. إضافة الـ Role Claim
                 await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Role, user.Role ?? "User"));
 
-                // 4. حفظ الصورة في الـ DB
                 if (createdFile != null)
                 {
                     _context.ExternalFiles.Add(createdFile);
-                    await _context.SaveChangesAsync(); // FileID يُولد
-
+                    await _context.SaveChangesAsync();
                     user.ProfileImageId = createdFile.FileID;
                     _context.Entry(user).Property(x => x.ProfileImageId).IsModified = true;
                     await _context.SaveChangesAsync();
                 }
 
-                _logger.LogInformation("User registered successfully – ID: {Id}, Image: {ImgId}, PublicId: {PublicId}",
-                    user.Id, user.ProfileImageId, uploadedPublicId);
-
+                _logger.LogInformation("User registered successfully – ID: {Id}", user.Id);
                 return (true, Array.Empty<string>());
             }
             catch (Exception ex)
@@ -142,6 +133,7 @@ namespace HealthCare_.Services.SharedService
                 return (false, new[] { "Registration failed due to server error" });
             }
         }
+
         private static string GetInitials(string fullName)
         {
             var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -155,13 +147,11 @@ namespace HealthCare_.Services.SharedService
             var initials = GetInitials(fullName);
             var publicId = $"healthcare_files/avatars/avatar_{initials}_{Guid.NewGuid():N}.png";
 
-            // 1. توليد الصورة
             using var image = new Image<Rgba32>(200, 200);
             image.Mutate(x => x.BackgroundColor(Color.ParseHex("0e76a8")));
 
-            // تحميل خط Arial
             var fontCollection = new FontCollection();
-            var fontFamily = fontCollection.Add("C:/Windows/Fonts/arial.ttf"); // تأكد من المسار
+            var fontFamily = fontCollection.Add("C:/Windows/Fonts/arial.ttf");
             var font = fontFamily.CreateFont(80, FontStyle.Bold);
 
             var textOptions = new RichTextOptions(font)
@@ -173,12 +163,10 @@ namespace HealthCare_.Services.SharedService
 
             image.Mutate(x => x.DrawText(textOptions, initials, Color.White));
 
-            // 2. تحويل إلى Stream
             using var ms = new MemoryStream();
             await image.SaveAsPngAsync(ms);
             ms.Position = 0;
 
-            // 3. رفع على Cloudinary باستخدام UploadFileAsync
             var file = new FormFile(ms, 0, ms.Length, "avatar", $"{initials}.png")
             {
                 Headers = new HeaderDictionary(),
@@ -186,60 +174,47 @@ namespace HealthCare_.Services.SharedService
             };
 
             var uploadResult = await _cloudinary.UploadFileAsync(file);
-
-            // تأكد إن UploadFileAsync بيرجع CloudinaryUploadResult
-            return (
-                uploadResult,
-                uploadResult.PublicId
-            );
+            return (uploadResult, uploadResult.PublicId);
         }
 
+        // ====================== LOGIN (مع Email OTP) ======================
         public async Task<(string AccessToken, string RefreshToken, string Error)> LoginAsync(
             LoginRequest request,
             string? deviceInfo = null,
-            string? ipAddress = null)
+            string? ipAddress = null,
+            IEmailService? emailService = null)
         {
             _logger.LogInformation("LoginAsync called for email: {Email}", request.Email);
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
-            {
-                _logger.LogWarning("Login failed: Email {Email} not found", request.Email);
                 return (null!, null!, "Email not found");
-            }
 
             if (!await _userManager.CheckPasswordAsync(user, request.Password))
-            {
-                _logger.LogWarning("Login failed: Invalid password for email {Email}", request.Email);
                 return (null!, null!, "Invalid password");
-            }
 
-            if (await _userManager.GetTwoFactorEnabledAsync(user))
+            if (user.TwoFactorEnabled)
             {
                 if (string.IsNullOrEmpty(request.OtpCode))
                 {
-                    _logger.LogWarning("Login failed: MFA required for email {Email}", request.Email);
-                    return (null!, null!, "MFA required: OTP code needed");
+                    if (emailService != null)
+                        await GenerateAndSendOtpAsync(user, emailService);
+                    return (null!, null!, "MFA_OTP_SENT");
                 }
 
-                if (!await _userManager.VerifyTwoFactorTokenAsync(user, "Authenticator", request.OtpCode))
-                {
-                    _logger.LogWarning("Login failed: Invalid OTP code for email {Email}", request.Email);
-                    return (null!, null!, "Invalid OTP code");
-                }
+                var (verified, error) = await VerifyMfaAsync(user.Id, request.OtpCode);
+                if (!verified)
+                    return (null!, null!, error);
             }
 
             if (request.UsePasskey)
-            {
-                _logger.LogWarning("Login failed: Passkey authentication required for email {Email}", request.Email);
                 return (null!, null!, "Passkey authentication required");
-            }
 
-            var (accessToken, jti, expiresAt) = await GenerateJwtToken(user);
+            var (accessToken, jti, _) = await GenerateJwtToken(user);
             var rawRefresh = GenerateRandomToken();
             var refreshHash = ComputeHmacSha256Base64(rawRefresh);
 
-            _logger.LogDebug("Generating session for user {UserId} with jti: {Jti}", user.Id, jti);
-            using (var tx = await _context.Database.BeginTransactionAsync())
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
                 var sessions = await _context.UserSessions
                     .Where(s => s.UserId == user.Id && !s.IsRevoked)
@@ -252,7 +227,6 @@ namespace HealthCare_.Services.SharedService
                     oldest.RevokeSession("Exceeded session limit");
                     _context.UserSessions.Update(oldest);
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("Revoked oldest session for user {UserId} due to limit", user.Id);
                 }
 
                 var (encryptedToken, tokenSalt) = EncryptAes(rawRefresh);
@@ -287,127 +261,64 @@ namespace HealthCare_.Services.SharedService
                 _context.RefreshTokens.Add(refreshTokenEntity);
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
-                _logger.LogInformation("Session and refresh token created for user {UserId}", user.Id);
-            }
 
-
-            var (encryptedForClient, _) = EncryptAes(rawRefresh); // ده للـ UserSession بس
-            _logger.LogInformation("Login successful for user {UserId} with access token length: {TokenLength}", user.Id, accessToken.Length);
-            return (accessToken, rawRefresh, string.Empty); // بعت rawRefresh للـ client بدل encrypted
-
-            //var (encryptedForClient, _) = EncryptAes(rawRefresh);
-            //return (accessToken, encryptedForClient, string.Empty);
-        }
-
-        public async Task<(bool Succeeded, string Error)> LogoutAsync(LogoutRequest request)
-        {
-            _logger.LogInformation("LogoutAsync called for userId: {UserId}", request?.UserId);
-            try
-            {
-                if (request == null || request.UserId <= 0)
-                {
-                    _logger.LogWarning("Logout failed: Invalid logout request for userId: {UserId}", request?.UserId);
-                    return (false, "Invalid logout request");
-                }
-
-                var session = await _context.UserSessions
-                    .Where(s => s.UserId == request.UserId && s.DeviceInfo == request.DeviceInfo && s.IsActive)
-                    .OrderByDescending(s => s.LastActivity)
-                    .FirstOrDefaultAsync();
-
-                if (session == null)
-                {
-                    _logger.LogWarning("Logout failed: No active session found for userId: {UserId}", request.UserId);
-                    return (false, "No active session found for this user/device");
-                }
-
-                session.IsActive = false;
-                session.RevokedAt = DateTime.UtcNow;
-                _context.UserSessions.Update(session);
-
-                var refreshTokens = await _context.RefreshTokens
-                    .Where(rt => rt.UserSessionId == session.Id && !rt.IsRevoked)
-                    .ToListAsync();
-
-                foreach (var rt in refreshTokens)
-                {
-                    rt.IsRevoked = true;
-                    rt.Revoked = DateTime.UtcNow;
-                }
-
-                _context.RefreshTokens.UpdateRange(refreshTokens);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Logout successful for userId: {UserId}", request.UserId);
-                return (true, string.Empty);
+                return (accessToken, rawRefresh, string.Empty);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Logout failed for userId: {UserId}", request?.UserId);
-                return (false, $"Logout failed: {ex.Message}");
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Login transaction failed");
+                return (null!, null!, "Server error");
             }
         }
 
-        public async Task<int?> GetRoleIdFromDbAsync(string roleName)
+        // ====================== LOGOUT ======================
+        public async Task<(bool Succeeded, string Error)> LogoutAsync(LogoutRequest request)
         {
-            _logger.LogInformation("GetRoleIdFromDbAsync called for roleName: {RoleName}", roleName);
-            var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
-            if (role == null)
-                _logger.LogWarning("Role not found: {RoleName}", roleName);
-            return role?.Id;
-        }
+            if (request == null || request.UserId <= 0)
+                return (false, "Invalid request");
 
-        public async Task<(bool Succeeded, int? RoleId, string Error)> CreateRoleAsync(string roleName, string description)
-        {
-            _logger.LogInformation("CreateRoleAsync called for roleName: {RoleName}", roleName);
-            var role = new ApplicationRole
-            {
-                Name = roleName,
-                NormalizedName = roleName.ToUpper(),
-                Description = description,
-                CreatedAt = DateTime.UtcNow
-            };
+            var session = await _context.UserSessions
+                .FirstOrDefaultAsync(s => s.UserId == request.UserId && s.DeviceInfo == request.DeviceInfo && s.IsActive);
 
-            var result = await _roleManager.CreateAsync(role);
-            if (result.Succeeded)
+            if (session == null)
+                return (false, "No active session");
+
+            session.IsActive = false;
+            session.RevokedAt = DateTime.UtcNow;
+            _context.UserSessions.Update(session);
+
+            var refreshTokens = await _context.RefreshTokens
+                .Where(rt => rt.UserSessionId == session.Id && !rt.IsRevoked)
+                .ToListAsync();
+
+            foreach (var rt in refreshTokens)
             {
-                _logger.LogInformation("Role created successfully: {RoleName} with Id: {RoleId}", roleName, role.Id);
-                return (true, role.Id, string.Empty);
+                rt.IsRevoked = true;
+                rt.Revoked = DateTime.UtcNow;
             }
 
-            _logger.LogError("Role creation failed for {RoleName}: {Errors}", roleName, string.Join(", ", result.Errors.Select(e => e.Description)));
-            return (false, null, string.Join(", ", result.Errors.Select(e => e.Description)));
+            _context.RefreshTokens.UpdateRange(refreshTokens);
+            await _context.SaveChangesAsync();
+
+            return (true, string.Empty);
         }
 
+        // ====================== REFRESH TOKEN ======================
         public async Task<(string AccessToken, string RefreshToken, string Error)> RefreshTokenAsync(
-                            RefreshRequest request,
-                            string? deviceInfo = null,
-                            string? ipAddress = null)
+            RefreshRequest request,
+            string? deviceInfo = null,
+            string? ipAddress = null)
         {
-            _logger.LogInformation("RefreshTokenAsync called");
-
             if (request == null || string.IsNullOrEmpty(request.AccessToken) || string.IsNullOrEmpty(request.RefreshToken))
-            {
-                return (string.Empty, string.Empty, "Access token and refresh token are required.");
-            }
+                return (string.Empty, string.Empty, "Invalid request");
 
-            // تنظيف الـ accessToken
             var cleanedAccessToken = request.AccessToken.Trim().Replace("Bearer ", "");
-
-            // التحقق من JWT
-            if (cleanedAccessToken.Split('.').Length != 3)
-            {
-                _logger.LogError("Invalid JWT format");
-                return (string.Empty, string.Empty, "Invalid access token format");
-            }
-
-            // Validate access token
             var tokenHandler = new JwtSecurityTokenHandler();
-            ClaimsPrincipal principal;
-            SecurityToken validatedToken;
 
             try
             {
-                principal = tokenHandler.ValidateToken(cleanedAccessToken, new TokenValidationParameters
+                var principal = tokenHandler.ValidateToken(cleanedAccessToken, new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey)),
@@ -416,61 +327,31 @@ namespace HealthCare_.Services.SharedService
                     ValidIssuer = _configuration["Jwt:Issuer"],
                     ValidAudience = _configuration["Jwt:Audience"],
                     ValidateLifetime = false
-                }, out validatedToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Invalid access token");
-                return (string.Empty, string.Empty, $"Invalid access token: {ex.Message}");
-            }
+                }, out var validatedToken);
 
-            var jwtToken = validatedToken as JwtSecurityToken;
-            var jti = jwtToken?.Id;
-            var userIdClaim = principal.FindFirst("UserID")?.Value;
-            if (!int.TryParse(userIdClaim, out int userId))
-            {
-                return (string.Empty, string.Empty, "Invalid token claims");
-            }
+                var jwtToken = validatedToken as JwtSecurityToken;
+                var jti = jwtToken?.Id;
+                var userIdClaim = principal.FindFirst("UserID")?.Value;
+                if (!int.TryParse(userIdClaim, out int userId))
+                    return (string.Empty, string.Empty, "Invalid token");
 
-            // حساب Hash من الـ raw refreshToken اللي بعته الـ client
-            var providedHash = ComputeHmacSha256Base64(request.RefreshToken);
-            _logger.LogDebug("Provided hash: {Hash}", providedHash);
+                var providedHash = ComputeHmacSha256Base64(request.RefreshToken);
 
-            using (var tx = await _context.Database.BeginTransactionAsync())
-            {
+                using var tx = await _context.Database.BeginTransactionAsync();
                 var stored = await _context.RefreshTokens
                     .Include(rt => rt.UserSession)
-                    .Where(rt => rt.Token == providedHash && rt.UserId == userId)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync(rt => rt.Token == providedHash && rt.UserId == userId);
 
-                if (stored == null || stored.IsUsed || stored.IsRevoked)
-                {
-                    _logger.LogWarning("Invalid refresh token for userId: {UserId}", userId);
+                if (stored == null || stored.IsUsed || stored.IsRevoked || stored.Expires < DateTime.UtcNow || stored.JwtId != jti)
                     return (string.Empty, string.Empty, "Invalid refresh token");
-                }
 
-                if (stored.Expires < DateTime.UtcNow)
-                {
-                    return (string.Empty, string.Empty, "Refresh token expired");
-                }
-
-                if (stored.JwtId != jti)
-                {
-                    return (string.Empty, string.Empty, "Refresh token does not match access token");
-                }
-
-                // revoke القديم
                 stored.IsUsed = true;
                 stored.IsRevoked = true;
                 stored.Revoked = DateTime.UtcNow;
                 _context.RefreshTokens.Update(stored);
 
                 var user = await _userManager.FindByIdAsync(userId.ToString());
-                if (user == null)
-                {
-                    await tx.RollbackAsync();
-                    return (string.Empty, string.Empty, "User not found");
-                }
+                if (user == null) return (string.Empty, string.Empty, "User not found");
 
                 var (newAccessToken, newJti, _) = await GenerateJwtToken(user);
                 var newRefreshRaw = GenerateRandomToken();
@@ -490,221 +371,222 @@ namespace HealthCare_.Services.SharedService
 
                 _context.RefreshTokens.Add(newRefreshEntity);
 
-                // تحديث Session (اختياري)
                 if (stored.UserSessionId.HasValue)
                 {
-                    var sessionUpdate = await _context.UserSessions.FindAsync(stored.UserSessionId.Value);
-                    if (sessionUpdate != null)
+                    var session = await _context.UserSessions.FindAsync(stored.UserSessionId.Value);
+                    if (session != null)
                     {
-                        sessionUpdate.LastActivity = DateTime.UtcNow;
-                        _context.UserSessions.Update(sessionUpdate);
+                        session.LastActivity = DateTime.UtcNow;
+                        _context.UserSessions.Update(session);
                     }
                 }
 
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
 
-                _logger.LogInformation("Refresh succeeded for userId: {UserId}", userId);
-                return (newAccessToken, newRefreshRaw, string.Empty); // بعت rawRefresh جديد
+                return (newAccessToken, newRefreshRaw, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Token validation failed");
+                return (string.Empty, string.Empty, "Invalid token");
             }
         }
 
-
-        public async Task<(bool Succeeded, string QrCodeUrl, string[] RecoveryCodes, string Error)> EnableMfaAsync(int userId)
+        // ====================== ENABLE MFA ======================
+        public async Task<(bool Succeeded, string Message, string Error)> EnableMfaAsync(int userId, IEmailService emailService)
         {
-            _logger.LogInformation("EnableMfaAsync called for userId: {UserId}", userId);
             var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-            {
-                return (false, string.Empty, Array.Empty<string>(), "User not found");
-            }
-
-            if (await _userManager.GetTwoFactorEnabledAsync(user))
-            {
-                return (false, string.Empty, Array.Empty<string>(), "MFA already enabled");
-            }
-
-            var authenticatorKey = await _userManager.GetAuthenticatorKeyAsync(user);
-            if (string.IsNullOrEmpty(authenticatorKey))
-            {
-                await _userManager.ResetAuthenticatorKeyAsync(user);
-                authenticatorKey = await _userManager.GetAuthenticatorKeyAsync(user);
-                _logger.LogDebug("Authenticator key reset for userId: {UserId}, new key: {Key}", userId, authenticatorKey);
-            }
-
-
-            // رابط الـ otpauth الأصلي لتطبيق Google Authenticator
-            var otpauthUri = $"otpauth://totp/{Uri.EscapeDataString(user.Email)}?secret={authenticatorKey}&issuer=HealthCareApp&period=60";
-
-            // رابط يمكن فتحه مباشرة من Flutter، 
-            // بحيث عند الضغط عليه من الهاتف يحاول فتح Google Authenticator،
-            // أو يفتح Google Play / App Store في حال عدم وجود التطبيق.
-            var qrCodeUrl = $"intent://totp/{Uri.EscapeDataString(user.Email)}?secret={authenticatorKey}&issuer=HealthCareApp&period=60#Intent;scheme=otpauth;package=com.google.android.apps.authenticator2;end";
-
-            var recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+            if (user == null) return (false, "", "User not found");
+            if (user.TwoFactorEnabled) return (false, "", "MFA already enabled");
 
             user.TwoFactorEnabled = true;
-            user.AuthenticatorKey = authenticatorKey;
-            user.RecoveryCodes = string.Join(",", recoveryCodes ?? Array.Empty<string>());
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) return (false, "", "Failed to enable MFA");
 
-            var updateResult = await _userManager.UpdateAsync(user);
-            if (!updateResult.Succeeded)
-            {
-                _logger.LogError("Failed to update user for MFA: {Errors}", string.Join(", ", updateResult.Errors.Select(e => e.Description)));
-                return (false, string.Empty, Array.Empty<string>(), "Failed to enable MFA");
-            }
-
-            // تحقق من الـ update
-            var updatedUser = await _userManager.FindByIdAsync(userId.ToString());
-            var isTwoFactorEnabled = await _userManager.GetTwoFactorEnabledAsync(updatedUser);
-            _logger.LogDebug("After update: TwoFactorEnabled = {Enabled}, AuthenticatorKey = {Key}", isTwoFactorEnabled, updatedUser.AuthenticatorKey);
-
-            if (!isTwoFactorEnabled)
-            {
-                _logger.LogError("TwoFactorEnabled still false after update for userId: {UserId}", userId);
-                return (false, string.Empty, Array.Empty<string>(), "Failed to enable MFA");
-            }
-
-            _logger.LogInformation("MFA enabled successfully for userId: {UserId}", userId);
-            return (true, qrCodeUrl, recoveryCodes?.ToArray() ?? Array.Empty<string>(), string.Empty);
+            await GenerateAndSendOtpAsync(user, emailService);
+            return (true, "Check your email for the login code.", "");
         }
 
-
+        // ====================== VERIFY MFA ======================
         public async Task<(bool Succeeded, string Error)> VerifyMfaAsync(int userId, string otpCode)
         {
-            _logger.LogInformation("VerifyMfaAsync called for userId: {UserId}, OTP: {OtpCode}", userId, otpCode);
+            var otp = await _context.EmailOtps
+                .FirstOrDefaultAsync(o => o.UserId == userId && o.Code == otpCode && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow);
+
+            if (otp == null) return (false, "Invalid or expired OTP");
+
+            otp.IsUsed = true;
+            await _context.SaveChangesAsync();
+
             var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-            {
-                _logger.LogWarning("VerifyMfaAsync failed: User not found for userId: {UserId}", userId);
-                return (false, "User not found");
-            }
-
-            var enabled = await _userManager.GetTwoFactorEnabledAsync(user);
-            _logger.LogDebug("MFA enabled for userId {UserId}: {Enabled}", userId, enabled);
-
-            if (!enabled)
-            {
-                _logger.LogWarning("VerifyMfaAsync failed: MFA not enabled for userId: {UserId}", userId);
-                return (false, "MFA not enabled");
-            }
-
-            var recoveryCodes = user.RecoveryCodes?.Split(",");
-            _logger.LogDebug("Recovery codes for user {UserId}: {Codes}", userId, recoveryCodes != null ? string.Join(", ", recoveryCodes) : "None");
-            _logger.LogDebug("Attempting to verify OTP code: {OtpCode}", otpCode);
-
-            // التحقق اليدوي من RecoveryCodes
-            if (recoveryCodes != null && recoveryCodes.Contains(otpCode, StringComparer.OrdinalIgnoreCase))
-            {
-                _logger.LogInformation("Manual recovery code verification successful for code: {OtpCode}", otpCode);
-                // إزالة الكود المستخدم
-                user.RecoveryCodes = string.Join(",", recoveryCodes.Where(c => !c.Equals(otpCode, StringComparison.OrdinalIgnoreCase)));
-                var updateResult = await _userManager.UpdateAsync(user);
-                if (!updateResult.Succeeded)
-                {
-                    _logger.LogError("Failed to update recovery codes for user {UserId}: {Errors}", userId, string.Join(", ", updateResult.Errors.Select(e => e.Description)));
-                    return (false, "Failed to update recovery codes");
-                }
+            if (user != null)
                 await _userManager.AddClaimAsync(user, new Claim("amr", "mfa"));
-                _logger.LogInformation("MFA verified successfully for userId: {UserId}", userId);
-                return (true, string.Empty);
-            }
 
-            // التحقق باستخدام Authenticator لرموز OTP
-            var verified = await _userManager.VerifyTwoFactorTokenAsync(user, "Authenticator", otpCode);
-            _logger.LogDebug("OTP verification result for userId {UserId}, OTP {OtpCode}: {Verified}", userId, otpCode, verified);
-
-            if (verified)
-            {
-                await _userManager.AddClaimAsync(user, new Claim("amr", "mfa"));
-                _logger.LogInformation("MFA verified successfully for userId: {UserId}", userId);
-                return (true, string.Empty);
-            }
-
-            _logger.LogWarning("VerifyMfaAsync failed: Invalid OTP code for userId: {UserId}, Provided OTP: {OtpCode}", userId, otpCode);
-            return (false, "Invalid OTP code");
+            return (true, "");
         }
 
+        // ====================== GENERATE & SEND OTP (PUBLIC) ======================
+        public async Task GenerateAndSendOtpAsync(ApplicationUser user, IEmailService emailService)
+        {
+            var oldOtps = await _context.EmailOtps
+                .Where(o => o.UserId == user.Id && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
+                .ToListAsync();
+
+            foreach (var old in oldOtps) old.IsUsed = true;
+
+            var code = new Random().Next(100000, 999999).ToString("D6");
+            var expiresAt = DateTime.UtcNow.AddMinutes(5);
+
+            var otp = new EmailOTP
+            {
+                UserId = user.Id,
+                Code = code,
+                ExpiresAt = expiresAt,
+                IsUsed = false
+            };
+
+            _context.EmailOtps.Add(otp);
+            await _context.SaveChangesAsync();
+
+            var subject = "Your HealthCare Login Code";
+            var html = $@"
+                <div style='font-family: Arial; text-align: center; padding: 20px;'>
+                    <h2>Your One-Time Login Code</h2>
+                    <p>Use this code to complete your login:</p>
+                    <h1 style='font-size: 36px; color: #0e76a8; letter-spacing: 5px;'>{code}</h1>
+                    <p>This code expires in <strong>5 minutes</strong>.</p>
+                    <hr><small>If you didn't request this, ignore this email.</small>
+                </div>";
+
+            await emailService.SendEmailAsync(user.Email!, subject, html);
+            _logger.LogInformation("OTP sent to {Email}: {Code}", user.Email, code);
+        }
+
+        // ====================== GENERATE JWT ======================
+        private async Task<(string Token, string Jti, DateTime Expires)> GenerateJwtToken(ApplicationUser user)
+        {
+            var jwtSection = _configuration.GetSection("Jwt");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var jti = Guid.NewGuid().ToString();
+
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Email ?? string.Empty),
+                new Claim("UserID", user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, jti),
+                new Claim("amr", user.TwoFactorEnabled ? "mfa" : user.PasskeyCredentialId != null ? "passkey" : "pwd")
+            };
+
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach (var role in roles)
+                claims.Add(new Claim(ClaimTypes.Role, role));
+
+            var expiryMinutes = Convert.ToDouble(jwtSection["ExpireMinutes"] ?? "15");
+            var token = new JwtSecurityToken(
+                issuer: jwtSection["Issuer"],
+                audience: jwtSection["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
+                signingCredentials: creds);
+
+            return (new JwtSecurityTokenHandler().WriteToken(token), jti, token.ValidTo);
+        }
+
+        private string GenerateRandomToken()
+        {
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
+        }
+
+        private string ComputeHmacSha256Base64(string input)
+        {
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_refreshHmacKey));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(input));
+            return Convert.ToBase64String(hash);
+        }
+
+        private (string EncryptedText, string Salt) EncryptAes(string plainText)
+        {
+            if (string.IsNullOrEmpty(plainText)) return (string.Empty, string.Empty);
+
+            var saltBytes = new byte[16];
+            using (var rng = RandomNumberGenerator.Create())
+                rng.GetBytes(saltBytes);
+
+            using var derivedKey = new Rfc2898DeriveBytes(_refreshAesKey, saltBytes, 10000, HashAlgorithmName.SHA256);
+            using var aes = Aes.Create();
+            aes.Key = derivedKey.GetBytes(32);
+            aes.GenerateIV();
+
+            using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+            var plainBytes = Encoding.UTF8.GetBytes(plainText);
+            var cipherBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
+
+            var combined = new byte[saltBytes.Length + aes.IV.Length + cipherBytes.Length];
+            Array.Copy(saltBytes, 0, combined, 0, saltBytes.Length);
+            Array.Copy(aes.IV, 0, combined, saltBytes.Length, aes.IV.Length);
+            Array.Copy(cipherBytes, 0, combined, saltBytes.Length + aes.IV.Length, cipherBytes.Length);
+
+            return (Convert.ToBase64String(combined), Convert.ToBase64String(saltBytes));
+        }
+
+        // ====================== PASSKEY ======================
         public async Task<(bool Succeeded, string Error)> RegisterPasskeyAsync(int userId, string credentialId, string publicKey)
         {
-            _logger.LogInformation("RegisterPasskeyAsync called for userId: {UserId}", userId);
             var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-            {
-                _logger.LogWarning("RegisterPasskeyAsync failed: User not found for userId: {UserId}", userId);
-                return (false, "User not found");
-            }
+            if (user == null) return (false, "User not found");
 
             user.PasskeyCredentialId = credentialId;
             user.PasskeyPublicKey = publicKey;
             await _userManager.UpdateAsync(user);
-            _logger.LogInformation("Passkey registered successfully for userId: {UserId}", userId);
             return (true, string.Empty);
         }
 
         public async Task<string> GeneratePasskeyChallengeAsync(string userId)
         {
-            _logger.LogInformation("GeneratePasskeyChallengeAsync called for userId: {UserId}", userId);
             var challenge = new byte[32];
             using (var rng = RandomNumberGenerator.Create())
-            {
                 rng.GetBytes(challenge);
-            }
+
             var challengeBase64 = Convert.ToBase64String(challenge);
-
-            // Store challenge in cache with 5-minute expiration
-            _cache.Set($"passkey_challenge_{userId}", challenge, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
-            });
-
-            _logger.LogDebug("Generated challenge for userId: {UserId}", userId);
-            return await Task.FromResult(challengeBase64);
+            _cache.Set($"passkey_challenge_{userId}", challenge, TimeSpan.FromMinutes(5));
+            return challengeBase64;
         }
 
         public async Task<(string AccessToken, string RefreshToken, string Error)> LoginWithPasskeyAsync(
-            PasskeyLoginRequest request,
-            string? deviceInfo = null,
-            string? ipAddress = null)
+                PasskeyLoginRequest request,
+                string? deviceInfo = null,
+                string? ipAddress = null)
         {
-            _logger.LogInformation("LoginWithPasskeyAsync called for credentialId: {CredentialId}", request?.CredentialId);
-            if (request == null || string.IsNullOrEmpty(request.CredentialId) || string.IsNullOrEmpty(request.AuthenticatorData) ||
-                string.IsNullOrEmpty(request.ClientDataJson) || string.IsNullOrEmpty(request.Signature))
-            {
-                _logger.LogWarning("LoginWithPasskeyAsync failed: Invalid request or missing required fields");
-                return (null!, null!, "Invalid request or missing required fields");
-            }
+            if (request == null)
+                return (null!, null!, "Invalid request");
 
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.PasskeyCredentialId == request.CredentialId);
-            if (user == null)
-            {
-                _logger.LogWarning("LoginWithPasskeyAsync failed: No user found with credentialId: {CredentialId}", request.CredentialId);
-                return (null!, null!, "No user found with this passkey");
-            }
 
-            // Retrieve challenge from cache
+            if (user == null)
+                return (null!, null!, "No user found");
+
             if (!_cache.TryGetValue($"passkey_challenge_{user.Id}", out byte[]? challenge) || challenge == null)
-            {
-                _logger.LogWarning("LoginWithPasskeyAsync failed: No valid challenge found for userId: {UserId}", user.Id);
-                return (null!, null!, "No valid challenge found");
-            }
+                return (null!, null!, "No valid challenge");
 
             if (!await VerifyPasskeySignature(request, user.PasskeyPublicKey, challenge, user.Id.ToString()))
-            {
-                _logger.LogWarning("LoginWithPasskeyAsync failed: Invalid passkey signature for userId: {UserId}", user.Id);
-                return (null!, null!, "Invalid passkey signature");
-            }
+                return (null!, null!, "Invalid signature");
 
-            // Clear challenge after use
             _cache.Remove($"passkey_challenge_{user.Id}");
 
-            var (accessToken, jti, expiresAt) = await GenerateJwtToken(user);
+            // --- إنشاء JWT ---
+            var (accessToken, jti, _) = await GenerateJwtToken(user);
             var rawRefresh = GenerateRandomToken();
             var refreshHash = ComputeHmacSha256Base64(rawRefresh);
 
-            _logger.LogDebug("Generating session for user {UserId} with jti: {Jti}", user.Id, jti);
-            using (var tx = await _context.Database.BeginTransactionAsync())
+            // --- إنشاء Session (نفس الـ Login) ---
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
             {
                 var sessions = await _context.UserSessions
                     .Where(s => s.UserId == user.Id && !s.IsRevoked)
@@ -717,21 +599,20 @@ namespace HealthCare_.Services.SharedService
                     oldest.RevokeSession("Exceeded session limit");
                     _context.UserSessions.Update(oldest);
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("Revoked oldest session for user {UserId} due to limit", user.Id);
                 }
 
-                var (encryptedToken, encSalt) = EncryptAes(rawRefresh);
+                var (encryptedToken, tokenSalt) = EncryptAes(rawRefresh);
                 var session = new UserSession
                 {
                     UserId = user.Id,
-                    DeviceInfo = deviceInfo,
-                    IpAddress = ipAddress,
+                    DeviceInfo = deviceInfo ?? "Passkey Device",
+                    IpAddress = ipAddress ?? "unknown",
                     CreatedAt = DateTime.UtcNow,
                     ExpiresAt = DateTime.UtcNow.AddDays(Convert.ToDouble(_configuration["Jwt:RefreshTokenExpireDays"] ?? "7")),
                     LastActivity = DateTime.UtcNow,
                     IsActive = true,
                     EncryptedToken = encryptedToken,
-                    Salt = encSalt
+                    Salt = tokenSalt
                 };
 
                 _context.UserSessions.Add(session);
@@ -752,259 +633,114 @@ namespace HealthCare_.Services.SharedService
                 _context.RefreshTokens.Add(refreshTokenEntity);
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
-                _logger.LogInformation("Session and refresh token created for user {UserId}", user.Id);
-            }
 
-            var (encryptedForClient, finalSalt) = EncryptAes(rawRefresh);
-            _logger.LogInformation("LoginWithPasskeyAsync successful for user {UserId} with access token length: {TokenLength}", user.Id, accessToken.Length);
-            return (accessToken, encryptedForClient, string.Empty);
-        }
-
-        private async Task<(string Token, string Jti, DateTime Expires)> GenerateJwtToken(ApplicationUser user)
-        {
-            _logger.LogInformation("GenerateJwtToken called for userId: {UserId}", user.Id);
-            var jwtSection = _configuration.GetSection("Jwt");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var jti = Guid.NewGuid().ToString();
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email ?? string.Empty),
-                new Claim("UserID", user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, jti),
-                new Claim("amr", user.TwoFactorEnabled ? "mfa" : user.PasskeyCredentialId != null ? "passkey" : "pwd")
-            };
-
-            var roles = await _userManager.GetRolesAsync(user);
-            foreach (var role in roles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-                _logger.LogDebug("Added role claim: {Role} for userId: {UserId}", role, user.Id);
-            }
-
-            var expiryMinutes = Convert.ToDouble(jwtSection["ExpireMinutes"] ?? "15");
-            var payload = new JwtPayload(
-                issuer: jwtSection["Issuer"],
-                audience: jwtSection["Audience"],
-                claims: claims,
-                notBefore: DateTime.UtcNow,
-                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
-                issuedAt: DateTime.UtcNow
-            );
-            var header = new JwtHeader(creds);
-            var token = new JwtSecurityToken(header, payload);
-            var expires = token.ValidTo;
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-            _logger.LogInformation("Generated token for user {UserId}: {Token}", user.Id, tokenString.Substring(0, 10) + "...");
-            return (tokenString, jti, expires);
-        }
-
-        private string GenerateRandomToken()
-        {
-            _logger.LogDebug("Generating random token");
-            var randomBytes = new byte[64];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomBytes);
-            return Convert.ToBase64String(randomBytes);
-        }
-
-        private string ComputeHmacSha256Base64(string input)
-        {
-            _logger.LogDebug("Computing HMAC-SHA256 for input length: {InputLength}", input?.Length);
-            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_refreshHmacKey));
-            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(input));
-            return Convert.ToBase64String(hash);
-        }
-
-        private (string EncryptedText, string Salt) EncryptAes(string plainText)
-        {
-            _logger.LogDebug("Encrypting AES for plain text length: {PlainTextLength}", plainText?.Length);
-            if (string.IsNullOrEmpty(plainText)) return (string.Empty, string.Empty);
-
-            var saltBytes = new byte[16];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(saltBytes);
-            }
-
-            using var derivedKey = new Rfc2898DeriveBytes(_refreshAesKey, saltBytes, 10000, HashAlgorithmName.SHA256);
-            using var aes = Aes.Create();
-            aes.Key = derivedKey.GetBytes(32);
-            aes.GenerateIV();
-            using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-            var plainBytes = Encoding.UTF8.GetBytes(plainText);
-            var cipherBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
-            var combined = new byte[saltBytes.Length + aes.IV.Length + cipherBytes.Length];
-            Array.Copy(saltBytes, 0, combined, 0, saltBytes.Length);
-            Array.Copy(aes.IV, 0, combined, saltBytes.Length, aes.IV.Length);
-            Array.Copy(cipherBytes, 0, combined, saltBytes.Length + aes.IV.Length, cipherBytes.Length);
-            return (Convert.ToBase64String(combined), Convert.ToBase64String(saltBytes));
-        }
-
-        // Example DecryptAes method with enhanced error handling
-        private string DecryptAes(string encryptedToken, string salt)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(encryptedToken) || string.IsNullOrEmpty(salt))
-                {
-                    _logger.LogWarning("DecryptAes: Encrypted token or salt is null or empty");
-                    return string.Empty;
-                }
-
-                byte[] encryptedBytes = Convert.FromBase64String(encryptedToken);
-                byte[] saltBytes = Convert.FromBase64String(salt);
-                byte[] keyBytes = Convert.FromBase64String(_configuration["Jwt:RefreshTokenAesKey"]);
-
-                using (var aes = Aes.Create())
-                {
-                    aes.Key = keyBytes;
-                    aes.IV = saltBytes.Take(16).ToArray(); // Ensure IV is 16 bytes
-                    aes.Padding = PaddingMode.PKCS7;
-                    aes.Mode = CipherMode.CBC;
-
-                    using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
-                    using (var ms = new MemoryStream(encryptedBytes))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var reader = new StreamReader(cs))
-                    {
-                        return reader.ReadToEnd();
-                    }
-                }
+                return (accessToken, rawRefresh, string.Empty);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("DecryptAes failed for token. Last error: {Error}", ex.Message);
-                return string.Empty;
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Passkey login transaction failed");
+                return (null!, null!, "Server error");
             }
         }
 
         private async Task<bool> VerifyPasskeySignature(
                 PasskeyLoginRequest request,
                 string? publicKeyBase64,
-                byte[] challenge,
+                byte[] expectedChallenge,
                 string userId)
         {
-            _logger.LogDebug("Verifying passkey signature for credentialId: {CredentialId}", request?.CredentialId);
-
-            if (string.IsNullOrEmpty(publicKeyBase64) || request == null)
-            {
-                _logger.LogWarning("Public key or request is missing");
-                return false;
-            }
-
             try
             {
-                // استرجاع المستخدم من قاعدة البيانات
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
-                if (user == null || string.IsNullOrEmpty(user.PasskeyCredentialId))
+                if (string.IsNullOrEmpty(publicKeyBase64))
+                    return false;
+
+                var credentialPublicKey = WebAuthnHelpers.Base64UrlToByteArray(publicKeyBase64);
+
+                var authenticatorData = WebAuthnHelpers.Base64UrlToByteArray(request.AuthenticatorData);
+                var clientDataJsonBytes = WebAuthnHelpers.Base64UrlToByteArray(request.ClientDataJson);
+                var clientDataJson = Encoding.UTF8.GetString(clientDataJsonBytes);
+                var signature = WebAuthnHelpers.Base64UrlToByteArray(request.Signature);
+
+                // --- تحقق من clientData ---
+                var clientData = System.Text.Json.JsonDocument.Parse(clientDataJson);
+                var type = clientData.RootElement.GetProperty("type").GetString();
+                var challengeB64 = clientData.RootElement.GetProperty("challenge").GetString();
+                var origin = clientData.RootElement.GetProperty("origin").GetString();
+
+                var expectedOrigin = _configuration["WebAuthn:Origin"];
+                var expectedChallengeB64 = Convert.ToBase64String(expectedChallenge);
+
+                if (type != "webauthn.get" ||
+                    challengeB64 != expectedChallengeB64 ||
+                    origin != expectedOrigin)
                 {
-                    _logger.LogWarning("User or credential not found for userId: {UserId}", userId);
+                    _logger.LogWarning("Passkey validation failed: type={Type}, origin={Origin}, expected={Expected}", type, origin, expectedOrigin);
                     return false;
                 }
 
-                // تحويل المفاتيح من Base64 إلى Bytes
-                var credentialIdBytes = Convert.FromBase64String(request.CredentialId);
-                var storedPublicKeyBytes = Convert.FromBase64String(publicKeyBase64);
+                // --- Hash clientData ---
+                using var sha256 = SHA256.Create();
+                var clientDataHash = sha256.ComputeHash(clientDataJsonBytes);
 
-                // إعداد تكوين FIDO2
-                var fidoConfig = new Fido2Configuration
-                {
-                    ServerDomain = _configuration["WebAuthn:RpId"] ?? "localhost",
-                    ServerName = "HealthCare App",
-                    Origins = new HashSet<string>
-                    {
-                        _configuration["WebAuthn:Origin"] ?? "https://localhost:7092"
-                    }
-                };
+                // --- دمج البيانات ---
+                var signedData = new byte[authenticatorData.Length + clientDataHash.Length];
+                Buffer.BlockCopy(authenticatorData, 0, signedData, 0, authenticatorData.Length);
+                Buffer.BlockCopy(clientDataHash, 0, signedData, authenticatorData.Length, clientDataHash.Length);
 
-                // إنشاء Assertion Options
-                var credentialDescriptor = new PublicKeyCredentialDescriptor(
-                    PublicKeyCredentialType.PublicKey,
-                    credentialIdBytes);
+                // --- تحقق من التوقيع ---
+                using var ecdsa = ECDsa.Create();
+                ecdsa.ImportSubjectPublicKeyInfo(credentialPublicKey, out _);
 
-                var assertionOptions = AssertionOptions.Create(
-                    fidoConfig,
-                    challenge,
-                    new[] { credentialDescriptor },
-                    UserVerificationRequirement.Preferred,
-                    null);
+                var isValid = ecdsa.VerifyData(signedData, signature, HashAlgorithmName.SHA256);
+                if (!isValid)
+                    _logger.LogWarning("Passkey signature invalid for user {UserId}", userId);
 
-                // حفظ الخيارات مؤقتًا في الكاش
-                var optionsJson = assertionOptions.ToJson();
-                _cache.Set($"assertion_options_{userId}", optionsJson, TimeSpan.FromMinutes(5));
-                var options = AssertionOptions.FromJson(optionsJson);
-
-                // دالة التحقق من ملكية الـ Credential
-                IsUserHandleOwnerOfCredentialIdAsync callback = async (args, cancellationToken) =>
-                {
-                    var storedCreds = await _context.Users
-                        .Where(u => u.PasskeyCredentialId != null)
-                        .Select(u => u.PasskeyCredentialId)
-                        .ToListAsync(cancellationToken);
-
-                    return storedCreds.Any(credId =>
-                        Convert.FromBase64String(credId!).SequenceEqual(args.CredentialId));
-                };
-
-                // تجهيز بيانات الاستجابة (Response)
-                var assertionResponse = new AuthenticatorAssertionRawResponse
-                {
-                    Type = PublicKeyCredentialType.PublicKey,
-                    RawId = credentialIdBytes,
-                    Response = new AuthenticatorAssertionRawResponse.AssertionResponse
-                    {
-                        AuthenticatorData = Convert.FromBase64String(request.AuthenticatorData ?? string.Empty),
-                        ClientDataJson = Encoding.UTF8.GetBytes(request.ClientDataJson ?? string.Empty),
-                        Signature = Convert.FromBase64String(request.Signature ?? string.Empty),
-                        UserHandle = Encoding.UTF8.GetBytes(userId)
-                    },
-                    Extensions = new AuthenticationExtensionsClientOutputs()
-                };
-
-                // إعداد معاملات التحقق
-                var makeAssertionParams = new MakeAssertionParams
-                {
-                    AssertionResponse = assertionResponse,
-                    OriginalOptions = options,
-                    StoredPublicKey = storedPublicKeyBytes,
-                    StoredSignatureCounter = 0, // يمكنك التحديث لاحقًا من قاعدة البيانات
-                    IsUserHandleOwnerOfCredentialIdCallback = callback
-                };
-
-                // تنفيذ التحقق
-                var result = await _fido2.MakeAssertionAsync(makeAssertionParams, CancellationToken.None);
-
-                // إذا وصلنا هنا بدون استثناء → التحقق ناجح
-                _logger.LogInformation("Passkey verification succeeded for credentialId: {CredentialId}", request.CredentialId);
-                _cache.Remove($"assertion_options_{userId}");
-
-                // يمكنك استخدام result.SignCount و result.IsBackedUp لو أردت
-                _logger.LogDebug("SignCount: {SignCount}, IsBackedUp: {IsBackedUp}", result.SignCount, result.IsBackedUp);
-
-                return true;
-            }
-            catch (Fido2VerificationException ex)
-            {
-                // استثناء تحقق من FIDO2 (فشل التحقق)
-                _logger.LogWarning("Passkey verification failed (FIDO2): {Error}", ex.Message);
-                return false;
+                return isValid;
             }
             catch (Exception ex)
             {
-                // أي خطأ آخر (مثل JSON أو قاعدة البيانات)
-                _logger.LogError(ex, "Passkey verification error for credentialId: {CredentialId}", request?.CredentialId);
+                _logger.LogError(ex, "Passkey signature verification failed for user {UserId}", userId);
                 return false;
             }
         }
 
-        // Helper class to match expected credential structure
-        private class StoredCredential
+        // Helpers/WebAuthnHelpers.cs
+        public static class WebAuthnHelpers
         {
-            public byte[] Id { get; set; } = null!;
-            public byte[] PublicKey { get; set; } = null!;
-            public uint SignCount { get; set; }
+            public static byte[] Base64UrlToByteArray(string base64Url)
+            {
+                string base64 = base64Url.Replace('-', '+').Replace('_', '/');
+                switch (base64.Length % 4)
+                {
+                    case 2: base64 += "=="; break;
+                    case 3: base64 += "="; break;
+                }
+                return Convert.FromBase64String(base64);
+            }
+        }
+
+        // ====================== ROLES ======================
+        public async Task<int?> GetRoleIdFromDbAsync(string roleName)
+        {
+            var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+            return role?.Id;
+        }
+
+        public async Task<(bool Succeeded, int? RoleId, string Error)> CreateRoleAsync(string roleName, string description)
+        {
+            var role = new ApplicationRole
+            {
+                Name = roleName,
+                NormalizedName = roleName.ToUpper(),
+                Description = description,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var result = await _roleManager.CreateAsync(role);
+            return result.Succeeded
+                ? (true, role.Id, string.Empty)
+                : (false, null, string.Join(", ", result.Errors.Select(e => e.Description)));
         }
     }
 }
