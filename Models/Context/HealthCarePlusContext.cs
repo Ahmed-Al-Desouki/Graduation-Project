@@ -13,52 +13,61 @@ namespace HealthCare_.Models.Context
         public HealthCarePlusContext(DbContextOptions<HealthCarePlusContext> options) : base(options) { }
 
         // DbSets for all entities
-        public DbSet<Doctor> Doctors { get; set; }
-        public DbSet<Patient> Patients { get; set; }
-        public DbSet<DoctorSlot> DoctorSlots { get; set; }
-        public DbSet<SessionType> SessionTypes { get; set; }
-        public DbSet<MedicalHistory> MedicalHistories { get; set; }
-        public DbSet<MedicalRecord> MedicalRecords { get; set; }
-        public DbSet<Appointment> Appointments { get; set; }
-        public DbSet<Prescription> Prescriptions { get; set; }
-        public DbSet<PrescriptionMed> PrescriptionMeds { get; set; }
-        public DbSet<MedicationsIntake> MedicationsIntakes { get; set; }
-        public DbSet<Reminder> Reminders { get; set; }
-        public DbSet<DoctorWeeklySchedule> DoctorWeeklySchedules { get; set; }
-        public DbSet<DosingSchedule> DosingSchedules { get; set; }
-        public DbSet<Review> Reviews { get; set; }
-        public DbSet<ExternalFile> ExternalFiles { get; set; }
-        public DbSet<RefreshToken> RefreshTokens { get; set; }
-        public DbSet<RevokedToken> RevokedTokens { get; set; }
-        public DbSet<UserSession> UserSessions { get; set; }
+        public DbSet<Doctor> Doctors { get; set; } = null!;
+        public DbSet<Patient> Patients { get; set; } = null!;
+        public DbSet<DoctorSlot> DoctorSlots { get; set; } = null!;
+        public DbSet<SessionType> SessionTypes { get; set; } = null!;
+        public DbSet<MedicalHistory> MedicalHistories { get; set; } = null!;
+        public DbSet<MedicalRecord> MedicalRecords { get; set; } = null!;
+        public DbSet<Appointment> Appointments { get; set; } = null!;
+        public DbSet<Prescription> Prescriptions { get; set; } = null!;
+        public DbSet<PrescriptionMed> PrescriptionMeds { get; set; } = null!;
+        public DbSet<MedicationsIntake> MedicationsIntakes { get; set; } = null!;
+        public DbSet<Reminder> Reminders { get; set; } = null!;
+        public DbSet<DoctorWeeklySchedule> DoctorWeeklySchedules { get; set; } = null!;
+        public DbSet<DosingSchedule> DosingSchedules { get; set; } = null!;
+        public DbSet<Review> Reviews { get; set; } = null!;
+        public DbSet<ExternalFile> ExternalFiles { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        public DbSet<RevokedToken> RevokedTokens { get; set; } = null!;
+        public DbSet<UserSession> UserSessions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure ApplicationUser (Core user entity)
+            // ─────────────────────── ApplicationUser ───────────────────────
             modelBuilder.Entity<ApplicationUser>(entity =>
             {
                 entity.ToTable("Users");
                 entity.Property(u => u.Id).HasColumnName("UserID");
-                entity.Property(u => u.FName).HasMaxLength(50);
-                entity.Property(u => u.LName).HasMaxLength(50);
-                entity.Property(u => u.Role).HasMaxLength(50)
+                entity.Property(u => u.FullName).HasMaxLength(100).IsRequired();
+                entity.Property(u => u.Role).HasMaxLength(50).IsRequired()
                     .HasConversion<string>();
                 entity.Property(u => u.Address).HasMaxLength(500);
-                entity.Property(u => u.ProfileImagePath).HasMaxLength(500).HasDefaultValue("default.png");
-                entity.Property(u => u.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
-                // MFA Properties
+
+                // Profile Image: FK + Navigation (nullable)
+                entity.HasOne(u => u.ProfileImagePath)
+                      .WithMany()
+                      .HasForeignKey(u => u.ProfileImageId)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+
+                entity.Property(u => u.CreatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
+                entity.Property(u => u.UpdatedAt).IsConcurrencyToken();
+
+                // MFA & Passkey
                 entity.Property(u => u.TwoFactorEnabled).HasDefaultValue(false);
                 entity.Property(u => u.AuthenticatorKey).HasMaxLength(500);
                 entity.Property(u => u.RecoveryCodes).HasMaxLength(1000);
-                // Passkey Properties
                 entity.Property(u => u.PasskeyCredentialId).HasMaxLength(500);
-                entity.Property(u => u.PasskeyPublicKey).HasMaxLength(1000);
-                entity.HasIndex(u => u.PasskeyCredentialId).IsUnique().HasFilter("[PasskeyCredentialId] IS NOT NULL");
+                entity.Property(u => u.PasskeyPublicKey).HasMaxLength(2000);
+                entity.HasIndex(u => u.PasskeyCredentialId)
+                      .IsUnique()
+                      .HasFilter("[PasskeyCredentialId] IS NOT NULL");
             });
 
-            // Configure ApplicationRole (Custom role entity)
+            // ─────────────────────── ApplicationRole ───────────────────────
             modelBuilder.Entity<ApplicationRole>(entity =>
             {
                 entity.ToTable("Roles");
@@ -69,7 +78,7 @@ namespace HealthCare_.Models.Context
                 entity.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
             });
 
-            // Configure UserSession (User session tracking)
+            // ─────────────────────── UserSession ───────────────────────
             modelBuilder.Entity<UserSession>(entity =>
             {
                 entity.HasKey(us => us.Id);
@@ -82,15 +91,17 @@ namespace HealthCare_.Models.Context
                 entity.Property(us => us.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(us => us.ExpiresAt).IsRequired();
                 entity.Property(us => us.LastActivity).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(us => us.User)
-                    .WithMany()
-                    .HasForeignKey(us => us.UserId)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany()
+                      .HasForeignKey(us => us.UserId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasIndex(us => us.UserId);
             });
 
-            // Configure RefreshToken (Authentication token management)
+            // ─────────────────────── RefreshToken ───────────────────────
             modelBuilder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
@@ -101,23 +112,27 @@ namespace HealthCare_.Models.Context
                 entity.Property(rt => rt.IpAddress).HasMaxLength(100);
                 entity.Property(rt => rt.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(rt => rt.Expires).IsRequired();
+
                 entity.HasOne(rt => rt.User)
-                    .WithMany()
-                    .HasForeignKey(rt => rt.UserId)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany()
+                      .HasForeignKey(rt => rt.UserId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasOne(rt => rt.UserSession)
-                    .WithMany()
-                    .HasForeignKey(rt => rt.UserSessionId)
-                    .OnDelete(DeleteBehavior.SetNull);
+                      .WithMany()
+                      .HasForeignKey(rt => rt.UserSessionId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasOne(rt => rt.ReplacedBy)
-                    .WithMany()
-                    .HasForeignKey(rt => rt.ReplacedById)
-                    .OnDelete(DeleteBehavior.NoAction);
+                      .WithMany()
+                      .HasForeignKey(rt => rt.ReplacedById)
+                      .OnDelete(DeleteBehavior.NoAction);
+
                 entity.HasIndex(rt => rt.JwtId);
             });
 
-            // Configure RevokedToken (Track revoked JWTs)
+            // ─────────────────────── RevokedToken ───────────────────────
             modelBuilder.Entity<RevokedToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
@@ -127,7 +142,7 @@ namespace HealthCare_.Models.Context
                 entity.Property(rt => rt.RevokedAt).HasDefaultValueSql("GETUTCDATE()");
             });
 
-            // Configure Doctor (Doctor profile)
+            // ─────────────────────── Doctor ───────────────────────
             modelBuilder.Entity<Doctor>(entity =>
             {
                 entity.HasKey(d => d.DoctorID);
@@ -137,15 +152,17 @@ namespace HealthCare_.Models.Context
                 entity.Property(d => d.AverageRating).HasColumnType("float").HasDefaultValue(0);
                 entity.Property(d => d.Description).HasMaxLength(500);
                 entity.Property(d => d.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(d => d.User)
-                    .WithOne(u => u.Doctor)
-                    .HasForeignKey<Doctor>(d => d.UserID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithOne(u => u.Doctor)
+                      .HasForeignKey<Doctor>(d => d.UserID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasIndex(d => d.UserID).IsUnique();
             });
 
-            // Configure Patient (Patient profile)
+            // ─────────────────────── Patient ───────────────────────
             modelBuilder.Entity<Patient>(entity =>
             {
                 entity.HasKey(p => p.PatientID);
@@ -153,15 +170,17 @@ namespace HealthCare_.Models.Context
                 entity.Property(p => p.CurrentLocation).HasMaxLength(200);
                 entity.Property(p => p.DateOfBirth).IsRequired();
                 entity.Property(p => p.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(p => p.User)
-                    .WithOne(u => u.Patient)
-                    .HasForeignKey<Patient>(p => p.UserID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithOne(u => u.Patient)
+                      .HasForeignKey<Patient>(p => p.UserID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasIndex(p => p.UserID).IsUnique();
             });
 
-            // Configure DoctorSlot (Doctor's availability slots)
+            // ─────────────────────── DoctorSlot ───────────────────────
             modelBuilder.Entity<DoctorSlot>(entity =>
             {
                 entity.HasKey(ds => ds.SlotID);
@@ -169,19 +188,22 @@ namespace HealthCare_.Models.Context
                 entity.Property(ds => ds.Duration).HasDefaultValue(30);
                 entity.Property(ds => ds.IsBooked).HasDefaultValue(false);
                 entity.Property(ds => ds.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(ds => ds.Doctor)
-                    .WithMany(d => d.Slots)
-                    .HasForeignKey(ds => ds.DoctorID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(d => d.Slots)
+                      .HasForeignKey(ds => ds.DoctorID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasOne(ds => ds.Appointment)
-                    .WithOne(a => a.Slot)
-                    .HasForeignKey<Appointment>(a => a.SlotID)
-                    .OnDelete(DeleteBehavior.Restrict);
+                      .WithOne(a => a.Slot)
+                      .HasForeignKey<Appointment>(a => a.SlotID)
+                      .OnDelete(DeleteBehavior.Restrict);
+
                 entity.HasIndex(ds => new { ds.DoctorID, ds.SlotDate });
             });
 
-            // Configure SessionType (Doctor's session types)
+            // ─────────────────────── SessionType ───────────────────────
             modelBuilder.Entity<SessionType>(entity =>
             {
                 entity.HasKey(st => st.SessionTypeID);
@@ -189,15 +211,17 @@ namespace HealthCare_.Models.Context
                 entity.Property(st => st.Duration).IsRequired();
                 entity.Property(st => st.Price).HasColumnType("decimal(18,2)").IsRequired();
                 entity.Property(st => st.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(st => st.Doctor)
-                    .WithMany(d => d.SessionTypes)
-                    .HasForeignKey(st => st.DoctorID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(d => d.SessionTypes)
+                      .HasForeignKey(st => st.DoctorID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasIndex(st => st.DoctorID);
             });
 
-            // Configure DoctorWeeklySchedule (Doctor's weekly availability)
+            // ─────────────────────── DoctorWeeklySchedule ───────────────────────
             modelBuilder.Entity<DoctorWeeklySchedule>(entity =>
             {
                 entity.HasKey(dws => dws.ScheduleID);
@@ -206,15 +230,17 @@ namespace HealthCare_.Models.Context
                 entity.Property(dws => dws.EndTime).IsRequired();
                 entity.Property(dws => dws.Duration).HasDefaultValue(30);
                 entity.Property(dws => dws.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(dws => dws.Doctor)
-                    .WithMany(d => d.WeeklySchedules)
-                    .HasForeignKey(dws => dws.DoctorID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(d => d.WeeklySchedules)
+                      .HasForeignKey(dws => dws.DoctorID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasIndex(dws => new { dws.DoctorID, dws.DayOfWeek });
             });
 
-            // Configure MedicalHistory (Patient's medical history)
+            // ─────────────────────── MedicalHistory ───────────────────────
             modelBuilder.Entity<MedicalHistory>(entity =>
             {
                 entity.HasKey(mh => mh.HistoryID);
@@ -225,15 +251,17 @@ namespace HealthCare_.Models.Context
                 entity.Property(mh => mh.Weight).HasColumnType("float");
                 entity.Property(mh => mh.FilePath).HasMaxLength(500);
                 entity.Property(mh => mh.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(mh => mh.Patient)
-                    .WithMany(pt => pt.MedicalHistories)
-                    .HasForeignKey(mh => mh.PatientID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(pt => pt.MedicalHistories)
+                      .HasForeignKey(mh => mh.PatientID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasIndex(mh => mh.PatientID);
             });
 
-            // Configure MedicalRecord (Doctor's medical records for patient)
+            // ─────────────────────── MedicalRecord ───────────────────────
             modelBuilder.Entity<MedicalRecord>(entity =>
             {
                 entity.HasKey(mr => mr.RecordID);
@@ -244,20 +272,23 @@ namespace HealthCare_.Models.Context
                 entity.Property(mr => mr.FilePath).HasMaxLength(500);
                 entity.Property(mr => mr.VisitDate).IsRequired();
                 entity.Property(mr => mr.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(mr => mr.MedicalHistory)
-                    .WithMany(mh => mh.MedicalRecords)
-                    .HasForeignKey(mr => mr.HistoryID)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .IsRequired();
+                      .WithMany(mh => mh.MedicalRecords)
+                      .HasForeignKey(mr => mr.HistoryID)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .IsRequired();
+
                 entity.HasOne(mr => mr.Doctor)
-                    .WithMany(d => d.MedicalRecords)
-                    .HasForeignKey(mr => mr.DoctorID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(d => d.MedicalRecords)
+                      .HasForeignKey(mr => mr.DoctorID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasIndex(mr => new { mr.HistoryID, mr.DoctorID });
             });
 
-            // Configure Appointment (Patient-Doctor appointments)
+            // ─────────────────────── Appointment ───────────────────────
             modelBuilder.Entity<Appointment>(entity =>
             {
                 entity.HasKey(a => a.AppointmentID);
@@ -269,44 +300,51 @@ namespace HealthCare_.Models.Context
                 entity.Property(a => a.AppointmentDate).IsRequired();
                 entity.Property(a => a.BookingDate).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(a => a.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(a => a.Patient)
-                    .WithMany(pt => pt.Appointments)
-                    .HasForeignKey(a => a.PatientID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(pt => pt.Appointments)
+                      .HasForeignKey(a => a.PatientID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasOne(a => a.Doctor)
-                    .WithMany(d => d.Appointments)
-                    .HasForeignKey(a => a.DoctorID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(d => d.Appointments)
+                      .HasForeignKey(a => a.DoctorID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasOne(a => a.Slot)
-                    .WithOne(ds => ds.Appointment)
-                    .HasForeignKey<Appointment>(a => a.SlotID)
-                    .OnDelete(DeleteBehavior.Restrict);
+                      .WithOne(ds => ds.Appointment)
+                      .HasForeignKey<Appointment>(a => a.SlotID)
+                      .OnDelete(DeleteBehavior.Restrict);
+
                 entity.HasIndex(a => new { a.PatientID, a.DoctorID, a.AppointmentDate });
             });
 
-            // Configure Prescription (Doctor prescriptions for patients)
+            // ─────────────────────── Prescription ───────────────────────
             modelBuilder.Entity<Prescription>(entity =>
             {
                 entity.HasKey(p => p.PrescriptionID);
                 entity.Property(p => p.GeneralInstructions).HasMaxLength(500);
                 entity.Property(p => p.PrescriptionDate).IsRequired();
                 entity.Property(p => p.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(p => p.Patient)
-                    .WithMany(pt => pt.Prescriptions)
-                    .HasForeignKey(p => p.PatientID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(pt => pt.Prescriptions)
+                      .HasForeignKey(p => p.PatientID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasOne(p => p.Doctor)
-                    .WithMany(d => d.Prescriptions)
-                    .HasForeignKey(p => p.DoctorID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(d => d.Prescriptions)
+                      .HasForeignKey(p => p.DoctorID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasIndex(p => new { p.PatientID, p.DoctorID });
             });
 
-            // Configure PrescriptionMed (Medications in a prescription)
+            // ─────────────────────── PrescriptionMed ───────────────────────
             modelBuilder.Entity<PrescriptionMed>(entity =>
             {
                 entity.HasKey(pm => pm.ID);
@@ -314,28 +352,32 @@ namespace HealthCare_.Models.Context
                 entity.Property(pm => pm.Dosage).HasMaxLength(50);
                 entity.Property(pm => pm.Instructions).HasMaxLength(500);
                 entity.Property(pm => pm.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(pm => pm.Prescription)
-                    .WithMany(p => p.Medications)
-                    .HasForeignKey(pm => pm.PrescriptionID)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .IsRequired();
+                      .WithMany(p => p.Medications)
+                      .HasForeignKey(pm => pm.PrescriptionID)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .IsRequired();
+
                 entity.HasIndex(pm => pm.PrescriptionID);
             });
 
-            // Configure DosingSchedule (Medication dosing times)
+            // ─────────────────────── DosingSchedule ───────────────────────
             modelBuilder.Entity<DosingSchedule>(entity =>
             {
                 entity.HasKey(ds => ds.DosingScheduleID);
                 entity.Property(ds => ds.DailyTime).IsRequired();
+
                 entity.HasOne(ds => ds.PrescriptionMed)
-                    .WithMany(pm => pm.DosingSchedules)
-                    .HasForeignKey(ds => ds.PrescriptionMedID)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .IsRequired();
+                      .WithMany(pm => pm.DosingSchedules)
+                      .HasForeignKey(ds => ds.PrescriptionMedID)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .IsRequired();
+
                 entity.HasIndex(ds => ds.PrescriptionMedID);
             });
 
-            // Configure MedicationsIntake (Tracking medication intake)
+            // ─────────────────────── MedicationsIntake ───────────────────────
             modelBuilder.Entity<MedicationsIntake>(entity =>
             {
                 entity.HasKey(mi => mi.IntakeID);
@@ -343,15 +385,17 @@ namespace HealthCare_.Models.Context
                 entity.Property(mi => mi.Status).IsRequired()
                     .HasConversion<string>();
                 entity.Property(mi => mi.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(mi => mi.PrescriptionMed)
-                    .WithMany(pm => pm.MedicationsIntakes)
-                    .HasForeignKey(mi => mi.PrescriptionMedID)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .IsRequired();
+                      .WithMany(pm => pm.MedicationsIntakes)
+                      .HasForeignKey(mi => mi.PrescriptionMedID)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .IsRequired();
+
                 entity.HasIndex(mi => mi.PrescriptionMedID);
             });
 
-            // Configure Reminder (Appointment and medication reminders)
+            // ─────────────────────── Reminder ───────────────────────
             modelBuilder.Entity<Reminder>(entity =>
             {
                 entity.HasKey(r => r.ReminderID);
@@ -362,18 +406,21 @@ namespace HealthCare_.Models.Context
                 entity.Property(r => r.Status).IsRequired()
                     .HasConversion<string>();
                 entity.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(r => r.PrescriptionMed)
-                    .WithMany(pm => pm.Reminders)
-                    .HasForeignKey(r => r.PrescriptionMedID)
-                    .OnDelete(DeleteBehavior.SetNull);
+                      .WithMany(pm => pm.Reminders)
+                      .HasForeignKey(r => r.PrescriptionMedID)
+                      .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasOne(r => r.Appointment)
-                    .WithMany(a => a.Reminders)
-                    .HasForeignKey(r => r.AppointmentID)
-                    .OnDelete(DeleteBehavior.SetNull);
+                      .WithMany(a => a.Reminders)
+                      .HasForeignKey(r => r.AppointmentID)
+                      .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasIndex(r => new { r.PrescriptionMedID, r.AppointmentID });
             });
 
-            // Configure Review (User reviews for appointments)
+            // ─────────────────────── Review ───────────────────────
             modelBuilder.Entity<Review>(entity =>
             {
                 entity.HasKey(r => r.ReviewID);
@@ -383,42 +430,72 @@ namespace HealthCare_.Models.Context
                 entity.Property(r => r.FilePath).HasMaxLength(500);
                 entity.Property(r => r.ReviewDate).IsRequired();
                 entity.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
                 entity.HasOne(r => r.User)
-                    .WithMany(u => u.Reviews)
-                    .HasForeignKey(r => r.UserID)
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                      .WithMany(u => u.Reviews)
+                      .HasForeignKey(r => r.UserID)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired();
+
                 entity.HasOne(r => r.Appointment)
-                    .WithMany(a => a.Reviews)
-                    .HasForeignKey(r => r.AppointmentID)
-                    .OnDelete(DeleteBehavior.SetNull);
+                      .WithMany(a => a.Reviews)
+                      .HasForeignKey(r => r.AppointmentID)
+                      .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasIndex(r => new { r.UserID, r.AppointmentID });
             });
 
-            // Configure ExternalFile (Files for doctors, patients, or medical history)
+            // ─────────────────────── ExternalFile ───────────────────────
             modelBuilder.Entity<ExternalFile>(entity =>
             {
                 entity.HasKey(f => f.FileID);
-                entity.Property(f => f.FileUrl).IsRequired().HasMaxLength(500);
-                entity.Property(f => f.PublicId).IsRequired().HasMaxLength(200);
-                entity.Property(f => f.FileType).HasMaxLength(100);
-                entity.Property(f => f.FileSize).IsRequired();
-                entity.Property(f => f.UploadedAt).HasDefaultValueSql("GETUTCDATE()");
-                entity.Property(f => f.Category).IsRequired()
-                    .HasConversion<string>();
+
+                entity.Property(f => f.FileUrl)
+                      .IsRequired()
+                      .HasMaxLength(500);
+
+                entity.Property(f => f.PublicId)
+                      .HasMaxLength(200)
+                      .IsRequired(false); // nullable
+
+                entity.Property(f => f.FileType)
+                      .HasMaxLength(100)
+                      .IsRequired();
+
+                entity.Property(f => f.FileSize)
+                      .IsRequired();
+
+                entity.Property(f => f.UploadedAt)
+                      .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.Property(f => f.Category)
+                      .IsRequired()
+                      .HasConversion(
+                          v => v.ToString(),
+                          v => (ExternalFileCategory)Enum.Parse(typeof(ExternalFileCategory), v)
+                      );
+
+                // Relationships (nullable)
                 entity.HasOne(f => f.Doctor)
-                    .WithMany(d => d.Files)
-                    .HasForeignKey(f => f.DoctorID)
-                    .OnDelete(DeleteBehavior.SetNull);
+                      .WithMany(d => d.Files)
+                      .HasForeignKey(f => f.DoctorID)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+
                 entity.HasOne(f => f.Patient)
-                    .WithMany()
-                    .HasForeignKey(f => f.PatientID)
-                    .OnDelete(DeleteBehavior.SetNull);
+                      .WithMany(p => p.Files)
+                      .HasForeignKey(f => f.PatientID)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+
                 entity.HasOne(f => f.MedicalHistory)
-                    .WithMany(mh => mh.Files)
-                    .HasForeignKey(f => f.MedicalHistoryID)
-                    .OnDelete(DeleteBehavior.SetNull);
-                entity.HasIndex(f => new { f.DoctorID, f.PatientID, f.MedicalHistoryID });
+                      .WithMany(mh => mh.Files)
+                      .HasForeignKey(f => f.MedicalHistoryID)
+                      .OnDelete(DeleteBehavior.SetNull)
+                      .IsRequired(false);
+
+                entity.HasIndex(f => new { f.DoctorID, f.PatientID, f.MedicalHistoryID })
+                      .HasDatabaseName("IX_ExternalFiles_RelatedIDs");
             });
         }
     }

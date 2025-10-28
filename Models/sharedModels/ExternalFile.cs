@@ -10,8 +10,8 @@ namespace HealthCare_.Models.SharedModels
         [Required, MaxLength(500)]
         public string FileUrl { get; set; } = string.Empty;
 
-        [Required, MaxLength(200)]
-        public string PublicId { get; set; } = string.Empty;
+        [MaxLength(200)]
+        public string? PublicId { get; set; }
 
         [MaxLength(100)]
         public string FileType { get; set; } = string.Empty;

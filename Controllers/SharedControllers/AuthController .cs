@@ -22,24 +22,57 @@ namespace HealthCare_.Controllers
 
         /// Registers a new user.
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public async Task<IActionResult> Register([FromForm] RegisterRequest request)
         {
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Register failed: Invalid model state for email: {Email}", request?.Email);
-                return BadRequest(new { success = false, error = "Invalid request data", details = ModelState });
+                return BadRequest(new
+                {
+                    success = false,
+                    error = "Invalid request data",
+                    details = ModelState
+                });
             }
 
-            var (succeeded, errors) = await _authService.RegisterAsync(request);
-            if (!succeeded)
+            try
             {
-                _logger.LogWarning("Register failed for email: {Email}, errors: {Errors}", request?.Email, string.Join(", ", errors));
-                return BadRequest(new { success = false, error = string.Join(", ", errors) });
-            }
+                _logger.LogInformation("Register endpoint called for {Email}", request.Email);
 
-            _logger.LogInformation("User registered successfully for email: {Email}", request?.Email);
-            return Ok(new { success = true, data = new { message = "User registered successfully" } });
+                var (succeeded, errors) = await _authService.RegisterAsync(request);
+
+                if (!succeeded)
+                {
+                    _logger.LogWarning("Register failed for email: {Email}, errors: {Errors}",
+                        request?.Email, string.Join(", ", errors));
+
+                    return BadRequest(new
+                    {
+                        success = false,
+                        error = string.Join(", ", errors)
+                    });
+                }
+
+                _logger.LogInformation("User registered successfully for email: {Email}", request?.Email);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = new { message = "User registered successfully" }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Unexpected error during registration for email: {Email}", request?.Email);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    error = "An unexpected error occurred during registration."
+                });
+            }
         }
+
+
 
         /// Logs in a user and returns access and refresh tokens.
         [HttpPost("login")]

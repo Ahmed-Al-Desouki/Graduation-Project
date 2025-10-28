@@ -1,16 +1,6 @@
-﻿using Fido2NetLib;
-using Fido2NetLib.Objects;
-using HealthCare_.Interfaces;
-using HealthCare_.Models.DTOs.AuthModels.MFA_Passkeys;
-using HealthCare_.Models.SharedModels;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
+﻿
+
+
 
 namespace HealthCare_.Services.SharedService
 {
@@ -28,6 +18,7 @@ namespace HealthCare_.Services.SharedService
         private readonly string _refreshAesKey;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly ILogger<AuthService> _logger;
+        private readonly CloudinaryService _cloudinary;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -37,6 +28,7 @@ namespace HealthCare_.Services.SharedService
             IMemoryCache cache,
             IFido2 fido2,
             RoleManager<ApplicationRole> roleManager,
+            CloudinaryService cloudinary,
             ILogger<AuthService> logger)
         {
             _userManager = userManager;
@@ -49,6 +41,7 @@ namespace HealthCare_.Services.SharedService
             _refreshHmacKey = _configuration["Jwt:RefreshTokenHmacKey"] ?? throw new InvalidOperationException("Missing Jwt:RefreshTokenHmacKey");
             _refreshAesKey = _configuration["Jwt:RefreshTokenAesKey"] ?? throw new InvalidOperationException("Missing Jwt:RefreshTokenAesKey");
             _roleManager = roleManager;
+            _cloudinary = cloudinary;
             _logger = logger;
 
             if (_jwtKey.Length != 44 || _refreshHmacKey.Length != 44 || _refreshAesKey.Length != 44)
@@ -60,37 +53,145 @@ namespace HealthCare_.Services.SharedService
         public async Task<(bool Succeeded, string[] Errors)> RegisterAsync(RegisterRequest request)
         {
             _logger.LogInformation("RegisterAsync called for email: {Email}", request.Email);
-            var existingUser = await _userManager.FindByEmailAsync(request.Email);
-            if (existingUser != null)
-            {
-                _logger.LogWarning("Registration failed: Email {Email} already registered", request.Email);
+
+            var existing = await _userManager.FindByEmailAsync(request.Email);
+            if (existing != null)
                 return (false, new[] { "Email already registered" });
-            }
 
             var user = new ApplicationUser
             {
                 UserName = request.Email,
                 Email = request.Email,
-                FName = request.FName,
-                LName = request.LName,
-                Role = request.Role ?? "User",
-                Address = request.Address ?? "Not Provided",
-                ProfileImagePath = request.ProfileImagePath ?? "default.png",
+                FullName = request.FullName,
+                Role = request.Role ?? "Patient",
+                Address = "N/A",
                 CreatedAt = DateTime.UtcNow,
-                TwoFactorEnabled = false
+                TwoFactorEnabled = request.TwoFactorEnabled
             };
 
-            _logger.LogDebug("Creating user: {UserName} with role: {Role}", user.UserName, user.Role);
-            var result = await _userManager.CreateAsync(user, request.Password);
-            if (!result.Succeeded)
-            {
-                _logger.LogError("User creation failed for {Email}: {Errors}", request.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
-                return (false, result.Errors.Select(e => e.Description).ToArray());
-            }
+            ExternalFile? createdFile = null;
+            string? uploadedPublicId = null;
 
-            _logger.LogInformation("User created successfully: {UserId}", user.Id);
-            await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Role, user.Role ?? "User"));
-            return (true, Array.Empty<string>());
+            try
+            {
+                // 1. رفع الصورة الحقيقية أو توليد افتراضية + رفعها
+                if (request.ProfileImageFile != null && request.ProfileImageFile.Length > 0)
+                {
+                    var result = await _cloudinary.UploadFileAsync(request.ProfileImageFile);
+                    createdFile = new ExternalFile
+                    {
+                        FileUrl = result.Url,
+                        PublicId = result.PublicId,
+                        FileType = result.FileType,
+                        FileSize = result.FileSize,
+                        UploadedAt = DateTime.UtcNow,
+                        Category = ExternalFileCategory.Profile
+                    };
+                    uploadedPublicId = result.PublicId;
+                }
+                else
+                {
+                    // توليد الصورة الافتراضية + رفعها
+                    var (stream, publicId) = await GenerateAndUploadAvatarAsync(request.FullName);
+                    uploadedPublicId = publicId;
+
+                    createdFile = new ExternalFile
+                    {
+                        FileUrl = stream.Url, // مش مهم هنا، هيتحفظ من Cloudinary
+                        PublicId = publicId,
+                        FileType = "image/png",
+                        FileSize = stream.FileSize,
+                        UploadedAt = DateTime.UtcNow,
+                        Category = ExternalFileCategory.Profile
+                    };
+                }
+
+                // 2. إنشاء المستخدم
+                var identityResult = await _userManager.CreateAsync(user, request.Password);
+                if (!identityResult.Succeeded)
+                {
+                    if (uploadedPublicId != null)
+                        await _cloudinary.DeleteFileAsync(uploadedPublicId);
+                    return (false, identityResult.Errors.Select(e => e.Description).ToArray());
+                }
+
+                // 3. إضافة الـ Role Claim
+                await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Role, user.Role ?? "User"));
+
+                // 4. حفظ الصورة في الـ DB
+                if (createdFile != null)
+                {
+                    _context.ExternalFiles.Add(createdFile);
+                    await _context.SaveChangesAsync(); // FileID يُولد
+
+                    user.ProfileImageId = createdFile.FileID;
+                    _context.Entry(user).Property(x => x.ProfileImageId).IsModified = true;
+                    await _context.SaveChangesAsync();
+                }
+
+                _logger.LogInformation("User registered successfully – ID: {Id}, Image: {ImgId}, PublicId: {PublicId}",
+                    user.Id, user.ProfileImageId, uploadedPublicId);
+
+                return (true, Array.Empty<string>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Registration failed for {Email}", request.Email);
+                if (uploadedPublicId != null)
+                    await _cloudinary.DeleteFileAsync(uploadedPublicId);
+                return (false, new[] { "Registration failed due to server error" });
+            }
+        }
+        private static string GetInitials(string fullName)
+        {
+            var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length >= 2
+                ? $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[1][0])}"
+                : parts.Length > 0 ? $"{char.ToUpper(parts[0][0])}" : "U";
+        }
+
+        private async Task<(CloudinaryUploadResult Result, string PublicId)> GenerateAndUploadAvatarAsync(string fullName)
+        {
+            var initials = GetInitials(fullName);
+            var publicId = $"healthcare_files/avatars/avatar_{initials}_{Guid.NewGuid():N}.png";
+
+            // 1. توليد الصورة
+            using var image = new Image<Rgba32>(200, 200);
+            image.Mutate(x => x.BackgroundColor(Color.ParseHex("0e76a8")));
+
+            // تحميل خط Arial
+            var fontCollection = new FontCollection();
+            var fontFamily = fontCollection.Add("C:/Windows/Fonts/arial.ttf"); // تأكد من المسار
+            var font = fontFamily.CreateFont(80, FontStyle.Bold);
+
+            var textOptions = new RichTextOptions(font)
+            {
+                Origin = new PointF(100, 90),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            image.Mutate(x => x.DrawText(textOptions, initials, Color.White));
+
+            // 2. تحويل إلى Stream
+            using var ms = new MemoryStream();
+            await image.SaveAsPngAsync(ms);
+            ms.Position = 0;
+
+            // 3. رفع على Cloudinary باستخدام UploadFileAsync
+            var file = new FormFile(ms, 0, ms.Length, "avatar", $"{initials}.png")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "image/png"
+            };
+
+            var uploadResult = await _cloudinary.UploadFileAsync(file);
+
+            // تأكد إن UploadFileAsync بيرجع CloudinaryUploadResult
+            return (
+                uploadResult,
+                uploadResult.PublicId
+            );
         }
 
         public async Task<(string AccessToken, string RefreshToken, string Error)> LoginAsync(
@@ -431,7 +532,15 @@ namespace HealthCare_.Services.SharedService
                 _logger.LogDebug("Authenticator key reset for userId: {UserId}, new key: {Key}", userId, authenticatorKey);
             }
 
-            var qrCodeUrl = $"otpauth://totp/{user.Email}?secret={authenticatorKey}&issuer=HealthCareApp&period=60";
+
+            // رابط الـ otpauth الأصلي لتطبيق Google Authenticator
+            var otpauthUri = $"otpauth://totp/{Uri.EscapeDataString(user.Email)}?secret={authenticatorKey}&issuer=HealthCareApp&period=60";
+
+            // رابط يمكن فتحه مباشرة من Flutter، 
+            // بحيث عند الضغط عليه من الهاتف يحاول فتح Google Authenticator،
+            // أو يفتح Google Play / App Store في حال عدم وجود التطبيق.
+            var qrCodeUrl = $"intent://totp/{Uri.EscapeDataString(user.Email)}?secret={authenticatorKey}&issuer=HealthCareApp&period=60#Intent;scheme=otpauth;package=com.google.android.apps.authenticator2;end";
+
             var recoveryCodes = await _userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
 
             user.TwoFactorEnabled = true;
@@ -459,6 +568,7 @@ namespace HealthCare_.Services.SharedService
             _logger.LogInformation("MFA enabled successfully for userId: {UserId}", userId);
             return (true, qrCodeUrl, recoveryCodes?.ToArray() ?? Array.Empty<string>(), string.Empty);
         }
+
 
         public async Task<(bool Succeeded, string Error)> VerifyMfaAsync(int userId, string otpCode)
         {

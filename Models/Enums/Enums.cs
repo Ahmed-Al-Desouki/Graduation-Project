@@ -28,6 +28,7 @@
             Bio,
             LabTest,
             Radiology,
+            Profile,
             Other
         }
     }

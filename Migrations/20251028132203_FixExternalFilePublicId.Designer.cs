@@ -4,6 +4,7 @@ using HealthCare_.Models.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthCare_.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    partial class HealthCarePlusContextModelSnapshot : ModelSnapshot
+    [Migration("20251028132203_FixExternalFilePublicId")]
+    partial class FixExternalFilePublicId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -589,8 +592,8 @@ namespace HealthCare_.Migrations
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -611,8 +614,8 @@ namespace HealthCare_.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("PasskeyPublicKey")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -644,7 +647,6 @@ namespace HealthCare_.Migrations
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .IsConcurrencyToken()
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UserName")
@@ -790,8 +792,7 @@ namespace HealthCare_.Migrations
 
                     b.HasIndex("PatientID");
 
-                    b.HasIndex("DoctorID", "PatientID", "MedicalHistoryID")
-                        .HasDatabaseName("IX_ExternalFiles_RelatedIDs");
+                    b.HasIndex("DoctorID", "PatientID", "MedicalHistoryID");
 
                     b.ToTable("ExternalFiles");
                 });
@@ -1367,7 +1368,7 @@ namespace HealthCare_.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
-                        .WithMany("Files")
+                        .WithMany()
                         .HasForeignKey("PatientID")
                         .OnDelete(DeleteBehavior.SetNull);
 
@@ -1540,8 +1541,6 @@ namespace HealthCare_.Migrations
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Patient", b =>
                 {
                     b.Navigation("Appointments");
-
-                    b.Navigation("Files");
 
                     b.Navigation("MedicalHistories");
 

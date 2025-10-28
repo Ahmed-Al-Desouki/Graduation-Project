@@ -19,14 +19,14 @@
     public string? DeviceInfo { get; set; } // محدّث من 200 إلى 500
 
     [MaxLength(100)]
-    public string? IpAddress { get; set; } // محدّث من 45 إلى 100
+    public string? IpAddress { get; set; } 
 
     [MaxLength(450)]
-    public string? RefreshTokenHash { get; set; } // مضاف
+    public string? RefreshTokenHash { get; set; } 
 
-    public DateTime? LastUsedAt { get; set; } // مضاف
+    public DateTime? LastUsedAt { get; set; }
 
-    public DateTime? EndedAt { get; set; } // مضاف
+    public DateTime? EndedAt { get; set; } 
 
     public bool IsActive { get; set; } = true;
     public bool IsRevoked { get; set; } = false;
@@ -37,7 +37,7 @@
 
     // Added for AES encryption
     [MaxLength(500)]
-    public string Salt { get; set; } // Added
+    public string Salt { get; set; } 
 
     public bool IsExpired() => DateTime.UtcNow >= ExpiresAt;
 

@@ -7,7 +7,6 @@ namespace HealthCare_.Models.DoctorModels
         [Required]
         public int DoctorID { get; set; }
 
-        // إضافة UserID لضمان الربط الواضح One-to-One
         [Required]
         public int UserID { get; set; }
         [ForeignKey(nameof(UserID))]

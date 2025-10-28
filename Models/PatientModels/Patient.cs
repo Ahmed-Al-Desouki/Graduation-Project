@@ -25,6 +25,7 @@ namespace HealthCare_.Models.PatientModels
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
+        public ICollection<ExternalFile> Files { get; set; } = new List<ExternalFile>();
         public ICollection<MedicalHistory> MedicalHistories { get; set; } = new List<MedicalHistory>();
         public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
         public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();

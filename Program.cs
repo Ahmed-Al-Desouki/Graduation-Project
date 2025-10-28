@@ -1,20 +1,12 @@
-﻿using HealthCare_.Interfaces;
-using HealthCare_.Models.Context;
-using HealthCare_.Models.SharedModels;
-using HealthCare_.Services.BackGround;
+﻿using HealthCare_.Services.BackGround;
 using HealthCare_.Services.DoctorDervice;
 using HealthCare_.Services.PatientService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using System.Diagnostics;
 using System.Text;
 using Fido2NetLib;
-
+using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add detailed logging
