@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/create_account_header.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/doctor_option_card.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/login_view_body.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/patient_option_card.dart';
 
 class CreateAccountViewBody extends StatelessWidget {
@@ -90,7 +90,12 @@ class CreateAccountViewBody extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () {
-                    AppRouter.router.go(AppRouter.kLogin);
+                    final router = GoRouter.of(context);
+                    if (router.canPop()) {
+                      router.pop();
+                    } else {
+                      router.go(AppRouter.kLogin);
+                    }
                   },
                   child: Text('Sign in', style: AppStyles.styleMedium12Blue),
                 ),

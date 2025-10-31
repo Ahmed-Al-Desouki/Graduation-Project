@@ -10,25 +10,25 @@ import 'package:intl/intl.dart';
 
 class RegistrationForm extends StatefulWidget {
   final Function(bool)? onFormValidChanged;
-  final Function(String?)? onGenderChanged;
-  final TextEditingController ageController;
-  final TextEditingController birthDateController;
+  // final Function(String?)? onGenderChanged;
+  // final TextEditingController ageController;
+  // final TextEditingController birthDateController;
   final TextEditingController nameController;
   final TextEditingController emailController;
   final TextEditingController passwordController;
-  String? gender;
+  // String? gender;
   bool isDoctor;
 
   RegistrationForm({
     super.key,
     this.onFormValidChanged,
-    this.onGenderChanged,
-    required this.ageController,
-    required this.birthDateController,
+    // this.onGenderChanged,
+    // required this.ageController,
+    // required this.birthDateController,
     required this.nameController,
     required this.emailController,
     required this.passwordController,
-    this.gender,
+    // this.gender,
     this.isDoctor = false,
   });
 
@@ -162,108 +162,108 @@ class _RegistrationFormState extends State<RegistrationForm> {
               ),
             ),
           const SizedBox(height: 12),
-          HeadersFieldInRegistration(
-            imagePath: Assets.imagesCalendarDays,
-            title: "Birth & Gender Details",
-          ),
-          Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: CustomFormTextField(
-                  controller: widget.ageController,
-                  hintText: "Age",
-                  imagePath: Assets.imagesCalendarDays,
-                  fieldType: FieldType.age,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 7,
-                child: GestureDetector(
-                  onTap: () async {
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime(2000),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (pickedDate != null) {
-                      final now = DateTime.now();
-                      final age =
-                          now.year -
-                          pickedDate.year -
-                          ((now.month < pickedDate.month ||
-                                  (now.month == pickedDate.month &&
-                                      now.day < pickedDate.day))
-                              ? 1
-                              : 0);
+          // HeadersFieldInRegistration(
+          //   imagePath: Assets.imagesCalendarDays,
+          //   title: "Birth & Gender Details",
+          // ),
+          // Row(
+          //   children: [
+          //     Expanded(
+          //       flex: 3,
+          //       child: CustomFormTextField(
+          //         controller: widget.ageController,
+          //         hintText: "Age",
+          //         imagePath: Assets.imagesCalendarDays,
+          //         fieldType: FieldType.age,
+          //       ),
+          //     ),
+          //     const SizedBox(width: 12),
+          //     Expanded(
+          //       flex: 7,
+          //       child: GestureDetector(
+          //         onTap: () async {
+          //           final pickedDate = await showDatePicker(
+          //             context: context,
+          //             initialDate: DateTime(2000),
+          //             firstDate: DateTime(1900),
+          //             lastDate: DateTime.now(),
+          //           );
+          //           if (pickedDate != null) {
+          //             final now = DateTime.now();
+          //             final age =
+          //                 now.year -
+          //                 pickedDate.year -
+          //                 ((now.month < pickedDate.month ||
+          //                         (now.month == pickedDate.month &&
+          //                             now.day < pickedDate.day))
+          //                     ? 1
+          //                     : 0);
 
-                      if (widget.ageController.text.isNotEmpty &&
-                          int.tryParse(widget.ageController.text) != age) {
-                        ShowSnackBar(
-                          context,
-                          "The entered age doesn't match the birth date",
-                          Colors.red,
-                        );
-                      }
-                      setState(() {
-                        widget.birthDateController.text = DateFormat(
-                          'yyyy-MM-dd',
-                        ).format(pickedDate);
-                        widget.ageController.text = age.toString();
-                      });
-                    }
-                  },
-                  child: AbsorbPointer(
-                    child: CustomFormTextField(
-                      hintText: "Birth Date",
-                      imagePath: Assets.imagesCalendarDays,
-                      fieldType: FieldType.birthDate,
-                      controller: widget.birthDateController,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: widget.gender,
-            decoration: InputDecoration(
-              labelText: "Gender",
-              labelStyle: AppStyles.styleRegular16Gray,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderSide: const BorderSide(
-                  color: Colors.redAccent,
-                  width: 1.5,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            items: const [
-              DropdownMenuItem(value: "Male", child: Text("Male")),
-              DropdownMenuItem(value: "Female", child: Text("Female")),
-            ],
-            onChanged: (value) {
-              setState(() {
-                widget.onGenderChanged?.call(value);
-              });
-            },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select a gender';
-              }
-            },
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-          ),
+          //             if (widget.ageController.text.isNotEmpty &&
+          //                 int.tryParse(widget.ageController.text) != age) {
+          //               ShowSnackBar(
+          //                 context,
+          //                 "The entered age doesn't match the birth date",
+          //                 Colors.red,
+          //               );
+          //             }
+          //             setState(() {
+          //               widget.birthDateController.text = DateFormat(
+          //                 'yyyy-MM-dd',
+          //               ).format(pickedDate);
+          //               widget.ageController.text = age.toString();
+          //             });
+          //           }
+          //         },
+          //         child: AbsorbPointer(
+          //           child: CustomFormTextField(
+          //             hintText: "Birth Date",
+          //             imagePath: Assets.imagesCalendarDays,
+          //             fieldType: FieldType.birthDate,
+          //             controller: widget.birthDateController,
+          //           ),
+          //         ),
+          //       ),
+          //     ),
+          //   ],
+          // ),
+          // const SizedBox(height: 16),
+          // DropdownButtonFormField<String>(
+          //   value: widget.gender,
+          //   decoration: InputDecoration(
+          //     labelText: "Gender",
+          //     labelStyle: AppStyles.styleRegular16Gray,
+          //     border: OutlineInputBorder(
+          //       borderRadius: BorderRadius.circular(12),
+          //     ),
+          //     errorBorder: OutlineInputBorder(
+          //       borderSide: const BorderSide(
+          //         color: Colors.redAccent,
+          //         width: 1.5,
+          //       ),
+          //       borderRadius: BorderRadius.circular(12),
+          //     ),
+          //     focusedErrorBorder: OutlineInputBorder(
+          //       borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+          //       borderRadius: BorderRadius.circular(12),
+          //     ),
+          //   ),
+          //   items: const [
+          //     DropdownMenuItem(value: "Male", child: Text("Male")),
+          //     DropdownMenuItem(value: "Female", child: Text("Female")),
+          //   ],
+          //   onChanged: (value) {
+          //     setState(() {
+          //       widget.onGenderChanged?.call(value);
+          //     });
+          //   },
+          //   validator: (value) {
+          //     if (value == null || value.isEmpty) {
+          //       return 'Please select a gender';
+          //     }
+          //   },
+          //   autovalidateMode: AutovalidateMode.onUserInteraction,
+          // ),
           if (widget.isDoctor)
             Column(
               children: [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
@@ -45,7 +46,15 @@ class CreateAccountHeader extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () {
-                    AppRouter.router.go(AppRouter.kLogin);
+                    final router = GoRouter.of(context);
+                    // لو في history يرجع خطوة، لو مش موجود يعمل replace للـ login
+                    if (router.canPop()) {
+                      router.pop();
+                    } else {
+                      router.go(
+                        AppRouter.kLogin,
+                      ); // أو router.pushReplacement(AppRouter.kLogin);
+                    }
                   },
                 ),
               ),

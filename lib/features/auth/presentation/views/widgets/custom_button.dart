@@ -1,10 +1,8 @@
-// file: core/widgets/custom_primary_button.dart
-
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback? onPressed; // <-- السر هنا إنه nullable
+  final VoidCallback? onPressed;
   final Color backgroundColor;
   final Color disabledColor;
 
@@ -12,7 +10,7 @@ class CustomButton extends StatelessWidget {
     super.key,
     required this.text,
     required this.onPressed,
-    this.backgroundColor = const Color(0xFF6A72DA), // ده اللون البنفسجي
+    this.backgroundColor = const Color(0xFF6A72DA),
     this.disabledColor = Colors.grey,
   });
 
@@ -25,16 +23,14 @@ class CustomButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           disabledBackgroundColor: disabledColor,
-          foregroundColor: Colors.white, // لون التكست
-          disabledForegroundColor: Colors.white.withOpacity(
-            0.8,
-          ), // لون التكست وهو مقفول
+          foregroundColor: Colors.white,
+          disabledForegroundColor: Colors.white.withOpacity(0.8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          elevation: 0, // عشان يبقى flat زي ما كان
+          elevation: 0,
         ),
-        onPressed: onPressed, // <-- هنا بنمرر الـ callback
+        onPressed: onPressed,
         child: Text(
           text,
           style: const TextStyle(
