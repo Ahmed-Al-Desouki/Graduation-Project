@@ -7,7 +7,6 @@ namespace HealthCare_.Models.SharedModels
 {
     public class ApplicationUser : IdentityUser<int>
     {
-        // ─────────────── Basic Information ───────────────
 
         // ─────────────── Basic Information ───────────────
         [Required(ErrorMessage = "Full name is required")]
