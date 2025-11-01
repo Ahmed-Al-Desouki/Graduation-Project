@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using HealthCare_.Services.Auth.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using HealthCare_.Models.sharedModels;
 
 namespace HealthCare_.Controllers
 {

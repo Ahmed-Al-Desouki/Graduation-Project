@@ -1,23 +1,26 @@
-﻿using Fido2NetLib;
+﻿using Hangfire;
 using HealthCare_.Interfaces.IAuth;
-using HealthCare_.Models;
+using HealthCare_.Interfaces.ReminderInterface;
+using HealthCare_.Models.sharedModels;
 using HealthCare_.Services;
 using HealthCare_.Services.Auth;
 using HealthCare_.Services.Auth.Interfaces;
+using HealthCare_.Services.Background;
 using HealthCare_.Services.BackGround;
+using HealthCare_.Services.Cloud;
 using HealthCare_.Services.DoctorDervice;
 using HealthCare_.Services.PatientService;
+using HealthCare_.Services.Reminder;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Security.Claims;
-using System.Text;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Reflection;
+using System.Text.Json.Serialization;
+using HealthCare_.Models.EnumForModels; // <-- تم إضافته لدعم PatientFileCategory و DoctorFileCategory
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +32,11 @@ builder.Logging.SetMinimumLevel(LogLevel.Debug);
 builder.Services.AddDbContext<HealthCarePlusContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
+
+// ====================== HANGFIRE ======================
+builder.Services.AddHangfire(config =>
+    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHangfireServer();
 
 // ====================== IDENTITY ======================
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -64,7 +72,6 @@ builder.Services.AddScoped<IFido2, Fido2>();
 // ====================== JWT ======================
 var jwtSecret = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Missing Jwt:Key");
 var key = Encoding.UTF8.GetBytes(jwtSecret);
-
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -91,7 +98,7 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ClockSkew = TimeSpan.Zero,
         NameClaimType = "UserID",
-        RoleClaimType = ClaimTypes.Role
+        RoleClaimType = "Role"
     };
 })
 .AddGoogle(options =>
@@ -100,16 +107,11 @@ builder.Services.AddAuthentication(options =>
         ?? throw new InvalidOperationException("Missing Google:ClientId");
     options.ClientSecret = builder.Configuration["Google:ClientSecret"]
         ?? throw new InvalidOperationException("Missing Google:ClientSecret");
-
-    // ✅ لازم يكون مطابق للرابط المسجل في Google Cloud Console
     options.CallbackPath = "/api/auth/external-callback";
-
     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.SaveTokens = true;
     options.Scope.Add("email");
     options.Scope.Add("profile");
-
-    // ✅ تأكد من تمرير redirect الصحيح
     options.Events.OnRedirectToAuthorizationEndpoint = context =>
     {
         context.Response.Redirect(context.RedirectUri);
@@ -121,7 +123,6 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<SignInManager<ApplicationUser>>();
 builder.Services.AddScoped<RoleManager<ApplicationRole>>();
 builder.Services.AddHttpContextAccessor();
-//builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDoctorService, DoctorServices>();
 builder.Services.AddScoped<IPatientService, PatientServices>();
 builder.Services.AddHostedService<RevokedTokensCleanupService>();
@@ -133,16 +134,32 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IPasskeyService, PasskeyService>();
 builder.Services.AddScoped<IExternalAuthService, ExternalAuthService>();
 builder.Services.AddScoped<IAvatarService, AvatarService>();
-
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.AddScoped<CloudinaryService>();
+builder.Services.AddScoped<FileUploadService>();
+
+// ====================== REMINDER SERVICE ======================
+builder.Services.AddScoped<IReminderService, ReminderService>();
 
 // ====================== CONTROLLERS & SWAGGER ======================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// إعداد Swagger مع دعم GroupName وتجنب تضارب الأسماء
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthCare+ API", Version = "v1" });
+
+    // تجنب تضارب الأسماء في الـ DTOs
+    c.CustomSchemaIds(x => x.FullName);
+
+    // XML Comments (إذا كان مفعّل في csproj)
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+        c.IncludeXmlComments(xmlPath);
+
+    // JWT Authorization
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme.",
@@ -163,6 +180,12 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 // ====================== CORS ======================
 builder.Services.AddCors(options =>
 {
@@ -179,16 +202,22 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
-app.UseStaticFiles();
 
+app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
         Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
+    ServeUnknownFileTypes = true,
+    DefaultContentType = "application/json",
     RequestPath = ""
 });
 
-app.Urls.Add("http://0.0.0.0:58093");
+// ====================== HANGFIRE DASHBOARD ======================
+app.UseHangfireDashboard("/admin-secret-reminders-2025-xyz", new DashboardOptions
+{
+    Authorization = new[] { new HangfireAuthorizationFilter() }
+});
 
 // ====================== MIDDLEWARE ======================
 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -198,7 +227,6 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
                        ForwardedHeaders.XForwardedHost
 });
 
-// ✅ إصلاح cookies الخاصة بـ OAuth state
 app.UseCookiePolicy(new CookiePolicyOptions
 {
     MinimumSameSitePolicy = SameSiteMode.None,
@@ -206,18 +234,41 @@ app.UseCookiePolicy(new CookiePolicyOptions
     Secure = CookieSecurePolicy.Always
 });
 
-// ✅ تفعيل Swagger دائمًا (في أي بيئة)
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "HealthCare+ API v1");
-    c.RoutePrefix = string.Empty; // يفتح Swagger مباشرة من /
+    c.RoutePrefix = string.Empty;
+});
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/patient/files/upload"))
+    {
+        Console.WriteLine($"Content-Type: {context.Request.ContentType}");
+        Console.WriteLine($"Content-Length: {context.Request.ContentLength}");
+        foreach (var file in context.Request.Form.Files)
+        {
+            Console.WriteLine($"Form File: {file.Name}, Size: {file.Length}, Type: {file.ContentType}");
+        }
+    }
+    await next();
 });
 
 app.UseCors("AllowAll");
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// ====================== HANGFIRE JOBS ======================
+RecurringJob.AddOrUpdate<ReminderService>(
+    "expire-reminders-daily",
+    service => service.ExpireRemindersAsync(),
+    "0 0 0 * * *");
+
+RecurringJob.AddOrUpdate<ReminderService>(
+    "mark-overdue-hourly",
+    service => service.MarkOverdueAsync(),
+    "0 0 * * * *");
 
 app.Run();

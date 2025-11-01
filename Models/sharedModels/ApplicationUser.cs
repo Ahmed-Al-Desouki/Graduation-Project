@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
+﻿
 
 
-namespace HealthCare_.Models.SharedModels
+namespace HealthCare_.Models.sharedModels
 {
     public class ApplicationUser : IdentityUser<int>
     {

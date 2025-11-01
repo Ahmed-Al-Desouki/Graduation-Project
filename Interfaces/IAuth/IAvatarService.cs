@@ -1,4 +1,6 @@
-﻿namespace HealthCare_.Interfaces.IAuth
+﻿using HealthCare_.Services.Cloud;
+
+namespace HealthCare_.Interfaces.IAuth
 {
     public interface IAvatarService
     {

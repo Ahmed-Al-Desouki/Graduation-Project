@@ -22,6 +22,75 @@ namespace HealthCare_.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ExternalFile", b =>
+                {
+                    b.Property<int>("FileID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FileID"));
+
+                    b.Property<string>("CategoryType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CategoryValue")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("DoctorID")
+                        .HasColumnType("int");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("MedicalHistoryID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PatientID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PublicId")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int?>("UploadedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UploadedByRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("FileID");
+
+                    b.HasIndex("MedicalHistoryID");
+
+                    b.HasIndex("PatientID");
+
+                    b.HasIndex("CategoryType", "CategoryValue")
+                        .HasDatabaseName("IX_ExternalFiles_Category");
+
+                    b.HasIndex("DoctorID", "PatientID", "MedicalHistoryID")
+                        .HasDatabaseName("IX_ExternalFiles_RelatedIDs");
+
+                    b.ToTable("ExternalFiles");
+                });
+
             modelBuilder.Entity("HealthCare_.Models.DTOs.AuthModels.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
@@ -164,10 +233,7 @@ namespace HealthCare_.Migrations
             modelBuilder.Entity("HealthCare_.Models.DoctorModels.Doctor", b =>
                 {
                     b.Property<int>("DoctorID")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DoctorID"));
 
                     b.Property<double>("AverageRating")
                         .ValueGeneratedOnAdd()
@@ -183,7 +249,6 @@ namespace HealthCare_.Migrations
                         .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -198,9 +263,6 @@ namespace HealthCare_.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
-
                     b.Property<int>("YearsOfExperience")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
@@ -208,7 +270,7 @@ namespace HealthCare_.Migrations
 
                     b.HasKey("DoctorID");
 
-                    b.HasIndex("UserID")
+                    b.HasIndex("DoctorID")
                         .IsUnique();
 
                     b.ToTable("Doctors");
@@ -335,27 +397,6 @@ namespace HealthCare_.Migrations
                     b.ToTable("SessionTypes");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.DosingSchedule", b =>
-                {
-                    b.Property<int>("DosingScheduleID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DosingScheduleID"));
-
-                    b.Property<TimeSpan>("DailyTime")
-                        .HasColumnType("time");
-
-                    b.Property<int>("PrescriptionMedID")
-                        .HasColumnType("int");
-
-                    b.HasKey("DosingScheduleID");
-
-                    b.HasIndex("PrescriptionMedID");
-
-                    b.ToTable("DosingSchedules");
-                });
-
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalHistory", b =>
                 {
                     b.Property<int>("HistoryID")
@@ -430,6 +471,9 @@ namespace HealthCare_.Migrations
                     b.Property<int>("PrescriptionMedID")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ReminderInstanceID")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -443,16 +487,17 @@ namespace HealthCare_.Migrations
 
                     b.HasIndex("PrescriptionMedID");
 
+                    b.HasIndex("ReminderInstanceID")
+                        .IsUnique()
+                        .HasFilter("[ReminderInstanceID] IS NOT NULL");
+
                     b.ToTable("MedicationsIntakes");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Patient", b =>
                 {
                     b.Property<int>("PatientID")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PatientID"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -475,12 +520,9 @@ namespace HealthCare_.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
-
                     b.HasKey("PatientID");
 
-                    b.HasIndex("UserID")
+                    b.HasIndex("PatientID")
                         .IsUnique();
 
                     b.ToTable("Patients");
@@ -497,26 +539,47 @@ namespace HealthCare_.Migrations
                     b.Property<int?>("AppointmentID")
                         .HasColumnType("int");
 
+                    b.Property<TimeSpan>("BaseTime")
+                        .HasColumnType("time");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("IntervalHours")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<bool>("IsLocalNotification")
                         .HasColumnType("bit");
 
                     b.Property<string>("Message")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int?>("PatientID")
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PatientID")
                         .HasColumnType("int");
 
                     b.Property<int?>("PrescriptionMedID")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("ReminderDateTime")
+                    b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
@@ -539,6 +602,67 @@ namespace HealthCare_.Migrations
                     b.HasIndex("PrescriptionMedID", "AppointmentID");
 
                     b.ToTable("Reminders");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.PatientModels.ReminderInstance", b =>
+                {
+                    b.Property<int>("InstanceID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InstanceID"));
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<DateTime>("DueDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IntakeID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReminderID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("InstanceID");
+
+                    b.HasIndex("DueDateTime");
+
+                    b.HasIndex("ReminderID");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ReminderInstances");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.ReminderModels.DosingSchedule", b =>
+                {
+                    b.Property<int>("DosingScheduleID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DosingScheduleID"));
+
+                    b.Property<TimeSpan>("DailyTime")
+                        .HasColumnType("time");
+
+                    b.Property<int>("PrescriptionMedID")
+                        .HasColumnType("int");
+
+                    b.HasKey("DosingScheduleID");
+
+                    b.HasIndex("PrescriptionMedID");
+
+                    b.ToTable("DosingSchedules");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.SharedModels.ApplicationRole", b =>
@@ -580,117 +704,6 @@ namespace HealthCare_.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("Roles", (string)null);
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.SharedModels.ApplicationUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("UserID");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("PasskeyCredentialId")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("PasskeyPublicKey")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("ProfileImageId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .IsConcurrencyToken()
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
-                        .HasFilter("[NormalizedUserName] IS NOT NULL");
-
-                    b.HasIndex("PasskeyCredentialId")
-                        .IsUnique()
-                        .HasFilter("[PasskeyCredentialId] IS NOT NULL");
-
-                    b.HasIndex("ProfileImageId");
-
-                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("HealthCare_.Models.SharedModels.Appointment", b =>
@@ -762,61 +775,6 @@ namespace HealthCare_.Migrations
                     b.HasIndex("PatientID", "DoctorID", "AppointmentDate");
 
                     b.ToTable("Appointments");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.SharedModels.ExternalFile", b =>
-                {
-                    b.Property<int>("FileID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FileID"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("DoctorID")
-                        .HasColumnType("int");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("FileType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("FileUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int?>("MedicalHistoryID")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PatientID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PublicId")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.HasKey("FileID");
-
-                    b.HasIndex("MedicalHistoryID");
-
-                    b.HasIndex("PatientID");
-
-                    b.HasIndex("DoctorID", "PatientID", "MedicalHistoryID")
-                        .HasDatabaseName("IX_ExternalFiles_RelatedIDs");
-
-                    b.ToTable("ExternalFiles");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.SharedModels.MedicalRecord", b =>
@@ -1028,6 +986,117 @@ namespace HealthCare_.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("HealthCare_.Models.sharedModels.ApplicationUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("UserID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccessFailedCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PasskeyCredentialId")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PasskeyPublicKey")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ProfileImageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .IsConcurrencyToken()
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasDatabaseName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasDatabaseName("UserNameIndex")
+                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.HasIndex("PasskeyCredentialId")
+                        .IsUnique()
+                        .HasFilter("[PasskeyCredentialId] IS NOT NULL");
+
+                    b.HasIndex("ProfileImageId");
+
+                    b.ToTable("Users", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.Property<int>("Id")
@@ -1202,14 +1271,37 @@ namespace HealthCare_.Migrations
                     b.ToTable("UserSessions");
                 });
 
+            modelBuilder.Entity("ExternalFile", b =>
+                {
+                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
+                        .WithMany("Files")
+                        .HasForeignKey("DoctorID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
+                        .WithMany("Files")
+                        .HasForeignKey("MedicalHistoryID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
+                        .WithMany("Files")
+                        .HasForeignKey("PatientID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("MedicalHistory");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("HealthCare_.Models.DTOs.AuthModels.RefreshToken", b =>
                 {
                     b.HasOne("HealthCare_.Models.DTOs.AuthModels.RefreshToken", "ReplacedBy")
                         .WithMany()
-                        .HasForeignKey("ReplacedById")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("ReplacedById");
 
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", "User")
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1229,7 +1321,7 @@ namespace HealthCare_.Migrations
 
             modelBuilder.Entity("HealthCare_.Models.DTOs.Email.EmailOTP", b =>
                 {
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", "User")
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1240,9 +1332,9 @@ namespace HealthCare_.Migrations
 
             modelBuilder.Entity("HealthCare_.Models.DoctorModels.Doctor", b =>
                 {
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", "User")
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", "User")
                         .WithOne("Doctor")
-                        .HasForeignKey("HealthCare_.Models.DoctorModels.Doctor", "UserID")
+                        .HasForeignKey("HealthCare_.Models.DoctorModels.Doctor", "DoctorID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1282,17 +1374,6 @@ namespace HealthCare_.Migrations
                     b.Navigation("Doctor");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.DosingSchedule", b =>
-                {
-                    b.HasOne("HealthCare_.Models.SharedModels.PrescriptionMed", "PrescriptionMed")
-                        .WithMany("DosingSchedules")
-                        .HasForeignKey("PrescriptionMedID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PrescriptionMed");
-                });
-
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalHistory", b =>
                 {
                     b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
@@ -1316,14 +1397,21 @@ namespace HealthCare_.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("HealthCare_.Models.PatientModels.ReminderInstance", "ReminderInstance")
+                        .WithOne("Intake")
+                        .HasForeignKey("HealthCare_.Models.PatientModels.MedicationsIntake", "ReminderInstanceID")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("PrescriptionMed");
+
+                    b.Navigation("ReminderInstance");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Patient", b =>
                 {
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", "User")
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", "User")
                         .WithOne("Patient")
-                        .HasForeignKey("HealthCare_.Models.PatientModels.Patient", "UserID")
+                        .HasForeignKey("HealthCare_.Models.PatientModels.Patient", "PatientID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1337,9 +1425,11 @@ namespace HealthCare_.Migrations
                         .HasForeignKey("AppointmentID")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("HealthCare_.Models.PatientModels.Patient", null)
+                    b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
                         .WithMany("Reminders")
-                        .HasForeignKey("PatientID");
+                        .HasForeignKey("PatientID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("HealthCare_.Models.SharedModels.PrescriptionMed", "PrescriptionMed")
                         .WithMany("Reminders")
@@ -1348,17 +1438,31 @@ namespace HealthCare_.Migrations
 
                     b.Navigation("Appointment");
 
+                    b.Navigation("Patient");
+
                     b.Navigation("PrescriptionMed");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.SharedModels.ApplicationUser", b =>
+            modelBuilder.Entity("HealthCare_.Models.PatientModels.ReminderInstance", b =>
                 {
-                    b.HasOne("HealthCare_.Models.SharedModels.ExternalFile", "ProfileImagePath")
-                        .WithMany()
-                        .HasForeignKey("ProfileImageId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("HealthCare_.Models.PatientModels.Reminder", "Reminder")
+                        .WithMany("Instances")
+                        .HasForeignKey("ReminderID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("ProfileImagePath");
+                    b.Navigation("Reminder");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.ReminderModels.DosingSchedule", b =>
+                {
+                    b.HasOne("HealthCare_.Models.SharedModels.PrescriptionMed", "PrescriptionMed")
+                        .WithMany("DosingSchedules")
+                        .HasForeignKey("PrescriptionMedID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PrescriptionMed");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.SharedModels.Appointment", b =>
@@ -1386,30 +1490,6 @@ namespace HealthCare_.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("Slot");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.SharedModels.ExternalFile", b =>
-                {
-                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
-                        .WithMany("Files")
-                        .HasForeignKey("DoctorID")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
-                        .WithMany("Files")
-                        .HasForeignKey("MedicalHistoryID")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
-                        .WithMany("Files")
-                        .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Doctor");
-
-                    b.Navigation("MedicalHistory");
-
-                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.SharedModels.MedicalRecord", b =>
@@ -1468,7 +1548,7 @@ namespace HealthCare_.Migrations
                         .HasForeignKey("AppointmentID")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", "User")
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", "User")
                         .WithMany("Reviews")
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1477,6 +1557,16 @@ namespace HealthCare_.Migrations
                     b.Navigation("Appointment");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.sharedModels.ApplicationUser", b =>
+                {
+                    b.HasOne("ExternalFile", "ProfileImagePath")
+                        .WithMany()
+                        .HasForeignKey("ProfileImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ProfileImagePath");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -1490,7 +1580,7 @@ namespace HealthCare_.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
                 {
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", null)
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1499,7 +1589,7 @@ namespace HealthCare_.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
                 {
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", null)
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1514,7 +1604,7 @@ namespace HealthCare_.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", null)
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1523,7 +1613,7 @@ namespace HealthCare_.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
                 {
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", null)
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1532,7 +1622,7 @@ namespace HealthCare_.Migrations
 
             modelBuilder.Entity("UserSession", b =>
                 {
-                    b.HasOne("HealthCare_.Models.SharedModels.ApplicationUser", "User")
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1586,13 +1676,14 @@ namespace HealthCare_.Migrations
                     b.Navigation("Reminders");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.SharedModels.ApplicationUser", b =>
+            modelBuilder.Entity("HealthCare_.Models.PatientModels.Reminder", b =>
                 {
-                    b.Navigation("Doctor");
+                    b.Navigation("Instances");
+                });
 
-                    b.Navigation("Patient");
-
-                    b.Navigation("Reviews");
+            modelBuilder.Entity("HealthCare_.Models.PatientModels.ReminderInstance", b =>
+                {
+                    b.Navigation("Intake");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.SharedModels.Appointment", b =>
@@ -1614,6 +1705,15 @@ namespace HealthCare_.Migrations
                     b.Navigation("MedicationsIntakes");
 
                     b.Navigation("Reminders");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.sharedModels.ApplicationUser", b =>
+                {
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("Reviews");
                 });
 #pragma warning restore 612, 618
         }

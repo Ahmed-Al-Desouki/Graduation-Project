@@ -1,13 +1,9 @@
 ﻿using HealthCare_.Interfaces.IAuth;
-using HealthCare_.Models.DTOs.Email;
+
+using HealthCare_.Models.sharedModels;
 using HealthCare_.Services.Auth.Interfaces;
-using Microsoft.AspNetCore.Http.Headers;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using SixLabors.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
+using HealthCare_.Services.Cloud;
+
 
 namespace HealthCare_.Services.Auth
 {
@@ -53,8 +49,6 @@ namespace HealthCare_.Services.Auth
 
         public async Task<(bool Succeeded, string[] Errors)> RegisterAsync(RegisterRequest request)
         {
-            _logger.LogInformation("RegisterAsync called for email: {Email}", request.Email);
-
             var existing = await _userManager.FindByEmailAsync(request.Email);
             if (existing != null)
                 return (false, new[] { "Email already registered" });
@@ -65,74 +59,93 @@ namespace HealthCare_.Services.Auth
                 Email = request.Email,
                 FullName = request.FullName,
                 Role = request.Role ?? "Patient",
-                Address = "N/A",
                 CreatedAt = DateTime.UtcNow,
-                TwoFactorEnabled = request.TwoFactorEnabled,
                 EmailConfirmed = true
             };
 
-            ExternalFile? createdFile = null;
-            string? uploadedPublicId = null;
-
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var result = await _userManager.CreateAsync(user, request.Password);
+                if (!result.Succeeded)
+                    return (false, result.Errors.Select(e => e.Description).ToArray());
+
+                await _userManager.AddToRoleAsync(user, user.Role);
+
+                // رفع الصورة
+                ExternalFile? file = null;
                 if (request.ProfileImageFile != null && request.ProfileImageFile.Length > 0)
                 {
-                    var result = await _cloudinary.UploadFileAsync(request.ProfileImageFile);
-                    createdFile = new ExternalFile
+                    var upload = await _cloudinary.UploadFileAsync(request.ProfileImageFile);
+                    file = new ExternalFile
                     {
-                        FileUrl = result.Url,
-                        PublicId = result.PublicId,
-                        FileType = result.FileType,
-                        FileSize = result.FileSize,
+                        FileUrl = upload.Url,
+                        PublicId = upload.PublicId,
+                        FileType = upload.FileType,
+                        FileSize = upload.FileSize,
                         UploadedAt = DateTime.UtcNow,
-                        Category = ExternalFileCategory.Profile
+                        CategoryValue = "Profile"
                     };
-                    uploadedPublicId = result.PublicId;
                 }
                 else
                 {
                     var (stream, publicId) = await _avatarService.GenerateAndUploadAvatarAsync(request.FullName);
-                    uploadedPublicId = publicId;
-                    createdFile = new ExternalFile
+                    file = new ExternalFile
                     {
                         FileUrl = stream.Url,
                         PublicId = publicId,
                         FileType = "image/png",
                         FileSize = stream.FileSize,
                         UploadedAt = DateTime.UtcNow,
-                        Category = ExternalFileCategory.Profile
+                        CategoryValue = "Profile"
                     };
                 }
 
-                var identityResult = await _userManager.CreateAsync(user, request.Password);
-                if (!identityResult.Succeeded)
+                if (file != null)
                 {
-                    if (uploadedPublicId != null)
-                        await _cloudinary.DeleteFileAsync(uploadedPublicId);
-                    return (false, identityResult.Errors.Select(e => e.Description).ToArray());
+                    _context.ExternalFiles.Add(file);
+                    await _context.SaveChangesAsync();
+                    user.ProfileImageId = file.FileID;
+                    await _userManager.UpdateAsync(user);
                 }
 
-                await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Role, user.Role ?? "User"));
-
-                if (createdFile != null)
+                // إضافة Patient أو Doctor
+                if (user.Role == "Patient")
                 {
-                    _context.ExternalFiles.Add(createdFile);
-                    await _context.SaveChangesAsync();
-                    user.ProfileImageId = createdFile.FileID;
-                    _context.Entry(user).Property(x => x.ProfileImageId).IsModified = true;
-                    await _context.SaveChangesAsync();
+                    var patient = new Patient
+                    {
+                        PatientID = user.Id, 
+                        DateOfBirth = DateTime.Today.AddYears(-25), 
+                        Gender = "Unknown",
+                        CreatedAt = DateTime.UtcNow,
+                        CurrentLocation = "Not Specified", 
+                    };
+                    _context.Patients.Add(patient);
+                }
+                else if (user.Role == "Doctor")
+                {
+                    var doctor = new Doctor
+                    {
+                        DoctorID = user.Id, 
+                        Specialization = "General",
+                        YearsOfExperience = 0,
+                        ConsultationFee = 0,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.Doctors.Add(doctor);
                 }
 
-                _logger.LogInformation("User registered successfully – ID: {Id}", user.Id);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
                 return (true, Array.Empty<string>());
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Registration failed for {Email}", request.Email);
-                if (uploadedPublicId != null)
-                    await _cloudinary.DeleteFileAsync(uploadedPublicId);
-                return (false, new[] { "Registration failed due to server error" });
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Registration failed");
+                return (false, new[] { "Server error" });
             }
         }
 

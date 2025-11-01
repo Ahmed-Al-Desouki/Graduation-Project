@@ -1,16 +1,12 @@
 ﻿
+using HealthCare_.Models.sharedModels;
+
 namespace HealthCare_.Models.DoctorModels
 {
     public class Doctor
     {
         [Key]
-        [Required]
         public int DoctorID { get; set; }
-
-        [Required]
-        public int UserID { get; set; }
-        [ForeignKey(nameof(UserID))]
-        public ApplicationUser User { get; set; }
 
         [Required, StringLength(100)]
         public string Specialization { get; set; }
@@ -26,11 +22,12 @@ namespace HealthCare_.Models.DoctorModels
         public double AverageRating { get; set; }
 
         [StringLength(500)]
-        public string Description { get; set; }
+        public string? Description { get; set; } = "Doctor Description";
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
+        public ApplicationUser User { get; set; } = null!;
         public ICollection<ExternalFile> Files { get; set; } = new List<ExternalFile>();
         public ICollection<DoctorWeeklySchedule> WeeklySchedules { get; set; } = new List<DoctorWeeklySchedule>();
         public ICollection<DoctorSlot> Slots { get; set; } = new List<DoctorSlot>();

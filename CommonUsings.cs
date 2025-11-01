@@ -16,7 +16,6 @@ global using HealthCare_.Services.SharedService;
 global using HealthCare_.Models.DoctorModels;
 global using HealthCare_.Models.PatientModels;
 global using System.ComponentModel.DataAnnotations.Schema;
-global using static HealthCare_.Models.Enums.Enums;
 global using Microsoft.AspNetCore.Identity;
 global using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 global using HealthCare_.Models.DTOs.AuthModels;
@@ -34,6 +33,9 @@ global using System.Security.Claims;
 global using System.Security.Cryptography;
 global using System.Text;
 global using SixLabors.ImageSharp.Processing;
+global using  HealthCare_.Models.ReminderModels;
+global using HealthCare_.Models.EnumForModels;
+global using static HealthCare_.Models.EnumForModels.Enums;
 
 
 

@@ -1,4 +1,6 @@
-﻿namespace HealthCare_.Services.Auth.Interfaces
+﻿using HealthCare_.Models.sharedModels;
+
+namespace HealthCare_.Services.Auth.Interfaces
 {
     public interface IMfaService
     {

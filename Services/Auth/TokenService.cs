@@ -1,4 +1,5 @@
-﻿using HealthCare_.Services.Auth.Interfaces;
+﻿using HealthCare_.Models.sharedModels;
+using HealthCare_.Services.Auth.Interfaces;
 
 
 namespace HealthCare_.Services.Auth
@@ -30,48 +31,30 @@ namespace HealthCare_.Services.Auth
         }
 
         public async Task<(string AccessToken, string Jti, string? Error)> GenerateJwtToken(
-                ApplicationUser user,
-                TimeSpan? expiry = null)
+             ApplicationUser user,
+             TimeSpan? expiry = null)
         {
-            try
-            {
-                var claims = new List<Claim>
-        {
-                new Claim("UserID", user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.UserName ?? user.Email!),
-                new Claim(ClaimTypes.Email, user.Email!),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+            var claims = new List<Claim>
+    {
+            new Claim("UserID", user.Id.ToString()), // ← هو نفسه PatientID
+            new Claim("Name", user.FullName),
+            new Claim("Email", user.Email!),
+            new Claim("Role", user.Role),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
 
-                var roles = await _userManager.GetRolesAsync(user);
-                claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
-                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(60),
+                signingCredentials: creds
+            );
 
-                // استخدم expiry أو الافتراضي
-                var expires = DateTime.UtcNow.Add(expiry ?? TimeSpan.FromMinutes(
-                    Convert.ToDouble(_configuration["Jwt:ExpireMinutes"] ?? "60")
-                ));
-
-                var token = new JwtSecurityToken(
-                    issuer: _configuration["Jwt:Issuer"],
-                    audience: _configuration["Jwt:Audience"],
-                    claims: claims,
-                    expires: expires,
-                    signingCredentials: creds
-                );
-
-                var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
-                var jti = token.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
-
-                return (accessToken, jti, null);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "JWT generation failed for user {UserId}", user.Id);
-                return (string.Empty, string.Empty, "Token generation failed");
-            }
+            return (new JwtSecurityTokenHandler().WriteToken(token), token.Id, null);
         }
 
         public string GenerateRandomToken()

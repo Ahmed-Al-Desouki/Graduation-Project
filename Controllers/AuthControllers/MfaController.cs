@@ -4,6 +4,7 @@ using HealthCare_.Services.Auth.Interfaces;
 using HealthCare_.Models.DTOs.AuthModels; // ← هنا
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
+using HealthCare_.Models.sharedModels;
 
 namespace HealthCare_.Controllers
 {

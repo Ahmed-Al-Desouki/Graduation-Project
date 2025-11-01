@@ -1,4 +1,6 @@
-﻿using HealthCare_.Services.Auth.Interfaces;
+﻿using HealthCare_.Models.DTOs.ForgetPassword;
+using HealthCare_.Models.sharedModels;
+using HealthCare_.Services.Auth.Interfaces;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
 

@@ -1,4 +1,6 @@
-﻿namespace HealthCare_.Models.DTOs.Email
+﻿using HealthCare_.Models.sharedModels;
+
+namespace HealthCare_.Models.DTOs.Email
 {
     public class EmailOTP
     {

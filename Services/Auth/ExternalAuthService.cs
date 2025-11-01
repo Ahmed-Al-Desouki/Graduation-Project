@@ -1,6 +1,8 @@
 ﻿using HealthCare_.Interfaces.IAuth;
+
+using HealthCare_.Models.sharedModels;
 using HealthCare_.Services.Auth.Interfaces;
-using Microsoft.AspNetCore.Identity;
+
 
 namespace HealthCare_.Services.Auth
 {
@@ -84,8 +86,8 @@ namespace HealthCare_.Services.Auth
                     PublicId = publicId,
                     FileType = "image/png",
                     FileSize = avatarResult.FileSize,
-                    UploadedAt = DateTime.UtcNow,
-                    Category = ExternalFileCategory.Profile
+                    UploadedAt = DateTime.UtcNow,        
+                    CategoryValue = "Profile",
                 };
 
                 _context.ExternalFiles.Add(file);

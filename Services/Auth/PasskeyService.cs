@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Security.Cryptography;
+using HealthCare_.Models.sharedModels;
 
 namespace HealthCare_.Services.Auth
 {

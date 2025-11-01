@@ -1,6 +1,6 @@
 ﻿using HealthCare_.Interfaces.IAuth;
 using HealthCare_.Services.Auth.Interfaces;
-using HealthCare_.Services.SharedService;
+using HealthCare_.Services.Cloud;
 using Microsoft.AspNetCore.Http.Headers;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;

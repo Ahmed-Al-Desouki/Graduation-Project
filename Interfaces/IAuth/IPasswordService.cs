@@ -1,4 +1,6 @@
-﻿namespace HealthCare_.Services.Auth.Interfaces
+﻿using HealthCare_.Models.DTOs.ForgetPassword;
+
+namespace HealthCare_.Services.Auth.Interfaces
 {
     public interface IPasswordService
     {

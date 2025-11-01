@@ -1,4 +1,5 @@
 ﻿using HealthCare_.Models.DTOs.Email;
+using HealthCare_.Models.sharedModels;
 using HealthCare_.Services.Auth.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
