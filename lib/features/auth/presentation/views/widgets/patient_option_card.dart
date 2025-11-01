@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
+import 'package:graduation_project/features/auth/presentation/views/patient_home.dart';
 
 class PatientOptionCard extends StatefulWidget {
   const PatientOptionCard({super.key});
@@ -31,7 +32,16 @@ class _PatientOptionCardState extends State<PatientOptionCard> {
         });
       },
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return PatientHome();
+                        },
+                      ),
+                    );
+        },
         hoverColor: Colors.transparent,
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,

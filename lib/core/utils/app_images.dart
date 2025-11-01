@@ -120,6 +120,21 @@ class Assets {
   /// assets/images/logout.svg
   static const String imagesLogout = "assets/images/logout.svg";
 
+  /// Assets for imagesMaleDoctorPointingSvgrepoCom
+  /// assets/images/male-doctor-pointing-svgrepo-com.svg
+  static const String imagesMaleDoctorPointingSvgrepoCom =
+      "assets/images/male-doctor-pointing-svgrepo-com.svg";
+
+  /// Assets for imagesMaleDoctorToGuideSvgrepoCom
+  /// assets/images/male-doctor-to-guide-svgrepo-com.svg
+  static const String imagesMaleDoctorToGuideSvgrepoCom =
+      "assets/images/male-doctor-to-guide-svgrepo-com.svg";
+
+  /// Assets for imagesMedicalRecordsSvgrepoCom
+  /// assets/images/medical-records-svgrepo-com.svg
+  static const String imagesMedicalRecordsSvgrepoCom =
+      "assets/images/medical-records-svgrepo-com.svg";
+
   /// Assets for imagesMeds
   /// assets/images/meds.svg
   static const String imagesMeds = "assets/images/meds.svg";
@@ -144,6 +159,11 @@ class Assets {
   /// assets/images/pedning_accept_doctor.png
   static const String imagesPedningAcceptDoctor =
       "assets/images/pedning_accept_doctor.png";
+
+  /// Assets for imagesPillsPillSvgrepoCom
+  /// assets/images/pills-pill-svgrepo-com.svg
+  static const String imagesPillsPillSvgrepoCom =
+      "assets/images/pills-pill-svgrepo-com.svg";
 
   /// Assets for imagesPreferences
   /// assets/images/preferences.svg
