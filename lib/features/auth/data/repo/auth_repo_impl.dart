@@ -50,9 +50,10 @@ class AuthRepositoryimpl implements AuthRepository {
         password: password,
         otpCode: otpCode ?? "",
       );
+print("🧩 LOGIN RESPONSE => $res");
 
       if (res['success'] == true) {
-        final token = res['data']?['accessToken'] ?? '';
+        final token = res['accessToken'] ?? '';
         return Right(token);
       } else {
         final msg = res['data']?['message'] ?? 'Login failed';

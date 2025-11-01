@@ -1,11 +1,15 @@
 import 'package:bloc/bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:meta/meta.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository _authRepository;
+  final _secureStorage = const FlutterSecureStorage();
   AuthCubit(this._authRepository) : super(AuthInitial());
   Future<void> login({required String email, required String password}) async {
     emit(LoginLoading());
@@ -15,9 +19,29 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     result.fold(
-      (failure) => emit(LoginFailure(errMessage: failure.errmessage)),
-      (token) => emit(LoginSuccess(uid: 'unknown', email: email)),
-    );
+    (failure) => emit(LoginFailure(errMessage: failure.errmessage)),
+    (token) async {
+      // token هنا مفترض string access token
+      try {
+        // decode
+        Map<String, dynamic> payload = JwtDecoder.decode(token);
+        final role = (payload['role'] ?? payload['Role'] ?? '').toString().toLowerCase();
+        final uid = (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '').toString();
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('accessToken', token);
+        await prefs.setString('role', role);
+
+        // لو بتحب تعدل ApiService ليضيف التوكن تلقائي
+        // getIt<ApiService>().setToken(token); // قابل للتنفيذ لو ضفت method في ApiService
+
+        emit(LoginSuccess(uid: uid, email: email, role: role,));
+      } catch (e) {
+        // لو decode فشل
+        emit(LoginFailure(errMessage: 'Invalid token format'));
+      }
+    },
+  );
   }
 
   Future<void> register({

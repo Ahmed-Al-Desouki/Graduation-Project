@@ -60,7 +60,7 @@ class _DoctorRegistrationViewBodyState
           //   ),
           // );
           ShowSnackBar(context, '✅ Login successful!', Colors.green);
-          AppRouter.router.go(AppRouter.kHome);
+          AppRouter.router.go(AppRouter.kLogin);
         } else if (state is RegisterFailure) {
           Navigator.pop(context); // close loader
           // ScaffoldMessenger.of(context).showSnackBar(
