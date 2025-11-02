@@ -2,12 +2,14 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
+import 'package:graduation_project/features/auth/presentation/views/biometric_auth_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/create_account_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/doctor_registration_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/login_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/patient_registration_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_password_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_success_view.dart';
+import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
 import 'package:graduation_project/features/splash/splash_body.dart';
 
@@ -21,6 +23,8 @@ abstract class AppRouter {
   static const kHome = '/home';
   static const kResetPassword = '/resetPassword';
   static const kResetSuccess = '/resetSuccess';
+  static const kSettings = '/settings';
+  static const kBiometric = '/biometric';
 
   static final router = GoRouter(
     routes: [
@@ -85,6 +89,15 @@ abstract class AppRouter {
       GoRoute(
         path: kResetSuccess,
         builder: (context, state) => const ResetSuccessView(),
+      ),
+      GoRoute(
+        path: kSettings,
+        builder: (context, state) => const SettingsScreen(),
+      ),
+
+      GoRoute(
+        path: kBiometric,
+        builder: (context, state) => const BiometricAuthScreen(),
       ),
     ],
   );

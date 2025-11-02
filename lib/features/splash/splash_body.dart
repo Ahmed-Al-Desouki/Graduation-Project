@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class SplashBody extends StatefulWidget {
   const SplashBody({super.key});
@@ -62,9 +64,24 @@ class _SplashBodyState extends State<SplashBody>
       ),
     );
     _controller.forward();
-    _controller.addStatusListener((status) {
+    // _controller.addStatusListener((status) {
+    //   if (status == AnimationStatus.completed && mounted) {
+    //     AppRouter.router.go(AppRouter.kLogin);
+    //   }
+    // });
+    _controller.addStatusListener((status) async {
       if (status == AnimationStatus.completed && mounted) {
-        AppRouter.router.go(AppRouter.kLogin);
+        var settingsBox = await Hive.openBox('settings');
+        bool biometricEnabled = settingsBox.get(
+          'biometric_enabled',
+          defaultValue: false,
+        );
+
+        if (biometricEnabled) {
+          context.go(AppRouter.kBiometric);
+        } else {
+          context.go(AppRouter.kLogin);
+        }
       }
     });
   }

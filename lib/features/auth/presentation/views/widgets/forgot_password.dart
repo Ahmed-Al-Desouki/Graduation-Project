@@ -45,6 +45,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
           Navigator.pop(context);
           ShowSnackBar(context, 'Password reset code sent', Color(0xFF16A34A));
         } else if (state is ForgotPasswordFailure) {
+          Navigator.pop(context);
           ShowSnackBar(context, '❌ ${state.errMessage}', Colors.red);
         }
       },

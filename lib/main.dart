@@ -1,15 +1,70 @@
 // import 'package:flutter/material.dart';
 // import 'package:graduation_project/core/utils/app_router.dart';
 // import 'package:graduation_project/core/utils/helper/service_locator.dart';
+// import 'package:app_links/app_links.dart';
+// import 'package:hive_flutter/hive_flutter.dart';
 
-// void main() {
+// void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
 //   setupServiceLocator();
-//   runApp(const MyApp());
+//   await Hive.initFlutter();
+//   var settingsBox = await Hive.openBox('settings');
+//   bool biometricEnabled = settingsBox.get(
+//     'biometric_enabled',
+//     defaultValue: false,
+//   );
+//   runApp(MyApp(biometricEnabled: biometricEnabled));
 // }
 
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
+// class MyApp extends StatefulWidget {
+//   const MyApp({super.key, required this.biometricEnabled});
+//   final bool biometricEnabled;
+
+//   @override
+//   State<MyApp> createState() => _MyAppState();
+// }
+
+// class _MyAppState extends State<MyApp> {
+//   late final AppLinks _appLinks;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _initDeepLinks();
+//   }
+
+//   Future<void> _initDeepLinks() async {
+//     _appLinks = AppLinks();
+
+//     // 🔹 لما الأبب يكون مفتوح و المستخدم يضغط على اللينك من الإيميل
+//     _appLinks.uriLinkStream.listen((uri) {
+//       _handleIncomingLink(uri);
+//     });
+
+//     // 🔹 لما الأبب يفتح أول مرة من اللينك (cold start)
+//     // final initialLink = await _appLinks.getInitialAppLink();
+//     final initialLink = await _appLinks.getInitialLink();
+
+//     if (initialLink != null) {
+//       _handleIncomingLink(initialLink);
+//     }
+//   }
+
+//   void _handleIncomingLink(Uri uri) {
+//     debugPrint('📩 Received app link: $uri');
+
+//     if (uri.path.contains('reset-password')) {
+//       final email = uri.queryParameters['email'];
+//       final token = uri.queryParameters['token'];
+
+//       if (email != null && token != null) {
+//         // 🔸 هنا بنروح مباشرة لشاشة ResetPasswordView
+//         AppRouter.router.go(
+//           '${AppRouter.kResetPassword}?email=$email&token=$token',
+//         );
+//       }
+//     }
+//   }
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -26,15 +81,33 @@ import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:app_links/app_links.dart';
+import 'package:graduation_project/features/auth/presentation/views/biometric_auth_view.dart';
+import 'package:graduation_project/features/splash/splash_screen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:local_auth/local_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   setupServiceLocator();
-  runApp(const MyApp());
+  await Hive.initFlutter();
+  // var settingsBox = await Hive.openBox('settings');
+  // bool biometricEnabled = settingsBox.get(
+  //   'biometric_enabled',
+  //   defaultValue: false,
+  // );
+  runApp(
+    MyApp(
+      // biometricEnabled: biometricEnabled
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+    // required this.biometricEnabled
+  });
+  // final bool biometricEnabled;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -42,6 +115,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final AppLinks _appLinks;
+  final LocalAuthentication auth = LocalAuthentication();
 
   @override
   void initState() {
@@ -52,15 +126,11 @@ class _MyAppState extends State<MyApp> {
   Future<void> _initDeepLinks() async {
     _appLinks = AppLinks();
 
-    // 🔹 لما الأبب يكون مفتوح و المستخدم يضغط على اللينك من الإيميل
     _appLinks.uriLinkStream.listen((uri) {
       _handleIncomingLink(uri);
     });
 
-    // 🔹 لما الأبب يفتح أول مرة من اللينك (cold start)
-    // final initialLink = await _appLinks.getInitialAppLink();
     final initialLink = await _appLinks.getInitialLink();
-
     if (initialLink != null) {
       _handleIncomingLink(initialLink);
     }
@@ -74,7 +144,6 @@ class _MyAppState extends State<MyApp> {
       final token = uri.queryParameters['token'];
 
       if (email != null && token != null) {
-        // 🔸 هنا بنروح مباشرة لشاشة ResetPasswordView
         AppRouter.router.go(
           '${AppRouter.kResetPassword}?email=$email&token=$token',
         );
@@ -84,11 +153,58 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    // return widget.biometricEnabled
+    //     ? const BiometricAuthScreen() // ⬅️ أول ما يفتح الأبب يروح لشاشة البصمة
+    //     : MaterialApp.router(
+    //       routerConfig: AppRouter.router,
+    //       debugShowCheckedModeBanner: false,
+    //       title: 'Wellora',
+    //       theme: ThemeData(primarySwatch: Colors.green),
+    //     );
+
+    // return MaterialApp(
+    //   debugShowCheckedModeBanner: false,
+    //   title: 'Wellora',
+    //   theme: ThemeData(primarySwatch: Colors.green),
+    //   home:
+    //       widget.biometricEnabled
+    //           ? const BiometricAuthScreen()
+    //           : const SplashScreen(), // أو Login أو Home
+    // );
+
+    // return MaterialApp(
+    //   debugShowCheckedModeBanner: false,
+    //   title: 'Wellora',
+    //   theme: ThemeData(primarySwatch: Colors.green),
+    //   home:
+    //       widget.biometricEnabled
+    //           ? const BiometricAuthScreen() // لو مفعّلة
+    //           : MaterialApp.router(
+    //             routerConfig: AppRouter.router,
+    //             debugShowCheckedModeBanner: false,
+    //             title: 'Wellora',
+    //             theme: ThemeData(primarySwatch: Colors.green),
+    //           ),
+    // );
+
+    // if (widget.biometricEnabled) {
+    //   return const MaterialApp(
+    //     debugShowCheckedModeBanner: false,
+    //     home: BiometricAuthScreen(),
+    //   );
+    // }
+
     return MaterialApp.router(
       routerConfig: AppRouter.router,
       debugShowCheckedModeBanner: false,
       title: 'Wellora',
       theme: ThemeData(primarySwatch: Colors.green),
     );
+    // MaterialApp.router(
+    //   routerConfig: AppRouter.router,
+    //   debugShowCheckedModeBanner: false,
+    //   title: 'Wellora',
+    //   theme: ThemeData(primarySwatch: Colors.green),
+    // );
   }
 }
