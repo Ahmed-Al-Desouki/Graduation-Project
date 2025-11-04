@@ -33,6 +33,8 @@ public class UserSession
     public bool IsActive { get; set; } = true;
     public bool IsRevoked { get; set; } = false;
     public DateTime? RevokedAt { get; set; }
+    [MaxLength(100)]
+    public string? RevokedByIp { get; set; }
 
     [MaxLength(300)]
     public string? Notes { get; set; }

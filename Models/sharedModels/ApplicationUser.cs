@@ -1,6 +1,5 @@
 ﻿
 
-
 namespace HealthCare_.Models.sharedModels
 {
     public class ApplicationUser : IdentityUser<int>
@@ -34,10 +33,10 @@ namespace HealthCare_.Models.sharedModels
         //public string? RecoveryCodes { get; set; }
 
         // ─────────────── Passkey / WebAuthn ───────────────
-        [StringLength(200)]
+        [StringLength(500)] // زيادة للأمان
         public string? PasskeyCredentialId { get; set; }
 
-        [StringLength(2000)]
+        [Column(TypeName = "nvarchar(max)")]
         public string? PasskeyPublicKey { get; set; }
 
         // ─────────────── Audit Information ───────────────

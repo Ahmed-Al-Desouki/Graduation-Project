@@ -182,6 +182,40 @@ namespace HealthCare_.Services.Auth
             {
                 return (string.Empty, string.Empty, "Invalid token");
             }
+
+        }
+        // File: Services/Auth/TokenService.cs
+        // داخل الكلاس TokenService
+
+        public (string PlainText, string Error) DecryptAes(string cipherTextBase64, string saltBase64)
+        {
+            if (string.IsNullOrEmpty(cipherTextBase64) || string.IsNullOrEmpty(saltBase64))
+                return (string.Empty, "Invalid input");
+
+            try
+            {
+                var cipherBytes = Convert.FromBase64String(cipherTextBase64);
+                var saltBytes = Convert.FromBase64String(saltBase64);
+
+                using var derivedKey = new Rfc2898DeriveBytes(_refreshAesKey, saltBytes, 10000, HashAlgorithmName.SHA256);
+                using var aes = Aes.Create();
+                aes.Key = derivedKey.GetBytes(32);
+
+                var iv = new byte[16];
+                var encrypted = new byte[cipherBytes.Length - 16 - saltBytes.Length];
+                Array.Copy(cipherBytes, saltBytes.Length, iv, 0, 16);
+                Array.Copy(cipherBytes, saltBytes.Length + 16, encrypted, 0, encrypted.Length);
+
+                aes.IV = iv;
+                using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+                var plainBytes = decryptor.TransformFinalBlock(encrypted, 0, encrypted.Length);
+                return (Encoding.UTF8.GetString(plainBytes), string.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AES decryption failed");
+                return (string.Empty, "Decryption failed");
+            }
         }
     }
 }

@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
     <PackageReference Include="CloudinaryDotNet" Version="1.27.8" />
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
     <PackageReference Include="Fido2" Version="4.0.0" />

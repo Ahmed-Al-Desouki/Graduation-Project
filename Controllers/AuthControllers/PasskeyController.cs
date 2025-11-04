@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿// File: Controllers/PasskeyController.cs
+using HealthCare_.Models.DTOs.AuthModels;
+using HealthCare_.Models.DTOs.AuthModels.Login_register;
+using HealthCare_.Services.Auth;
 using HealthCare_.Services.Auth.Interfaces;
-using HealthCare_.Models.DTOs.AuthModels.MFA_Passkeys; // ← هنا
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HealthCare_.Controllers
 {
@@ -11,81 +12,66 @@ namespace HealthCare_.Controllers
     public class PasskeyController : ControllerBase
     {
         private readonly IPasskeyService _passkeyService;
+        private readonly ILogger<PasskeyController> _logger;
 
-        public PasskeyController(IPasskeyService passkeyService)
+        public PasskeyController(IPasskeyService passkeyService, ILogger<PasskeyController> logger)
         {
             _passkeyService = passkeyService;
+            _logger = logger;
         }
 
-        [Authorize]
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] PasskeyRegisterRequest request)
+        [HttpPost("BiometricLogin")]
+        public async Task<IActionResult> BiometricLogin([FromBody] BiometricLoginRequest request)
         {
-            var userIdClaim = User.FindFirst("UserID")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized();
+            _logger.LogInformation("BiometricRefresh endpoint called | DeviceId: {DeviceId}", request.DeviceId);
 
-            var userId = int.Parse(userIdClaim);
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid model state");
+                return BadRequest(ModelState);
+            }
 
-            var result = await _passkeyService.RegisterPasskeyAsync(
-                userId,
-                request.CredentialId,
-                request.PublicKey
-            );
+            var deviceInfo = request.DeviceId;
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-            if (!result.Succeeded)
-                return BadRequest(new { error = result.Error });
+            _logger.LogInformation("Calling PasskeyService.BiometricRefreshAsync...");
 
+            var result = await _passkeyService.BiometricRefreshAsync(request, deviceInfo, ipAddress);
+
+            if (!string.IsNullOrEmpty(result.Error))
+            {
+                _logger.LogWarning("Biometric login failed: {Error}", result.Error);
+                return Unauthorized(new { success = false, error = result.Error });
+            }
+
+            _logger.LogInformation("Biometric login SUCCESS");
             return Ok(new
             {
                 success = true,
                 accessToken = result.AccessToken,
-                expiresInDays = 30,
-                message = "Passkey Active! You can log in without internet for 30 days."
+                refreshToken = result.RefreshToken
             });
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] PasskeyLoginRequest request) // ← من Models
+        [HttpPost("disable")]
+        public async Task<IActionResult> DisableBiometric([FromBody] DisableBiometricRequest request)
         {
-            var deviceInfo = Request.Headers["User-Agent"].FirstOrDefault() ?? "unknown";
+            _logger.LogInformation("DisableBiometric endpoint called | DeviceId: {DeviceId}", request.DeviceId);
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var result = await _passkeyService.DisableBiometricAsync(request, ipAddress);
 
-            var result = await _passkeyService.LoginWithPasskeyAsync(request, deviceInfo, ipAddress);
-            if (result.AccessToken == null)
-                return Unauthorized(new { success = false, error = result.Error });
+            if (!result.Success)
+                return BadRequest(new { success = false, error = result.Error });
 
-            SetRefreshTokenCookie(result.RefreshToken);
-            return Ok(new { success = true, accessToken = result.AccessToken });
-        }
-
-        [Authorize]
-        [HttpPost("challenge")]
-        public async Task<IActionResult> GenerateChallenge([FromBody] GenerateChallengeRequest request) // ← من Models
-        {
-            if (User.FindFirst("UserID")?.Value != request.UserId)
-                return Unauthorized();
-
-            var challenge = await _passkeyService.GeneratePasskeyChallengeAsync(request.UserId);
-            return Ok(new { success = true, challenge });
-        }
-
-        public class GenerateChallengeRequest
-        {
-            public string UserId { get; set; } = null!;
-        }
-
-        private void SetRefreshTokenCookie(string token)
-        {
-            Response.Cookies.Append("refresh_token", token, new CookieOptions
+            return Ok(new
             {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTimeOffset.UtcNow.AddDays(7)
+                success = true,
+                message = "تم تعطيل الدخول بالبصمة بنجاح"
             });
         }
-
-        private int GetUserId() =>
-            int.TryParse(User.FindFirst("UserID")?.Value, out int id) ? id : 0;
     }
 }

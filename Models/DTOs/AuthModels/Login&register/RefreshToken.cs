@@ -23,6 +23,8 @@ namespace HealthCare_.Models.DTOs.AuthModels
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? Revoked { get; set; }
+        [MaxLength(100)]
+        public string? RevokedByIp { get; set; }
 
         [Required]
         public string JwtId { get; set; }
