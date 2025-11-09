@@ -24,7 +24,7 @@ namespace HealthCare_.Models.sharedModels
         public ExternalFile? ProfileImagePath { get; set; } // لا تُعبأ يدوياً أبداً
 
         // ─────────────── Security / 2FA ───────────────
-        public override bool TwoFactorEnabled { get; set; } = false;
+        public override bool TwoFactorEnabled { get; set; } = true;
 
         //[StringLength(200)]
         //public string? AuthenticatorKey { get; set; }

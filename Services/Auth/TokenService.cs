@@ -36,7 +36,7 @@ namespace HealthCare_.Services.Auth
         {
             var claims = new List<Claim>
     {
-            new Claim("UserID", user.Id.ToString()), // ← هو نفسه PatientID
+            new Claim("UserID", user.Id.ToString()), 
             new Claim("Name", user.FullName),
             new Claim("Email", user.Email!),
             new Claim("Role", user.Role),
@@ -50,7 +50,7 @@ namespace HealthCare_.Services.Auth
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(60),
+                expires: DateTime.UtcNow.AddMinutes(10),
                 signingCredentials: creds
             );
 
@@ -140,6 +140,26 @@ namespace HealthCare_.Services.Auth
                 stored.IsUsed = true;
                 stored.IsRevoked = true;
                 stored.Revoked = DateTime.UtcNow;
+
+                var oldJti = jwtToken?.Id; // من الـ accessToken القديم
+
+                if (!string.IsNullOrEmpty(oldJti))
+                {
+                    var existing = await _context.RevokedTokens
+                        .AnyAsync(rt => rt.Jti == oldJti);
+
+                    if (!existing)
+                    {
+                        _context.RevokedTokens.Add(new RevokedToken
+                        {
+                            Jti = oldJti,
+                            Expires = DateTime.UtcNow.AddMinutes(10), // نفس عمر Access Token
+                            RevokedAt = DateTime.UtcNow,
+                            UserId = userId
+                        });
+                    }
+                }
+
                 _context.RefreshTokens.Update(stored);
 
                 var user = await _userManager.FindByIdAsync(userId.ToString());
@@ -152,7 +172,7 @@ namespace HealthCare_.Services.Auth
                 var newRefreshEntity = new RefreshToken
                 {
                     Token = newRefreshHash,
-                    Expires = DateTime.UtcNow.AddDays(Convert.ToDouble(_configuration["Jwt:RefreshTokenExpireDays"] ?? "7")),
+                    Expires = DateTime.UtcNow.AddDays(Convert.ToDouble(_configuration["Jwt:RefreshTokenExpireDays"] ?? "30")),
                     CreatedAt = DateTime.UtcNow,
                     JwtId = newJti,
                     UserId = user.Id,
@@ -215,6 +235,55 @@ namespace HealthCare_.Services.Auth
             {
                 _logger.LogError(ex, "AES decryption failed");
                 return (string.Empty, "Decryption failed");
+            }
+        }
+        public async Task<(string MfaToken, string Jti, string? Error)> GenerateMfaTokenAsync(ApplicationUser user)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim("UserID", user.Id.ToString()),
+                new Claim("Email", user.Email!),
+                new Claim("mfa_pending", "true"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(15),
+                signingCredentials: creds
+            );
+
+            return (new JwtSecurityTokenHandler().WriteToken(token), token.Id, null);
+        }
+        public ClaimsPrincipal? ValidateJwtToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_jwtKey);
+
+            try
+            {
+                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidIssuer = _configuration["Jwt:Issuer"],
+                    ValidAudience = _configuration["Jwt:Audience"],
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                }, out _);
+
+                return principal;
+            }
+            catch
+            {
+                return null;
             }
         }
     }

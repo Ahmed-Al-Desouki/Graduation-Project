@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using HealthCare_.Models.sharedModels;
 using HealthCare_.Services.Auth.Interfaces;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using HealthCare_.Models.sharedModels;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HealthCare_.Controllers
 {
@@ -9,47 +11,57 @@ namespace HealthCare_.Controllers
     [Route("api/auth/external")]
     public class ExternalAuthController : ControllerBase
     {
-        private readonly IExternalAuthService _externalAuthService;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ITokenService _tokenService;
 
         public ExternalAuthController(
-            IExternalAuthService externalAuthService,
-            SignInManager<ApplicationUser> signInManager)
+            SignInManager<ApplicationUser> signInManager,
+            UserManager<ApplicationUser> userManager,
+            ITokenService tokenService)
         {
-            _externalAuthService = externalAuthService;
             _signInManager = signInManager;
+            _userManager = userManager;
+            _tokenService = tokenService;
         }
 
         [HttpGet("login")]
         public IActionResult Login([FromQuery] string provider = "Google")
         {
-            var host = Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? Request.Host.Value;
-            var scheme = Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? Request.Scheme;
-            var callbackUrl = $"{scheme}://{host}/api/auth/external/callback";
+            var redirectUrl = Url.Action(
+                nameof(Callback),
+                "ExternalAuth",
+                null,
+                Request.Scheme,
+                Request.Host.Value
+            );
 
-            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, callbackUrl);
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
             return Challenge(properties, provider);
         }
-
         [HttpGet("callback")]
         public async Task<IActionResult> Callback()
         {
-            var deviceInfo = Request.Headers["User-Agent"].FirstOrDefault() ?? "Google";
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-            var result = await _externalAuthService.ExternalLoginAsync(deviceInfo, ipAddress);
-            if (!string.IsNullOrEmpty(result.Error))
-                return BadRequest(new { success = false, error = result.Error });
-
-            Response.Cookies.Append("refresh_token", result.RefreshToken, new CookieOptions
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
             {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTimeOffset.UtcNow.AddDays(7)
-            });
+                return StatusCode(500, new { error = "External login failed", details = "State missing or invalid." });
+            }
 
-            return Ok(new { success = true, accessToken = result.AccessToken });
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrEmpty(email))
+                return BadRequest("Email not provided");
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = true };
+                var result = await _userManager.CreateAsync(user);
+                if (!result.Succeeded) return BadRequest(result.Errors);
+            }
+
+            var token = _tokenService.GenerateJwtToken(user);
+            return Ok(new { success = true, accessToken = token });
         }
     }
 }

@@ -72,6 +72,11 @@ namespace HealthCare_.Services.Auth
 
                 await _userManager.AddToRoleAsync(user, user.Role);
 
+
+                user.TwoFactorEnabled = true;
+                await _userManager.UpdateAsync(user);
+
+
                 // رفع الصورة
                 ExternalFile? file = null;
                 if (request.ProfileImageFile != null && request.ProfileImageFile.Length > 0)
@@ -114,11 +119,11 @@ namespace HealthCare_.Services.Auth
                 {
                     var patient = new Patient
                     {
-                        PatientID = user.Id, 
-                        DateOfBirth = DateTime.Today.AddYears(-25), 
+                        PatientID = user.Id,
+                        DateOfBirth = DateTime.Today.AddYears(-25),
                         Gender = "Unknown",
                         CreatedAt = DateTime.UtcNow,
-                        CurrentLocation = "Not Specified", 
+                        CurrentLocation = "Not Specified",
                     };
                     _context.Patients.Add(patient);
                 }
@@ -126,7 +131,7 @@ namespace HealthCare_.Services.Auth
                 {
                     var doctor = new Doctor
                     {
-                        DoctorID = user.Id, 
+                        DoctorID = user.Id,
                         Specialization = "General",
                         YearsOfExperience = 0,
                         ConsultationFee = 0,
@@ -150,47 +155,42 @@ namespace HealthCare_.Services.Auth
         }
 
         public async Task<(string AccessToken, string RefreshToken, string Error)> LoginAsync(
-    LoginRequest request,
-    string? deviceInfo = null,
-    string? ipAddress = null,
-    IEmailService? emailService = null)
+            LoginRequest request,
+            string? deviceInfo = null,
+            string? ipAddress = null,
+            IEmailService? emailService = null)
         {
             _logger.LogInformation("LoginAsync called for email: {Email} | Device: {Device} | IP: {IP}",
                 request.Email, deviceInfo, ipAddress);
-
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
                 return (null!, null!, "Email not found");
-
             if (!await _userManager.CheckPasswordAsync(user, request.Password))
                 return (null!, null!, "Invalid password");
-
             if (user.TwoFactorEnabled)
             {
                 if (string.IsNullOrEmpty(request.OtpCode))
                 {
+                    // === التعديل: توليد mfaToken وإرجاعه مع MFA_PENDING| ===
+                    var (mfaToken, mfaJti, _) = await _tokenService.GenerateMfaTokenAsync(user);
                     if (emailService != null)
                         await _mfaService.GenerateAndSendOtpAsync(user, emailService);
-                    return (null!, null!, "MFA_OTP_SENT");
+                    return (null!, null!, "MFA_PENDING|" + mfaToken);
+                    // === نهاية التعديل ===
                 }
-
                 var (verified, error) = await _mfaService.VerifyMfaAsync(user.Id, request.OtpCode);
                 if (!verified)
                     return (null!, null!, error);
             }
-
             if (request.UsePasskey)
                 return (null!, null!, "Passkey authentication required");
-
             var (accessToken, jti, _) = await _tokenService.GenerateJwtToken(user);
             var rawRefresh = _tokenService.GenerateRandomToken();
-
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
                 // === 1. تحديد الحد الأقصى للأجهزة ===
                 int maxDevices = Convert.ToInt32(_configuration["Auth:MaxActiveDevices"] ?? "3");
-
                 // === 2. جلب كل السيشنز النشطة لليوزر (من أي جهاز) ===
                 var activeSessions = await _context.UserSessions
                     .Where(s =>
@@ -200,9 +200,7 @@ namespace HealthCare_.Services.Auth
                         s.ExpiresAt > DateTime.UtcNow)
                     .OrderBy(s => s.CreatedAt) // الأقدم أولاً
                     .ToListAsync();
-
                 _logger.LogInformation("User has {Count}/{Max} active devices", activeSessions.Count, maxDevices);
-
                 // === 3. إذا زاد عن الحد → إبطال أقدم سيشن ===
                 if (activeSessions.Count >= maxDevices)
                 {
@@ -212,34 +210,27 @@ namespace HealthCare_.Services.Auth
                     oldestSession.RevokedAt = DateTime.UtcNow;
                     oldestSession.RevokedByIp = ipAddress;
                     oldestSession.Notes = $"Device limit exceeded (max: {maxDevices}). Revoked on new login.";
-
                     _context.UserSessions.Update(oldestSession);
                     _logger.LogWarning("Revoked oldest session due to device limit | Id: {Id} | Device: {Device}",
                         oldestSession.Id, oldestSession.DeviceInfo);
                 }
-
                 // === 4. إبطال أي سيشن قديمة بنفس الجهاز (حتى لو ما زادش الحد) ===
                 var existingSameDevice = await _context.UserSessions
                     .FirstOrDefaultAsync(s =>
                         s.UserId == user.Id &&
                         s.DeviceInfo == deviceInfo &&
                         s.IsActive);
-
                 if (existingSameDevice != null)
                 {
                     existingSameDevice.IsActive = false;
-                    existingSameDevice.IsRevoked = true;
                     existingSameDevice.RevokedAt = DateTime.UtcNow;
                     existingSameDevice.RevokedByIp = ipAddress;
                     existingSameDevice.Notes = "Same device re-login";
-
                     _context.UserSessions.Update(existingSameDevice);
                     _logger.LogInformation("Revoked previous session on same device | Id: {Id}", existingSameDevice.Id);
                 }
-
                 // === 5. إنشاء سيشن جديدة ===
                 var (encryptedToken, tokenSalt) = _tokenService.EncryptAes(rawRefresh);
-
                 var newSession = new UserSession
                 {
                     UserId = user.Id,
@@ -253,10 +244,8 @@ namespace HealthCare_.Services.Auth
                     Salt = tokenSalt,
                     Notes = "New login with device limit enforcement"
                 };
-
                 _context.UserSessions.Add(newSession);
                 await _context.SaveChangesAsync();
-
                 // === 6. إضافة RefreshToken ===
                 var refreshEntity = new RefreshToken
                 {
@@ -269,11 +258,9 @@ namespace HealthCare_.Services.Auth
                     IpAddress = ipAddress,
                     UserSessionId = newSession.Id
                 };
-
                 _context.RefreshTokens.Add(refreshEntity);
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
-
                 _logger.LogInformation("Login successful | UserId: {Id} | SessionId: {SessionId}", user.Id, newSession.Id);
                 return (accessToken, rawRefresh, string.Empty);
             }
@@ -291,8 +278,7 @@ namespace HealthCare_.Services.Auth
                 return (false, "Invalid request");
 
             var session = await _context.UserSessions
-                .FirstOrDefaultAsync(s => s.UserId == request.UserId && s.DeviceInfo == request.DeviceInfo && s.IsActive);
-
+                .FirstOrDefaultAsync(s => s.UserId == request.UserId && s.IsActive);
             if (session == null)
                 return (false, "No active session");
 
@@ -303,16 +289,32 @@ namespace HealthCare_.Services.Auth
             var refreshTokens = await _context.RefreshTokens
                 .Where(rt => rt.UserSessionId == session.Id && !rt.IsRevoked)
                 .ToListAsync();
-
             foreach (var rt in refreshTokens)
             {
                 rt.IsRevoked = true;
                 rt.Revoked = DateTime.UtcNow;
             }
-
             _context.RefreshTokens.UpdateRange(refreshTokens);
-            await _context.SaveChangesAsync();
 
+            // ===  Jti إلى RevokedTokens ===
+            if (!string.IsNullOrEmpty(request.Jti))
+            {
+                var existing = await _context.RevokedTokens
+                    .AnyAsync(rt => rt.Jti == request.Jti);
+
+                if (!existing)
+                {
+                    _context.RevokedTokens.Add(new RevokedToken
+                    {
+                        Jti = request.Jti,
+                        Expires = DateTime.UtcNow.AddMinutes(10), // نفس عمر Access Token
+                        RevokedAt = DateTime.UtcNow,
+                        UserId = request.UserId
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
             return (true, string.Empty);
         }
     }

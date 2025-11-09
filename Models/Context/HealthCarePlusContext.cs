@@ -7,6 +7,7 @@ using HealthCare_.Models.SharedModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using WebAuthn.Net.Services.Common.AttestationStatementVerifier.Abstractions.Tpm.Models.Attestation;
 
 namespace HealthCare_.Models.Context
 {
@@ -129,7 +130,7 @@ namespace HealthCare_.Models.Context
             modelBuilder.Entity<RevokedToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
-                entity.HasIndex(rt => rt.Jti);
+                entity.HasIndex(rt => rt.Jti).IsUnique();
                 entity.Property(rt => rt.Jti).IsRequired().HasMaxLength(500);
                 entity.Property(rt => rt.Expires).IsRequired();
                 entity.Property(rt => rt.RevokedAt).HasDefaultValueSql("GETUTCDATE()");

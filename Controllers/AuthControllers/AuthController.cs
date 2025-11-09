@@ -49,21 +49,36 @@ namespace HealthCare_.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
             var deviceInfo = Request.Headers["User-Agent"].FirstOrDefault() ?? "unknown";
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
             var result = await _authCoreService.LoginAsync(request, deviceInfo, ipAddress, _emailService);
 
-            if (result.Error == "MFA_OTP_SENT")
-                return Ok(new { success = true, requiresMfa = true, message = "Check your email" });
+            // ===  MFA_PENDING| ===
+            if (result.Error?.StartsWith("MFA_PENDING|") == true)
+            {
+                var mfaToken = result.Error.AsSpan("MFA_PENDING|".Length).ToString();
+                return Ok(new
+                {
+                    success = true,
+                    status = "pending",
+                    requiresMfa = true,
+                    mfaToken = mfaToken,
+                    message = "Check your email for the login code"
+                });
+            }
 
             if (result.AccessToken == null)
-                return Unauthorized(new { success = false, error = result.Error });
+                return Ok(new { success = false, error = result.Error });
 
             SetRefreshTokenCookie(result.RefreshToken);
-            return Ok(new { success = true, accessToken = result.AccessToken, refreshToken = result.RefreshToken });
+            return Ok(new
+            {
+                success = true,
+                accessToken = result.AccessToken,
+                refreshToken = result.RefreshToken
+            });
         }
 
         [HttpPost("refresh-token")]
@@ -104,6 +119,7 @@ namespace HealthCare_.Controllers
                 refreshToken = result.RefreshToken // ← نرجعه في الـ body عشان Flutter يخزنه
             });
         }
+
 
 
         [HttpGet("devices")]
@@ -152,17 +168,105 @@ namespace HealthCare_.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var userIdClaim = User.FindFirst("UserID")?.Value;
+            var jti = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+            if (!int.TryParse(userIdClaim, out int userId) || string.IsNullOrEmpty(jti))
+                return Unauthorized();
+
+            request.UserId = userId;
+            request.Jti = jti;
 
             var result = await _authCoreService.LogoutAsync(request);
-            Response.Cookies.Delete("refresh_token");
             return result.Succeeded
-                ? Ok(new { success = true, message = "Logged out" })
+                ? Ok(new { success = true })
                 : BadRequest(new { success = false, error = result.Error });
         }
 
+[HttpGet("token-status-v2")]
+[AllowAnonymous]
+public async Task<IActionResult> GetTokenStatusV2(
+    [FromHeader] string? Authorization,
+    [FromHeader] string? RefreshToken)
+{
+    var accessToken = Authorization?.StartsWith("Bearer ") == true
+        ? Authorization["Bearer ".Length..].Trim()
+        : null;
 
+    var refreshTokenHeader = RefreshToken; // من Header: RefreshToken: abc123
+    var refreshTokenCookie = Request.Cookies["refresh_token"];
 
+    var refreshToken = refreshTokenHeader ?? refreshTokenCookie;
+
+    var accessResult = new TokenCheckResult { Type = "access", Valid = false };
+    var refreshResult = new TokenCheckResult { Type = "refresh", Valid = false };
+
+    // === 1. فحص Access Token ===
+    if (!string.IsNullOrEmpty(accessToken))
+    {
+        var principal = _tokenService.ValidateJwtToken(accessToken);
+        if (principal != null)
+        {
+            var jti = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+            var expClaim = principal.FindFirst("exp")?.Value;
+
+            if (long.TryParse(expClaim, out long exp))
+            {
+                var expiry = DateTimeOffset.FromUnixTimeSeconds(exp);
+                var now = DateTime.UtcNow;
+
+                accessResult.Valid = expiry > now;
+                accessResult.ExpiresAt = expiry.UtcDateTime;
+                accessResult.ExpiresIn = (int)(expiry - now).TotalSeconds;
+
+                if (accessResult.Valid && !string.IsNullOrEmpty(jti))
+                {
+                    var isRevoked = await _context.RevokedTokens
+                        .AnyAsync(rt => rt.Jti == jti && rt.Expires > now);
+                    accessResult.Valid = !isRevoked;
+                    accessResult.Revoked = isRevoked;
+                }
+            }
+        }
+    }
+
+    // === 2. فحص Refresh Token ===
+    if (!string.IsNullOrEmpty(refreshToken))
+    {
+        var hash = _tokenService.ComputeHmacSha256Base64(refreshToken);
+        var stored = await _context.RefreshTokens
+            .Include(rt => rt.UserSession)
+            .FirstOrDefaultAsync(rt => rt.Token == hash);
+
+        if (stored != null && !stored.IsRevoked && !stored.IsUsed && stored.Expires > DateTime.UtcNow)
+        {
+            refreshResult.Valid = true;
+            refreshResult.ExpiresAt = stored.Expires;
+            refreshResult.ExpiresIn = (int)(stored.Expires - DateTime.UtcNow).TotalSeconds;
+        }
+        else
+        {
+            refreshResult.Reason = stored == null ? "not_found" :
+                                  stored.IsRevoked ? "revoked" :
+                                  stored.IsUsed ? "used" : "expired";
+        }
+    }
+
+    // === 3. النتيجة ===
+    var results = new List<TokenCheckResult>();
+    if (accessToken != null) results.Add(accessResult);
+    if (refreshToken != null) results.Add(refreshResult);
+
+    return Ok(new
+    {
+        checkedAt = DateTime.UtcNow,
+        tokens = results.Any() ? results : null,
+        summary = results.Any() ? 
+            (results.All(r => r.Valid) ? "all_valid" :
+             results.Any(r => r.Valid) ? "partially_valid" : "all_invalid") 
+            : "no_tokens_provided"
+    });
+}
         private void SetRefreshTokenCookie(string token)
         {
             Response.Cookies.Append("refresh_token", token, new CookieOptions

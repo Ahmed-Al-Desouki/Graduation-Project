@@ -27,7 +27,7 @@ namespace HealthCare_.Models.AuthModels
 
         public DateTime? UpdatedAt { get; set; }
 
-        public bool TwoFactorEnabled { get; set; } = false;
+        public bool TwoFactorEnabled { get; set; } = true;
     }
 
 }

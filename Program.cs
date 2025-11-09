@@ -1,6 +1,8 @@
-﻿using Hangfire;
+﻿using AspNetCoreRateLimit;
+using Hangfire;
 using HealthCare_.Interfaces.IAuth;
 using HealthCare_.Interfaces.ReminderInterface;
+using HealthCare_.Middleware;
 using HealthCare_.Models.sharedModels;
 using HealthCare_.Services;
 using HealthCare_.Services.Auth;
@@ -13,14 +15,13 @@ using HealthCare_.Services.PatientService;
 using HealthCare_.Services.Reminder;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using HealthCare_.Models.EnumForModels; // <-- تم إضافته لدعم PatientFileCategory و DoctorFileCategory
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,12 +53,20 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddDefaultTokenProviders();
 
 // ====================== DATA PROTECTION ======================
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")))
-    .SetApplicationName("HealthCarePlus");
+//builder.Services.AddDataProtection()
+// .PersistKeysToFileSystem(new DirectoryInfo(@"C:\temp\dpkeys"))
+// .SetApplicationName("HealthCarePlus")
+// .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
 // ====================== MEMORY CACHE ======================
 builder.Services.AddMemoryCache();
+
+// ====================== RATE LIMITING (IP + Device) ======================
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+builder.Services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
 
 // ====================== FIDO2 ======================
 builder.Services.AddFido2(options =>
@@ -76,19 +85,37 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = "External";
 })
-.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+// === External Cookie ===
+.AddCookie("External", o =>
 {
-    options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.HttpOnly = true;
+    o.Cookie.Name = ".AspNetCore.External";
+    o.Cookie.SameSite = SameSiteMode.None;
+    o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    o.Cookie.HttpOnly = true;
+    o.Cookie.Domain = "nonvolitional-unstuccoed-wilfred.ngrok-free.dev";
+    o.Cookie.Path = "/";
+    o.ExpireTimeSpan = TimeSpan.FromMinutes(15);
+    o.DataProtectionProvider = null;
 })
-.AddJwtBearer(options =>
+// === Cookie للـ Session ===
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, o =>
 {
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
+    o.Cookie.SameSite = SameSiteMode.None;
+    o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    o.Cookie.HttpOnly = true;
+    o.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+    o.SlidingExpiration = true;
+    o.Cookie.Domain = "nonvolitional-unstuccoed-wilfred.ngrok-free.dev";
+    o.Cookie.Path = "/";
+})
+// === JWT Bearer ===
+.AddJwtBearer(o =>
+{
+    o.RequireHttpsMetadata = false;
+    o.SaveToken = true;
+    o.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
@@ -100,21 +127,50 @@ builder.Services.AddAuthentication(options =>
         NameClaimType = "UserID",
         RoleClaimType = "Role"
     };
-})
-.AddGoogle(options =>
-{
-    options.ClientId = builder.Configuration["Google:ClientId"]
-        ?? throw new InvalidOperationException("Missing Google:ClientId");
-    options.ClientSecret = builder.Configuration["Google:ClientSecret"]
-        ?? throw new InvalidOperationException("Missing Google:ClientSecret");
-    options.CallbackPath = "/api/auth/external-callback";
-    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.SaveTokens = true;
-    options.Scope.Add("email");
-    options.Scope.Add("profile");
-    options.Events.OnRedirectToAuthorizationEndpoint = context =>
+
+    // === التعديل: التحقق من RevokedTokens في كل طلب ===
+    o.Events = new JwtBearerEvents
     {
-        context.Response.Redirect(context.RedirectUri);
+        OnTokenValidated = async context =>
+        {
+            var jti = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+            if (string.IsNullOrEmpty(jti)) return;
+
+            var scope = context.HttpContext.RequestServices.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<HealthCarePlusContext>();
+            var isRevoked = await db.RevokedTokens
+                .AnyAsync(rt => rt.Jti == jti && rt.Expires > DateTime.UtcNow);
+
+            if (isRevoked)
+            {
+                context.Fail("Token has been revoked");
+            }
+        }
+    };
+    // === نهاية التعديل ===
+})
+// === Google OAuth2 ===
+.AddGoogle(o =>
+{
+    o.ClientId = builder.Configuration["Google:ClientId"]
+        ?? throw new InvalidOperationException("Missing Google:ClientId");
+    o.ClientSecret = builder.Configuration["Google:ClientSecret"]
+        ?? throw new InvalidOperationException("Missing Google:ClientSecret");
+    o.CallbackPath = "/api/auth/external/callback";
+    o.SignInScheme = "External";
+    o.SaveTokens = true;
+    o.Scope.Add("email");
+    o.Scope.Add("profile");
+    o.Events.OnRedirectToAuthorizationEndpoint = context =>
+    {
+        var scheme = "https";
+        var host = context.Request.Host;
+        var redirectUri = $"{scheme}://{host}{o.CallbackPath}";
+        var uri = new Uri(context.RedirectUri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        query["redirect_uri"] = redirectUri;
+        var newUri = $"{uri.Scheme}://{uri.Authority}{uri.LocalPath}?{query}";
+        context.Response.Redirect(newUri);
         return Task.CompletedTask;
     };
 });
@@ -138,28 +194,24 @@ builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection(
 builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddScoped<FileUploadService>();
 
+// بعد AddIdentity
+builder.Services.AddScoped<UserManager<ApplicationUser>>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 // ====================== REMINDER SERVICE ======================
 builder.Services.AddScoped<IReminderService, ReminderService>();
 
 // ====================== CONTROLLERS & SWAGGER ======================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
-// إعداد Swagger مع دعم GroupName وتجنب تضارب الأسماء
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthCare+ API", Version = "v1" });
-
-    // تجنب تضارب الأسماء في الـ DTOs
     c.CustomSchemaIds(x => x.FullName);
-
-    // XML Comments (إذا كان مفعّل في csproj)
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
         c.IncludeXmlComments(xmlPath);
-
-    // JWT Authorization
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme.",
@@ -179,12 +231,12 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+
 
 // ====================== CORS ======================
 builder.Services.AddCors(options =>
@@ -224,8 +276,12 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor |
                        ForwardedHeaders.XForwardedProto |
-                       ForwardedHeaders.XForwardedHost
+                       ForwardedHeaders.XForwardedHost,
+    RequireHeaderSymmetry = false,
 });
+
+// === Rate Limiting ===
+app.UseIpRateLimiting(); // ← أضف هنا
 
 app.UseCookiePolicy(new CookiePolicyOptions
 {
@@ -255,9 +311,19 @@ app.Use(async (context, next) =>
     await next();
 });
 
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    MinimumSameSitePolicy = SameSiteMode.None,
+    Secure = CookieSecurePolicy.Always
+});
+
 app.UseCors("AllowAll");
+
+// === Update LastActivity Middleware ===
 app.UseAuthentication();
+app.UseMiddleware<UpdateLastActivityMiddleware>();
 app.UseAuthorization();
+
 app.MapControllers();
 
 // ====================== HANGFIRE JOBS ======================
@@ -265,10 +331,9 @@ RecurringJob.AddOrUpdate<ReminderService>(
     "expire-reminders-daily",
     service => service.ExpireRemindersAsync(),
     "0 0 0 * * *");
-
 RecurringJob.AddOrUpdate<ReminderService>(
     "mark-overdue-hourly",
     service => service.MarkOverdueAsync(),
-    "0 0 * * * *");
+    "0 0 * * *");
 
 app.Run();

@@ -14,5 +14,9 @@ namespace HealthCare_.Services.Auth.Interfaces
 
         Task<(string AccessToken, string RefreshToken, string Error)> RefreshTokenAsync(
             RefreshRequest request, string? deviceInfo = null, string? ipAddress = null);
+        Task<(string MfaToken, string Jti, string? Error)> GenerateMfaTokenAsync(ApplicationUser user);
+        ClaimsPrincipal? ValidateJwtToken(string token);
     }
+
+
 }
