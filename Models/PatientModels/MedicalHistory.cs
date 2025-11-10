@@ -1,5 +1,7 @@
 ﻿
 
+
+
 namespace HealthCare_.Models.PatientModels
 {
     public class MedicalHistory

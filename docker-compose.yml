@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  api:
+    build: .
+    ports:
+      - "7092:7092"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:7092
+      - ASPNETCORE_FORWARDEDLIMIT=1

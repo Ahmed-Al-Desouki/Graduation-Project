@@ -1,15 +1,29 @@
-﻿{
-  "$schema": "https://json.schemastore.org/launchsettings.json",
+{
   "profiles": {
-    "HealthCare+": { // Changed to a single profile name
+    "HealthCare+": {
       "commandName": "Project",
+      "launchBrowser": false,
       "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "launchUrl": "https://localhost:7092",
-      "applicationUrl": "https://localhost:7092;http://localhost:5240",
+      "applicationUrl": "http://localhost:58039",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:58039"
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:58039",
+      "sslPort": 0
     }
   }
 }
