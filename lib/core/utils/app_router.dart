@@ -1,13 +1,14 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/features/auth/presentation/layout/patient_home_layout.dart';
 import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
 import 'package:graduation_project/features/auth/presentation/views/create_account_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/doctor_home_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/doctor_registration_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/login_view.dart';
-import 'package:graduation_project/features/auth/presentation/views/patient_home_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/patient_registration_view.dart';
+// import 'package:graduation_project/features/auth/presentation/views/reminder_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_password_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_success_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
@@ -22,7 +23,7 @@ abstract class AppRouter {
   static const kCreatAcount = '/createAcountView';
   // static const kHome = '/home';
   static const kHomePatient = '/home/patient';
-  static const kHomeDoctor  = '/home/doctor';
+  static const kHomeDoctor = '/home/doctor';
   static const kResetPassword = '/resetPassword';
   static const kResetSuccess = '/resetSuccess';
 
@@ -72,10 +73,15 @@ abstract class AppRouter {
       ),
 
       // GoRoute(path: kHome, builder: (context, state) => const SplashBody()),
+      GoRoute(
+        path: kHomePatient,
+        builder: (context, state) => const PatientHomeLayout(),
+      ),
 
-      GoRoute(path: kHomePatient, builder: (context, state) => const PatientHomeView()),
-
-      GoRoute(path: kHomeDoctor,  builder: (context, state) => const DoctorHomeView()),
+      GoRoute(
+        path: kHomeDoctor,
+        builder: (context, state) => const DoctorHomeView(),
+      ),
 
       GoRoute(
         path: kResetPassword,
