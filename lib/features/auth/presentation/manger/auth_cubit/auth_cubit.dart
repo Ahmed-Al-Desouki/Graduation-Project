@@ -1,13 +1,18 @@
 import 'package:bloc/bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/features/auth/data/models/auth_token_model.dart';
+
 import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:meta/meta.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository _authRepository;
+  final _secureStorage = const FlutterSecureStorage();
   AuthCubit(this._authRepository) : super(AuthInitial());
 
   Future<void> login({
@@ -36,11 +41,28 @@ class AuthCubit extends Cubit<AuthState> {
           print("MFA TOKEN IN CUBIT: ${response["mfaToken"]}");
         } else if (response is AuthTokenModel) {
           try {
+            Map<String, dynamic> payload = JwtDecoder.decode(
+              response.accessToken,
+            );
+            final role =
+                (payload['role'] ?? payload['Role'] ?? '')
+                    .toString()
+                    .toLowerCase();
+            final uid =
+                (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '')
+                    .toString();
+
             await SecureStorageHelper.saveTokens(
               accessToken: response.accessToken,
               refreshToken: response.refreshToken,
             );
-            emit(LoginSuccess(email: email));
+
+            await SecureStorageHelper.saveUserRoleAndId(
+              role: role,
+              userId: uid,
+            );
+
+            emit(LoginSuccess(uid: uid, email: email, role: role));
           } catch (e) {
             emit(LoginFailure(errMessage: 'Failed to save tokens: $e'));
           }
@@ -51,6 +73,31 @@ class AuthCubit extends Cubit<AuthState> {
         }
       },
     );
+    // =======
+    //     (failure) => emit(LoginFailure(errMessage: failure.errmessage)),
+    //     (token) async {
+    //       // token هنا مفترض string access token
+    //       try {
+    //         // decode
+    //         Map<String, dynamic> payload = JwtDecoder.decode(token);
+    //         final role = (payload['role'] ?? payload['Role'] ?? '').toString().toLowerCase();
+    //         final uid = (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '').toString();
+
+    //         final prefs = await SharedPreferences.getInstance();
+    //         await prefs.setString('accessToken', token);
+    //         await prefs.setString('role', role);
+
+    //         // لو بتحب تعدل ApiService ليضيف التوكن تلقائي
+    //         // getIt<ApiService>().setToken(token); // قابل للتنفيذ لو ضفت method في ApiService
+
+    //         emit(LoginSuccess(uid: uid, email: email, role: role,));
+    //       } catch (e) {
+    //         // لو decode فشل
+    //         emit(LoginFailure(errMessage: 'Invalid token format'));
+    //       }
+    //     },
+    //   );
+    // >>>>>>> origin/login-register
   }
 
   Future<void> register({

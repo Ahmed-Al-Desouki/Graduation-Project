@@ -48,6 +48,8 @@ dependencies:
   passkeys: ^2.16.0
   flutter_secure_storage: ^9.2.4
   pin_code_fields: ^8.0.1
+  jwt_decoder: ^2.0.1
+  shared_preferences: ^2.5.3
   
 
 dev_dependencies:

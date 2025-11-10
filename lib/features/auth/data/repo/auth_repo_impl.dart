@@ -51,8 +51,10 @@ class AuthRepositoryimpl implements AuthRepository {
         password: password,
         otpCode: otpCode ?? "",
       );
+      print("🧩 LOGIN RESPONSE => $res");
 
       if (res['success'] == true) {
+        // <<<<<<< HEAD
         if (otpCode == null || otpCode.isEmpty) {
           return Right({
             "message": res['message'] ?? 'OTP Sent successfully',
@@ -61,6 +63,10 @@ class AuthRepositoryimpl implements AuthRepository {
         } else {
           return Right(AuthTokenModel.fromJson(res));
         }
+        // =======
+        //         final token = res['accessToken'] ?? '';
+        //         return Right(token);
+        // >>>>>>> origin/login-register
       } else {
         final msg = res['data']?['message'] ?? 'Login failed';
         return Left(ServerFailure(msg));

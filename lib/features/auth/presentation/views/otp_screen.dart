@@ -66,9 +66,9 @@ class _OtpScreenState extends State<OtpScreen> {
     final settingsBox = await Hive.openBox('settings');
     await settingsBox.put('biometric_enabled', enableBiometrics ?? false);
 
-    if (context.mounted) {
-      context.go(AppRouter.kSettings);
-    }
+    // if (context.mounted) {
+    //   context.go(AppRouter.kSettings);
+    // }
   }
 
   @override
@@ -78,7 +78,16 @@ class _OtpScreenState extends State<OtpScreen> {
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is LoginSuccess) {
-            _showBiometricDialog();
+            final role = state.role;
+            if (role == 'doctor') {
+              _showBiometricDialog();
+
+              AppRouter.router.go(AppRouter.kHomeDoctor);
+            } else {
+              _showBiometricDialog();
+
+              AppRouter.router.go(AppRouter.kHomePatient);
+            }
           }
           if (state is LoginOtpRequired) {
             print("MFA TOKEN IN OTP SCREEN: ${widget.mfaToken}");

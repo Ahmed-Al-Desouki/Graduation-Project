@@ -5,6 +5,8 @@ class AuthTokenModel {
   AuthTokenModel({required this.accessToken, required this.refreshToken});
 
   factory AuthTokenModel.fromJson(Map<String, dynamic> json) {
+    // final data = json['data'] as Map<String, dynamic>;
+
     if (json.containsKey('accessToken') && json.containsKey('refreshToken')) {
       return AuthTokenModel(
         accessToken: json['accessToken'],

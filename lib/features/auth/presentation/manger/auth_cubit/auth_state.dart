@@ -11,7 +11,9 @@ final class RegisterLoading extends AuthState {}
 
 final class LoginSuccess extends AuthState {
   final String email;
-  LoginSuccess({required this.email});
+  final String role;
+  final String uid;
+  LoginSuccess({required this.uid, required this.email, required this.role});
 }
 
 class LoginOtpRequired extends AuthState {

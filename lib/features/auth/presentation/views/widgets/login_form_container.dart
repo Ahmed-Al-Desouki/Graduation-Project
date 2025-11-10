@@ -63,7 +63,16 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
         } else if (state is LoginSuccess) {
           // Navigator.pop(context);
           ShowSnackBar(context, '✅ Login successful!', Colors.green);
-          AppRouter.router.go(AppRouter.kSettings);
+          // <<<<<<< HEAD
+          //           AppRouter.router.go(AppRouter.kSettings);
+          // =======
+          final role = state.role;
+          if (role == 'doctor') {
+            AppRouter.router.go(AppRouter.kHomeDoctor);
+          } else {
+            AppRouter.router.go(AppRouter.kHomePatient);
+          }
+          // >>>>>>> origin/login-register
         } else if (state is LoginFailure) {
           // Navigator.pop(context);
           ShowSnackBar(context, '❌ ${state.errMessage}', Colors.red);

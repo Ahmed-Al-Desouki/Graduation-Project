@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
@@ -23,12 +25,14 @@ class _SplashBodyState extends State<SplashBody>
   final List<String> _nameLetters = ['M', 'e', 'd', 'C', 'a', 'r', 'e', '+'];
   static const Color darkBlue = Color(0xFF1B4E8C);
   static const Color brightGreen = Color(0xFF4CAF50);
+
   static const double nameAppearanceDurationFactor = 0.68;
   static const double logoAppearanceDurationFactor = 0.15;
   static const double totalAppearanceFactor =
       nameAppearanceDurationFactor + logoAppearanceDurationFactor;
   static const double fadeOutStartTime = 0.93;
   static const int totalDurationMs = 5500;
+
   @override
   void initState() {
     super.initState();
@@ -36,8 +40,10 @@ class _SplashBodyState extends State<SplashBody>
       duration: const Duration(milliseconds: totalDurationMs),
       vsync: this,
     );
+
     final double letterSegmentDuration =
         nameAppearanceDurationFactor / _nameLetters.length;
+
     for (int i = 0; i < _nameLetters.length; i++) {
       final double begin = i * letterSegmentDuration;
       final double end = (i + 1) * letterSegmentDuration;
@@ -50,6 +56,7 @@ class _SplashBodyState extends State<SplashBody>
         ),
       );
     }
+
     _logoOpacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -60,12 +67,14 @@ class _SplashBodyState extends State<SplashBody>
         ),
       ),
     );
+
     _globalFadeOutAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: const Interval(fadeOutStartTime, 1.0, curve: Curves.easeOut),
       ),
     );
+
     _controller.forward();
     _controller.addStatusListener((status) async {
       if (status == AnimationStatus.completed && mounted) {
@@ -77,6 +86,8 @@ class _SplashBodyState extends State<SplashBody>
 
         final accessToken = await SecureStorageHelper.getAccessToken();
         final refreshToken = await SecureStorageHelper.getRefreshToken();
+        final role = await SecureStorageHelper.getUserRole();
+        final uid = await SecureStorageHelper.getUserId();
 
         print("access ${accessToken}");
         print("refreshToken ${refreshToken}");
@@ -98,7 +109,12 @@ class _SplashBodyState extends State<SplashBody>
           if (biometricEnabled) {
             context.go(AppRouter.kBiometric);
           } else {
-            context.go(AppRouter.kSettings);
+            if (role == 'Doctor') {
+              AppRouter.router.go(AppRouter.kHomeDoctor);
+            } else {
+              AppRouter.router.go(AppRouter.kHomePatient);
+            }
+            // context.go(AppRouter.kSettings);
           }
         } else {
           final validityResult_RefreshToken = await authRepo
@@ -122,10 +138,30 @@ class _SplashBodyState extends State<SplashBody>
                   newAccessToken: tokenModel.accessToken,
                   newRefreshToken: tokenModel.refreshToken,
                 );
+                Map<String, dynamic> payload = JwtDecoder.decode(
+                  tokenModel.accessToken,
+                );
+                final role =
+                    (payload['role'] ?? payload['Role'] ?? '')
+                        .toString()
+                        .toLowerCase();
+                final uid =
+                    (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '')
+                        .toString();
+                await SecureStorageHelper.saveUserRoleAndId(
+                  role: role,
+                  userId: uid,
+                );
+
                 if (biometricEnabled) {
                   context.go(AppRouter.kBiometric);
                 } else {
-                  context.go(AppRouter.kSettings);
+                  if (role == 'Doctor') {
+                    AppRouter.router.go(AppRouter.kHomeDoctor);
+                  } else {
+                    AppRouter.router.go(AppRouter.kHomePatient);
+                  }
+                  // context.go(AppRouter.kSettings);
                 }
               },
             );
