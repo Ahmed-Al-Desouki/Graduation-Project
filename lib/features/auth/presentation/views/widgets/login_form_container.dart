@@ -39,18 +39,33 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state is LoginLoading) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => const Center(child: CircularProgressIndicator()),
+        // if (state is LoginLoading) {
+        //   showDialog(
+        //     context: context,
+        //     barrierDismissible: false,
+        //     builder: (_) => const Center(child: CircularProgressIndicator()),
+        //   );
+        // }
+        if (state is LoginOtpRequired) {
+          // ممكن نعرض رسالة الـ Cubit
+          ShowSnackBar(context, '✅ ${state.message}', Colors.green);
+          print("mfaToken in listener: ${state.mfaToken}");
+
+          // 2. روح شاشة الـ OTP ومعاك الداتا اللي محتاجها
+          AppRouter.router.push(
+            AppRouter.kOtpScreen, // اتأكد إن ده اسم الراوت الصحيح
+            extra: {
+              'email': _emailController.text.trim(),
+              'password': _passwordController.text.trim(),
+              'mfaToken': state.mfaToken,
+            },
           );
         } else if (state is LoginSuccess) {
-          Navigator.pop(context);
+          // Navigator.pop(context);
           ShowSnackBar(context, '✅ Login successful!', Colors.green);
           AppRouter.router.go(AppRouter.kSettings);
         } else if (state is LoginFailure) {
-          Navigator.pop(context);
+          // Navigator.pop(context);
           ShowSnackBar(context, '❌ ${state.errMessage}', Colors.red);
         }
       },

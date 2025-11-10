@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/errors/failures.dart';
+import 'package:graduation_project/features/auth/data/models/auth_token_model.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
 import '../services/auth_web_service.dart';
 
@@ -39,7 +40,7 @@ class AuthRepositoryimpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, String>> login({
+  Future<Either<Failure, dynamic>> login({
     required String email,
     required String password,
     String? otpCode,
@@ -52,8 +53,14 @@ class AuthRepositoryimpl implements AuthRepository {
       );
 
       if (res['success'] == true) {
-        final token = res['data']?['accessToken'] ?? '';
-        return Right(token);
+        if (otpCode == null || otpCode.isEmpty) {
+          return Right({
+            "message": res['message'] ?? 'OTP Sent successfully',
+            "mfaToken": res['mfaToken'],
+          });
+        } else {
+          return Right(AuthTokenModel.fromJson(res));
+        }
       } else {
         final msg = res['data']?['message'] ?? 'Login failed';
         return Left(ServerFailure(msg));
@@ -62,6 +69,56 @@ class AuthRepositoryimpl implements AuthRepository {
       return Left(ServerFailure.fromDioException(e));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AuthTokenModel>> refreshToken({
+    required String refreshToken,
+    required String accessToken,
+  }) async {
+    try {
+      final res = await _authService.refreshToken(
+        refreshToken: refreshToken,
+        accessToken: accessToken,
+      );
+
+      if (res['success'] == true) {
+        final tokens = res['data'] ?? res;
+        return Right(AuthTokenModel.fromJson(tokens));
+      } else {
+        final msg = res['data']?['message'] ?? 'Refresh token failed';
+        return Left(ServerFailure(msg));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioException(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> checkAccessValidity(String accessToken) async {
+    try {
+      final res = await _authService.checkToken(accessToken: accessToken);
+      print(res);
+      return Right(res['summary'] == 'all_valid');
+    } catch (e) {
+      return const Right(false);
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> checkRefreshValidity(
+    String refreshToken,
+  ) async {
+    try {
+      final res = await _authService.checkRefreshToken(refreshToken);
+      print(res);
+
+      return Right(res['summary'] == 'all_valid');
+    } catch (e) {
+      return const Right(false);
     }
   }
 
@@ -112,6 +169,18 @@ class AuthRepositoryimpl implements AuthRepository {
       }
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioException(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> resendOtp({
+    required String mfaToken,
+  }) async {
+    try {
+      final res = await _authService.resendOtp(mfaToken: mfaToken);
+      return Right(res);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

@@ -6,12 +6,13 @@ import 'package:graduation_project/features/auth/presentation/views/biometric_au
 import 'package:graduation_project/features/auth/presentation/views/create_account_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/doctor_registration_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/login_view.dart';
+import 'package:graduation_project/features/auth/presentation/views/otp_screen.dart';
 import 'package:graduation_project/features/auth/presentation/views/patient_registration_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_password_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_success_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
-import 'package:graduation_project/features/splash/splash_body.dart';
+import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
 
 abstract class AppRouter {
   static const kSplash = '/';
@@ -25,6 +26,7 @@ abstract class AppRouter {
   static const kResetSuccess = '/resetSuccess';
   static const kSettings = '/settings';
   static const kBiometric = '/biometric';
+  static const kOtpScreen = '/otpScreen';
 
   static final router = GoRouter(
     routes: [
@@ -38,8 +40,8 @@ abstract class AppRouter {
       GoRoute(
         path: kRegisterAsPatient,
         builder:
-            (context, state) => BlocProvider.value(
-              value: getIt<AuthCubit>(),
+            (context, state) => BlocProvider(
+              create: (_) => getIt<AuthCubit>(),
               child: const PatientRegistrationView(),
             ),
       ),
@@ -56,8 +58,8 @@ abstract class AppRouter {
       GoRoute(
         path: kRegisterAsDoctor,
         builder:
-            (context, state) => BlocProvider.value(
-              value: getIt<AuthCubit>(),
+            (context, state) => BlocProvider(
+              create: (_) => getIt<AuthCubit>(),
               child: const DoctorRegistrationView(),
             ),
       ),
@@ -65,8 +67,8 @@ abstract class AppRouter {
       GoRoute(
         path: kForgotPassword,
         builder:
-            (context, state) => BlocProvider.value(
-              value: getIt<AuthCubit>(),
+            (context, state) => BlocProvider(
+              create: (_) => getIt<AuthCubit>(),
               child: const ForgotPassword(),
             ),
       ),
@@ -79,8 +81,8 @@ abstract class AppRouter {
           final email = state.uri.queryParameters['email'];
           final token = state.uri.queryParameters['token'];
 
-          return BlocProvider.value(
-            value: getIt<AuthCubit>(),
+          return BlocProvider(
+            create: (_) => getIt<AuthCubit>(),
             child: ResetPasswordView(email: email ?? '', token: token ?? ''),
           );
         },
@@ -98,6 +100,25 @@ abstract class AppRouter {
       GoRoute(
         path: kBiometric,
         builder: (context, state) => const BiometricAuthScreen(),
+      ),
+
+      GoRoute(
+        path: kOtpScreen,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>;
+          final email = data['email'] as String;
+          final password = data['password'] as String;
+          final mfaToken = data['mfaToken'] as String;
+
+          return BlocProvider(
+            create: (_) => getIt<AuthCubit>(),
+            child: OtpScreen(
+              email: email,
+              password: password,
+              mfaToken: mfaToken,
+            ),
+          );
+        },
       ),
     ],
   );

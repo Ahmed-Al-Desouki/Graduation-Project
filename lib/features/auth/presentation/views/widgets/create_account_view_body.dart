@@ -28,52 +28,49 @@ class CreateAccountViewBody extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 25),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(5),
-                    child: Image.asset(
-                      Assets.imagesPatient,
-                      height: 120,
-                      width: 120,
-                      fit: BoxFit.cover,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: Image.asset(
+                    Assets.imagesPatient,
+                    height: 120,
+                    width: 120,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                SizedBox(width: 10),
+                Column(
+                  children: [
+                    Text(
+                      'Create your account',
+                      style: AppStyles.styleSemiBold18Dark.copyWith(
+                        fontSize: 25,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 25),
-                  Column(
-                    children: [
-                      Text(
-                        'Create your account',
-                        style: AppStyles.styleSemiBold18Dark.copyWith(
-                          fontSize: 25,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Text.rich(
-                        TextSpan(
-                          text: 'Join thousands of users who trust\n',
-                          style: AppStyles.styleRegular14Gray,
-                          children: [
-                            TextSpan(
-                              text: 'MedConnect',
-                              style: AppStyles.styleRegular14Gray,
-                            ),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        'Choose your account type to get started',
+                    SizedBox(height: 16),
+                    Text.rich(
+                      TextSpan(
+                        text: 'Join thousands of users who trust\n',
                         style: AppStyles.styleRegular14Gray,
+                        children: [
+                          TextSpan(
+                            text: 'MedConnect',
+                            style: AppStyles.styleRegular14Gray,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Choose your account type to get started',
+                      style: AppStyles.styleRegular14Gray,
+                    ),
+                  ],
+                ),
+              ],
             ),
             SizedBox(height: 30),
             Row(

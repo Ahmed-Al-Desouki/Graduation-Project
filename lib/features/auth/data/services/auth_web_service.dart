@@ -71,4 +71,30 @@ class AuthWebServices {
     final response = await _apiService.post('password/reset', body);
     return response;
   }
+
+  Future<Map<String, dynamic>> refreshToken({
+    required String refreshToken,
+    required String accessToken,
+  }) async {
+    final body = {"refreshToken": refreshToken, "accessToken": accessToken};
+    final response = await _apiService.post('auth/refresh-token', body);
+    return response;
+  }
+
+  Future<Map<String, dynamic>> checkToken({required String accessToken}) async {
+    return await _apiService.get(
+      'auth/token-status-v2',
+      bearerToken: accessToken,
+    );
+  }
+
+  Future<Map<String, dynamic>> checkRefreshToken(String token) async {
+    return await _apiService.get('auth/token-status-v2', refreshCookie: token);
+  }
+
+  Future<Map<String, dynamic>> resendOtp({required String mfaToken}) async {
+    final body = {"mfaToken": mfaToken};
+    final response = await _apiService.post('mfa/resend', body);
+    return response;
+  }
 }

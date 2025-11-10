@@ -106,10 +106,7 @@ class LoginViewBody extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
                 Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 20,
-                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(15),

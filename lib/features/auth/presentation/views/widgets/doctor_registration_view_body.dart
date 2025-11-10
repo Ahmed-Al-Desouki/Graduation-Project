@@ -53,22 +53,10 @@ class _DoctorRegistrationViewBodyState
           );
         } else if (state is RegisterSuccess) {
           Navigator.pop(context); // close loader
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   const SnackBar(
-          //     content: Text('✅ Login successful!'),
-          //     backgroundColor: Colors.green,
-          //   ),
-          // );
           ShowSnackBar(context, '✅ Login successful!', Colors.green);
-          AppRouter.router.go(AppRouter.kHome);
+          AppRouter.router.go(AppRouter.kLogin);
         } else if (state is RegisterFailure) {
           Navigator.pop(context); // close loader
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(
-          //     content: Text('❌ ${state.errMessage}'),
-          //     backgroundColor: Colors.red,
-          //   ),
-          // );
           ShowSnackBar(context, '❌ ${state.errMessage}', Colors.red);
         }
         // TODO: implement listener

@@ -1,4 +1,6 @@
 import 'package:bloc/bloc.dart';
+import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
+import 'package:graduation_project/features/auth/data/models/auth_token_model.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
 import 'package:meta/meta.dart';
 
@@ -7,16 +9,47 @@ part 'auth_state.dart';
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository _authRepository;
   AuthCubit(this._authRepository) : super(AuthInitial());
-  Future<void> login({required String email, required String password}) async {
+
+  Future<void> login({
+    required String email,
+    required String password,
+    String? otpCode,
+  }) async {
     emit(LoginLoading());
+
     final result = await _authRepository.login(
       email: email,
       password: password,
+      otpCode: otpCode,
     );
 
     result.fold(
       (failure) => emit(LoginFailure(errMessage: failure.errmessage)),
-      (token) => emit(LoginSuccess(uid: 'unknown', email: email)),
+      (response) async {
+        if (response is Map<String, dynamic>) {
+          emit(
+            LoginOtpRequired(
+              message: response["message"],
+              mfaToken: response["mfaToken"],
+            ),
+          );
+          print("MFA TOKEN IN CUBIT: ${response["mfaToken"]}");
+        } else if (response is AuthTokenModel) {
+          try {
+            await SecureStorageHelper.saveTokens(
+              accessToken: response.accessToken,
+              refreshToken: response.refreshToken,
+            );
+            emit(LoginSuccess(email: email));
+          } catch (e) {
+            emit(LoginFailure(errMessage: 'Failed to save tokens: $e'));
+          }
+        } else {
+          emit(
+            LoginFailure(errMessage: 'Unknown response type from repository'),
+          );
+        }
+      },
     );
   }
 
@@ -36,7 +69,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     result.fold(
       (failure) => emit(RegisterFailure(errMessage: failure.errmessage)),
-      (message) => emit(RegisterSuccess(uid: 'temp', email: email)),
+      (message) => emit(RegisterSuccess(email: email)),
     );
   }
 
@@ -67,6 +100,18 @@ class AuthCubit extends Cubit<AuthState> {
     result.fold(
       (failure) => emit(ResetPasswordFailure(errMessage: failure.errmessage)),
       (message) => emit(ResetPasswordSuccess(message: message)),
+    );
+  }
+
+  Future<void> resendOtp(String mfaToken) async {
+    emit(ResendOtpLoading());
+
+    final result = await _authRepository.resendOtp(mfaToken: mfaToken);
+
+    result.fold(
+      (failure) => emit(ResendOtpFailure(errMessage: failure.errmessage)),
+      (response) =>
+          emit(ResendOtpSuccess(message: response["message"] ?? "OTP Sent")),
     );
   }
 }

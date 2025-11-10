@@ -20,6 +20,7 @@ class ApiService {
         onRequest: (options, handler) {
           print('➡️ [REQUEST] ${options.method} ${options.path}');
           print('Body: ${options.data}');
+
           return handler.next(options);
         },
         onResponse: (response, handler) {
@@ -34,14 +35,45 @@ class ApiService {
     );
   }
 
-  Future<dynamic> get(String endpoint, {String? token}) async {
+  // Future<dynamic> get(String endpoint, {String? token}) async {
+  //   try {
+  //     final response = await _dio.get(
+  //       endpoint,
+  //       options: Options(
+  //         headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+  //       ),
+  //     );
+  //     return response.data;
+  //   } catch (e) {
+  //     rethrow;
+  //   }
+  // }
+  Future<dynamic> get(
+    String endpoint, {
+    String? bearerToken,
+    String? refreshCookie,
+  }) async {
     try {
+      final Map<String, dynamic> headers = {};
+      // print('Bearer Token: $bearerToken');
+      // print('Refresh Cookie: $refreshCookie');
+      if (bearerToken != null) {
+        print('Bearer Token: $bearerToken');
+
+        headers['Authorization'] = 'Bearer $bearerToken';
+      }
+
+      if (refreshCookie != null) {
+        print('Refresh Cookie: $refreshCookie');
+
+        headers['Cookie'] = 'refresh_token=$refreshCookie';
+      }
+
       final response = await _dio.get(
         endpoint,
-        options: Options(
-          headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-        ),
+        options: Options(headers: headers),
       );
+
       return response.data;
     } catch (e) {
       rethrow;

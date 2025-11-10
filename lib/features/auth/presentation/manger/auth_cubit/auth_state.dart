@@ -10,20 +10,37 @@ final class LoginLoading extends AuthState {}
 final class RegisterLoading extends AuthState {}
 
 final class LoginSuccess extends AuthState {
-  final String uid;
   final String email;
-  LoginSuccess({required this.uid, required this.email});
+  LoginSuccess({required this.email});
 }
 
+class LoginOtpRequired extends AuthState {
+  final String message;
+  final String mfaToken;
+
+  LoginOtpRequired({required this.message, required this.mfaToken});
+}
+
+final class ResendOtpSuccess extends AuthState {
+  final String message;
+  ResendOtpSuccess({required this.message});
+}
+
+final class ResendOtpLoading extends AuthState {}
+
 final class RegisterSuccess extends AuthState {
-  final String uid;
   final String email;
-  RegisterSuccess({required this.uid, required this.email});
+  RegisterSuccess({required this.email});
 }
 
 final class LoginFailure extends AuthState {
   final String errMessage;
   LoginFailure({required this.errMessage});
+}
+
+final class ResendOtpFailure extends AuthState {
+  final String errMessage;
+  ResendOtpFailure({required this.errMessage});
 }
 
 final class RegisterFailure extends AuthState {

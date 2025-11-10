@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
+import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
+import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class SplashBody extends StatefulWidget {
@@ -64,23 +67,72 @@ class _SplashBodyState extends State<SplashBody>
       ),
     );
     _controller.forward();
-    // _controller.addStatusListener((status) {
-    //   if (status == AnimationStatus.completed && mounted) {
-    //     AppRouter.router.go(AppRouter.kLogin);
-    //   }
-    // });
     _controller.addStatusListener((status) async {
       if (status == AnimationStatus.completed && mounted) {
-        var settingsBox = await Hive.openBox('settings');
-        bool biometricEnabled = settingsBox.get(
+        final settingsBox = await Hive.openBox('settings');
+        final biometricEnabled = settingsBox.get(
           'biometric_enabled',
           defaultValue: false,
         );
 
-        if (biometricEnabled) {
-          context.go(AppRouter.kBiometric);
-        } else {
+        final accessToken = await SecureStorageHelper.getAccessToken();
+        final refreshToken = await SecureStorageHelper.getRefreshToken();
+
+        print("access ${accessToken}");
+        print("refreshToken ${refreshToken}");
+        // لو مفيش توكنات أساسًا → روح على اللوجن
+        if (accessToken == null || refreshToken == null) {
           context.go(AppRouter.kLogin);
+          return;
+        }
+
+        final authRepo = getIt<AuthRepositoryimpl>();
+        final validityResult = await authRepo.checkAccessValidity(accessToken);
+
+        final isAccessValid = validityResult.fold(
+          (failure) => false,
+          (isValid) => isValid,
+        );
+
+        if (isAccessValid) {
+          if (biometricEnabled) {
+            context.go(AppRouter.kBiometric);
+          } else {
+            context.go(AppRouter.kSettings);
+          }
+        } else {
+          final validityResult_RefreshToken = await authRepo
+              .checkRefreshValidity(refreshToken);
+          final isRefreshValid = validityResult_RefreshToken.fold(
+            (failure) => false,
+            (isValid) => isValid,
+          );
+          if (isRefreshValid) {
+            final refreshResult = await authRepo.refreshToken(
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+            );
+            await refreshResult.fold(
+              (failure) async {
+                await SecureStorageHelper.clearTokens();
+                context.go(AppRouter.kLogin);
+              },
+              (tokenModel) async {
+                await SecureStorageHelper.updateTokens(
+                  newAccessToken: tokenModel.accessToken,
+                  newRefreshToken: tokenModel.refreshToken,
+                );
+                if (biometricEnabled) {
+                  context.go(AppRouter.kBiometric);
+                } else {
+                  context.go(AppRouter.kSettings);
+                }
+              },
+            );
+          } else {
+            await SecureStorageHelper.clearTokens();
+            context.go(AppRouter.kLogin);
+          }
         }
       }
     });
