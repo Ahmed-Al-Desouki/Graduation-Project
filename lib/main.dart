@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:app_links/app_links.dart';
@@ -59,11 +60,18 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: AppRouter.router,
-      debugShowCheckedModeBanner: false,
-      title: 'Wellora',
-      theme: ThemeData(primarySwatch: Colors.green),
+    return ScreenUtilInit(
+      designSize: const Size(390, 844),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MaterialApp.router(
+          routerConfig: AppRouter.router,
+          debugShowCheckedModeBanner: false,
+          title: 'Wellora',
+          theme: ThemeData(primarySwatch: Colors.green),
+        );
+      },
     );
   }
 }

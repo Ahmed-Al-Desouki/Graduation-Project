@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
@@ -89,7 +90,7 @@ class _PatientRegistrationViewBodyState
                   Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(left: 16.0),
+                        padding: EdgeInsets.only(left: 16.w,top: 15.h),
                         child: Container(
                           alignment: Alignment.centerLeft,
                           child: Text(

@@ -23,7 +23,7 @@ class PatientHomeHeader extends StatelessWidget {
       ),
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.only(left: 50),
+          padding: const EdgeInsets.only(left: 25),
           child: Row(
             children: [
               CircleAvatar(
@@ -39,41 +39,32 @@ class PatientHomeHeader extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 12),
               Column(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 15),
-                    child: Text(
-                      'Welcome UserName',
-                      style: AppStyles.styleSemiBold18Dark.copyWith(
-                        color: Colors.white,
-                        fontSize: 18,
-                      ),
+                  Text(
+                    'Welcome UserName',
+                    style: AppStyles.styleSemiBold18Dark.copyWith(
+                      color: Colors.white,
+                      fontSize: 18,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 10),
-                    child: Text(
-                      'How are you feeling today?',
-                      textAlign: TextAlign.center,
-                      style: AppStyles.styleRegular14Gray.copyWith(
-                        color: Colors.white70,
-                      ),
+                  Text(
+                    'How are you feeling today?',
+                    style: AppStyles.styleRegular14Gray.copyWith(
+                      color: Colors.white70,
                     ),
                   ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 120),
-                child: IconButton(
-                  icon: const Icon(Icons.notifications),
-                  color: Colors.white,
-                  iconSize: 28,
-                  onPressed: () {
-                    // Navigator.pushNamed(context, AppRouter.kNotifications);
-                  },
-                ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.notifications),
+                color: Colors.white,
+                iconSize: 28,
+                onPressed: () {},
               ),
             ],
           ),

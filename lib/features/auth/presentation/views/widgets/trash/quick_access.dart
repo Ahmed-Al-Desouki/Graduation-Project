@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/quick_access_button.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/trash/quick_access_button.dart';
 
 class QuickAccess extends StatelessWidget {
   const QuickAccess({super.key});

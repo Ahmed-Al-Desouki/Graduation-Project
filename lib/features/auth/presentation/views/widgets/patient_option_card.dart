@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
@@ -39,12 +40,13 @@ class _PatientOptionCardState extends State<PatientOptionCard> {
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         child: AnimatedContainer(
+          padding: EdgeInsets.symmetric(vertical: 20.h),
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
           transform: Matrix4.translationValues(0.0, translateY, 0.0),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(15.r),
             border: Border.all(color: borderColor, width: 2.0),
             boxShadow: [
               BoxShadow(
@@ -55,49 +57,51 @@ class _PatientOptionCardState extends State<PatientOptionCard> {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 20.h),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
+                  borderRadius: BorderRadius.circular(25.r),
                   child: Image.asset(
                     Assets.imagesPatient1,
-                    height: 80,
-                    width: 80,
+                    height: 80.h,
+                    width: 80.h,
                     fit: BoxFit.cover,
                   ),
                 ),
+                SizedBox(height: 10.h),
                 Text(
                   "I'm a Patient",
                   style: AppStyles.styleSemiBold18Dark.copyWith(
-                    fontSize: 25,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 10),
+                SizedBox(height: 10.h),
                 Text(
                   'Book appointments,\nmanagehealth records',
                   textAlign: TextAlign.center,
                   style: AppStyles.styleRegular14Gray,
                 ),
-                SizedBox(height: 15),
+                SizedBox(height: 15.h),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 3.h),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
+                    borderRadius: BorderRadius.circular(25.r),
                     color: Color(0xFFDBEAFE),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.favorite, color: Color(0xFF2563EB), size: 15),
-                      SizedBox(width: 5),
+                      Icon(Icons.favorite, color: Color(0xFF2563EB), size: 15.sp),
+                      SizedBox(width: 5.w),
                       Text(
                         'Health Management',
                         style: AppStyles.styleMedium12Blue.copyWith(
                           fontWeight: FontWeight.bold,
+                          fontSize: 12.sp,
                         ),
                       ),
                     ],

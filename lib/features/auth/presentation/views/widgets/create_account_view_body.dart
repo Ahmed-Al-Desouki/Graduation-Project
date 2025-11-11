@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
@@ -27,57 +28,64 @@ class CreateAccountViewBody extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 25),
+            SizedBox(height: 25.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(5.r),
                   child: Image.asset(
                     Assets.imagesPatient,
-                    height: 120,
-                    width: 120,
+                    height: 120.h,
+                    width: 120.w,
                     fit: BoxFit.cover,
                   ),
                 ),
-                SizedBox(width: 10),
+                SizedBox(width: 10.w),
                 Column(
                   children: [
                     Text(
                       'Create your account',
                       style: AppStyles.styleSemiBold18Dark.copyWith(
-                        fontSize: 25,
+                        fontSize: 25.sp,
                       ),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 16.h),
                     Text.rich(
                       TextSpan(
                         text: 'Join thousands of users who trust\n',
-                        style: AppStyles.styleRegular14Gray,
+                        style: AppStyles.styleRegular14Gray.copyWith(
+                        fontSize: 12.sp,
+                      ),
                         children: [
                           TextSpan(
                             text: 'MedConnect',
-                            style: AppStyles.styleRegular14Gray,
+                            style: AppStyles.styleRegular14Gray.copyWith(
+                        fontSize: 12.sp,
+                      ),
                           ),
                         ],
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 10),
+                    SizedBox(height: 10.h),
                     Text(
                       'Choose your account type to get started',
-                      style: AppStyles.styleRegular14Gray,
+                      style: AppStyles.styleRegular14Gray.copyWith(
+                        fontSize: 12.sp,
+                      ),
+                      
                     ),
                   ],
                 ),
               ],
             ),
-            SizedBox(height: 30),
+            SizedBox(height: 30.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [PatientOptionCard(), DoctorOptionCard()],
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 20.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -98,12 +106,12 @@ class CreateAccountViewBody extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               '© 2024 MediConnect. All rights reserved.',
               style: AppStyles.styleRegular12Gray,
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 8.h),
           ],
         ),
       ),

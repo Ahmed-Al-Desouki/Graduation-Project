@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
@@ -80,109 +81,106 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
       },
       builder: (context, state) {
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-          constraints: const BoxConstraints(
-            minHeight: 400,
-            maxHeight: double.infinity,
-          ),
+          margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+          padding: EdgeInsets.symmetric(horizontal: 25.w, vertical: 25.h),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
+            borderRadius: BorderRadius.circular(20.r),
+            boxShadow: [
               BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                offset: Offset(0, 5),
+                color: Colors.black12,
+                blurRadius: 10.r,
+                offset: Offset(0, 4.h),
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
-            child: Center(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    InputField(
-                      label: 'Email Address',
-                      hint: 'Enter your email',
-                      icon: Icons.email,
-                      controller: _emailController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Email is required!';
-                        }
-                        if (!_isValidEmail(value)) {
-                          return 'Enter a valid email (e.g. example@gmail.com)';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 25),
-                    InputField(
-                      label: 'Password',
-                      hint: 'Enter your password',
-                      icon: Icons.lock,
-                      isPassword: true,
-                      controller: _passwordController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Password is required!';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    Center(
-                      child: TextButton(
-                        onPressed: () {
-                          AppRouter.router.go(AppRouter.kForgotPassword);
-                        },
-                        child: Text(
-                          'Forgot Password?',
-                          style: AppStyles.styleRegular16Teal.copyWith(
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 25),
-                    Center(
-                      child: Container(
-                        width: 300,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: widget.gradientColors,
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: ElevatedButton(
-                          onPressed: state is LoginLoading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                          child: const Text(
-                            'Sign In',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                InputField(
+                  label: 'Email Address',
+                  hint: 'Enter your email',
+                  hintSize: 16,
+                  icon: Icons.email,
+                  controller: _emailController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Email is required!';
+                    }
+                    if (!_isValidEmail(value)) {
+                      return 'Enter a valid email (e.g. example@gmail.com)';
+                    }
+                    return null;
+                  },
                 ),
-              ),
+                SizedBox(height: 20.h),
+                InputField(
+                  label: 'Password',
+                  hint: 'Enter your password',
+                  hintSize: 16,
+                  icon: Icons.lock,
+                  isPassword: true,
+                  controller: _passwordController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password is required!';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 15.h),
+                Align(
+                  alignment: Alignment.center,
+                  child: TextButton(
+                    onPressed: () {
+                      AppRouter.router.go(AppRouter.kForgotPassword);
+                    },
+                    child: Text(
+                      'Forgot Password?',
+                      style: AppStyles.styleRegular16Teal.copyWith(
+                        fontSize: 18.sp,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 25.h),
+                SizedBox(
+                  width: double.infinity,
+                  height: 70.h,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: widget.gradientColors,
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(15.r),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: state is LoginLoading ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15.r),
+                        ),
+                      ),
+                      child:
+                          state is LoginLoading
+                              ? CircularProgressIndicator(color: Colors.white)
+                              : Text(
+                                'Sign In',
+                                style: TextStyle(
+                                  fontSize: 22.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );

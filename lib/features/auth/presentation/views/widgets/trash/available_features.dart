@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/features_container.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/trash/features_container.dart';
 
 class AvailableFeatures extends StatelessWidget {
   const AvailableFeatures({super.key});
