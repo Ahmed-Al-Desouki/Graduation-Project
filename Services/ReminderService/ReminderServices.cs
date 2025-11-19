@@ -34,7 +34,7 @@ namespace HealthCare_.Services.Reminder
                 Frequency = dto.Frequency,
                 IntervalHours = dto.IntervalHours,
                 BaseTime = dto.BaseTime,
-                Message = dto.Message ?? "تذكير مخصص",
+                Message = dto.Message ?? "",
                 Status = ReminderStatus.Pending,
                 IsActive = true,
                 IsLocalNotification = true

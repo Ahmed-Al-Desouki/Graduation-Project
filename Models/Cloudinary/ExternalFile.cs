@@ -23,3 +23,4 @@ public class ExternalFile
     [ForeignKey(nameof(PatientID))] public Patient? Patient { get; set; }
     [ForeignKey(nameof(MedicalHistoryID))] public MedicalHistory? MedicalHistory { get; set; }
 }
+

@@ -11,6 +11,7 @@ using HealthCare_.Services.Background;
 using HealthCare_.Services.BackGround;
 using HealthCare_.Services.Cloud;
 using HealthCare_.Services.DoctorDervice;
+using HealthCare_.Services.Patient;
 using HealthCare_.Services.PatientService;
 using HealthCare_.Services.Reminder;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -169,7 +170,7 @@ builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<UserManager<ApplicationUser>>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
-
+builder.Services.AddScoped<IMedicalHistoryService, PatientMedicalHistoryService>();
 // ====================== CONTROLLERS & SWAGGER ======================
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));

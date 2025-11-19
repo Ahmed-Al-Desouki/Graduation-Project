@@ -14,23 +14,22 @@ namespace HealthCare_.Models.PatientModels
         [ForeignKey("PatientID")]
         public Patient Patient { get; set; }
         [StringLength(10)]
-        public string BloodType { get; set; }
+        public string? BloodType { get; set; }
         [StringLength(500)]
-        public string Allergies { get; set; }
+        public string? Allergies { get; set; }
         [StringLength(500)]
-        public string ChronicConditions { get; set; }
+        public string? ChronicConditions { get; set; }
         [Range(0, 300)]
         public double Height { get; set; }
         [Range(0, 500)]
         public double Weight { get; set; }
         [StringLength(500)]
-        public string FilePath { get; set; } // General
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
         // External files (Lab tests, Radiology...) stored externally; use FileCategory to differentiate.
-        public ICollection<ExternalFile> Files { get; set; } = new List<ExternalFile>();
+        public ICollection<ExternalFile>? Files { get; set; } = new List<ExternalFile>();
 
-        public ICollection<MedicalRecord> MedicalRecords { get; set; }
+        public ICollection<MedicalRecord>? MedicalRecords { get; set; }
     }
 }

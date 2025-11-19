@@ -240,7 +240,6 @@ namespace HealthCare_.Models.Context
                 entity.Property(mh => mh.ChronicConditions).HasMaxLength(500);
                 entity.Property(mh => mh.Height).HasColumnType("float");
                 entity.Property(mh => mh.Weight).HasColumnType("float");
-                entity.Property(mh => mh.FilePath).HasMaxLength(500);
                 entity.Property(mh => mh.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
 
                 entity.HasOne(mh => mh.Patient)

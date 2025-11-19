@@ -1,5 +1,5 @@
 ﻿using HealthCare_.Interfaces.IAuth;
-
+using HealthCare_.Models.PatientModels; 
 using HealthCare_.Models.sharedModels;
 using HealthCare_.Services.Auth.Interfaces;
 using HealthCare_.Services.Cloud;
@@ -117,7 +117,7 @@ namespace HealthCare_.Services.Auth
                 // إضافة Patient أو Doctor
                 if (user.Role == "Patient")
                 {
-                    var patient = new Patient
+                    var patient = new HealthCare_.Models.PatientModels.Patient
                     {
                         PatientID = user.Id,
                         DateOfBirth = DateTime.Today.AddYears(-25),
