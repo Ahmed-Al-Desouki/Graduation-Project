@@ -50,7 +50,7 @@ namespace HealthCare_.Services.Auth
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(10),
+                expires: DateTime.UtcNow.AddMinutes(100),
                 signingCredentials: creds
             );
 

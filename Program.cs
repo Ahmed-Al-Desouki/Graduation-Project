@@ -15,13 +15,12 @@ using HealthCare_.Services.PatientService;
 using HealthCare_.Services.Reminder;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
-using System.Net.Http.Headers;
+using System.Net;
 using System.Reflection;
 using System.Text.Json.Serialization;
-
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,15 +52,15 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddDefaultTokenProviders();
 
 // ====================== DATA PROTECTION ======================
-//builder.Services.AddDataProtection()
-// .PersistKeysToFileSystem(new DirectoryInfo(@"C:\temp\dpkeys"))
-// .SetApplicationName("HealthCarePlus")
-// .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "DataProtectionKeys")))
+    .SetApplicationName("HealthCarePlus")
+    .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
 // ====================== MEMORY CACHE ======================
 builder.Services.AddMemoryCache();
 
-// ====================== RATE LIMITING (IP + Device) ======================
+// ====================== RATE LIMITING ======================
 builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
 builder.Services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
 builder.Services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
@@ -81,25 +80,23 @@ builder.Services.AddScoped<IFido2, Fido2>();
 // ====================== JWT ======================
 var jwtSecret = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Missing Jwt:Key");
 var key = Encoding.UTF8.GetBytes(jwtSecret);
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultSignInScheme = "External";
 })
-// === External Cookie ===
+// === External Cookie (نظيف تمامًا) ===
 .AddCookie("External", o =>
 {
     o.Cookie.Name = ".AspNetCore.External";
     o.Cookie.SameSite = SameSiteMode.None;
     o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     o.Cookie.HttpOnly = true;
-    o.Cookie.Domain = "nonvolitional-unstuccoed-wilfred.ngrok-free.dev";
-    o.Cookie.Path = "/";
     o.ExpireTimeSpan = TimeSpan.FromMinutes(15);
-    o.DataProtectionProvider = null;
 })
-// === Cookie للـ Session ===
+// === Session Cookie ===
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, o =>
 {
     o.Cookie.SameSite = SameSiteMode.None;
@@ -107,8 +104,6 @@ builder.Services.AddAuthentication(options =>
     o.Cookie.HttpOnly = true;
     o.ExpireTimeSpan = TimeSpan.FromMinutes(60);
     o.SlidingExpiration = true;
-    o.Cookie.Domain = "nonvolitional-unstuccoed-wilfred.ngrok-free.dev";
-    o.Cookie.Path = "/";
 })
 // === JWT Bearer ===
 .AddJwtBearer(o =>
@@ -127,52 +122,30 @@ builder.Services.AddAuthentication(options =>
         NameClaimType = "UserID",
         RoleClaimType = "Role"
     };
-
-    // === التعديل: التحقق من RevokedTokens في كل طلب ===
     o.Events = new JwtBearerEvents
     {
         OnTokenValidated = async context =>
         {
             var jti = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
             if (string.IsNullOrEmpty(jti)) return;
-
             var scope = context.HttpContext.RequestServices.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<HealthCarePlusContext>();
             var isRevoked = await db.RevokedTokens
                 .AnyAsync(rt => rt.Jti == jti && rt.Expires > DateTime.UtcNow);
-
-            if (isRevoked)
-            {
-                context.Fail("Token has been revoked");
-            }
+            if (isRevoked) context.Fail("Token has been revoked");
         }
     };
-    // === نهاية التعديل ===
 })
 // === Google OAuth2 ===
 .AddGoogle(o =>
 {
-    o.ClientId = builder.Configuration["Google:ClientId"]
-        ?? throw new InvalidOperationException("Missing Google:ClientId");
-    o.ClientSecret = builder.Configuration["Google:ClientSecret"]
-        ?? throw new InvalidOperationException("Missing Google:ClientSecret");
+    o.ClientId = builder.Configuration["Google:ClientId"] ?? throw new InvalidOperationException("Missing Google:ClientId");
+    o.ClientSecret = builder.Configuration["Google:ClientSecret"] ?? throw new InvalidOperationException("Missing Google:ClientSecret");
     o.CallbackPath = "/api/auth/external/callback";
     o.SignInScheme = "External";
     o.SaveTokens = true;
     o.Scope.Add("email");
     o.Scope.Add("profile");
-    o.Events.OnRedirectToAuthorizationEndpoint = context =>
-    {
-        var scheme = "https";
-        var host = context.Request.Host;
-        var redirectUri = $"{scheme}://{host}{o.CallbackPath}";
-        var uri = new Uri(context.RedirectUri);
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        query["redirect_uri"] = redirectUri;
-        var newUri = $"{uri.Scheme}://{uri.Authority}{uri.LocalPath}?{query}";
-        context.Response.Redirect(newUri);
-        return Task.CompletedTask;
-    };
 });
 
 // ====================== SERVICES ======================
@@ -182,7 +155,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IDoctorService, DoctorServices>();
 builder.Services.AddScoped<IPatientService, PatientServices>();
 builder.Services.AddHostedService<RevokedTokensCleanupService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailService, HealthCare_.Services.EmailService>();
 builder.Services.AddScoped<IAuthCoreService, AuthCoreService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IMfaService, MfaService>();
@@ -193,16 +166,14 @@ builder.Services.AddScoped<IAvatarService, AvatarService>();
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddScoped<FileUploadService>();
-
-// بعد AddIdentity
 builder.Services.AddScoped<UserManager<ApplicationUser>>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-
-// ====================== REMINDER SERVICE ======================
 builder.Services.AddScoped<IReminderService, ReminderService>();
 
 // ====================== CONTROLLERS & SWAGGER ======================
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -210,8 +181,8 @@ builder.Services.AddSwaggerGen(c =>
     c.CustomSchemaIds(x => x.FullName);
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-        c.IncludeXmlComments(xmlPath);
+    if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme.",
@@ -223,28 +194,20 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
+            new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
             Array.Empty<string>()
         }
     });
 });
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
-
 
 // ====================== CORS ======================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyMethod()
-              .AllowAnyHeader());
+              .AllowAnyHeader()
+              .AllowCredentials());
 });
 
 // ====================== AUTHORIZATION ======================
@@ -258,68 +221,64 @@ var app = builder.Build();
 app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
     ServeUnknownFileTypes = true,
     DefaultContentType = "application/json",
     RequestPath = ""
 });
 
-// ====================== HANGFIRE DASHBOARD ======================
 app.UseHangfireDashboard("/admin-secret-reminders-2025-xyz", new DashboardOptions
 {
     Authorization = new[] { new HangfireAuthorizationFilter() }
 });
 
-// ====================== MIDDLEWARE ======================
+// ====================== Forwarded Headers - الحل النهائي لـ ngrok free ======================
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                       ForwardedHeaders.XForwardedProto |
-                       ForwardedHeaders.XForwardedHost,
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
+    // ده السطر السحري اللي كان ناقص
     RequireHeaderSymmetry = false,
+    // نقبل أي proxy (ngrok بيبعت من IP غريبة)
+    KnownProxies = { },
+    KnownNetworks = { }
 });
 
-// === Rate Limiting ===
-app.UseIpRateLimiting(); // ← أضف هنا
+// ده السطر الجديد اللي لازم يكون موجود في .NET 8/9 مع ngrok
+app.Use((context, next) =>
+{
+    // نجبر .NET يشوف الـ scheme صح
+    if (context.Request.Headers.ContainsKey("X-Forwarded-Proto"))
+    {
+        context.Request.Scheme = context.Request.Headers["X-Forwarded-Proto"].ToString();
+    }
+    if (context.Request.Headers.ContainsKey("X-Forwarded-Host"))
+    {
+        context.Request.Host = HostString.FromUriComponent(context.Request.Headers["X-Forwarded-Host"].ToString());
+    }
+    return next();
+});
+
+app.UseIpRateLimiting();
 
 app.UseCookiePolicy(new CookiePolicyOptions
 {
     MinimumSameSitePolicy = SameSiteMode.None,
-    HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always,
     Secure = CookieSecurePolicy.Always
 });
 
+// ده اللي هيخلي الـ root (/) يفتح Swagger تلقائيًا
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "HealthCare+ API v1");
-    c.RoutePrefix = string.Empty;
+    c.RoutePrefix = string.Empty;  // ده السطر السحري، يخلي Swagger يبقى على الـ root
 });
 
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path.StartsWithSegments("/api/patient/files/upload"))
-    {
-        Console.WriteLine($"Content-Type: {context.Request.ContentType}");
-        Console.WriteLine($"Content-Length: {context.Request.ContentLength}");
-        foreach (var file in context.Request.Form.Files)
-        {
-            Console.WriteLine($"Form File: {file.Name}, Size: {file.Length}, Type: {file.ContentType}");
-        }
-    }
-    await next();
-});
-
-app.UseCookiePolicy(new CookiePolicyOptions
-{
-    MinimumSameSitePolicy = SameSiteMode.None,
-    Secure = CookieSecurePolicy.Always
-});
+// لو عايز تضمن إن أي حد يدخل / يروح Swagger حتى لو كتب حاجة غلط
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.UseCors("AllowAll");
 
-// === Update LastActivity Middleware ===
 app.UseAuthentication();
 app.UseMiddleware<UpdateLastActivityMiddleware>();
 app.UseAuthorization();
@@ -327,13 +286,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // ====================== HANGFIRE JOBS ======================
-RecurringJob.AddOrUpdate<ReminderService>(
-    "expire-reminders-daily",
-    service => service.ExpireRemindersAsync(),
-    "0 0 0 * * *");
-RecurringJob.AddOrUpdate<ReminderService>(
-    "mark-overdue-hourly",
-    service => service.MarkOverdueAsync(),
-    "0 0 * * *");
+RecurringJob.AddOrUpdate<ReminderService>("expire-reminders-daily", service => service.ExpireRemindersAsync(), "0 0 0 * * *");
+RecurringJob.AddOrUpdate<ReminderService>("mark-overdue-hourly", service => service.MarkOverdueAsync(), "0 0 * * *");
 
 app.Run();

@@ -28,16 +28,12 @@ namespace HealthCare_.Controllers
         [HttpGet("login")]
         public IActionResult Login([FromQuery] string provider = "Google")
         {
-            var redirectUrl = Url.Action(
-                nameof(Callback),
-                "ExternalAuth",
-                null,
-                Request.Scheme,
-                Request.Host.Value
-            );
+            var redirectUrl = "https://nonvolitional-unstuccoed-wilfred.ngrok-free.dev/api/auth/external/callback";
 
             var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
-            return Challenge(properties, provider);
+            properties.RedirectUri = redirectUrl; // مهم جدًا
+
+            return new ChallengeResult(provider, properties);
         }
         [HttpGet("callback")]
         public async Task<IActionResult> Callback()
