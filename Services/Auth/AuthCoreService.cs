@@ -272,6 +272,116 @@ namespace HealthCare_.Services.Auth
             }
         }
 
+        // google sign in
+        public async Task<(string AccessToken, string RefreshToken, string? Error)> ExternalLoginAsync(
+            ApplicationUser user,
+            string? deviceInfo = null,
+            string? ipAddress = null,
+            IEmailService? emailService = null)
+        {
+            if (user == null)
+                return (null!, null!, "User not found");
+
+            // === MFA check ===
+            if (user.TwoFactorEnabled)
+            {
+                // توليد mfaToken وإرجاعه مع MFA_PENDING
+                var (mfaToken, mfaJti, _) = await _tokenService.GenerateMfaTokenAsync(user);
+                if (emailService != null)
+                    await _mfaService.GenerateAndSendOtpAsync(user, emailService);
+                return (null!, null!, "MFA_PENDING|" + mfaToken);
+            }
+
+            var (accessToken, jti, _) = await _tokenService.GenerateJwtToken(user);
+            var rawRefresh = _tokenService.GenerateRandomToken();
+
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                int maxDevices = Convert.ToInt32(_configuration["Auth:MaxActiveDevices"] ?? "3");
+
+                var activeSessions = await _context.UserSessions
+                    .Where(s =>
+                        s.UserId == user.Id &&
+                        s.IsActive &&
+                        !s.IsRevoked &&
+                        s.ExpiresAt > DateTime.UtcNow)
+                    .OrderBy(s => s.CreatedAt)
+                    .ToListAsync();
+
+                // Revoke oldest session if limit exceeded
+                if (activeSessions.Count >= maxDevices)
+                {
+                    var oldestSession = activeSessions.First();
+                    oldestSession.IsActive = false;
+                    oldestSession.IsRevoked = true;
+                    oldestSession.RevokedAt = DateTime.UtcNow;
+                    oldestSession.RevokedByIp = ipAddress;
+                    oldestSession.Notes = $"Device limit exceeded (max: {maxDevices}). Revoked on new login.";
+                    _context.UserSessions.Update(oldestSession);
+                }
+
+                // Revoke same device session if exists
+                var existingSameDevice = await _context.UserSessions
+                    .FirstOrDefaultAsync(s =>
+                        s.UserId == user.Id &&
+                        s.DeviceInfo == deviceInfo &&
+                        s.IsActive);
+                if (existingSameDevice != null)
+                {
+                    existingSameDevice.IsActive = false;
+                    existingSameDevice.RevokedAt = DateTime.UtcNow;
+                    existingSameDevice.RevokedByIp = ipAddress;
+                    existingSameDevice.Notes = "Same device re-login";
+                    _context.UserSessions.Update(existingSameDevice);
+                }
+
+                // Create new session
+                var (encryptedToken, tokenSalt) = _tokenService.EncryptAes(rawRefresh);
+                var newSession = new UserSession
+                {
+                    UserId = user.Id,
+                    DeviceInfo = deviceInfo,
+                    IpAddress = ipAddress,
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.AddDays(Convert.ToDouble(_configuration["Jwt:RefreshTokenExpireDays"] ?? "30")),
+                    LastActivity = DateTime.UtcNow,
+                    IsActive = true,
+                    EncryptedToken = encryptedToken,
+                    Salt = tokenSalt,
+                    Notes = "New external login session"
+                };
+                _context.UserSessions.Add(newSession);
+                await _context.SaveChangesAsync();
+
+                // Create refresh token
+                var refreshEntity = new RefreshToken
+                {
+                    Token = _tokenService.ComputeHmacSha256Base64(rawRefresh),
+                    Expires = newSession.ExpiresAt,
+                    CreatedAt = DateTime.UtcNow,
+                    JwtId = jti,
+                    UserId = user.Id,
+                    DeviceInfo = deviceInfo,
+                    IpAddress = ipAddress,
+                    UserSessionId = newSession.Id
+                };
+                _context.RefreshTokens.Add(refreshEntity);
+                await _context.SaveChangesAsync();
+
+                await tx.CommitAsync();
+
+                return (accessToken, rawRefresh, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "External login transaction failed for user: {UserId}", user.Id);
+                return (null!, null!, "Server error");
+            }
+        }
+
+
         public async Task<(bool Succeeded, string Error)> LogoutAsync(LogoutRequest request)
         {
             if (request == null || request.UserId <= 0)
@@ -317,5 +427,6 @@ namespace HealthCare_.Services.Auth
             await _context.SaveChangesAsync();
             return (true, string.Empty);
         }
+
     }
 }

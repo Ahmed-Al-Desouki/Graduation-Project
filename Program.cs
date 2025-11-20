@@ -22,6 +22,7 @@ using Microsoft.Extensions.FileProviders;
 using System.Net;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using HealthCare_.Interfaces.IAuth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -136,19 +137,18 @@ builder.Services.AddAuthentication(options =>
             if (isRevoked) context.Fail("Token has been revoked");
         }
     };
-})
-// === Google OAuth2 ===
-.AddGoogle(o =>
-{
-    o.ClientId = builder.Configuration["Google:ClientId"] ?? throw new InvalidOperationException("Missing Google:ClientId");
-    o.ClientSecret = builder.Configuration["Google:ClientSecret"] ?? throw new InvalidOperationException("Missing Google:ClientSecret");
-    o.CallbackPath = "/api/auth/external/callback";
-    o.SignInScheme = "External";
-    o.SaveTokens = true;
-    o.Scope.Add("email");
-    o.Scope.Add("profile");
 });
-
+// === Google OAuth2 ===
+//.AddGoogle(o =>
+//{
+//    o.ClientId = builder.Configuration["Google:ClientId"] ?? throw new InvalidOperationException("Missing Google:ClientId");
+//    o.ClientSecret = builder.Configuration["Google:ClientSecret"] ?? throw new InvalidOperationException("Missing Google:ClientSecret");
+//    o.CallbackPath = "/api/auth/external/callback";
+//    o.SignInScheme = "External";
+//    o.SaveTokens = true;
+//    o.Scope.Add("email");
+//    o.Scope.Add("profile");
+//});
 // ====================== SERVICES ======================
 builder.Services.AddScoped<SignInManager<ApplicationUser>>();
 builder.Services.AddScoped<RoleManager<ApplicationRole>>();
@@ -162,7 +162,6 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IMfaService, MfaService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IPasskeyService, PasskeyService>();
-builder.Services.AddScoped<IExternalAuthService, ExternalAuthService>();
 builder.Services.AddScoped<IAvatarService, AvatarService>();
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.AddScoped<CloudinaryService>();
@@ -171,6 +170,8 @@ builder.Services.AddScoped<UserManager<ApplicationUser>>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddScoped<IMedicalHistoryService, PatientMedicalHistoryService>();
+
+
 // ====================== CONTROLLERS & SWAGGER ======================
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
