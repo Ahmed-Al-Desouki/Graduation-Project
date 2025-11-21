@@ -1,5 +1,7 @@
 ﻿using AspNetCoreRateLimit;
 using Hangfire;
+using HealthCare_.Controllers;
+using HealthCare_.Interfaces.IAuth;
 using HealthCare_.Interfaces.IAuth;
 using HealthCare_.Interfaces.ReminderInterface;
 using HealthCare_.Middleware;
@@ -22,7 +24,6 @@ using Microsoft.Extensions.FileProviders;
 using System.Net;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using HealthCare_.Interfaces.IAuth;
 
 var builder = WebApplication.CreateBuilder(args);
 

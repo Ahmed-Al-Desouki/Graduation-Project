@@ -280,26 +280,40 @@ namespace HealthCare_.Services.Auth
             IEmailService? emailService = null)
         {
             if (user == null)
-                return (null!, null!, "User not found");
-
-            // === MFA check ===
-            if (user.TwoFactorEnabled)
             {
-                // توليد mfaToken وإرجاعه مع MFA_PENDING
-                var (mfaToken, mfaJti, _) = await _tokenService.GenerateMfaTokenAsync(user);
-                if (emailService != null)
-                    await _mfaService.GenerateAndSendOtpAsync(user, emailService);
-                return (null!, null!, "MFA_PENDING|" + mfaToken);
+                _logger.LogWarning("ExternalLoginAsync: User is null");
+                return (null!, null!, "User not found");
             }
 
+            _logger.LogInformation("ExternalLoginAsync: Starting login for UserId={UserId}, Device={Device}, IP={IP}",
+                user.Id, deviceInfo, ipAddress);
+
+            user.TwoFactorEnabled = false;
+            // === 1. MFA check ===
+            //if (user.TwoFactorEnabled)
+            //{
+            //    _logger.LogInformation("ExternalLoginAsync: MFA enabled for UserId={UserId}", user.Id);
+            //    var (mfaToken, mfaJti, _) = await _tokenService.GenerateMfaTokenAsync(user);
+            //    if (emailService != null)
+            //    {
+            //        _logger.LogInformation("ExternalLoginAsync: Sending OTP for MFA to UserId={UserId}", user.Id);
+            //        await _mfaService.GenerateAndSendOtpAsync(user, emailService);
+            //    }
+            //    return (null!, null!, "MFA_PENDING|" + mfaToken);
+            //}
+
+            // === 2. Generate access & refresh tokens ===
             var (accessToken, jti, _) = await _tokenService.GenerateJwtToken(user);
             var rawRefresh = _tokenService.GenerateRandomToken();
+            _logger.LogInformation("ExternalLoginAsync: Generated JWT and refresh token for UserId={UserId}", user.Id);
 
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
                 int maxDevices = Convert.ToInt32(_configuration["Auth:MaxActiveDevices"] ?? "3");
+                _logger.LogInformation("ExternalLoginAsync: Max active devices allowed: {Max}", maxDevices);
 
+                // === 3. Get active sessions ===
                 var activeSessions = await _context.UserSessions
                     .Where(s =>
                         s.UserId == user.Id &&
@@ -308,8 +322,9 @@ namespace HealthCare_.Services.Auth
                         s.ExpiresAt > DateTime.UtcNow)
                     .OrderBy(s => s.CreatedAt)
                     .ToListAsync();
+                _logger.LogInformation("ExternalLoginAsync: User has {Count} active sessions", activeSessions.Count);
 
-                // Revoke oldest session if limit exceeded
+                // === 4. Revoke oldest session if limit exceeded ===
                 if (activeSessions.Count >= maxDevices)
                 {
                     var oldestSession = activeSessions.First();
@@ -319,9 +334,10 @@ namespace HealthCare_.Services.Auth
                     oldestSession.RevokedByIp = ipAddress;
                     oldestSession.Notes = $"Device limit exceeded (max: {maxDevices}). Revoked on new login.";
                     _context.UserSessions.Update(oldestSession);
+                    _logger.LogWarning("ExternalLoginAsync: Revoked oldest session Id={Id}, Device={Device}", oldestSession.Id, oldestSession.DeviceInfo);
                 }
 
-                // Revoke same device session if exists
+                // === 5. Revoke same device session if exists ===
                 var existingSameDevice = await _context.UserSessions
                     .FirstOrDefaultAsync(s =>
                         s.UserId == user.Id &&
@@ -334,9 +350,10 @@ namespace HealthCare_.Services.Auth
                     existingSameDevice.RevokedByIp = ipAddress;
                     existingSameDevice.Notes = "Same device re-login";
                     _context.UserSessions.Update(existingSameDevice);
+                    _logger.LogInformation("ExternalLoginAsync: Revoked previous session on same device, Id={Id}", existingSameDevice.Id);
                 }
 
-                // Create new session
+                // === 6. Create new session ===
                 var (encryptedToken, tokenSalt) = _tokenService.EncryptAes(rawRefresh);
                 var newSession = new UserSession
                 {
@@ -353,8 +370,9 @@ namespace HealthCare_.Services.Auth
                 };
                 _context.UserSessions.Add(newSession);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("ExternalLoginAsync: Created new session Id={Id} for UserId={UserId}", newSession.Id, user.Id);
 
-                // Create refresh token
+                // === 7. Create refresh token entity ===
                 var refreshEntity = new RefreshToken
                 {
                     Token = _tokenService.ComputeHmacSha256Base64(rawRefresh),
@@ -368,18 +386,21 @@ namespace HealthCare_.Services.Auth
                 };
                 _context.RefreshTokens.Add(refreshEntity);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("ExternalLoginAsync: Created refresh token for UserId={UserId}, SessionId={SessionId}", user.Id, newSession.Id);
 
                 await tx.CommitAsync();
+                _logger.LogInformation("ExternalLoginAsync: External login completed successfully for UserId={UserId}", user.Id);
 
                 return (accessToken, rawRefresh, string.Empty);
             }
             catch (Exception ex)
             {
                 await tx.RollbackAsync();
-                _logger.LogError(ex, "External login transaction failed for user: {UserId}", user.Id);
+                _logger.LogError(ex, "ExternalLoginAsync: Transaction failed for UserId={UserId}", user.Id);
                 return (null!, null!, "Server error");
             }
         }
+
 
 
         public async Task<(bool Succeeded, string Error)> LogoutAsync(LogoutRequest request)
