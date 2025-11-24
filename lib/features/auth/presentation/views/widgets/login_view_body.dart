@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
+import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
 import 'package:graduation_project/features/auth/presentation/views/create_account_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/login_form_container.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/login_header.dart';
+import 'package:graduation_project/features/auth/presentation/views/widgets/role_selection.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/security_item.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/ways_to_continue.dart';
 
@@ -65,18 +68,26 @@ class LoginViewBody extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 10),
-                WaysToContinue(
-                  text: 'Continue with Google',
-                  icon: Assets.imagesGoogleColorSvgrepoCom,
-                  onTap: () {},
+                BlocBuilder<AuthCubit, AuthState>(
+                  builder: (context, state) {
+                    return WaysToContinue(
+                      text: 'Continue with Google',
+                      icon: Assets.imagesGoogleColorSvgrepoCom,
+                      onTap:
+                          state is LoginLoading
+                              ? null
+                              : () async {
+                                final String? role =
+                                    await RoleSelectionDialog.show(context);
+                                if (role != null && context.mounted) {
+                                  context.read<AuthCubit>().signInWithGoogle(
+                                    role,
+                                  );
+                                }
+                              },
+                    );
+                  },
                 ),
-                SizedBox(height: 15),
-                WaysToContinue(
-                  text: 'Continue with Apple',
-                  icon: Assets.imagesApple173SvgrepoCom,
-                  onTap: () {},
-                ),
-                SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

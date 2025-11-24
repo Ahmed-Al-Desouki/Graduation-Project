@@ -15,6 +15,7 @@ import 'package:graduation_project/features/auth/presentation/views/reset_passwo
 import 'package:graduation_project/features/auth/presentation/views/reset_success_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
+import 'package:graduation_project/features/medical_history/presentation/view/medical_history_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
 
 abstract class AppRouter {
@@ -32,7 +33,9 @@ abstract class AppRouter {
   static const kSettings = '/settings';
   static const kBiometric = '/biometric';
   static const kOtpScreen = '/otpScreen';
-
+  static const kMedicalHistory = '/medicalHistory';
+  // static const kMedicalHistory = '/';
+  // https://nonvolitional-unstuccoed-wilfred.ngrok-free.dev/api/
   static final router = GoRouter(
     routes: [
       GoRoute(path: kSplash, builder: (context, state) => const SplashBody()),
@@ -133,6 +136,10 @@ abstract class AppRouter {
             ),
           );
         },
+      ),
+      GoRoute(
+        path: kMedicalHistory,
+        builder: (context, state) => const MedicalHistoryView(),
       ),
     ],
   );

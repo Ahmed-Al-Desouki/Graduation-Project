@@ -39,21 +39,11 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
-        // if (state is LoginLoading) {
-        //   showDialog(
-        //     context: context,
-        //     barrierDismissible: false,
-        //     builder: (_) => const Center(child: CircularProgressIndicator()),
-        //   );
-        // }
         if (state is LoginOtpRequired) {
-          // ممكن نعرض رسالة الـ Cubit
           ShowSnackBar(context, '✅ ${state.message}', Colors.green);
           print("mfaToken in listener: ${state.mfaToken}");
-
-          // 2. روح شاشة الـ OTP ومعاك الداتا اللي محتاجها
           AppRouter.router.push(
-            AppRouter.kOtpScreen, // اتأكد إن ده اسم الراوت الصحيح
+            AppRouter.kOtpScreen,
             extra: {
               'email': _emailController.text.trim(),
               'password': _passwordController.text.trim(),
@@ -61,20 +51,14 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
             },
           );
         } else if (state is LoginSuccess) {
-          // Navigator.pop(context);
           ShowSnackBar(context, '✅ Login successful!', Colors.green);
-          // <<<<<<< HEAD
-          //           AppRouter.router.go(AppRouter.kSettings);
-          // =======
           final role = state.role;
           if (role == 'doctor') {
             AppRouter.router.go(AppRouter.kHomeDoctor);
           } else {
             AppRouter.router.go(AppRouter.kHomePatient);
           }
-          // >>>>>>> origin/login-register
         } else if (state is LoginFailure) {
-          // Navigator.pop(context);
           ShowSnackBar(context, '❌ ${state.errMessage}', Colors.red);
         }
       },
@@ -180,6 +164,50 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
                         ),
                       ),
                     ),
+
+                    // Row(
+                    //   children: [
+                    //     Expanded(
+                    //       child: Divider(
+                    //         indent: 20,
+                    //         color: Colors.grey,
+                    //         thickness: 1,
+                    //       ),
+                    //     ),
+                    //     Text(
+                    //       '__Or continue with__',
+                    //       style: TextStyle(
+                    //         color: Colors.grey,
+                    //         backgroundColor: Colors.white,
+                    //       ),
+                    //     ),
+                    //     Expanded(
+                    //       child: Divider(
+                    //         endIndent: 20,
+                    //         color: Colors.grey,
+                    //         thickness: 1,
+                    //       ),
+                    //     ),
+                    //   ],
+                    // ),
+                    // SizedBox(height: 10),
+                    // WaysToContinue(
+                    //   text: 'Continue with Google',
+                    //   icon: Assets.imagesGoogleColorSvgrepoCom,
+                    //   onTap:
+                    //       state is LoginLoading
+                    //           ? null
+                    //           : () async {
+                    //             final String? role =
+                    //                 await RoleSelectionDialog.show(context);
+                    //             if (role != null && context.mounted) {
+                    //               context.read<AuthCubit>().signInWithGoogle(
+                    //                 role,
+                    //               );
+                    //             }
+                    //           },
+                    // ),
+                    // SizedBox(height: 15),
                   ],
                 ),
               ),

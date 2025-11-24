@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "68726068226",
+    "project_id": "healthcare-9dd79",
+    "storage_bucket": "healthcare-9dd79.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:68726068226:android:46d07e818b00ff7584431b",
+        "android_client_info": {
+          "package_name": "com.example.graduation_project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "68726068226-6p71hbc14me3fbelcoflhjg03jpofr7s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.graduation_project",
+            "certificate_hash": "9c1156bf46a9bce6e8f3b43ebe730d4fe7ce4056"
+          }
+        },
+        {
+          "client_id": "68726068226-i8hh6glnum4h1f19ln16685cddufpptc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFaAi2mUQi_cWEpoaUMVKsUDOG3maYzC4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "68726068226-i8hh6glnum4h1f19ln16685cddufpptc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

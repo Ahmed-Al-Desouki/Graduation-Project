@@ -10,6 +10,7 @@ enum FieldType {
   nationalId,
   medicalLicense,
   birthDate,
+  number,
 }
 
 class CustomFormTextField extends StatefulWidget {

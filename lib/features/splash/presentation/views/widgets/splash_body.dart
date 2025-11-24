@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
-import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class SplashBody extends StatefulWidget {
@@ -84,94 +82,33 @@ class _SplashBodyState extends State<SplashBody>
           defaultValue: false,
         );
 
-        final accessToken = await SecureStorageHelper.getAccessToken();
-        final refreshToken = await SecureStorageHelper.getRefreshToken();
-        final role = await SecureStorageHelper.getUserRole();
-        final uid = await SecureStorageHelper.getUserId();
+        final sessionManager = getIt<SessionManager>();
+        final sessionStatus = await sessionManager.validateSession();
 
-        print("access ${accessToken}");
-        print("refreshToken ${refreshToken}");
-        // لو مفيش توكنات أساسًا → روح على اللوجن
-        if (accessToken == null || refreshToken == null) {
-          context.go(AppRouter.kLogin);
-          return;
-        }
+        if (!mounted) return;
 
-        final authRepo = getIt<AuthRepositoryimpl>();
-        final validityResult = await authRepo.checkAccessValidity(accessToken);
-
-        final isAccessValid = validityResult.fold(
-          (failure) => false,
-          (isValid) => isValid,
-        );
-
-        if (isAccessValid) {
+        if (sessionStatus == SessionStatus.valid) {
           if (biometricEnabled) {
             context.go(AppRouter.kBiometric);
           } else {
-            if (role == 'Doctor') {
-              AppRouter.router.go(AppRouter.kHomeDoctor);
-            } else {
-              AppRouter.router.go(AppRouter.kHomePatient);
-            }
-            // context.go(AppRouter.kSettings);
+            await _navigateToHome();
           }
         } else {
-          final validityResult_RefreshToken = await authRepo
-              .checkRefreshValidity(refreshToken);
-          final isRefreshValid = validityResult_RefreshToken.fold(
-            (failure) => false,
-            (isValid) => isValid,
-          );
-          if (isRefreshValid) {
-            final refreshResult = await authRepo.refreshToken(
-              accessToken: accessToken,
-              refreshToken: refreshToken,
-            );
-            await refreshResult.fold(
-              (failure) async {
-                await SecureStorageHelper.clearTokens();
-                context.go(AppRouter.kLogin);
-              },
-              (tokenModel) async {
-                await SecureStorageHelper.updateTokens(
-                  newAccessToken: tokenModel.accessToken,
-                  newRefreshToken: tokenModel.refreshToken,
-                );
-                Map<String, dynamic> payload = JwtDecoder.decode(
-                  tokenModel.accessToken,
-                );
-                final role =
-                    (payload['role'] ?? payload['Role'] ?? '')
-                        .toString()
-                        .toLowerCase();
-                final uid =
-                    (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '')
-                        .toString();
-                await SecureStorageHelper.saveUserRoleAndId(
-                  role: role,
-                  userId: uid,
-                );
-
-                if (biometricEnabled) {
-                  context.go(AppRouter.kBiometric);
-                } else {
-                  if (role == 'Doctor') {
-                    AppRouter.router.go(AppRouter.kHomeDoctor);
-                  } else {
-                    AppRouter.router.go(AppRouter.kHomePatient);
-                  }
-                  // context.go(AppRouter.kSettings);
-                }
-              },
-            );
-          } else {
-            await SecureStorageHelper.clearTokens();
-            context.go(AppRouter.kLogin);
-          }
+          context.go(AppRouter.kLogin);
         }
       }
     });
+  }
+
+  Future<void> _navigateToHome() async {
+    final roleData = await SecureStorageHelper.getUserRole();
+    final role = roleData['role']?.toLowerCase();
+
+    if (role == 'doctor') {
+      AppRouter.router.go(AppRouter.kHomeDoctor);
+    } else {
+      AppRouter.router.go(AppRouter.kHomePatient);
+    }
   }
 
   @override

@@ -6,14 +6,90 @@ import 'package:graduation_project/features/auth/data/models/auth_token_model.da
 import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:meta/meta.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // إضافة الاستيراد
+import 'package:firebase_auth/firebase_auth.dart';
 
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository _authRepository;
   final _secureStorage = const FlutterSecureStorage();
+
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
   AuthCubit(this._authRepository) : super(AuthInitial());
+
+  Future<void> signInWithGoogle(String role) async {
+    emit(LoginLoading());
+    try {
+      await _googleSignIn.signOut();
+      // 1. الحصول على بيانات مستخدم جوجل
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        emit(LoginFailure(errMessage: 'Google Sign In cancelled by user.'));
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // 2. الحصول على Google ID Token مباشرة (الذي طلبه الباك إيند)
+      final String? googleIdToken = googleAuth.idToken;
+
+      if (googleIdToken == null) {
+        emit(LoginFailure(errMessage: 'Failed to get Google ID Token.'));
+        return;
+      }
+
+      // 🚨 تم حذف خطوة:
+      // await _firebaseAuth.signInWithCredential(credential);
+      // final String firebaseIdToken = await userCredential.user!.getIdToken();
+
+      // 3. تمرير Google ID Token والدور للباك إيند
+      final result = await _authRepository.googleSignIn(
+        idToken: googleIdToken, // 💡 إرسال Google ID Token مباشرة
+        role: role,
+      );
+
+      result.fold(
+        (failure) =>
+            emit(LoginFailure(errMessage: "${failure.errmessage}+ test")),
+        (response) async {
+          // ... نفس منطق معالجة LoginSuccess الحالي
+          if (response is AuthTokenModel) {
+            // ... (فك تشفير الـ JWT وحفظ التوكنات كما في السابق)
+            Map<String, dynamic> payload = JwtDecoder.decode(
+              response.accessToken,
+            );
+            final uid =
+                (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '')
+                    .toString();
+
+            await SecureStorageHelper.saveTokens(
+              accessToken: response.accessToken,
+              refreshToken: response.refreshToken,
+            );
+            await SecureStorageHelper.saveUserRoleAndId(
+              role: role,
+              userId: uid,
+            );
+
+            // نستخدم email المستخدم من Google Account
+            emit(LoginSuccess(uid: uid, email: googleUser.email!, role: role));
+          } else {
+            emit(
+              LoginFailure(errMessage: 'Unknown response type from repository'),
+            );
+          }
+        },
+      );
+    } on Exception catch (e) {
+      // التعامل مع جميع الأخطاء المحتملة (بما في ذلك Google Sign In)
+      emit(LoginFailure(errMessage: 'Google Sign In Failed: $e'));
+    }
+  }
 
   Future<void> login({
     required String email,
@@ -73,31 +149,6 @@ class AuthCubit extends Cubit<AuthState> {
         }
       },
     );
-    // =======
-    //     (failure) => emit(LoginFailure(errMessage: failure.errmessage)),
-    //     (token) async {
-    //       // token هنا مفترض string access token
-    //       try {
-    //         // decode
-    //         Map<String, dynamic> payload = JwtDecoder.decode(token);
-    //         final role = (payload['role'] ?? payload['Role'] ?? '').toString().toLowerCase();
-    //         final uid = (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '').toString();
-
-    //         final prefs = await SharedPreferences.getInstance();
-    //         await prefs.setString('accessToken', token);
-    //         await prefs.setString('role', role);
-
-    //         // لو بتحب تعدل ApiService ليضيف التوكن تلقائي
-    //         // getIt<ApiService>().setToken(token); // قابل للتنفيذ لو ضفت method في ApiService
-
-    //         emit(LoginSuccess(uid: uid, email: email, role: role,));
-    //       } catch (e) {
-    //         // لو decode فشل
-    //         emit(LoginFailure(errMessage: 'Invalid token format'));
-    //       }
-    //     },
-    //   );
-    // >>>>>>> origin/login-register
   }
 
   Future<void> register({

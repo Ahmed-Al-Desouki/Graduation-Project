@@ -5,7 +5,7 @@ import 'package:graduation_project/core/utils/app_styles.dart';
 class WaysToContinue extends StatelessWidget {
   final String text;
   final String icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const WaysToContinue({
     super.key,
     required this.text,
@@ -33,7 +33,8 @@ class WaysToContinue extends StatelessWidget {
             ),
           ],
         ),
-        height: 50,
+        height: 60,
+        width: 300,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

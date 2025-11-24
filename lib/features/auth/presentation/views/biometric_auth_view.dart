@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
@@ -56,85 +56,23 @@ class _BiometricScreenState extends State<BiometricAuthScreen> {
   }
 
   Future<void> _handleAfterBiometricSuccess() async {
-    final accessToken = await SecureStorageHelper.getAccessToken();
-    final refreshToken = await SecureStorageHelper.getRefreshToken();
-    final role = await SecureStorageHelper.getUserRole();
-    final uid = await SecureStorageHelper.getUserId();
+    final sessionManager = getIt<SessionManager>();
 
-    if (accessToken == null || refreshToken == null) {
-      if (context.mounted) context.go(AppRouter.kLogin);
-      return;
-    }
+    final status = await sessionManager.validateSession();
 
-    final validityResult = await _authRepository.checkAccessValidity(
-      accessToken,
-    );
+    if (!mounted) return;
 
-    final isAccessValid = validityResult.fold(
-      (failure) => false,
-      (isValid) => isValid,
-    );
+    if (status == SessionStatus.valid) {
+      final roleData = await SecureStorageHelper.getUserRole();
+      final role = roleData['role']?.toLowerCase();
 
-    if (isAccessValid) {
-      if (context.mounted) {
-        if (role == 'doctor') {
-          AppRouter.router.go(AppRouter.kHomeDoctor);
-        } else {
-          AppRouter.router.go(AppRouter.kHomePatient);
-        }
+      if (role == 'doctor') {
+        AppRouter.router.go(AppRouter.kHomeDoctor);
+      } else {
+        AppRouter.router.go(AppRouter.kHomePatient);
       }
     } else {
-      final validityResult_RefreshToken = await _authRepository
-          .checkRefreshValidity(refreshToken);
-      final isRefreshValid = validityResult_RefreshToken.fold(
-        (failure) => false,
-        (isValid) => isValid,
-      );
-      if (isRefreshValid) {
-        final refreshResult = await _authRepository.refreshToken(
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-        );
-        await refreshResult.fold(
-          (failure) async {
-            await SecureStorageHelper.clearTokens();
-            if (context.mounted) context.go(AppRouter.kLogin);
-          },
-          (tokenModel) async {
-            await SecureStorageHelper.updateTokens(
-              newAccessToken: tokenModel.accessToken,
-              newRefreshToken: tokenModel.refreshToken,
-            );
-            Map<String, dynamic> payload = JwtDecoder.decode(
-              tokenModel.accessToken,
-            );
-            final role =
-                (payload['role'] ?? payload['Role'] ?? '')
-                    .toString()
-                    .toLowerCase();
-            final uid =
-                (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '')
-                    .toString();
-            await SecureStorageHelper.saveUserRoleAndId(
-              role: role,
-              userId: uid,
-            );
-            if (context.mounted) {
-              if (role == 'doctor') {
-                AppRouter.router.go(AppRouter.kHomeDoctor);
-              } else {
-                AppRouter.router.go(AppRouter.kHomePatient);
-              }
-            }
-          },
-        );
-      } else {
-        await SecureStorageHelper.clearTokens();
-        if (context.mounted) context.go(AppRouter.kLogin);
-      }
-    }
-    if (mounted) {
-      setState(() => _isAuthenticating = false);
+      if (context.mounted) context.go(AppRouter.kLogin);
     }
   }
 

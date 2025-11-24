@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
+import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -64,9 +66,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
+              final GoogleSignIn googleSignIn = getIt<GoogleSignIn>();
               await SecureStorageHelper.clearTokens();
               await Hive.box('settings').put('biometric_enabled', false);
-
+              await googleSignIn.signOut();
               if (!mounted) return;
               context.go(AppRouter.kLogin);
             },
