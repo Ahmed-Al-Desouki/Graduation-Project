@@ -72,47 +72,13 @@ namespace HealthCare_.Services.Auth
 
                 await _userManager.AddToRoleAsync(user, user.Role);
 
-
                 user.TwoFactorEnabled = true;
                 await _userManager.UpdateAsync(user);
 
+                // ================================
+                // ❌ تم نقل رفع الصورة من هنا
+                // ================================
 
-                // رفع الصورة
-                ExternalFile? file = null;
-                if (request.ProfileImageFile != null && request.ProfileImageFile.Length > 0)
-                {
-                    var upload = await _cloudinary.UploadFileAsync(request.ProfileImageFile);
-                    file = new ExternalFile
-                    {
-                        FileUrl = upload.Url,
-                        PublicId = upload.PublicId,
-                        FileType = upload.FileType,
-                        FileSize = upload.FileSize,
-                        UploadedAt = DateTime.UtcNow,
-                        CategoryValue = "Profile"
-                    };
-                }
-                else
-                {
-                    var (stream, publicId) = await _avatarService.GenerateAndUploadAvatarAsync(request.FullName);
-                    file = new ExternalFile
-                    {
-                        FileUrl = stream.Url,
-                        PublicId = publicId,
-                        FileType = "image/png",
-                        FileSize = stream.FileSize,
-                        UploadedAt = DateTime.UtcNow,
-                        CategoryValue = "Profile"
-                    };
-                }
-
-                if (file != null)
-                {
-                    _context.ExternalFiles.Add(file);
-                    await _context.SaveChangesAsync();
-                    user.ProfileImageId = file.FileID;
-                    await _userManager.UpdateAsync(user);
-                }
 
                 // إضافة Patient أو Doctor
                 if (user.Role == "Patient")
@@ -120,12 +86,27 @@ namespace HealthCare_.Services.Auth
                     var patient = new HealthCare_.Models.PatientModels.Patient
                     {
                         PatientID = user.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    var medicalHistory = new HealthCare_.Models.PatientModels.MedicalHistory
+                    {
+                        PatientID = user.Id,
                         DateOfBirth = DateTime.Today.AddYears(-25),
                         Gender = "Unknown",
-                        CreatedAt = DateTime.UtcNow,
                         CurrentLocation = "Not Specified",
+                        BloodType = null,
+                        Height = 0,
+                        Weight = 0,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
                     };
+
+                    patient.MedicalHistory = medicalHistory;
+
                     _context.Patients.Add(patient);
+                    _context.MedicalHistories.Add(medicalHistory);
                 }
                 else if (user.Role == "Doctor")
                 {
@@ -141,7 +122,62 @@ namespace HealthCare_.Services.Auth
                     _context.Doctors.Add(doctor);
                 }
 
+                // =====================================================
+                // ✅ تعديل مهم جداً
+                // حفظ الـ Patient / Doctor قبل رفع الصورة
+                // =====================================================
                 await _context.SaveChangesAsync();
+
+
+                // =====================================================
+                // ✅ رفع الصورة بعد ما الـ Patient أو Doctor اتسجل فعلاً
+                // =====================================================
+                ExternalFile? file = null;
+
+                if (request.ProfileImageFile != null && request.ProfileImageFile.Length > 0)
+                {
+                    var upload = await _cloudinary.UploadFileAsync(request.ProfileImageFile);
+
+                    file = new ExternalFile
+                    {
+                        FileUrl = upload.Url,
+                        PublicId = upload.PublicId,
+                        FileType = upload.FileType,
+                        FileSize = upload.FileSize,
+                        UploadedAt = DateTime.UtcNow,
+                        CategoryValue = "Profile"
+                    };
+                }
+                else
+                {
+                    var (stream, publicId) = await _avatarService.GenerateAndUploadAvatarAsync(request.FullName);
+
+                    file = new ExternalFile
+                    {
+                        FileUrl = stream.Url,
+                        PublicId = publicId,
+                        FileType = "image/png",
+                        FileSize = stream.FileSize,
+                        UploadedAt = DateTime.UtcNow,
+                        CategoryValue = "Profile"
+                    };
+                }
+
+                if (file != null)
+                {
+                    // =====================================================
+                    // ✅ ربط الصورة بالمستخدم الصحيح بعد إنشاء السجلات
+                    // =====================================================
+                    file.PatientID = user.Role == "Patient" ? user.Id : null;
+                    file.DoctorID = user.Role == "Doctor" ? user.Id : null;
+
+                    _context.ExternalFiles.Add(file);
+                    await _context.SaveChangesAsync();
+
+                    user.ProfileImageId = file.FileID;
+                    await _userManager.UpdateAsync(user);
+                }
+
                 await transaction.CommitAsync();
 
                 return (true, Array.Empty<string>());

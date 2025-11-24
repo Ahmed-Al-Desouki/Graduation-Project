@@ -9,12 +9,14 @@ namespace HealthCare_.Models.DTOs.CloudinaryDTO
         public IFormFile File { get; set; } = null!;
         public int? MedicalHistoryId { get; set; }
         public PatientFileCategory Category { get; set; }
+        public string? Description { get; set; }
     }
 
     public class DoctorUploadRequest
     {
         public IFormFile File { get; set; } = null!;
         public DoctorFileCategory Category { get; set; }
+        public string? Description { get; set; }
     }
 
     public class UploadFileResponse
@@ -23,5 +25,7 @@ namespace HealthCare_.Models.DTOs.CloudinaryDTO
         public string Message { get; set; } = string.Empty;
         public ExternalFile? File { get; set; }
         public string? Error { get; set; }
+        public int? UploadedById { get; set; }
+        public string? UploadedByRole { get; set; }
     }
 }

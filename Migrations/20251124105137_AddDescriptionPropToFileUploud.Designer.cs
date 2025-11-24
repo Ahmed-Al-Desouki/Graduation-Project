@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthCare_.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    [Migration("20251101003554_fixAbludeFiles")]
-    partial class fixAbludeFiles
+    [Migration("20251124105137_AddDescriptionPropToFileUploud")]
+    partial class AddDescriptionPropToFileUploud
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -40,6 +40,9 @@ namespace HealthCare_.Migrations
                     b.Property<string>("CategoryValue")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("DoctorID")
                         .HasColumnType("int");
@@ -81,15 +84,13 @@ namespace HealthCare_.Migrations
 
                     b.HasKey("FileID");
 
+                    b.HasIndex("DoctorID");
+
                     b.HasIndex("MedicalHistoryID");
 
-                    b.HasIndex("PatientID");
+                    b.HasIndex("CategoryType", "CategoryValue");
 
-                    b.HasIndex("CategoryType", "CategoryValue")
-                        .HasDatabaseName("IX_ExternalFiles_Category");
-
-                    b.HasIndex("DoctorID", "PatientID", "MedicalHistoryID")
-                        .HasDatabaseName("IX_ExternalFiles_RelatedIDs");
+                    b.HasIndex("PatientID", "DoctorID", "MedicalHistoryID");
 
                     b.ToTable("ExternalFiles");
                 });
@@ -139,6 +140,10 @@ namespace HealthCare_.Migrations
 
                     b.Property<DateTime?>("Revoked")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Salt")
                         .HasMaxLength(500)
@@ -197,7 +202,8 @@ namespace HealthCare_.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Jti");
+                    b.HasIndex("Jti")
+                        .IsUnique();
 
                     b.ToTable("RevokedTokens");
                 });
@@ -408,30 +414,38 @@ namespace HealthCare_.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryID"));
 
-                    b.Property<string>("Allergies")
+                    b.PrimitiveCollection<string>("Allergies")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AllergiesJson")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("BloodType")
-                        .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<string>("ChronicConditions")
+                    b.PrimitiveCollection<string>("ChronicConditions")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ChronicConditionsJson")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<string>("FilePath")
+                    b.Property<string>("CurrentLocation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Gender")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("Height")
                         .HasColumnType("float");
@@ -440,6 +454,7 @@ namespace HealthCare_.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.Property<double>("Weight")
@@ -447,7 +462,8 @@ namespace HealthCare_.Migrations
 
                     b.HasKey("HistoryID");
 
-                    b.HasIndex("PatientID");
+                    b.HasIndex("PatientID")
+                        .IsUnique();
 
                     b.ToTable("MedicalHistories");
                 });
@@ -507,20 +523,8 @@ namespace HealthCare_.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<string>("CurrentLocation")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("DateOfBirth")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
                     b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
 
                     b.HasKey("PatientID");
@@ -696,8 +700,8 @@ namespace HealthCare_.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("NormalizedName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
@@ -747,6 +751,9 @@ namespace HealthCare_.Migrations
                     b.Property<int>("PatientID")
                         .HasColumnType("int");
 
+                    b.Property<int?>("PrescriptionID")
+                        .HasColumnType("int");
+
                     b.Property<int>("SlotID")
                         .HasColumnType("int");
 
@@ -771,6 +778,8 @@ namespace HealthCare_.Migrations
                     b.HasKey("AppointmentID");
 
                     b.HasIndex("DoctorID");
+
+                    b.HasIndex("PrescriptionID");
 
                     b.HasIndex("SlotID")
                         .IsUnique();
@@ -1046,7 +1055,7 @@ namespace HealthCare_.Migrations
 
                     b.Property<string>("PasskeyPublicKey")
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -1259,6 +1268,10 @@ namespace HealthCare_.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("RevokedByIp")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Salt")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -1279,17 +1292,17 @@ namespace HealthCare_.Migrations
                     b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
                         .WithMany("Files")
                         .HasForeignKey("DoctorID")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
                         .WithMany("Files")
                         .HasForeignKey("MedicalHistoryID")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
                         .WithMany("Files")
                         .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Doctor");
 
@@ -1380,9 +1393,9 @@ namespace HealthCare_.Migrations
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalHistory", b =>
                 {
                     b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
-                        .WithMany("MedicalHistories")
-                        .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .WithOne("MedicalHistory")
+                        .HasForeignKey("HealthCare_.Models.PatientModels.MedicalHistory", "PatientID")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Patient");
@@ -1482,6 +1495,10 @@ namespace HealthCare_.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("HealthCare_.Models.SharedModels.Prescription", "Prescription")
+                        .WithMany()
+                        .HasForeignKey("PrescriptionID");
+
                     b.HasOne("HealthCare_.Models.DoctorModels.DoctorSlot", "Slot")
                         .WithOne("Appointment")
                         .HasForeignKey("HealthCare_.Models.SharedModels.Appointment", "SlotID")
@@ -1491,6 +1508,8 @@ namespace HealthCare_.Migrations
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
+
+                    b.Navigation("Prescription");
 
                     b.Navigation("Slot");
                 });
@@ -1670,7 +1689,8 @@ namespace HealthCare_.Migrations
 
                     b.Navigation("Files");
 
-                    b.Navigation("MedicalHistories");
+                    b.Navigation("MedicalHistory")
+                        .IsRequired();
 
                     b.Navigation("MedicationsIntakes");
 

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HealthCare_.Migrations
 {
     /// <inheritdoc />
-    public partial class NewIntial : Migration
+    public partial class FinalNoCascadeError : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,7 +36,7 @@ namespace HealthCare_.Migrations
                     Description = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     Name = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    NormalizedName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -83,7 +83,8 @@ namespace HealthCare_.Migrations
                     SlotID = table.Column<int>(type: "int", nullable: false),
                     BookingDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PrescriptionID = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -161,7 +162,7 @@ namespace HealthCare_.Migrations
                     ConsultationFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     AverageRating = table.Column<double>(type: "float", nullable: false, defaultValue: 0.0),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -289,7 +290,10 @@ namespace HealthCare_.Migrations
                     DoctorID = table.Column<int>(type: "int", nullable: true),
                     PatientID = table.Column<int>(type: "int", nullable: true),
                     MedicalHistoryID = table.Column<int>(type: "int", nullable: true),
-                    Category = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    UploadedById = table.Column<int>(type: "int", nullable: true),
+                    UploadedByRole = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    CategoryType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    CategoryValue = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -299,7 +303,7 @@ namespace HealthCare_.Migrations
                         column: x => x.DoctorID,
                         principalTable: "Doctors",
                         principalColumn: "DoctorID",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -314,7 +318,7 @@ namespace HealthCare_.Migrations
                     ProfileImageId = table.Column<int>(type: "int", nullable: true),
                     TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     PasskeyCredentialId = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    PasskeyPublicKey = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    PasskeyPublicKey = table.Column<string>(type: "nvarchar(max)", maxLength: 2000, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -347,9 +351,6 @@ namespace HealthCare_.Migrations
                 columns: table => new
                 {
                     PatientID = table.Column<int>(type: "int", nullable: false),
-                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Gender = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
-                    CurrentLocation = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -418,6 +419,7 @@ namespace HealthCare_.Migrations
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsRevoked = table.Column<bool>(type: "bit", nullable: false),
                     RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RevokedByIp = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Notes = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
                     Salt = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
                 },
@@ -439,12 +441,16 @@ namespace HealthCare_.Migrations
                     HistoryID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PatientID = table.Column<int>(type: "int", nullable: false),
-                    BloodType = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
-                    Allergies = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    ChronicConditions = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Gender = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CurrentLocation = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BloodType = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
+                    AllergiesJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ChronicConditionsJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Allergies = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ChronicConditions = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Height = table.Column<double>(type: "float", nullable: false),
                     Weight = table.Column<double>(type: "float", nullable: false),
-                    FilePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -456,7 +462,7 @@ namespace HealthCare_.Migrations
                         column: x => x.PatientID,
                         principalTable: "Patients",
                         principalColumn: "PatientID",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -502,6 +508,7 @@ namespace HealthCare_.Migrations
                     IsRevoked = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     Revoked = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RevokedByIp = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     JwtId = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
                     ReplacedById = table.Column<int>(type: "int", nullable: true),
@@ -711,6 +718,11 @@ namespace HealthCare_.Migrations
                 columns: new[] { "PatientID", "DoctorID", "AppointmentDate" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Appointments_PrescriptionID",
+                table: "Appointments",
+                column: "PrescriptionID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Appointments_SlotID",
                 table: "Appointments",
                 column: "SlotID",
@@ -763,24 +775,30 @@ namespace HealthCare_.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ExternalFiles_CategoryType_CategoryValue",
+                table: "ExternalFiles",
+                columns: new[] { "CategoryType", "CategoryValue" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExternalFiles_DoctorID",
+                table: "ExternalFiles",
+                column: "DoctorID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ExternalFiles_MedicalHistoryID",
                 table: "ExternalFiles",
                 column: "MedicalHistoryID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExternalFiles_PatientID",
+                name: "IX_ExternalFiles_PatientID_DoctorID_MedicalHistoryID",
                 table: "ExternalFiles",
-                column: "PatientID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ExternalFiles_RelatedIDs",
-                table: "ExternalFiles",
-                columns: new[] { "DoctorID", "PatientID", "MedicalHistoryID" });
+                columns: new[] { "PatientID", "DoctorID", "MedicalHistoryID" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_MedicalHistories_PatientID",
                 table: "MedicalHistories",
-                column: "PatientID");
+                column: "PatientID",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_MedicalRecords_DoctorID",
@@ -899,7 +917,8 @@ namespace HealthCare_.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_RevokedTokens_Jti",
                 table: "RevokedTokens",
-                column: "Jti");
+                column: "Jti",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "RoleNameIndex",
@@ -967,6 +986,13 @@ namespace HealthCare_.Migrations
                 onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
+                name: "FK_Appointments_Prescriptions_PrescriptionID",
+                table: "Appointments",
+                column: "PrescriptionID",
+                principalTable: "Prescriptions",
+                principalColumn: "PrescriptionID");
+
+            migrationBuilder.AddForeignKey(
                 name: "FK_AspNetUserClaims_Users_UserId",
                 table: "AspNetUserClaims",
                 column: "UserId",
@@ -1028,7 +1054,7 @@ namespace HealthCare_.Migrations
                 column: "MedicalHistoryID",
                 principalTable: "MedicalHistories",
                 principalColumn: "HistoryID",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_ExternalFiles_Patients_PatientID",
@@ -1036,7 +1062,7 @@ namespace HealthCare_.Migrations
                 column: "PatientID",
                 principalTable: "Patients",
                 principalColumn: "PatientID",
-                onDelete: ReferentialAction.SetNull);
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />

@@ -1,10 +1,11 @@
 ﻿using HealthCare_.Models.DTOs.PatientDot;
+using HealthCare_.Models.DTOs.PatientDTO;
 
 namespace HealthCare_.Interfaces
 {
-    public interface IMedicalHistoryService
+    public interface IMedicalProfileService
     {
-        Task<MedicalHistoryResponse> CreateOrUpdateMedicalHistoryAsync(CreateOrUpdateMedicalHistoryRequest request);
-        Task<PatientProfileResponse> GetPatientProfileAsync();
+        Task<MedicalProfileResponse> GetMedicalProfileAsync();
+        Task<MedicalProfileResponse> UpdateMedicalProfileAsync(Models.DTOs.PatientDot.UpdateMedicalProfileRequest request);
     }
 }

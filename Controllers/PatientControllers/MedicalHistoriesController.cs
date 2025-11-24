@@ -1,76 +1,51 @@
-﻿using HealthCare_.Models.DTOs.PatientDot;
+﻿// File: Controllers/Patient/PatientMedicalProfileController.cs
+using HealthCare_.Models.DTOs.PatientDot;
 using Microsoft.AspNetCore.Authorization;
 
-
-namespace HealthCare_.Controllers.Patient
+[Route("api/patient/profile")]
+[ApiController]
+[Authorize(Roles = "Patient")]
+public class PatientMedicalProfileController : ControllerBase
 {
-    [Route("api/patient")]
-    [ApiController]
-    [Authorize(Roles = "Patient")]
-    public class PatientMedicalHistoryController : ControllerBase
+    private readonly IMedicalProfileService _service;
+    private readonly ILogger<PatientMedicalProfileController> _logger;
+
+    public PatientMedicalProfileController(IMedicalProfileService service, ILogger<PatientMedicalProfileController> logger)
     {
-        private readonly IMedicalHistoryService _service;
-        private readonly HealthCarePlusContext _context;
+        _service = service;
+        _logger = logger;
+    }
 
-        public PatientMedicalHistoryController(
-            IMedicalHistoryService service,
-            HealthCarePlusContext context)
+    [HttpGet]
+    public async Task<IActionResult> GetProfile()
+    {
+        try
         {
-            _service = service;
-            _context = context;
+            var profile = await _service.GetMedicalProfileAsync();
+            return Ok(new { success = true, data = profile });
         }
-
-        [HttpPost("medical-history")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> CreateOrUpdate([FromForm] CreateOrUpdateMedicalHistoryRequest request)
+        catch (Exception ex)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            try
-            {
-                var result = await _service.CreateOrUpdateMedicalHistoryAsync(request);
-
-                var action = await _context.MedicalHistories
-                    .AnyAsync(h => h.HistoryID == result.HistoryID && h.UpdatedAt == result.UpdatedAt)
-                    ? "updated" : "created";
-
-                return Ok(new
-                {
-                    message = $"Medical history {action} successfully.",
-                    data = result
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { error = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "An unexpected error occurred.", details = ex.Message });
-            }
+            _logger.LogError(ex, "Error fetching medical profile");
+            return StatusCode(500, new { success = false, error = "Failed to load profile" });
         }
+    }
 
-        [HttpGet("patient-history")]
-        public async Task<IActionResult> GetPatientHistory()
+    [HttpPut]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateMedicalProfileRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { success = false, errors = ModelState });
+
+        try
         {
-            try
-            {
-                var profile = await _service.GetPatientProfileAsync();
-                return Ok(profile);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { error = "Patient profile not found." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = ex.Message });
-            }
+            var profile = await _service.UpdateMedicalProfileAsync(request);
+            return Ok(new { success = true, message = "Profile updated successfully", data = profile });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating medical profile");
+            return StatusCode(500, new { success = false, error = "Update failed" });
         }
     }
 }

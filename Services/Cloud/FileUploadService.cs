@@ -50,6 +50,7 @@ namespace HealthCare_.Services.Cloud
                 UploadedById = userId,
                 UploadedByRole = "Patient",
                 CategoryType = "Patient",
+                Description = request.Description,
                 CategoryValue = request.Category.ToString(),
                 UploadedAt = DateTime.UtcNow
             };
@@ -77,6 +78,7 @@ namespace HealthCare_.Services.Cloud
                 UploadedById = doctorId,
                 UploadedByRole = "Doctor",
                 CategoryType = "Doctor",
+                Description = request.Description,
                 CategoryValue = request.Category.ToString()
             };
 
@@ -103,7 +105,9 @@ namespace HealthCare_.Services.Cloud
                 {
                     Success = true,
                     Message = "File uploaded successfully.",
-                    File = file
+                    File = file,
+                    UploadedById = file.UploadedById,
+                    UploadedByRole = file.UploadedByRole
                 };
             }
             catch (Exception ex)

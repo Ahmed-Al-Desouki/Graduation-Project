@@ -37,5 +37,7 @@
         // Added missing navigation property
         public ICollection<Review> Reviews { get; set; } // Already added previously
         public ICollection<Reminder> Reminders { get; set; } // Added this to fix the error
+                                                             // أضف ده مع باقي الـ navigation properties
+        public Prescription? Prescription { get; set; }
     }
 }

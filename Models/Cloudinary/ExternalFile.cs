@@ -1,4 +1,7 @@
 ﻿// File: Models/DTOs/Cloudinary/ExternalFile.cs
+using HealthCare_.Models.sharedModels;
+using System.Text.Json.Serialization;
+
 public class ExternalFile
 {
     [Key] public int FileID { get; set; }
@@ -7,7 +10,7 @@ public class ExternalFile
     [MaxLength(100)] public string FileType { get; set; } = string.Empty;
     public long FileSize { get; set; }
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
-
+    public string? Description { get; set; }
     public int? DoctorID { get; set; }
     public int? PatientID { get; set; }
     public int? MedicalHistoryID { get; set; }
@@ -21,6 +24,10 @@ public class ExternalFile
 
     [ForeignKey(nameof(DoctorID))] public Doctor? Doctor { get; set; }
     [ForeignKey(nameof(PatientID))] public Patient? Patient { get; set; }
-    [ForeignKey(nameof(MedicalHistoryID))] public MedicalHistory? MedicalHistory { get; set; }
+    [JsonIgnore]
+    [ForeignKey(nameof(MedicalHistoryID))]
+    public MedicalHistory? MedicalHistory { get; set; }
+    [ForeignKey(nameof(UploadedById))]
+    public ApplicationUser? UploadedBy { get; set; }
 }
 

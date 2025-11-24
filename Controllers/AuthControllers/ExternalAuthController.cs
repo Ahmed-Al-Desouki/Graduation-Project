@@ -141,16 +141,40 @@ namespace HealthCare_.Controllers
                         {
                             if (!await _context.Patients.AnyAsync(p => p.PatientID == user.Id))
                             {
-                                _logger.LogInformation("Creating Patient profile for user {UserId}", user.Id);
+                                _logger.LogInformation("Creating Patient and MedicalHistory profile for user {UserId}", user.Id);
 
-                                _context.Patients.Add(new HealthCare_.Models.PatientModels.Patient
+                                // 1. إنشاء الـ Patient (بس بيانات أساسية)
+                                var patient = new HealthCare_.Models.PatientModels.Patient
                                 {
                                     PatientID = user.Id,
-                                    DateOfBirth = DateTime.Today.AddYears(-25),
-                                    Gender = "Unknown",
                                     CreatedAt = DateTime.UtcNow,
-                                    CurrentLocation = "Not Specified"
-                                });
+                                    UpdatedAt = DateTime.UtcNow
+                                };
+
+                                // 2. إنشاء الـ MedicalHistory (كل البيانات الطبية والشخصية هنا)
+                                var medicalHistory = new HealthCare_.Models.PatientModels.MedicalHistory
+                                {
+                                    PatientID = user.Id,
+                                    DateOfBirth = DateTime.Today.AddYears(-25),     // أو خد من الـ request لو موجود
+                                    Gender = "Unknown",
+                                    CurrentLocation = "Not Specified",
+                                    BloodType = null,
+                                    Height = 0,
+                                    Weight = 0,
+                                    Allergies = new List<string>(),
+                                    ChronicConditions = new List<string>(),
+                                    CreatedAt = DateTime.UtcNow,
+                                    UpdatedAt = DateTime.UtcNow
+                                };
+
+                                // 3. ربط الاثنين مع بعض
+                                patient.MedicalHistory = medicalHistory;
+
+                                // 4. إضافتهم للـ Context
+                                _context.Patients.Add(patient);
+                                _context.MedicalHistories.Add(medicalHistory);
+
+                                _logger.LogInformation("Patient and MedicalHistory created successfully for user {UserId}", user.Id);
                             }
                         }
                         else if (requestedRole.Equals("Doctor", StringComparison.OrdinalIgnoreCase))

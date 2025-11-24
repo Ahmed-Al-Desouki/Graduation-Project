@@ -170,7 +170,9 @@ builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<UserManager<ApplicationUser>>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
-builder.Services.AddScoped<IMedicalHistoryService, PatientMedicalHistoryService>();
+builder.Services.AddScoped<IMedicalProfileService, PatientMedicalProfileService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 
 
 // ====================== CONTROLLERS & SWAGGER ======================
@@ -221,14 +223,22 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "HealthCare+ API v1");
+    c.RoutePrefix = string.Empty;  // ده السطر السحري، يخلي Swagger يبقى على الـ root
+});
+
 app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
-    ServeUnknownFileTypes = true,
-    DefaultContentType = "application/json",
-    RequestPath = ""
+    ServeUnknownFileTypes = false,
+    RequestPath = "/static"
 });
+
 
 app.UseHangfireDashboard("/admin-secret-reminders-2025-xyz", new DashboardOptions
 {
@@ -270,15 +280,11 @@ app.UseCookiePolicy(new CookiePolicyOptions
 });
 
 // ده اللي هيخلي الـ root (/) يفتح Swagger تلقائيًا
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "HealthCare+ API v1");
-    c.RoutePrefix = string.Empty;  // ده السطر السحري، يخلي Swagger يبقى على الـ root
-});
+
 
 // لو عايز تضمن إن أي حد يدخل / يروح Swagger حتى لو كتب حاجة غلط
-app.MapGet("/", () => Results.Redirect("/swagger"));
+app.MapGet("/", () => Results.Redirect("/swagger"))
+   .ExcludeFromDescription();
 
 app.UseCors("AllowAll");
 
