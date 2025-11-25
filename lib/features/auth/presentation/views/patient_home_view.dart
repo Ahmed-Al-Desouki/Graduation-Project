@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/next_reminder_card.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/patient_home_header.dart';
@@ -28,7 +29,9 @@ class PatientHomeView extends StatelessWidget {
             ),
             SizedBox(height: 10),
             PatientQuickActionCard(
-              onTap: () {},
+              onTap: () {
+                AppRouter.router.go(AppRouter.kReminder);
+              },
               title: 'Search for Doctors',
               subtitle: 'Schedule with your doctor',
               gradientColor: Color(0xFF9333EA),

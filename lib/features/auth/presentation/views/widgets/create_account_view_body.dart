@@ -55,14 +55,14 @@ class CreateAccountViewBody extends StatelessWidget {
                       TextSpan(
                         text: 'Join thousands of users who trust\n',
                         style: AppStyles.styleRegular14Gray.copyWith(
-                        fontSize: 12.sp,
-                      ),
+                          fontSize: 12.sp,
+                        ),
                         children: [
                           TextSpan(
                             text: 'MedConnect',
                             style: AppStyles.styleRegular14Gray.copyWith(
-                        fontSize: 12.sp,
-                      ),
+                              fontSize: 12.sp,
+                            ),
                           ),
                         ],
                       ),
@@ -74,7 +74,6 @@ class CreateAccountViewBody extends StatelessWidget {
                       style: AppStyles.styleRegular14Gray.copyWith(
                         fontSize: 12.sp,
                       ),
-                      
                     ),
                   ],
                 ),
@@ -82,8 +81,22 @@ class CreateAccountViewBody extends StatelessWidget {
             ),
             SizedBox(height: 30.h),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [PatientOptionCard(), DoctorOptionCard()],
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 8.w, right: 2.w),
+                    child: PatientOptionCard(),
+                  ),
+                ),
+                SizedBox(width: 3.w),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 8.w, left: 2.w),
+                    child: DoctorOptionCard(),
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 20.h),
             Row(
@@ -108,7 +121,7 @@ class CreateAccountViewBody extends StatelessWidget {
             ),
             SizedBox(height: 8.h),
             Text(
-              '© 2024 MediConnect. All rights reserved.',
+              '© 2025 MedConnect. All rights reserved.',
               style: AppStyles.styleRegular12Gray,
             ),
             SizedBox(height: 8.h),

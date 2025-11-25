@@ -1,8 +1,13 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:graduation_project/core/utils/helper/api.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/features/reminder/data/repo/reminder_repo.dart';
+import 'package:graduation_project/features/reminder/data/repo/reminder_repo_impl.dart';
+import 'package:graduation_project/features/reminder/data/services/reminder_web_service.dart';
 import 'package:graduation_project/features/auth/presentation/layout/patient_home_layout.dart';
 import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
+import 'package:graduation_project/features/reminder/presentation/manger/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/auth/presentation/views/biometric_auth_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/create_account_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/doctor_home_view.dart';
@@ -10,7 +15,7 @@ import 'package:graduation_project/features/auth/presentation/views/doctor_regis
 import 'package:graduation_project/features/auth/presentation/views/login_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/otp_screen.dart';
 import 'package:graduation_project/features/auth/presentation/views/patient_registration_view.dart';
-// import 'package:graduation_project/features/auth/presentation/views/reminder_view.dart';
+import 'package:graduation_project/features/reminder/presentation/views/reminder_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_password_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_success_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
@@ -27,6 +32,7 @@ abstract class AppRouter {
   // static const kHome = '/home';
   static const kHomePatient = '/home/patient';
   static const kHomeDoctor = '/home/doctor';
+  static const kReminder = '/reminder';
   static const kResetPassword = '/resetPassword';
   static const kResetSuccess = '/resetSuccess';
   static const kSettings = '/settings';
@@ -87,6 +93,31 @@ abstract class AppRouter {
       GoRoute(
         path: kHomeDoctor,
         builder: (context, state) => const DoctorHomeView(),
+      ),
+
+      // GoRoute(
+      //   path: kReminder,
+      //   builder: (context, state) => const ReminderView(),
+      // ),
+      // GoRoute(
+      //   path: kReminder,
+      //   builder:
+      //       (context, state) => BlocProvider(
+      //         create:
+      //             (_) => ReminderCubit(
+      //               ReminderRepositoryImpl(ReminderWebService(ApiService())),
+      //             )..loadReminders(),
+      //         child: const ReminderView(),
+      //       ),
+      // ),
+      GoRoute(
+        path: kReminder,
+        builder:
+            (context, state) => BlocProvider(
+              create:
+                  (_) => getIt<ReminderCubit>(),
+              child: const ReminderView(),
+            ),
       ),
 
       GoRoute(

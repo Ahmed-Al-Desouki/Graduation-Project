@@ -4,110 +4,90 @@ import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
-class PatientOptionCard extends StatefulWidget {
+class PatientOptionCard extends StatelessWidget {
   const PatientOptionCard({super.key});
 
   @override
-  State<PatientOptionCard> createState() => _PatientOptionCardState();
-}
-
-class _PatientOptionCardState extends State<PatientOptionCard> {
-  bool _isHovering = false;
-  static const double _liftAmount = -5.0;
-  static const Color _activeBorderColor = Colors.blueAccent;
-  @override
   Widget build(BuildContext context) {
-    final double translateY = _isHovering ? _liftAmount : 0.0;
-    final Color borderColor =
-        _isHovering ? _activeBorderColor : Colors.transparent;
-    final double shadowOpacity = _isHovering ? 0.25 : 0.1;
-    return MouseRegion(
-      onEnter: (_) {
-        setState(() {
-          _isHovering = true;
-        });
-      },
-      onExit: (_) {
-        setState(() {
-          _isHovering = false;
-        });
-      },
-      child: InkWell(
-        onTap: () {
-          AppRouter.router.go(AppRouter.kRegisterAsPatient);
-        },
-        hoverColor: Colors.transparent,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        child: AnimatedContainer(
+    return InkWell(
+      onTap: () => AppRouter.router.go(AppRouter.kRegisterAsPatient),
+      child: Container(
+        width: 0.48.sw,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15.r),
+          border: Border.all(
+            color: Color.fromARGB(255, 181, 211, 251),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10.r,
+              offset: Offset(0, 5.h),
+            ),
+          ],
+        ),
+        child: Padding(
           padding: EdgeInsets.symmetric(vertical: 20.h),
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          transform: Matrix4.translationValues(0.0, translateY, 0.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15.r),
-            border: Border.all(color: borderColor, width: 2.0),
-            boxShadow: [
-              BoxShadow(
-                color: Color.fromRGBO(0, 0, 0, shadowOpacity),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(25.r),
+                child: Image.asset(
+                  Assets.imagesPatient1,
+                  height: 80.h,
+                  width: 80.h,
+                ),
+              ),
+              SizedBox(height: 10.h),
+              Text(
+                "I'm a Patient",
+                style: AppStyles.styleSemiBold18Dark.copyWith(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 10.h),
+              Text(
+                'Book appointments,\nmanage health records',
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                style: AppStyles.styleRegular14Gray,
+              ),
+              SizedBox(height: 15.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 3.h),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25.r),
+                  color: const Color(0xFFDBEAFE),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.favorite, color: Color(0xFF2563EB), size: 20.sp),
+                    SizedBox(width: 5.w),
+                    Text(
+                      'Health Management',
+                      style: AppStyles.styleMedium12Blue.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10.sp,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 20.h),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(25.r),
-                  child: Image.asset(
-                    Assets.imagesPatient1,
-                    height: 80.h,
-                    width: 80.h,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                SizedBox(height: 10.h),
-                Text(
-                  "I'm a Patient",
-                  style: AppStyles.styleSemiBold18Dark.copyWith(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 10.h),
-                Text(
-                  'Book appointments,\nmanagehealth records',
-                  textAlign: TextAlign.center,
-                  style: AppStyles.styleRegular14Gray,
-                ),
-                SizedBox(height: 15.h),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 3.h),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25.r),
-                    color: Color(0xFFDBEAFE),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.favorite, color: Color(0xFF2563EB), size: 15.sp),
-                      SizedBox(width: 5.w),
-                      Text(
-                        'Health Management',
-                        style: AppStyles.styleMedium12Blue.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Row(
+        ),
+      ),
+    );
+  }
+}
+
+
+// Row(
                 //   mainAxisAlignment: MainAxisAlignment.center,
                 //   children: [
                 //     Column(
@@ -180,11 +160,3 @@ class _PatientOptionCardState extends State<PatientOptionCard> {
                 //     ),
                 //   ],
                 // ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
