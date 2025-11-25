@@ -203,6 +203,7 @@ namespace HealthCare_.Services.Auth
                 return (null!, null!, "Email not found");
             if (!await _userManager.CheckPasswordAsync(user, request.Password))
                 return (null!, null!, "Invalid password");
+            user.TwoFactorEnabled = true;
             if (user.TwoFactorEnabled)
             {
                 if (string.IsNullOrEmpty(request.OtpCode))
@@ -324,7 +325,7 @@ namespace HealthCare_.Services.Auth
             _logger.LogInformation("ExternalLoginAsync: Starting login for UserId={UserId}, Device={Device}, IP={IP}",
                 user.Id, deviceInfo, ipAddress);
 
-            user.TwoFactorEnabled = false;
+            //user.TwoFactorEnabled = false;
             // === 1. MFA check ===
             //if (user.TwoFactorEnabled)
             //{
