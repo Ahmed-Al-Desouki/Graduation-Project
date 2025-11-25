@@ -257,8 +257,8 @@
 // ----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:graduation_project/features/reminder/presentation/manger/reminder_cubit/reminder_cubit.dart';
-import 'package:graduation_project/features/reminder/presentation/manger/reminder_cubit/reminder_state.dart';
+import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
+import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_state.dart';
 
 class AddReminderView extends StatefulWidget {
   const AddReminderView({super.key});

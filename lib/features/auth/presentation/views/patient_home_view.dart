@@ -47,7 +47,9 @@ class PatientHomeView extends StatelessWidget {
             ),
             SizedBox(height: 20),
             PatientQuickActionCard(
-              onTap: () {},
+              onTap: () {
+                AppRouter.router.go(AppRouter.kMedicalHistory);
+              },
               title: 'Medical History',
               subtitle: 'View your health history',
               gradientColor: Color.fromARGB(255, 35, 184, 42),

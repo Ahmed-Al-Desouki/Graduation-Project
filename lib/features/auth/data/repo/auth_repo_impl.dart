@@ -40,6 +40,28 @@ class AuthRepositoryimpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, AuthTokenModel>> googleSignIn({
+    required String idToken,
+    required String role,
+  }) async {
+    try {
+      final res = await _authService.googleSignIn(idToken: idToken, role: role);
+
+      if (res['success'] == true) {
+        final tokens = res['data'] ?? res;
+        return Right(AuthTokenModel.fromJson(tokens));
+      } else {
+        final msg = res['data']?['message'] ?? 'Google Sign In failed';
+        return Left(ServerFailure(msg));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioException(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, dynamic>> login({
     required String email,
     required String password,
@@ -54,7 +76,6 @@ class AuthRepositoryimpl implements AuthRepository {
       print("🧩 LOGIN RESPONSE => $res");
 
       if (res['success'] == true) {
-        // <<<<<<< HEAD
         if (otpCode == null || otpCode.isEmpty) {
           return Right({
             "message": res['message'] ?? 'OTP Sent successfully',
@@ -63,10 +84,6 @@ class AuthRepositoryimpl implements AuthRepository {
         } else {
           return Right(AuthTokenModel.fromJson(res));
         }
-        // =======
-        //         final token = res['accessToken'] ?? '';
-        //         return Right(token);
-        // >>>>>>> origin/login-register
       } else {
         final msg = res['data']?['message'] ?? 'Login failed';
         return Left(ServerFailure(msg));
@@ -106,7 +123,7 @@ class AuthRepositoryimpl implements AuthRepository {
   @override
   Future<Either<Failure, bool>> checkAccessValidity(String accessToken) async {
     try {
-      final res = await _authService.checkToken(accessToken: accessToken);
+      final res = await _authService.checkToken();
       print(res);
       return Right(res['summary'] == 'all_valid');
     } catch (e) {

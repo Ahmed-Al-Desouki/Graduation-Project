@@ -247,7 +247,7 @@ import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
-import 'package:graduation_project/features/reminder/presentation/manger/reminder_cubit/reminder_cubit.dart';
+import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/reminder/presentation/views/add_reminder_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/reminder_appointment_card.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/reminder_header.dart';

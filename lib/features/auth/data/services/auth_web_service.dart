@@ -33,6 +33,15 @@ class AuthWebServices {
     return response;
   }
 
+  Future<Map<String, dynamic>> googleSignIn({
+    required String idToken,
+    required String role,
+  }) async {
+    final body = {"idToken": idToken, "role": role};
+    final response = await _apiService.post('ExternalAuth/google-login', body);
+    return response;
+  }
+
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -81,15 +90,18 @@ class AuthWebServices {
     return response;
   }
 
-  Future<Map<String, dynamic>> checkToken({required String accessToken}) async {
+  Future<Map<String, dynamic>> checkToken() async {
     return await _apiService.get(
       'auth/token-status-v2',
-      bearerToken: accessToken,
+      // bearerToken: accessToken,
     );
   }
 
   Future<Map<String, dynamic>> checkRefreshToken(String token) async {
-    return await _apiService.get('auth/token-status-v2', refreshCookie: token);
+    return await _apiService.get(
+      'auth/token-status-v2',
+      // , refreshCookie: token
+    );
   }
 
   Future<Map<String, dynamic>> resendOtp({required String mfaToken}) async {

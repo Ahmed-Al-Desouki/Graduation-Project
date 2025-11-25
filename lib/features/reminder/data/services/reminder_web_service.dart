@@ -1,5 +1,4 @@
 import 'package:graduation_project/core/utils/helper/api.dart';
-import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_instance_model.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
 
@@ -29,11 +28,9 @@ class ReminderWebService {
       "baseTime": baseTime,
       "message": message,
     };
-    final token = await SecureStorageHelper.getAccessToken();
     final response = await _apiService.post(
       "patients/$patientId/reminders",
       body,
-      token: token,
     );
     return response;
   }
