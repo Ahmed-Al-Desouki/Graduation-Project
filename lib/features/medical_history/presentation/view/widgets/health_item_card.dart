@@ -33,25 +33,6 @@ class HealthItemCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (isEditing) ...[
-            GestureDetector(
-              onTap: onDelete,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.remove_circle,
-                  color: Colors.red,
-                  size: 22,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
-
           Icon(icon, size: 14, color: accentColor),
           const SizedBox(width: 12),
 
@@ -65,6 +46,24 @@ class HealthItemCard extends StatelessWidget {
               ),
             ),
           ),
+          if (isEditing) ...[
+            GestureDetector(
+              onTap: onDelete,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.red,
+                  size: 22,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
         ],
       ),
     );

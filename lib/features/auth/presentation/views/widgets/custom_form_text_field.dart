@@ -23,6 +23,7 @@ class CustomFormTextField extends StatefulWidget {
   final bool obscureText;
   final int? minLines;
   final int? maxLines;
+  final String? Function(String?)? validator;
   const CustomFormTextField({
     super.key,
     required this.hintText,
@@ -34,6 +35,7 @@ class CustomFormTextField extends StatefulWidget {
     this.obscureText = false,
     this.minLines,
     this.maxLines,
+    this.validator,
   });
 
   @override
@@ -49,6 +51,8 @@ class _CustomFormTextFieldState extends State<CustomFormTextField> {
       case FieldType.nationalId:
       case FieldType.medicalLicense:
         return TextInputType.number;
+      case FieldType.birthDate:
+        return TextInputType.datetime;
       case FieldType.email:
         return TextInputType.emailAddress;
       default:
@@ -93,8 +97,8 @@ class _CustomFormTextFieldState extends State<CustomFormTextField> {
         if (age == null) {
           return 'Please enter a valid number';
         }
-        if (age < 18) {
-          return 'Age must be 18 or older';
+        if (age < 0) {
+          return 'Age cannot be negative';
         }
         break;
 
@@ -128,7 +132,7 @@ class _CustomFormTextFieldState extends State<CustomFormTextField> {
         controller: widget.controller,
         obscureText: isPasswordField && !_isPasswordVisible,
         keyboardType: _getKeyboardType(),
-        validator: _validate,
+        validator: widget.validator ?? _validate,
         onChanged: widget.onChanged,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         decoration: InputDecoration(

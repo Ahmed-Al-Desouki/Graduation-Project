@@ -15,6 +15,7 @@ class PatientRepositoryImpl implements PatientRepository {
   Future<Either<Failure, PatientProfileModel>> getPatientProfile() async {
     try {
       final response = await _patientWebServices.getPatientProfile();
+      print("🔍 Raw Profile Data: ${response['data']}");
       if (response['success'] == true && response['data'] != null) {
         return Right(PatientProfileModel.fromJson(response['data']));
       }

@@ -14,6 +14,20 @@ class ProfileViewMode extends StatelessWidget {
             ? profile.dateOfBirth!.split('T')[0]
             : "N/A";
 
+    IconData genderIcon = Icons.person; // Default
+    if (profile.gender.toLowerCase() == 'male') {
+      genderIcon = Icons.male;
+    } else if (profile.gender.toLowerCase() == 'female') {
+      genderIcon = Icons.female;
+    }
+
+    String displayAge;
+    if (profile.age == 0) {
+      displayAge = "Infant"; // أو "< 1 Yr"
+    } else {
+      displayAge = "${profile.age} Yrs";
+    }
+
     return Column(
       children: [
         Row(
@@ -22,14 +36,14 @@ class ProfileViewMode extends StatelessWidget {
               child: InfoCardWidget(
                 label: "Gender",
                 value: profile.gender,
-                icon: Icons.male,
+                icon: genderIcon,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: InfoCardWidget(
                 label: "Age",
-                value: "${profile.age} Yrs",
+                value: displayAge,
                 icon: Icons.cake,
               ),
             ),

@@ -134,6 +134,14 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
                   hintText: "Weight (kg)",
                   fieldType: FieldType.number,
                   imagePath: Assets.imagesWeight,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return "Required";
+                    final n = double.tryParse(value);
+                    if (n == null) return "Invalid number";
+                    if (n < 1) return "Min 1kg";
+                    if (n > 300) return "Max 300kg";
+                    return null;
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -143,6 +151,14 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
                   hintText: "Height (cm)",
                   fieldType: FieldType.number,
                   imagePath: Assets.imagesHeight,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return "Required";
+                    final n = double.tryParse(value);
+                    if (n == null) return "Invalid number";
+                    if (n < 20) return "Min 20cm";
+                    if (n > 300) return "Max 300cm";
+                    return null;
+                  },
                 ),
               ),
             ],
