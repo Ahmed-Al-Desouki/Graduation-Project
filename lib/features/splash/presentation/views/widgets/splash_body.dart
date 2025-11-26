@@ -30,7 +30,7 @@ class _SplashBodyState extends State<SplashBody>
   static const double totalAppearanceFactor =
       nameAppearanceDurationFactor + logoAppearanceDurationFactor;
   static const double fadeOutStartTime = 0.93;
-  static const int totalDurationMs = 5500;
+  static const int totalDurationMs = 5000;
 
   @override
   void initState() {

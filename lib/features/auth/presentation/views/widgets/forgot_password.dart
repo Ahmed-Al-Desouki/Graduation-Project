@@ -68,6 +68,10 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(30),
+                        bottomRight: Radius.circular(30),
+                      ),
                     ),
                     child: Center(
                       child: Column(
@@ -129,7 +133,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             borderRadius: BorderRadius.circular(15.r),
                           ),
                           child: ElevatedButton(
-                            onPressed: state is RegisterLoading ? null : _submit,
+                            onPressed:
+                                state is RegisterLoading ? null : _submit,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,

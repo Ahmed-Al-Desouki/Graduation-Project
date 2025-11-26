@@ -286,10 +286,12 @@
 // }
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
+import 'package:graduation_project/features/auth/presentation/views/create_account_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/input_field.dart';
 
 class LoginFormContainer extends StatefulWidget {
@@ -417,7 +419,7 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 15),
                     Center(
                       child: Container(
                         width: 300,
@@ -448,6 +450,39 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
                             ),
                           ),
                         ),
+                      ),
+                    ),
+                    SizedBox(height: 15),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Don't have an account? ",
+                            style: AppStyles.styleMedium16Dark.copyWith(
+                              fontSize: 18.sp,
+                            ), // responsive font
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return CreateAccountView();
+                                  },
+                                ),
+                              );
+                            },
+                            child: Text(
+                              "Create Account",
+                              style: AppStyles.styleRegular16Teal.copyWith(
+                                fontSize: 20.sp, // responsive font
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 

@@ -51,6 +51,9 @@ class Assets {
 
   // static const String imagesChronicDiseases = "assets/images/chronic_diseases.svg";
 
+  /// Assets for imagesClipartDoctorPerson1
+  /// assets/images/clipart-doctor-person-1.png
+  static const String imagesClipartDoctorPerson1 = "assets/images/clipart-doctor-person-1.png";
 
   /// Assets for imagesClock
   /// assets/images/clock.svg
@@ -201,6 +204,11 @@ class Assets {
   /// assets/images/register_patient.png
   static const String imagesRegisterPatient =
       "assets/images/register_patient.png";
+
+  /// Assets for imagesReminderSvgrepoCom
+  /// assets/images/reminder-svgrepo-com.svg
+  static const String imagesReminderSvgrepoCom =
+      "assets/images/reminder-svgrepo-com.svg";
 
   /// Assets for imagesSchduleBooking
   /// assets/images/schdule_booking.svg

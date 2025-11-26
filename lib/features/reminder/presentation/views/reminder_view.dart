@@ -249,10 +249,10 @@ import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/reminder/presentation/views/add_reminder_view.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/reminder_appointment_card.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/reminder_header.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/reminder_medication_card.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/reminder_section_header.dart';
+import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_appointment_card.dart';
+import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_header.dart';
+import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_medication_card.dart';
+import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_section_header.dart';
 
 // class ReminderView extends StatelessWidget {
 //   const ReminderView({super.key});

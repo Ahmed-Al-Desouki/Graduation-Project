@@ -79,7 +79,7 @@ class _InputFieldState extends State<InputField> {
               ),
               hintText: widget.hint,
               hintStyle: TextStyle(
-                fontSize: (widget.hintSize ?? 14).sp,
+                fontSize: (widget.hintSize ?? 15).sp,
                 color: Colors.black54,
               ),
             ),
