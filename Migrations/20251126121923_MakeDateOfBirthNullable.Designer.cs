@@ -4,6 +4,7 @@ using HealthCare_.Models.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthCare_.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    partial class HealthCarePlusContextModelSnapshot : ModelSnapshot
+    [Migration("20251126121923_MakeDateOfBirthNullable")]
+    partial class MakeDateOfBirthNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -405,153 +408,6 @@ namespace HealthCare_.Migrations
                     b.ToTable("SessionTypes");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.Appointment", b =>
-                {
-                    b.Property<int>("AppointmentID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AppointmentID"));
-
-                    b.Property<DateTime>("AppointmentDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("BookingDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<int>("DoctorID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Duration")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EmergencyLevel")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsReviewed")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("PatientID")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PrescriptionID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SlotID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Symptoms")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("AppointmentID");
-
-                    b.HasIndex("DoctorID");
-
-                    b.HasIndex("PrescriptionID");
-
-                    b.HasIndex("SlotID")
-                        .IsUnique();
-
-                    b.HasIndex("PatientID", "DoctorID", "AppointmentDate");
-
-                    b.ToTable("Appointments");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.DosingSchedule", b =>
-                {
-                    b.Property<int>("DosingScheduleID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DosingScheduleID"));
-
-                    b.Property<TimeSpan>("DailyTime")
-                        .HasColumnType("time");
-
-                    b.Property<int>("PrescriptionMedID")
-                        .HasColumnType("int");
-
-                    b.HasKey("DosingScheduleID");
-
-                    b.HasIndex("PrescriptionMedID");
-
-                    b.ToTable("DosingSchedules");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.FamilyHistoryEntry", b =>
-                {
-                    b.Property<int>("FamilyHistoryID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FamilyHistoryID"));
-
-                    b.Property<string>("Condition")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("HistoryID")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsVerified")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int?>("OnsetAge")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Relative")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("FamilyHistoryID");
-
-                    b.HasIndex("HistoryID");
-
-                    b.ToTable("FamilyHistoryEntries");
-                });
-
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalHistory", b =>
                 {
                     b.Property<int>("HistoryID")
@@ -612,68 +468,6 @@ namespace HealthCare_.Migrations
                         .IsUnique();
 
                     b.ToTable("MedicalHistories");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalRecord", b =>
-                {
-                    b.Property<int>("RecordID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RecordID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("CurrentStatus")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Diagnosis")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("DoctorID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("HistoryID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("NextVisitDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("Symptoms")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("VisitDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("RecordID");
-
-                    b.HasIndex("DoctorID");
-
-                    b.HasIndex("HistoryID", "DoctorID");
-
-                    b.ToTable("MedicalRecords");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicationsIntake", b =>
@@ -741,141 +535,6 @@ namespace HealthCare_.Migrations
                         .IsUnique();
 
                     b.ToTable("Patients");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.PatientSelfMedication", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Dosage")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Instructions")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("MedicationName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PatientID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("PatientID");
-
-                    b.ToTable("PatientSelfMedications");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.Prescription", b =>
-                {
-                    b.Property<int>("PrescriptionID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PrescriptionID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<int>("DoctorID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("GeneralInstructions")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("PatientID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("PrescriptionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("PrescriptionID");
-
-                    b.HasIndex("DoctorID");
-
-                    b.HasIndex("PatientID", "DoctorID");
-
-                    b.ToTable("Prescriptions");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.PrescriptionMed", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("Dosage")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Instructions")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("MedicationName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("PrescriptionID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("PrescriptionID");
-
-                    b.ToTable("PrescriptionMeds");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Reminder", b =>
@@ -994,118 +653,25 @@ namespace HealthCare_.Migrations
                     b.ToTable("ReminderInstances");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.SocialHistory", b =>
+            modelBuilder.Entity("HealthCare_.Models.ReminderModels.DosingSchedule", b =>
                 {
-                    b.Property<int>("SocialHistoryID")
+                    b.Property<int>("DosingScheduleID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SocialHistoryID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DosingScheduleID"));
 
-                    b.Property<string>("AlcoholUse")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<TimeSpan>("DailyTime")
+                        .HasColumnType("time");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DrugUse")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Exercise")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("HistoryID")
+                    b.Property<int>("PrescriptionMedID")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                    b.HasKey("DosingScheduleID");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                    b.HasIndex("PrescriptionMedID");
 
-                    b.Property<string>("Occupation")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("SmokingDetails")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("SmokingStatus")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("SocialHistoryID");
-
-                    b.HasIndex("HistoryID");
-
-                    b.ToTable("SocialHistories");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.Surgery", b =>
-                {
-                    b.Property<int>("SurgeryID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SurgeryID"));
-
-                    b.Property<int?>("AppointmentID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Complications")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("HistoryID")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("SurgeryID");
-
-                    b.HasIndex("HistoryID");
-
-                    b.ToTable("Surgeries");
+                    b.ToTable("DosingSchedules");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.SharedModels.ApplicationRole", b =>
@@ -1147,6 +713,233 @@ namespace HealthCare_.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("Roles", (string)null);
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.Appointment", b =>
+                {
+                    b.Property<int>("AppointmentID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AppointmentID"));
+
+                    b.Property<DateTime>("AppointmentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("BookingDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int>("DoctorID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EmergencyLevel")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsReviewed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PatientID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PrescriptionID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SlotID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Symptoms")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("AppointmentID");
+
+                    b.HasIndex("DoctorID");
+
+                    b.HasIndex("PrescriptionID");
+
+                    b.HasIndex("SlotID")
+                        .IsUnique();
+
+                    b.HasIndex("PatientID", "DoctorID", "AppointmentDate");
+
+                    b.ToTable("Appointments");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.MedicalRecord", b =>
+                {
+                    b.Property<int>("RecordID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RecordID"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("CurrentStatus")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Diagnosis")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DoctorID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("HistoryID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NextVisitDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Symptoms")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("VisitDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("RecordID");
+
+                    b.HasIndex("DoctorID");
+
+                    b.HasIndex("HistoryID", "DoctorID");
+
+                    b.ToTable("MedicalRecords");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.Prescription", b =>
+                {
+                    b.Property<int>("PrescriptionID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PrescriptionID"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int>("DoctorID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GeneralInstructions")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("PatientID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PrescriptionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("PrescriptionID");
+
+                    b.HasIndex("DoctorID");
+
+                    b.HasIndex("PatientID", "DoctorID");
+
+                    b.ToTable("Prescriptions");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.PrescriptionMed", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("Dosage")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("MedicationName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PrescriptionID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("PrescriptionID");
+
+                    b.ToTable("PrescriptionMeds");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.SharedModels.Review", b =>
@@ -1605,61 +1398,6 @@ namespace HealthCare_.Migrations
                     b.Navigation("Doctor");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.Appointment", b =>
-                {
-                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
-                        .WithMany("Appointments")
-                        .HasForeignKey("DoctorID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
-                        .WithMany("Appointments")
-                        .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HealthCare_.Models.PatientModels.Prescription", "Prescription")
-                        .WithMany()
-                        .HasForeignKey("PrescriptionID");
-
-                    b.HasOne("HealthCare_.Models.DoctorModels.DoctorSlot", "Slot")
-                        .WithOne("Appointment")
-                        .HasForeignKey("HealthCare_.Models.PatientModels.Appointment", "SlotID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Doctor");
-
-                    b.Navigation("Patient");
-
-                    b.Navigation("Prescription");
-
-                    b.Navigation("Slot");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.DosingSchedule", b =>
-                {
-                    b.HasOne("HealthCare_.Models.PatientModels.PrescriptionMed", "PrescriptionMed")
-                        .WithMany("DosingSchedules")
-                        .HasForeignKey("PrescriptionMedID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PrescriptionMed");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.FamilyHistoryEntry", b =>
-                {
-                    b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
-                        .WithMany()
-                        .HasForeignKey("HistoryID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("MedicalHistory");
-                });
-
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalHistory", b =>
                 {
                     b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
@@ -1671,32 +1409,13 @@ namespace HealthCare_.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalRecord", b =>
-                {
-                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
-                        .WithMany("MedicalRecords")
-                        .HasForeignKey("DoctorID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
-                        .WithMany("MedicalRecords")
-                        .HasForeignKey("HistoryID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Doctor");
-
-                    b.Navigation("MedicalHistory");
-                });
-
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicationsIntake", b =>
                 {
                     b.HasOne("HealthCare_.Models.PatientModels.Patient", null)
                         .WithMany("MedicationsIntakes")
                         .HasForeignKey("PatientID");
 
-                    b.HasOne("HealthCare_.Models.PatientModels.PrescriptionMed", "PrescriptionMed")
+                    b.HasOne("HealthCare_.Models.SharedModels.PrescriptionMed", "PrescriptionMed")
                         .WithMany("MedicationsIntakes")
                         .HasForeignKey("PrescriptionMedID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1723,50 +1442,9 @@ namespace HealthCare_.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.PatientSelfMedication", b =>
-                {
-                    b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Patient");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.Prescription", b =>
-                {
-                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
-                        .WithMany("Prescriptions")
-                        .HasForeignKey("DoctorID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
-                        .WithMany("Prescriptions")
-                        .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Doctor");
-
-                    b.Navigation("Patient");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.PrescriptionMed", b =>
-                {
-                    b.HasOne("HealthCare_.Models.PatientModels.Prescription", "Prescription")
-                        .WithMany("Medications")
-                        .HasForeignKey("PrescriptionID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Prescription");
-                });
-
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Reminder", b =>
                 {
-                    b.HasOne("HealthCare_.Models.PatientModels.Appointment", "Appointment")
+                    b.HasOne("HealthCare_.Models.SharedModels.Appointment", "Appointment")
                         .WithMany("Reminders")
                         .HasForeignKey("AppointmentID")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1777,7 +1455,7 @@ namespace HealthCare_.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("HealthCare_.Models.PatientModels.PrescriptionMed", "PrescriptionMed")
+                    b.HasOne("HealthCare_.Models.SharedModels.PrescriptionMed", "PrescriptionMed")
                         .WithMany("Reminders")
                         .HasForeignKey("PrescriptionMedID")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1800,31 +1478,102 @@ namespace HealthCare_.Migrations
                     b.Navigation("Reminder");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.SocialHistory", b =>
+            modelBuilder.Entity("HealthCare_.Models.ReminderModels.DosingSchedule", b =>
                 {
-                    b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
+                    b.HasOne("HealthCare_.Models.SharedModels.PrescriptionMed", "PrescriptionMed")
+                        .WithMany("DosingSchedules")
+                        .HasForeignKey("PrescriptionMedID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PrescriptionMed");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.Appointment", b =>
+                {
+                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
+                        .WithMany("Appointments")
+                        .HasForeignKey("DoctorID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
+                        .WithMany("Appointments")
+                        .HasForeignKey("PatientID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HealthCare_.Models.SharedModels.Prescription", "Prescription")
                         .WithMany()
+                        .HasForeignKey("PrescriptionID");
+
+                    b.HasOne("HealthCare_.Models.DoctorModels.DoctorSlot", "Slot")
+                        .WithOne("Appointment")
+                        .HasForeignKey("HealthCare_.Models.SharedModels.Appointment", "SlotID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("Prescription");
+
+                    b.Navigation("Slot");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.MedicalRecord", b =>
+                {
+                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
+                        .WithMany("MedicalRecords")
+                        .HasForeignKey("DoctorID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
+                        .WithMany("MedicalRecords")
                         .HasForeignKey("HistoryID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Doctor");
 
                     b.Navigation("MedicalHistory");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.Surgery", b =>
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.Prescription", b =>
                 {
-                    b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
-                        .WithMany()
-                        .HasForeignKey("HistoryID")
+                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
+                        .WithMany("Prescriptions")
+                        .HasForeignKey("DoctorID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
+                        .WithMany("Prescriptions")
+                        .HasForeignKey("PatientID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.PrescriptionMed", b =>
+                {
+                    b.HasOne("HealthCare_.Models.SharedModels.Prescription", "Prescription")
+                        .WithMany("Medications")
+                        .HasForeignKey("PrescriptionID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("MedicalHistory");
+                    b.Navigation("Prescription");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.SharedModels.Review", b =>
                 {
-                    b.HasOne("HealthCare_.Models.PatientModels.Appointment", "Appointment")
+                    b.HasOne("HealthCare_.Models.SharedModels.Appointment", "Appointment")
                         .WithMany("Reviews")
                         .HasForeignKey("AppointmentID")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1935,13 +1684,6 @@ namespace HealthCare_.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.Appointment", b =>
-                {
-                    b.Navigation("Reminders");
-
-                    b.Navigation("Reviews");
-                });
-
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalHistory", b =>
                 {
                     b.Navigation("Files");
@@ -1965,20 +1707,6 @@ namespace HealthCare_.Migrations
                     b.Navigation("Reminders");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.Prescription", b =>
-                {
-                    b.Navigation("Medications");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.PrescriptionMed", b =>
-                {
-                    b.Navigation("DosingSchedules");
-
-                    b.Navigation("MedicationsIntakes");
-
-                    b.Navigation("Reminders");
-                });
-
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Reminder", b =>
                 {
                     b.Navigation("Instances");
@@ -1987,6 +1715,27 @@ namespace HealthCare_.Migrations
             modelBuilder.Entity("HealthCare_.Models.PatientModels.ReminderInstance", b =>
                 {
                     b.Navigation("Intake");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.Appointment", b =>
+                {
+                    b.Navigation("Reminders");
+
+                    b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.Prescription", b =>
+                {
+                    b.Navigation("Medications");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.SharedModels.PrescriptionMed", b =>
+                {
+                    b.Navigation("DosingSchedules");
+
+                    b.Navigation("MedicationsIntakes");
+
+                    b.Navigation("Reminders");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.sharedModels.ApplicationUser", b =>

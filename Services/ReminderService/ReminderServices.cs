@@ -2,8 +2,6 @@
 using HealthCare_.Models.Context;
 using HealthCare_.Models.DTOs.ReminderDTO;
 using HealthCare_.Models.EnumForModels;
-using HealthCare_.Models.PatientModels;
-using HealthCare_.Models.ReminderModels;
 using HealthCare_.Models.SharedModels;
 using Microsoft.EntityFrameworkCore;
 using static HealthCare_.Models.EnumForModels.Enums;
@@ -104,7 +102,6 @@ namespace HealthCare_.Services.Reminder
                     RepeatFrequency.Daily => current.AddDays(1),
                     RepeatFrequency.Weekly => current.AddDays(7),
                     RepeatFrequency.EveryXHours => current.AddHours(reminder.IntervalHours ?? 24),
-                    RepeatFrequency.Custom => current.AddDays(1),
                     _ => current.AddDays(1)
                 };
             }
@@ -241,7 +238,7 @@ namespace HealthCare_.Services.Reminder
                 .FirstOrDefaultAsync(r => r.ReminderID == reminderId);
 
             if (reminder == null) throw new Exception("Reminder not found");
-
+            reminder.Type = dto.Type;
             reminder.Name = dto.Name;
             reminder.StartDate = dto.StartDate;
             reminder.EndDate = dto.EndDate;

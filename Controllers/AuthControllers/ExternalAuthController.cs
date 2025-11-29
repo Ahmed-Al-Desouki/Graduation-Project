@@ -155,7 +155,7 @@ namespace HealthCare_.Controllers
                                 var medicalHistory = new HealthCare_.Models.PatientModels.MedicalHistory
                                 {
                                     PatientID = user.Id,
-                                    DateOfBirth = DateTime.Today.AddYears(-25),     // أو خد من الـ request لو موجود
+                                    DateOfBirth = null,     // أو خد من الـ request لو موجود
                                     Gender = "Unknown",
                                     CurrentLocation = "Not Specified",
                                     BloodType = null,

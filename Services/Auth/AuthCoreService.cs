@@ -93,7 +93,7 @@ namespace HealthCare_.Services.Auth
                     var medicalHistory = new HealthCare_.Models.PatientModels.MedicalHistory
                     {
                         PatientID = user.Id,
-                        DateOfBirth = DateTime.Today.AddYears(-25),
+                        DateOfBirth = null,
                         Gender = "Unknown",
                         CurrentLocation = "Not Specified",
                         BloodType = null,
@@ -203,8 +203,8 @@ namespace HealthCare_.Services.Auth
                 return (null!, null!, "Email not found");
             if (!await _userManager.CheckPasswordAsync(user, request.Password))
                 return (null!, null!, "Invalid password");
-            user.TwoFactorEnabled = true;
-            if (user.TwoFactorEnabled)
+            //user.TwoFactorEnabled = true;
+            //if (user.TwoFactorEnabled)
             {
                 if (string.IsNullOrEmpty(request.OtpCode))
                 {
@@ -218,94 +218,95 @@ namespace HealthCare_.Services.Auth
                 var (verified, error) = await _mfaService.VerifyMfaAsync(user.Id, request.OtpCode);
                 if (!verified)
                     return (null!, null!, error);
-            }
-            if (request.UsePasskey)
-                return (null!, null!, "Passkey authentication required");
-            var (accessToken, jti, _) = await _tokenService.GenerateJwtToken(user);
-            var rawRefresh = _tokenService.GenerateRandomToken();
-            using var tx = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                // === 1. تحديد الحد الأقصى للأجهزة ===
-                int maxDevices = Convert.ToInt32(_configuration["Auth:MaxActiveDevices"] ?? "3");
-                // === 2. جلب كل السيشنز النشطة لليوزر (من أي جهاز) ===
-                var activeSessions = await _context.UserSessions
-                    .Where(s =>
-                        s.UserId == user.Id &&
-                        s.IsActive &&
-                        !s.IsRevoked &&
-                        s.ExpiresAt > DateTime.UtcNow)
-                    .OrderBy(s => s.CreatedAt) // الأقدم أولاً
-                    .ToListAsync();
-                _logger.LogInformation("User has {Count}/{Max} active devices", activeSessions.Count, maxDevices);
-                // === 3. إذا زاد عن الحد → إبطال أقدم سيشن ===
-                if (activeSessions.Count >= maxDevices)
+                //}
+                if (request.UsePasskey)
+                    return (null!, null!, "Passkey authentication required");
+                var (accessToken, jti, _) = await _tokenService.GenerateJwtToken(user);
+                var rawRefresh = _tokenService.GenerateRandomToken();
+                using var tx = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    var oldestSession = activeSessions.First();
-                    oldestSession.IsActive = false;
-                    oldestSession.IsRevoked = true;
-                    oldestSession.RevokedAt = DateTime.UtcNow;
-                    oldestSession.RevokedByIp = ipAddress;
-                    oldestSession.Notes = $"Device limit exceeded (max: {maxDevices}). Revoked on new login.";
-                    _context.UserSessions.Update(oldestSession);
-                    _logger.LogWarning("Revoked oldest session due to device limit | Id: {Id} | Device: {Device}",
-                        oldestSession.Id, oldestSession.DeviceInfo);
+                    // === 1. تحديد الحد الأقصى للأجهزة ===
+                    int maxDevices = Convert.ToInt32(_configuration["Auth:MaxActiveDevices"] ?? "3");
+                    // === 2. جلب كل السيشنز النشطة لليوزر (من أي جهاز) ===
+                    var activeSessions = await _context.UserSessions
+                        .Where(s =>
+                            s.UserId == user.Id &&
+                            s.IsActive &&
+                            !s.IsRevoked &&
+                            s.ExpiresAt > DateTime.UtcNow)
+                        .OrderBy(s => s.CreatedAt) // الأقدم أولاً
+                        .ToListAsync();
+                    _logger.LogInformation("User has {Count}/{Max} active devices", activeSessions.Count, maxDevices);
+                    // === 3. إذا زاد عن الحد → إبطال أقدم سيشن ===
+                    if (activeSessions.Count >= maxDevices)
+                    {
+                        var oldestSession = activeSessions.First();
+                        oldestSession.IsActive = false;
+                        oldestSession.IsRevoked = true;
+                        oldestSession.RevokedAt = DateTime.UtcNow;
+                        oldestSession.RevokedByIp = ipAddress;
+                        oldestSession.Notes = $"Device limit exceeded (max: {maxDevices}). Revoked on new login.";
+                        _context.UserSessions.Update(oldestSession);
+                        _logger.LogWarning("Revoked oldest session due to device limit | Id: {Id} | Device: {Device}",
+                            oldestSession.Id, oldestSession.DeviceInfo);
+                    }
+                    // === 4. إبطال أي سيشن قديمة بنفس الجهاز (حتى لو ما زادش الحد) ===
+                    var existingSameDevice = await _context.UserSessions
+                        .FirstOrDefaultAsync(s =>
+                            s.UserId == user.Id &&
+                            s.DeviceInfo == deviceInfo &&
+                            s.IsActive);
+                    if (existingSameDevice != null)
+                    {
+                        existingSameDevice.IsActive = false;
+                        existingSameDevice.RevokedAt = DateTime.UtcNow;
+                        existingSameDevice.RevokedByIp = ipAddress;
+                        existingSameDevice.Notes = "Same device re-login";
+                        _context.UserSessions.Update(existingSameDevice);
+                        _logger.LogInformation("Revoked previous session on same device | Id: {Id}", existingSameDevice.Id);
+                    }
+                    // === 5. إنشاء سيشن جديدة ===
+                    var (encryptedToken, tokenSalt) = _tokenService.EncryptAes(rawRefresh);
+                    var newSession = new UserSession
+                    {
+                        UserId = user.Id,
+                        DeviceInfo = deviceInfo,
+                        IpAddress = ipAddress,
+                        CreatedAt = DateTime.UtcNow,
+                        ExpiresAt = DateTime.UtcNow.AddDays(Convert.ToDouble(_configuration["Jwt:RefreshTokenExpireDays"] ?? "30")),
+                        LastActivity = DateTime.UtcNow,
+                        IsActive = true,
+                        EncryptedToken = encryptedToken,
+                        Salt = tokenSalt,
+                        Notes = "New login with device limit enforcement"
+                    };
+                    _context.UserSessions.Add(newSession);
+                    await _context.SaveChangesAsync();
+                    // === 6. إضافة RefreshToken ===
+                    var refreshEntity = new RefreshToken
+                    {
+                        Token = _tokenService.ComputeHmacSha256Base64(rawRefresh),
+                        Expires = newSession.ExpiresAt,
+                        CreatedAt = DateTime.UtcNow,
+                        JwtId = jti,
+                        UserId = user.Id,
+                        DeviceInfo = deviceInfo,
+                        IpAddress = ipAddress,
+                        UserSessionId = newSession.Id
+                    };
+                    _context.RefreshTokens.Add(refreshEntity);
+                    await _context.SaveChangesAsync();
+                    await tx.CommitAsync();
+                    _logger.LogInformation("Login successful | UserId: {Id} | SessionId: {SessionId}", user.Id, newSession.Id);
+                    return (accessToken, rawRefresh, string.Empty);
                 }
-                // === 4. إبطال أي سيشن قديمة بنفس الجهاز (حتى لو ما زادش الحد) ===
-                var existingSameDevice = await _context.UserSessions
-                    .FirstOrDefaultAsync(s =>
-                        s.UserId == user.Id &&
-                        s.DeviceInfo == deviceInfo &&
-                        s.IsActive);
-                if (existingSameDevice != null)
+                catch (Exception ex)
                 {
-                    existingSameDevice.IsActive = false;
-                    existingSameDevice.RevokedAt = DateTime.UtcNow;
-                    existingSameDevice.RevokedByIp = ipAddress;
-                    existingSameDevice.Notes = "Same device re-login";
-                    _context.UserSessions.Update(existingSameDevice);
-                    _logger.LogInformation("Revoked previous session on same device | Id: {Id}", existingSameDevice.Id);
+                    await tx.RollbackAsync();
+                    _logger.LogError(ex, "Login transaction failed for user: {Email}", request.Email);
+                    return (null!, null!, "Server error");
                 }
-                // === 5. إنشاء سيشن جديدة ===
-                var (encryptedToken, tokenSalt) = _tokenService.EncryptAes(rawRefresh);
-                var newSession = new UserSession
-                {
-                    UserId = user.Id,
-                    DeviceInfo = deviceInfo,
-                    IpAddress = ipAddress,
-                    CreatedAt = DateTime.UtcNow,
-                    ExpiresAt = DateTime.UtcNow.AddDays(Convert.ToDouble(_configuration["Jwt:RefreshTokenExpireDays"] ?? "30")),
-                    LastActivity = DateTime.UtcNow,
-                    IsActive = true,
-                    EncryptedToken = encryptedToken,
-                    Salt = tokenSalt,
-                    Notes = "New login with device limit enforcement"
-                };
-                _context.UserSessions.Add(newSession);
-                await _context.SaveChangesAsync();
-                // === 6. إضافة RefreshToken ===
-                var refreshEntity = new RefreshToken
-                {
-                    Token = _tokenService.ComputeHmacSha256Base64(rawRefresh),
-                    Expires = newSession.ExpiresAt,
-                    CreatedAt = DateTime.UtcNow,
-                    JwtId = jti,
-                    UserId = user.Id,
-                    DeviceInfo = deviceInfo,
-                    IpAddress = ipAddress,
-                    UserSessionId = newSession.Id
-                };
-                _context.RefreshTokens.Add(refreshEntity);
-                await _context.SaveChangesAsync();
-                await tx.CommitAsync();
-                _logger.LogInformation("Login successful | UserId: {Id} | SessionId: {SessionId}", user.Id, newSession.Id);
-                return (accessToken, rawRefresh, string.Empty);
-            }
-            catch (Exception ex)
-            {
-                await tx.RollbackAsync();
-                _logger.LogError(ex, "Login transaction failed for user: {Email}", request.Email);
-                return (null!, null!, "Server error");
             }
         }
 

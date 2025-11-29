@@ -4,6 +4,7 @@ using HealthCare_.Models.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthCare_.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    partial class HealthCarePlusContextModelSnapshot : ModelSnapshot
+    [Migration("20251126164841_AddMedicationSyrgrySocialHistoryFamilyHistory")]
+    partial class AddMedicationSyrgrySocialHistoryFamilyHistory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -518,9 +521,6 @@ namespace HealthCare_.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("HistoryID")
                         .HasColumnType("int");
 
@@ -741,52 +741,6 @@ namespace HealthCare_.Migrations
                         .IsUnique();
 
                     b.ToTable("Patients");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.PatientSelfMedication", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Dosage")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Instructions")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("MedicationName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PatientID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("PatientID");
-
-                    b.ToTable("PatientSelfMedications");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Prescription", b =>
@@ -1010,9 +964,6 @@ namespace HealthCare_.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("DrugUse")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1023,9 +974,6 @@ namespace HealthCare_.Migrations
 
                     b.Property<int>("HistoryID")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
@@ -1073,9 +1021,6 @@ namespace HealthCare_.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("HistoryID")
@@ -1721,17 +1666,6 @@ namespace HealthCare_.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.PatientModels.PatientSelfMedication", b =>
-                {
-                    b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Prescription", b =>

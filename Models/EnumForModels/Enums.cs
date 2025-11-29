@@ -32,8 +32,7 @@ namespace HealthCare_.Models.EnumForModels
             Once,
             Daily,
             Weekly,
-            EveryXHours,
-            Custom
+            EveryXHours
         }
 
         // أي enums تانية تحتفظ بيها هنا

@@ -1,4 +1,6 @@
-﻿using HealthCare_.Models.DTOs.AppointmentDTO;
+﻿using HealthCare_.Controllers.Patient;
+using HealthCare_.Models.DTOs.AppointmentDTO;
+using HealthCare_.Models.DTOs.PatientDTO;
 using Microsoft.AspNetCore.Authorization;
 
 namespace HealthCare_.Controllers.DoctorControllers
@@ -12,11 +14,13 @@ namespace HealthCare_.Controllers.DoctorControllers
         private readonly IAppointmentService _appointmentService;
         private readonly IMedicalRecordService _medicalRecordService;
         private readonly IHttpContextAccessor _http;
+        private readonly ILogger<PatientMedicalProfileController> _logger;
 
         public DoctorAppointmentsController(
             IAppointmentService appointmentService,
             IMedicalRecordService medicalRecordService,
-            IHttpContextAccessor http)
+            IHttpContextAccessor http,
+            ILogger<PatientMedicalProfileController> logger)
         {
             _appointmentService = appointmentService;
             _medicalRecordService = medicalRecordService;
@@ -36,6 +40,21 @@ namespace HealthCare_.Controllers.DoctorControllers
             return success
                 ? Ok(new { success = true, message = "Medical record created" })
                 : BadRequest(new { success = false, message = "Appointment not found or not yours" });
+        }
+                [HttpPost("Medication/{prescriptionId}")]
+        public async Task<IActionResult> UpsertMedication(int prescriptionId, [FromBody] CurrentMedicationDto request)
+        {
+            try
+            {
+                _logger.LogInformation("API call: UpsertMedication '{Medication}' for PrescriptionID: {PrescriptionID}", request.MedicationName, prescriptionId);
+                var med = await _appointmentService.UpsertMedicationAsync(prescriptionId, request);
+                return Ok(med);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error upserting medication '{Medication}' for PrescriptionID: {PrescriptionID}", request.MedicationName, prescriptionId);
+                return StatusCode(500, "Internal server error");
+            }
         }
     }
 }

@@ -3,6 +3,7 @@
     public class UpdateReminderDto
     {
         public string? Name { get; set; }
+        public Enums.ReminderType Type { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public RepeatFrequency Frequency { get; set; } = RepeatFrequency.Daily;

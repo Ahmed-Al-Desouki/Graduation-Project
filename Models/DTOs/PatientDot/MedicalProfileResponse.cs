@@ -13,36 +13,43 @@ namespace HealthCare_.Models.DTOs.PatientDTO
         public string Email { get; set; } = string.Empty;
         public string? ProfileImageUrl { get; set; }
 
-        public DateTime DateOfBirth { get; set; }
+        public DateTime? DateOfBirth { get; set; }
         public int Age
         {
             get
             {
-                if (DateOfBirth == default) return 0;
+                if (!DateOfBirth.HasValue) return 0;
 
                 var today = DateTime.Today;
-                var age = today.Year - DateOfBirth.Year;
+                var age = today.Year - DateOfBirth.Value.Year;
 
-                if (DateOfBirth > today.AddYears(-age)) age--;
+                if (DateOfBirth.Value > today.AddYears(-age)) age--;
 
                 return age;
             }
         }
 
+
         public string Gender { get; set; } = "Unknown";
         public string? CurrentLocation { get; set; }
 
         public string? BloodType { get; set; }
-        public List<string> Allergies { get; set; } = new();
-        public List<string> ChronicConditions { get; set; } = new();
+        public List<string>? Allergies { get; set; } = new();
+        public List<string>? ChronicConditions { get; set; } = new();
         public double Height { get; set; }
         public double Weight { get; set; }
 
-        public List<FileDto> LabTests { get; set; } = new();
-        public List<FileDto> RadiologyFiles { get; set; } = new();
+        public List<FileDto>? LabTests { get; set; } = new();
+        public List<FileDto>? RadiologyFiles { get; set; } = new();
 
-        public List<PastAppointmentDto> PastAppointments { get; set; } = new();
-        public List<MedicalRecordDto> MedicalRecords { get; set; } = new();
+        public List<PastAppointmentDto>? PastAppointments { get; set; } = new();
+        public List<MedicalRecordDto>? MedicalRecords { get; set; } = new();
+        public List<SurgeryDto>? Surgeries { get; set; } = new();
+        public List<FamilyHistoryDto>? FamilyHistory { get; set; } = new();
+        public List<SocialHistoryDto>? SocialHistory { get; set; } = new();
+        public List<CurrentMedicationDto>? CurrentMedications { get; set; } = new();
+        public List<SelfMedicationDto>? PatientSelfMedications { get; set; } = new();
+
     }
 
     public class FileDto
@@ -71,27 +78,31 @@ namespace HealthCare_.Models.DTOs.PatientDTO
         public int PrescriptionID { get; set; }
         public DateTime PrescriptionDate { get; set; }
         public string GeneralInstructions { get; set; } = string.Empty;
-        public List<MedicationDto> Medications { get; set; } = new();
+        public List<CurrentMedicationDto> Medications { get; set; } = new();
     }
 
-    public class MedicationDto
+    public class CurrentMedicationDto
     {
+        public int CurrentMedicationID { get; set; } // PrescriptionMed.ID
+        public int HistoryID { get; set; }
         public string MedicationName { get; set; } = string.Empty;
-        public string Dosage { get; set; } = string.Empty;
-        public string Instructions { get; set; } = string.Empty;
+        public string? Dosage { get; set; } // dosage field
+        public string? Doseinstruction { get; set; } // specific dose instruction
+        public string? Frequency { get; set; } // readable frequency / schedule summary
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string? Notes { get; set; }
+        public bool IsOverTheCounter { get; set; } = false; // optional
     }
 
-
-    // Request
-    public class UpdateMedicalProfileRequest
+    public class SelfMedicationDto
     {
-        public string? BloodType { get; set; }
-        public List<string>? Allergies { get; set; }
-        public List<string>? ChronicConditions { get; set; }
-        public double? Height { get; set; }
-        public double? Weight { get; set; }
-        public DateTime? DateOfBirth { get; set; }
-        public string? Gender { get; set; }
-        public string? CurrentLocation { get; set; }
+        public int ID { get; set; }
+        public string MedicationName { get; set; } = string.Empty;
+        public string? Dosage { get; set; }
+        public string? Instructions { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
+
 }

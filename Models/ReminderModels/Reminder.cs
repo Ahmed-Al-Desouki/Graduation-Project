@@ -1,9 +1,6 @@
 ﻿// File: Models/PatientModels/Reminder.cs
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
-using HealthCare_.Models.SharedModels;
-using HealthCare_.Models.PatientModels;
 using HealthCare_.Models.EnumForModels;
 
 namespace HealthCare_.Models.PatientModels

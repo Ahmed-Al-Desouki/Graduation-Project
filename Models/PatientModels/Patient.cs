@@ -1,5 +1,4 @@
-﻿
-using HealthCare_.Models.sharedModels;
+﻿using HealthCare_.Models.sharedModels;
 
 
 namespace HealthCare_.Models.PatientModels

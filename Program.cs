@@ -1,12 +1,9 @@
 ﻿using AspNetCoreRateLimit;
 using Hangfire;
-using HealthCare_.Controllers;
-using HealthCare_.Interfaces.IAuth;
 using HealthCare_.Interfaces.IAuth;
 using HealthCare_.Interfaces.ReminderInterface;
 using HealthCare_.Middleware;
 using HealthCare_.Models.sharedModels;
-using HealthCare_.Services;
 using HealthCare_.Services.Auth;
 using HealthCare_.Services.Auth.Interfaces;
 using HealthCare_.Services.Background;
@@ -14,14 +11,12 @@ using HealthCare_.Services.BackGround;
 using HealthCare_.Services.Cloud;
 using HealthCare_.Services.DoctorDervice;
 using HealthCare_.Services.Patient;
-using HealthCare_.Services.PatientService;
 using HealthCare_.Services.Reminder;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
-using System.Net;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -155,7 +150,6 @@ builder.Services.AddScoped<SignInManager<ApplicationUser>>();
 builder.Services.AddScoped<RoleManager<ApplicationRole>>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IDoctorService, DoctorServices>();
-builder.Services.AddScoped<IPatientService, PatientServices>();
 builder.Services.AddHostedService<RevokedTokensCleanupService>();
 builder.Services.AddScoped<IEmailService, HealthCare_.Services.EmailService>();
 builder.Services.AddScoped<IAuthCoreService, AuthCoreService>();
@@ -222,6 +216,31 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+
+        var result = new
+        {
+            message = ex.Message,
+            inner = ex.InnerException?.Message,
+            stack = ex.StackTrace
+        };
+
+        await context.Response.WriteAsJsonAsync(result);
+    }
+});
+
+
 
 
 app.UseSwagger();

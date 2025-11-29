@@ -1,6 +1,4 @@
-﻿
-
-namespace HealthCare_.Models.ReminderModels
+﻿namespace HealthCare_.Models.PatientModels
 {
     public class DosingSchedule
     {

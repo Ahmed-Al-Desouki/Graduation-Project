@@ -1,6 +1,4 @@
-﻿
-
-namespace HealthCare_.Models.SharedModels
+﻿namespace HealthCare_.Models.PatientModels
 {
     public class MedicalRecord
     {
