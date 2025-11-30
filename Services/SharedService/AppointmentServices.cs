@@ -1,7 +1,9 @@
-﻿using HealthCare_.Interfaces;
+﻿// File: Services/SharedService/AppointmentService.cs
+using HealthCare_.Interfaces;
 using HealthCare_.Models.DTOs.AppointmentDTO;
 using HealthCare_.Models.DTOs.PatientDTO;
-using HealthCare_.Services.Patient;
+using HealthCare_.Services.Shared;
+using Microsoft.EntityFrameworkCore;
 
 namespace HealthCare_.Services.SharedService
 {
@@ -9,14 +11,18 @@ namespace HealthCare_.Services.SharedService
     {
         private readonly HealthCarePlusContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly ILogger<PatientMedicalProfileService> _logger;
+        private readonly AuthHelperService _authHelper;
+        private readonly ILogger<AppointmentService> _logger;
 
-        public AppointmentService(HealthCarePlusContext context,
+        public AppointmentService(
+            HealthCarePlusContext context,
             IHttpContextAccessor httpContextAccessor,
-            ILogger<PatientMedicalProfileService> logger)
+            AuthHelperService authHelper,
+            ILogger<AppointmentService> logger)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;
+            _authHelper = authHelper;
             _logger = logger;
         }
 
@@ -67,8 +73,10 @@ namespace HealthCare_.Services.SharedService
 
         public async Task<CurrentMedicationDto> UpsertMedicationAsync(int prescriptionId, CurrentMedicationDto request)
         {
-            await EnsureHistoryBelongsToCurrentUser(request.HistoryID);
-            _logger.LogInformation("Upserting medication '{Medication}' for PrescriptionID: {PrescriptionID}", request.MedicationName, prescriptionId);
+            await _authHelper.EnsureHistoryBelongsToCurrentUser(request.HistoryID);
+
+            _logger.LogInformation("Upserting medication '{Medication}' for PrescriptionID: {PrescriptionID}",
+                request.MedicationName, prescriptionId);
 
             var med = await _context.PrescriptionMeds
                 .FirstOrDefaultAsync(m => m.PrescriptionID == prescriptionId && m.MedicationName == request.MedicationName);
@@ -97,6 +105,7 @@ namespace HealthCare_.Services.SharedService
             }
 
             await _context.SaveChangesAsync();
+
             _logger.LogInformation("Medication upserted successfully: '{Medication}' (ID: {ID})", med.MedicationName, med.ID);
 
             return new CurrentMedicationDto
@@ -110,21 +119,6 @@ namespace HealthCare_.Services.SharedService
                 EndDate = med.EndDate,
                 Notes = med.Instructions
             };
-        }
-        private async Task EnsureHistoryBelongsToCurrentUser(int historyId)
-        {
-            var userId = GetCurrentUserId();
-
-            var patient = await _context.Patients
-                .Include(p => p.MedicalHistory)
-                .FirstOrDefaultAsync(p => p.PatientID == userId);
-
-            if (patient == null)
-                throw new KeyNotFoundException("Patient not found.");
-            if (patient.MedicalHistory == null)
-                throw new InvalidOperationException("Medical history not initialized for this patient.");
-            if (patient.MedicalHistory.HistoryID != historyId)
-                throw new UnauthorizedAccessException("The specified medical history does not belong to the current user.");
         }
     }
 }

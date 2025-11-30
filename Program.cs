@@ -1,6 +1,8 @@
 ﻿using AspNetCoreRateLimit;
 using Hangfire;
 using HealthCare_.Interfaces.IAuth;
+using HealthCare_.Interfaces.Patient;
+using HealthCare_.Interfaces.Patient.Medical_History;
 using HealthCare_.Interfaces.ReminderInterface;
 using HealthCare_.Middleware;
 using HealthCare_.Models.Context;
@@ -14,6 +16,7 @@ using HealthCare_.Services.Cloud;
 using HealthCare_.Services.DoctorDervice;
 using HealthCare_.Services.Patient;
 using HealthCare_.Services.Reminder;
+using HealthCare_.Services.Shared;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
@@ -157,9 +160,15 @@ builder.Services.AddScoped<SignInManager<ApplicationUser>>();
 builder.Services.AddScoped<RoleManager<ApplicationRole>>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddScoped<IReminderV2Service, ReminderV2Service>();
-builder.Services.AddScoped<IMedicalProfileService, PatientMedicalProfileService>();
+builder.Services.AddScoped<IMedicalProfileService, MedicalProfileService>();
+builder.Services.AddScoped<ISurgeryService, SurgeryService>();
+builder.Services.AddScoped<IFamilyHistoryService, FamilyHistoryService>();
+builder.Services.AddScoped<ISocialHistoryService, SocialHistoryService>();
+builder.Services.AddScoped<ISelfMedicationService, SelfMedicationService>();
+builder.Services.AddScoped<ICurrentMedicationService, CurrentMedicationService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+builder.Services.AddScoped<AuthHelperService>();
 
 // ====================== CONTROLLERS & SWAGGER (الجزء الجديد) ======================
 builder.Services.AddControllers()
