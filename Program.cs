@@ -1,4 +1,6 @@
 ﻿using AspNetCoreRateLimit;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Hangfire;
 using HealthCare_.Interfaces.IAuth;
 using HealthCare_.Interfaces.Patient;
@@ -169,6 +171,10 @@ builder.Services.AddScoped<ICurrentMedicationService, CurrentMedicationService>(
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 builder.Services.AddScoped<AuthHelperService>();
+builder.Services.AddFluentValidationAutoValidation();           // مهم جدًا
+builder.Services.AddFluentValidationClientsideAdapters();       // اختياري للـ frontend
+builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // يسجل كل الـ validators تلقائي
+
 
 // ====================== CONTROLLERS & SWAGGER (الجزء الجديد) ======================
 builder.Services.AddControllers()
@@ -233,24 +239,26 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+//app.UseMiddleware<GlobalExceptionMiddleware>();
+
 // Global Exception Handler
-app.UseExceptionHandler(errorApp =>
-{
-    errorApp.Run(async context =>
-    {
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "application/json";
-        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-        if (error != null)
-        {
-            await context.Response.WriteAsJsonAsync(new
-            {
-                message = error.Error.Message,
-                inner = error.Error.InnerException?.Message
-            });
-        }
-    });
-});
+//app.UseExceptionHandler(errorApp =>
+//{
+//    errorApp.Run(async context =>
+//    {
+//        context.Response.StatusCode = 500;
+//        context.Response.ContentType = "application/json";
+//        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+//        if (error != null)
+//        {
+//            await context.Response.WriteAsJsonAsync(new
+//            {
+//                message = error.Error.Message,
+//                inner = error.Error.InnerException?.Message
+//            });
+//        }
+//    });
+//});
 
 // SWAGGER UI – يفتح على الـ root تلقائيًا
 app.UseSwagger();

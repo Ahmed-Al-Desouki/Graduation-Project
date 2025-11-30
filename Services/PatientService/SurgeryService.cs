@@ -28,6 +28,7 @@ namespace HealthCare_.Services.Patient
             await _authHelper.EnsureHistoryBelongsToCurrentUser(historyId);
 
             return await _context.Surgeries
+                .AsNoTracking()
                 .Where(s => s.HistoryID == historyId && !s.IsDeleted)
                 .Select(s => new SurgeryDto
                 {

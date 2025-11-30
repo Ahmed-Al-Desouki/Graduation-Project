@@ -14,13 +14,19 @@ namespace HealthCare_.Services.Shared
             _httpContextAccessor = httpContextAccessor;
         }
 
+
         public int GetCurrentUserId()
         {
-            var claim = _httpContextAccessor.HttpContext?.User.FindFirst("UserID")?.Value
-                ?? throw new UnauthorizedAccessException("UserID claim missing.");
-            return int.Parse(claim);
-        }
+            var value = _httpContextAccessor.HttpContext?.User.FindFirst("UserID")?.Value;
 
+            if (string.IsNullOrEmpty(value))
+                throw new UnauthorizedAccessException("UserID claim is missing.");
+
+            if (!int.TryParse(value, out int userId))
+                throw new UnauthorizedAccessException("UserID claim is not a valid integer.");
+
+            return userId;
+        }
         public async Task EnsureHistoryBelongsToCurrentUser(int historyId)
         {
             {

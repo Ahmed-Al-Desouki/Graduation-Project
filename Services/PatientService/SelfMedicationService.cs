@@ -28,6 +28,7 @@ namespace HealthCare_.Services.Patient
             var userId = _authHelper.GetCurrentUserId();
 
             return await _context.PatientSelfMedications
+                .AsNoTracking()
                 .Where(m => m.PatientID == userId && !m.IsDeleted)
                 .Select(m => new SelfMedicationDto
                 {

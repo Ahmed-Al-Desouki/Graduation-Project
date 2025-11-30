@@ -26,6 +26,7 @@ namespace HealthCare_.Services.Patient
             var userId = _authHelper.GetCurrentUserId();
 
             var meds = await _context.Prescriptions
+                .AsNoTracking()
                 .Where(pr => pr.PatientID == userId)
                 .SelectMany(pr => pr.Medications)
                 .Select(med => new CurrentMedicationDto

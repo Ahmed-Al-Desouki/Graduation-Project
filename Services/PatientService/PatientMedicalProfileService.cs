@@ -29,6 +29,7 @@ namespace HealthCare_.Services.Patient
             _logger.LogInformation("Fetching medical profile for PatientID: {PatientID}", userId);
 
             var patient = await _context.Patients
+                .AsNoTracking()
                 .Include(p => p.User)
                     .ThenInclude(u => u.ProfileImagePath)
                 .Include(p => p.MedicalHistory!)
