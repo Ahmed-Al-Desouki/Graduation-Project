@@ -4,6 +4,7 @@ using HealthCare_.Models.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthCare_.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    partial class HealthCarePlusContextModelSnapshot : ModelSnapshot
+    [Migration("20251129112748_AddAnewVirtualReminder")]
+    partial class AddAnewVirtualReminder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1270,10 +1273,6 @@ namespace HealthCare_.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppointmentId");
-
-                    b.HasIndex("PrescriptionMedId");
-
                     b.ToTable("ReminderV2s");
                 });
 
@@ -1941,21 +1940,6 @@ namespace HealthCare_.Migrations
                     b.Navigation("Appointment");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("HealthCare_.Models.V2.ReminderV2", b =>
-                {
-                    b.HasOne("HealthCare_.Models.PatientModels.Appointment", "Appointment")
-                        .WithMany()
-                        .HasForeignKey("AppointmentId");
-
-                    b.HasOne("HealthCare_.Models.PatientModels.PrescriptionMed", "PrescriptionMed")
-                        .WithMany()
-                        .HasForeignKey("PrescriptionMedId");
-
-                    b.Navigation("Appointment");
-
-                    b.Navigation("PrescriptionMed");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.sharedModels.ApplicationUser", b =>

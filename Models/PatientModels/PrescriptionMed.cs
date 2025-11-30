@@ -1,5 +1,6 @@
 ﻿namespace HealthCare_.Models.PatientModels
 {
+    [Table("PrescriptionMeds")]
     public class PrescriptionMed
     {
         [Key]

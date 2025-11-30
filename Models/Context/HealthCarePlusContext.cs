@@ -2,6 +2,7 @@
 using HealthCare_.Models.DTOs.Email;
 using HealthCare_.Models.PatientModels;
 using HealthCare_.Models.sharedModels;
+using HealthCare_.Models.V2;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,9 @@ namespace HealthCare_.Models.Context
         public DbSet<FamilyHistoryEntry> FamilyHistoryEntries { get; set; }
         public DbSet<SocialHistory> SocialHistories { get; set; }
         public DbSet<PatientSelfMedication> PatientSelfMedications { get; set; }
+        public DbSet<ReminderV2> ReminderV2s { get; set; }
+        public DbSet<ReminderOccurrenceLog> ReminderOccurrenceLogs { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

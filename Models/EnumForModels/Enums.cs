@@ -17,7 +17,8 @@ namespace HealthCare_.Models.EnumForModels
             Completed,
             Overdue,
             Expired,
-            Dismissed
+            Dismissed,
+            Skipped
         }
 
         public enum ReminderType

@@ -3,7 +3,9 @@ using Hangfire;
 using HealthCare_.Interfaces.IAuth;
 using HealthCare_.Interfaces.ReminderInterface;
 using HealthCare_.Middleware;
+using HealthCare_.Models.Context;
 using HealthCare_.Models.sharedModels;
+using HealthCare_.Services;
 using HealthCare_.Services.Auth;
 using HealthCare_.Services.Auth.Interfaces;
 using HealthCare_.Services.Background;
@@ -16,15 +18,19 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using System.Reflection;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;  // الصحيح
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ====================== LOGGING ======================
+builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
-builder.Logging.SetMinimumLevel(LogLevel.Debug);
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 // ====================== DATABASE ======================
 builder.Services.AddDbContext<HealthCarePlusContext>(options =>
@@ -85,7 +91,6 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultSignInScheme = "External";
 })
-// === External Cookie (نظيف تمامًا) ===
 .AddCookie("External", o =>
 {
     o.Cookie.Name = ".AspNetCore.External";
@@ -94,7 +99,6 @@ builder.Services.AddAuthentication(options =>
     o.Cookie.HttpOnly = true;
     o.ExpireTimeSpan = TimeSpan.FromMinutes(15);
 })
-// === Session Cookie ===
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, o =>
 {
     o.Cookie.SameSite = SameSiteMode.None;
@@ -103,7 +107,6 @@ builder.Services.AddAuthentication(options =>
     o.ExpireTimeSpan = TimeSpan.FromMinutes(60);
     o.SlidingExpiration = true;
 })
-// === JWT Bearer ===
 .AddJwtBearer(o =>
 {
     o.RequireHttpsMetadata = false;
@@ -134,20 +137,8 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
-// === Google OAuth2 ===
-//.AddGoogle(o =>
-//{
-//    o.ClientId = builder.Configuration["Google:ClientId"] ?? throw new InvalidOperationException("Missing Google:ClientId");
-//    o.ClientSecret = builder.Configuration["Google:ClientSecret"] ?? throw new InvalidOperationException("Missing Google:ClientSecret");
-//    o.CallbackPath = "/api/auth/external/callback";
-//    o.SignInScheme = "External";
-//    o.SaveTokens = true;
-//    o.Scope.Add("email");
-//    o.Scope.Add("profile");
-//});
+
 // ====================== SERVICES ======================
-builder.Services.AddScoped<SignInManager<ApplicationUser>>();
-builder.Services.AddScoped<RoleManager<ApplicationRole>>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IDoctorService, DoctorServices>();
 builder.Services.AddHostedService<RevokedTokensCleanupService>();
@@ -162,39 +153,55 @@ builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection(
 builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<UserManager<ApplicationUser>>();
-builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<SignInManager<ApplicationUser>>();
+builder.Services.AddScoped<RoleManager<ApplicationRole>>();
 builder.Services.AddScoped<IReminderService, ReminderService>();
+builder.Services.AddScoped<IReminderV2Service, ReminderV2Service>();
 builder.Services.AddScoped<IMedicalProfileService, PatientMedicalProfileService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 
-
-// ====================== CONTROLLERS & SWAGGER ======================
+// ====================== CONTROLLERS & SWAGGER (الجزء الجديد) ======================
 builder.Services.AddControllers()
-    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddEndpointsApiExplorer();
+
+// SWAGGER 6.5.0 – شغال 100% بدون أي خطأ
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthCare+ API", Version = "v1" });
-    c.CustomSchemaIds(x => x.FullName);
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
+    c.SwaggerDoc("v2", new OpenApiInfo
+    {
+        Title = "HealthCarePlus API V2",
+        Version = "v2",
+        Description = ""
+    });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme.",
+        Description = "JWT Authorization header: Bearer {your token}",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer"
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
     });
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
-            Array.Empty<string>()
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header
+            },
+            new List<string>()
         }
     });
 });
@@ -217,96 +224,72 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-
-app.Use(async (context, next) =>
+// Global Exception Handler
+app.UseExceptionHandler(errorApp =>
 {
-    try
-    {
-        await next();
-    }
-    catch (Exception ex)
+    errorApp.Run(async context =>
     {
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
-
-        var result = new
+        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        if (error != null)
         {
-            message = ex.Message,
-            inner = ex.InnerException?.Message,
-            stack = ex.StackTrace
-        };
-
-        await context.Response.WriteAsJsonAsync(result);
-    }
+            await context.Response.WriteAsJsonAsync(new
+            {
+                message = error.Error.Message,
+                inner = error.Error.InnerException?.Message
+            });
+        }
+    });
 });
 
-
-
-
+// SWAGGER UI – يفتح على الـ root تلقائيًا
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "HealthCare+ API v1");
-    c.RoutePrefix = string.Empty;  // ده السطر السحري، يخلي Swagger يبقى على الـ root
+    c.SwaggerEndpoint("/swagger/v2/swagger.json", "HealthCare+ API V2");
+    c.RoutePrefix = string.Empty; // السطر السحري
+    c.DocumentTitle = "HealthCare+ API";
 });
+
+// Redirect root to Swagger
+app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 
 app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")),
-    ServeUnknownFileTypes = false,
     RequestPath = "/static"
 });
-
 
 app.UseHangfireDashboard("/admin-secret-reminders-2025-xyz", new DashboardOptions
 {
     Authorization = new[] { new HangfireAuthorizationFilter() }
 });
 
-// ====================== Forwarded Headers - الحل النهائي لـ ngrok free ======================
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
-    // ده السطر السحري اللي كان ناقص
-    RequireHeaderSymmetry = false,
-    // نقبل أي proxy (ngrok بيبعت من IP غريبة)
-    KnownProxies = { },
-    KnownNetworks = { }
+    RequireHeaderSymmetry = false
 });
 
-// ده السطر الجديد اللي لازم يكون موجود في .NET 8/9 مع ngrok
 app.Use((context, next) =>
 {
-    // نجبر .NET يشوف الـ scheme صح
     if (context.Request.Headers.ContainsKey("X-Forwarded-Proto"))
-    {
-        context.Request.Scheme = context.Request.Headers["X-Forwarded-Proto"].ToString();
-    }
+        context.Request.Scheme = context.Request.Headers["X-Forwarded-Proto"];
     if (context.Request.Headers.ContainsKey("X-Forwarded-Host"))
-    {
-        context.Request.Host = HostString.FromUriComponent(context.Request.Headers["X-Forwarded-Host"].ToString());
-    }
+        context.Request.Host = HostString.FromUriComponent(context.Request.Headers["X-Forwarded-Host"]);
     return next();
 });
 
 app.UseIpRateLimiting();
-
 app.UseCookiePolicy(new CookiePolicyOptions
 {
     MinimumSameSitePolicy = SameSiteMode.None,
     Secure = CookieSecurePolicy.Always
 });
 
-// ده اللي هيخلي الـ root (/) يفتح Swagger تلقائيًا
-
-
-// لو عايز تضمن إن أي حد يدخل / يروح Swagger حتى لو كتب حاجة غلط
-app.MapGet("/", () => Results.Redirect("/swagger"))
-   .ExcludeFromDescription();
-
 app.UseCors("AllowAll");
-
 app.UseAuthentication();
 app.UseMiddleware<UpdateLastActivityMiddleware>();
 app.UseAuthorization();
@@ -314,7 +297,9 @@ app.UseAuthorization();
 app.MapControllers();
 
 // ====================== HANGFIRE JOBS ======================
-RecurringJob.AddOrUpdate<ReminderService>("expire-reminders-daily", service => service.ExpireRemindersAsync(), "0 0 0 * * *");
-RecurringJob.AddOrUpdate<ReminderService>("mark-overdue-hourly", service => service.MarkOverdueAsync(), "0 0 * * *");
+RecurringJob.AddOrUpdate<ReminderService>("expire-reminders-daily",
+    service => service.ExpireRemindersAsync(), "0 0 0 * * *");
+RecurringJob.AddOrUpdate<ReminderService>("mark-overdue-hourly",
+    service => service.MarkOverdueAsync(), "0 0 * * *");
 
 app.Run();

@@ -299,41 +299,33 @@ namespace HealthCare_.Services.Patient
             };
         }
 
-
-
         public async Task<List<CurrentMedicationDto>> GetCurrentMedicationsAsync(int historyId)
         {
-            var today = DateTime.UtcNow.Date;
+            var userId = GetCurrentUserId();
+
             await EnsureHistoryBelongsToCurrentUser(historyId);
-            _logger.LogInformation("Fetching current medications for HistoryID: {HistoryID}", historyId);
 
             var meds = await _context.Prescriptions
-                .Where(pr => pr.Patient.MedicalHistory != null && pr.Patient.MedicalHistory.HistoryID == historyId)
-                .SelectMany(pr => pr.Medications, (pr, pm) => new { Prescription = pr, Med = pm })
-                .Where(x =>
-                    ((x.Med.StartDate == null || x.Med.StartDate.Value.Date <= today)
-                     && (x.Med.EndDate == null || x.Med.EndDate.Value.Date >= today))
-                    ||
-                    ((x.Med.StartDate == null && x.Med.EndDate == null)
-                     && (x.Prescription.PrescriptionDate.Date <= today)
-                     && (x.Prescription.EndDate == null || x.Prescription.EndDate.Value.Date >= today)))
-                .Select(x => new CurrentMedicationDto
+                .Where(pr => pr.PatientID == userId)
+                .SelectMany(pr => pr.Medications)
+                .Select(med => new CurrentMedicationDto
                 {
-                    CurrentMedicationID = x.Med.ID,
+                    CurrentMedicationID = med.ID,
                     HistoryID = historyId,
-                    MedicationName = x.Med.MedicationName,
-                    Dosage = x.Med.Dosage,
-                    Doseinstruction = x.Med.Instructions,
-                    Frequency = x.Med.DosingSchedules.Any() ? string.Join(", ", x.Med.DosingSchedules.Select(ds => ds.DailyTime.ToString(@"hh\:mm"))) : null,
-                    StartDate = x.Med.StartDate ?? x.Prescription.PrescriptionDate,
-                    EndDate = x.Med.EndDate ?? x.Prescription.EndDate,
-                    Notes = x.Med.Instructions,
-                    IsOverTheCounter = false
-                }).ToListAsync();
+                    MedicationName = med.MedicationName,
+                    Dosage = med.Dosage,
+                    StartDate = med.StartDate,
+                    EndDate = med.EndDate,
+                    Notes = med.Instructions
+                })
+                .ToListAsync();
 
-            _logger.LogInformation("Fetched {Count} current medications for HistoryID: {HistoryID}", meds.Count, historyId);
             return meds;
         }
+
+
+
+
 
         private async Task EnsureHistoryBelongsToCurrentUser(int historyId)
         {
