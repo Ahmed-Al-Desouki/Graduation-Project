@@ -1,10 +1,5 @@
 ﻿using HealthCare_.Interfaces.ReminderInterface;
-using HealthCare_.Models.Context;
 using HealthCare_.Models.DTOs.ReminderDTO;
-using HealthCare_.Models.EnumForModels;
-using HealthCare_.Models.SharedModels;
-using Microsoft.EntityFrameworkCore;
-using static HealthCare_.Models.EnumForModels.Enums;
 
 namespace HealthCare_.Services.Reminder
 {

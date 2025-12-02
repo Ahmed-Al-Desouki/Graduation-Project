@@ -1,6 +1,4 @@
 ﻿// Services/Shared/AuthHelperService.cs
-using Microsoft.EntityFrameworkCore;
-
 namespace HealthCare_.Services.Shared
 {
     public class AuthHelperService

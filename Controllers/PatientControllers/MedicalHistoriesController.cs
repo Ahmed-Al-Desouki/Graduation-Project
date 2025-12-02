@@ -2,10 +2,7 @@
 using HealthCare_.Interfaces.Patient;
 using HealthCare_.Interfaces.Patient.Medical_History;
 using HealthCare_.Models.DTOs.PatientDot;
-using HealthCare_.Models.DTOs.PatientDTO;
-using HealthCare_.Services.Patient;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace HealthCare_.Controllers.Patient
 {

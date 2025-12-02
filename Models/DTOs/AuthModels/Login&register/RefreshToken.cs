@@ -1,7 +1,4 @@
 ﻿using HealthCare_.Models.sharedModels;
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HealthCare_.Models.DTOs.AuthModels
 {
@@ -49,7 +46,7 @@ namespace HealthCare_.Models.DTOs.AuthModels
         [MaxLength(100)]
         public string IpAddress { get; set; }
         [MaxLength(500)]
-        public string? Salt { get; set; } 
+        public string? Salt { get; set; }
 
         public DateTime? LastUsedAt { get; set; }
     }

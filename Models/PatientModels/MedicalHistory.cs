@@ -1,5 +1,4 @@
 ﻿// File: Models/PatientModels/MedicalHistory.cs
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

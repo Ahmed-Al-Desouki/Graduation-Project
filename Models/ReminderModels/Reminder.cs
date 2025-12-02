@@ -1,8 +1,4 @@
 ﻿// File: Models/PatientModels/Reminder.cs
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using HealthCare_.Models.EnumForModels;
-
 namespace HealthCare_.Models.PatientModels
 {
     [Table("Reminders")]

@@ -4,7 +4,7 @@ using HealthCare_.Services.Auth.Interfaces;
 
 namespace HealthCare_.Services.Auth
 {
-    
+
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _configuration;
@@ -36,7 +36,7 @@ namespace HealthCare_.Services.Auth
         {
             var claims = new List<Claim>
     {
-            new Claim("UserID", user.Id.ToString()), 
+            new Claim("UserID", user.Id.ToString()),
             new Claim("Name", user.FullName),
             new Claim("Email", user.Email!),
             new Claim("Role", user.Role),
@@ -50,7 +50,7 @@ namespace HealthCare_.Services.Auth
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(100),
+                expires: DateTime.UtcNow.AddMinutes(1440),
                 signingCredentials: creds
             );
 

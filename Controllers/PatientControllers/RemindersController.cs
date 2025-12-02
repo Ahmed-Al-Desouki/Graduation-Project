@@ -1,13 +1,7 @@
 ﻿// File: Controllers/RemindersController.cs
 using HealthCare_.Interfaces.ReminderInterface;
-using HealthCare_.Models.Context;
 using HealthCare_.Models.DTOs.ReminderDTO;
-using HealthCare_.Models.EnumForModels;
-using HealthCare_.Models.PatientModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 
 namespace HealthCare_.Controllers
@@ -68,7 +62,7 @@ namespace HealthCare_.Controllers
         [HttpPost]
         public async Task<ActionResult<ReminderDto>> CreateManual(
             int patientId,
-            [FromBody] CreateReminderDto dto) 
+            [FromBody] CreateReminderDto dto)
         {
             if (!await IsAuthorizedPatientAsync(patientId)) return Forbid();
 

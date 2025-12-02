@@ -1,11 +1,13 @@
 ﻿// File: Services/ReminderV2Service.cs
+using Hangfire;
 using HealthCare_.Interfaces.ReminderInterface;
 using HealthCare_.Models.DTOs.V2;
 using HealthCare_.Models.DTOs.V2.HealthCare_.Models.DTOs.V2;
 using HealthCare_.Models.V2;
+using HealthCare_.Services.Background;
+using Ical.Net;
 using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
-
 
 namespace HealthCare_.Services
 {
@@ -20,7 +22,8 @@ namespace HealthCare_.Services
             _logger = logger;
         }
 
-        // 1. CREATE REMINDER
+        #region ==================== 1. CREATE & UPDATE ====================
+
         public async Task<ReminderV2> CreateAsync(int patientId, CreateReminderV2Dto dto)
         {
             try
@@ -34,15 +37,19 @@ namespace HealthCare_.Services
                     StartDate = dto.StartDate.Date,
                     EndDate = dto.EndDate?.Date,
                     TimeZoneId = dto.TimeZoneId ?? "Africa/Cairo",
+                    BaseTime = ExtractBaseTime(dto),
                     PrescriptionMedId = dto.PrescriptionMedId,
                     AppointmentId = dto.AppointmentId,
                     RRULE = string.IsNullOrWhiteSpace(dto.RRULE)
                         ? GenerateRRuleFromSimple(dto.Simple ?? new SimpleFrequency())
-                        : dto.RRULE.Trim().ToUpperInvariant()
+                        : dto.RRULE.Trim().ToUpperInvariant(),
+                    IsActive = true
                 };
 
                 _context.ReminderV2s.Add(reminder);
                 await _context.SaveChangesAsync();
+
+                BackgroundJob.Enqueue<ReminderOccurrencesGeneratorJob>(j => j.GenerateForPatientAsync(patientId));
 
                 _logger.LogInformation("ReminderV2 created | ID: {Id} | Patient: {PatientId}", reminder.Id, patientId);
                 return reminder;
@@ -54,201 +61,321 @@ namespace HealthCare_.Services
             }
         }
 
+        public async Task UpdateAsync(int reminderId, int patientId, UpdateReminderV2Dto dto)
+        {
+            var reminder = await ValidateReminderAccess(reminderId, patientId);
+
+            if (!string.IsNullOrWhiteSpace(dto.Title)) reminder.Title = dto.Title.Trim();
+            if (dto.Message != null) reminder.Message = dto.Message.Trim();
+            if (dto.StartDate.HasValue) reminder.StartDate = dto.StartDate.Value.Date;
+            if (dto.EndDate.HasValue) reminder.EndDate = dto.EndDate.Value.Date;
+            if (dto.TimeZoneId != null) reminder.TimeZoneId = dto.TimeZoneId;
+            if (dto.IsActive.HasValue) reminder.IsActive = dto.IsActive.Value;
+
+            if (dto.Simple != null || !string.IsNullOrWhiteSpace(dto.RRULE))
+            {
+                reminder.BaseTime = ExtractBaseTimeFromUpdate(dto);
+                reminder.RRULE = !string.IsNullOrWhiteSpace(dto.RRULE)
+                    ? dto.RRULE.Trim().ToUpperInvariant()
+                    : GenerateRRuleFromSimple(dto.Simple!);
+            }
+
+            reminder.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            BackgroundJob.Enqueue<ReminderOccurrencesGeneratorJob>(j => j.GenerateForPatientAsync(patientId));
+        }
+
+        private TimeSpan? ExtractBaseTime(CreateReminderV2Dto dto)
+        {
+            if (dto.Simple?.Times != null && dto.Simple.Times.Any())
+                if (TimeSpan.TryParse(dto.Simple.Times.First(), out var t)) return t;
+
+            return null; // ✅ لا يوجد وقت افتراضي
+        }
+
+        private TimeSpan? ExtractBaseTimeFromUpdate(UpdateReminderV2Dto dto)
+        {
+            if (dto.Simple?.Times != null && dto.Simple.Times.Any())
+                if (TimeSpan.TryParse(dto.Simple.Times.First(), out var t)) return t;
+
+            return null; // ✅ لا يوجد وقت افتراضي
+        }
+
         private string GenerateRRuleFromSimple(SimpleFrequency simple)
         {
-            if (simple == null) return "FREQ=DAILY";
+            if (simple == null) return "FREQ=DAILY;INTERVAL=1";
 
-            var parts = new List<string>();
-
-            switch (simple.Frequency)
+            return simple.Frequency switch
             {
-                case "Once":
-                    return "FREQ=ONCE";
-
-                case "Daily":
-                    parts.Add("FREQ=DAILY");
-                    parts.Add("INTERVAL=1");
-                    break;
-
-                case "Weekly":
-                    parts.Add("FREQ=WEEKLY");
-                    parts.Add("INTERVAL=1");
-                    break;
-
-                case "EveryXHours":
-                    parts.Add($"FREQ=HOURLY");
-                    parts.Add($"INTERVAL={simple.IntervalHours ?? 24}");
-                    break;
-
-                default:
-                    parts.Add("FREQ=DAILY");
-                    parts.Add("INTERVAL=1");
-                    break;
-            }
-
-            if (simple.Times != null && simple.Times.Count > 0)
-            {
-                var hours = new List<string>();
-                foreach (var timeStr in simple.Times)
-                {
-                    if (TimeSpan.TryParse(timeStr, out var time))
-                    {
-                        hours.Add(time.Hours.ToString()); // 8 أو 20
-                    }
-                }
-
-                if (hours.Any())
-                {
-                    parts.Add($"BYHOUR={string.Join(",", hours)}");
-                }
-            }
-
-            return string.Join(";", parts);
+                "Once" => "FREQ=ONCE",
+                "EveryXHours" => $"FREQ=HOURLY;INTERVAL={simple.IntervalHours ?? 24}",
+                "Weekly" => "FREQ=WEEKLY;INTERVAL=1",
+                _ => "FREQ=DAILY;INTERVAL=1"
+            };
         }
 
+        #endregion
 
-        // 2. GET UPCOMING / TODAY (Virtual Core)
-        public async Task<List<UpcomingOccurrenceDto>> GetUpcomingAsync(int patientId, int daysAhead = 30)
-        {
-            var fromUtc = DateTime.UtcNow.AddHours(-2);
-            var toUtc = DateTime.UtcNow.AddDays(daysAhead);
-            return await GetOccurrencesInRangeAsync(patientId, fromUtc, toUtc);
-        }
+        #region ==================== 2. GET TODAY & UPCOMING (FROM CACHE) ====================
 
         public async Task<List<UpcomingOccurrenceDto>> GetTodayAsync(int patientId)
         {
-            var tz = TimeZoneInfo.FindSystemTimeZoneById("Africa/Cairo");
-            var todayLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz).Date;
-            var tomorrowLocal = todayLocal.AddDays(1);
-
-            var fromUtc = TimeZoneInfo.ConvertTimeToUtc(todayLocal, tz);
-            var toUtc = TimeZoneInfo.ConvertTimeToUtc(tomorrowLocal, tz);
-
-            return await GetOccurrencesInRangeAsync(patientId, fromUtc, toUtc);
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+            return await GetFromCache(patientId, today, tomorrow);
         }
 
-        private async Task<List<UpcomingOccurrenceDto>> GetOccurrencesInRangeAsync(int patientId, DateTime fromUtc, DateTime toUtc)
+        public async Task<List<UpcomingOccurrenceDto>> GetUpcomingAsync(int patientId, int daysAhead = 30)
+        {
+            var from = DateTime.Today;
+            var to = from.AddDays(daysAhead);
+            return await GetFromCache(patientId, from, to);
+        }
+
+        private async Task<List<UpcomingOccurrenceDto>> GetFromCache(
+            int patientId,
+            DateTime fromInclusive,
+            DateTime toExclusive)
+        {
+            var now = DateTime.Now;
+
+            var cached = await _context.ReminderOccurrencesCache
+                .AsNoTracking()
+                .Where(x => x.PatientId == patientId
+                         && x.DueDateTime >= fromInclusive
+                         && x.DueDateTime < toExclusive)
+                .OrderBy(x => x.DueDateTime)
+                .ToListAsync();
+
+            if (cached.Any())
+            {
+                return cached.Select(x => new UpcomingOccurrenceDto
+                {
+                    ReminderId = x.ReminderId,
+                    Title = x.Title,
+                    Message = x.Message ?? string.Empty,
+                    DueDateTime = x.DueDateTime,
+                    Type = x.Type,
+                    IsMedication = x.Type == ReminderType.Medication,
+                    Dosage = x.Dosage,
+                    Status = GetStatus(x.Status, x.DueDateTime, now),
+                    CanSnooze = x.Status == 0
+                }).ToList();
+            }
+
+            _logger.LogWarning("Cache miss للمريض {PatientId} → توليد فوري", patientId);
+
+            var result = await GenerateUpcomingOnTheFly(patientId, fromInclusive, toExclusive);
+
+            BackgroundJob.Enqueue<ReminderOccurrencesGeneratorJob>(j => j.GenerateForPatientAsync(patientId));
+
+            return result;
+        }
+
+        private async Task<List<UpcomingOccurrenceDto>> GenerateUpcomingOnTheFly(
+            int patientId,
+            DateTime fromLocal,
+            DateTime toLocal)
         {
             var reminders = await _context.ReminderV2s
+                .AsNoTracking()
                 .Where(r => r.PatientId == patientId && r.IsActive)
-                .Include(r => r.PrescriptionMed)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Title,
+                    r.Message,
+                    r.Type,
+                    r.StartDate,
+                    r.BaseTime,
+                    r.RRULE,
+                    r.EXDATE,
+                    r.EndDate,
+                    r.TimeZoneId,
+                    Dosage = r.PrescriptionMed != null
+                        ? $"{r.PrescriptionMed.Dosage} {r.PrescriptionMed.MedicationName}"
+                        : null
+                })
                 .ToListAsync();
 
             var result = new List<UpcomingOccurrenceDto>();
+            var now = DateTime.Now;
 
-            foreach (var reminder in reminders)
+            foreach (var r in reminders)
             {
-                var occurrences = GenerateOccurrences(reminder, fromUtc, toUtc);
-                foreach (var dueLocal in occurrences)
-                {
-                    var status = await GetOccurrenceStatusAsync(reminder.Id, dueLocal);
+                var tz = TimeZoneInfo.FindSystemTimeZoneById(r.TimeZoneId);
 
-                    result.Add(new UpcomingOccurrenceDto
+                var fromUtc = TimeZoneInfo.ConvertTimeToUtc(
+                    DateTime.SpecifyKind(fromLocal, DateTimeKind.Unspecified), tz);
+
+                var toUtc = TimeZoneInfo.ConvertTimeToUtc(
+                    DateTime.SpecifyKind(toLocal, DateTimeKind.Unspecified), tz);
+
+                var occurrences = GenerateOccurrencesWithIcalNet(
+                    r.Id,
+                    r.StartDate,
+                    r.BaseTime,
+                    r.RRULE,
+                    r.EXDATE,
+                    r.EndDate,
+                    r.TimeZoneId,
+                    fromUtc,
+                    toUtc
+                );
+
+                foreach (var dt in occurrences)
+                {
+                    if (dt >= fromLocal && dt < toLocal)
                     {
-                        ReminderId = reminder.Id,
-                        Title = reminder.Title,
-                        Message = reminder.Message,
-                        DueDateTime = dueLocal,
-                        Type = reminder.Type,
-                        IsMedication = reminder.Type == ReminderType.Medication,
-                        Dosage = reminder.PrescriptionMed != null
-                            ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
-                            : null,
-                        Status = status,
-                        CanSnooze = status == ReminderStatus.Pending || status == ReminderStatus.Active
-                    });
+                        result.Add(new UpcomingOccurrenceDto
+                        {
+                            ReminderId = r.Id,
+                            Title = r.Title,
+                            Message = r.Message,
+                            DueDateTime = dt,
+                            Type = r.Type,
+                            IsMedication = r.Type == ReminderType.Medication,
+                            Dosage = r.Dosage,
+                            Status = dt < now.AddMinutes(-30)
+                                ? ReminderStatus.Overdue
+                                : ReminderStatus.Pending,
+                            CanSnooze = true
+                        });
+                    }
                 }
             }
 
             return result.OrderBy(x => x.DueDateTime).ToList();
         }
 
-
-        // 3. GENERATE OCCURRENCES 
-        private IEnumerable<DateTime> GenerateOccurrences(ReminderV2 reminder, DateTime fromUtc, DateTime toUtc)
+        private static ReminderStatus GetStatus(byte status, DateTime dueDateTime, DateTime now)
         {
-            var results = new List<DateTime>();
-
-            // حالة خاصة: مرة واحدة أو RRULE فاضي
-            if (string.IsNullOrWhiteSpace(reminder.RRULE) ||
-                reminder.RRULE.Trim().Equals("FREQ=ONCE", StringComparison.OrdinalIgnoreCase))
+            return status switch
             {
-                var singleTime = reminder.StartDate.Date + (reminder.BaseTime ?? TimeSpan.FromHours(8));
-                if (singleTime >= fromUtc && singleTime < toUtc)
-                    results.Add(singleTime);
-                return results;
-            }
+                1 => ReminderStatus.Completed,
+                2 => ReminderStatus.Skipped,
+                _ => dueDateTime < now.AddMinutes(-30)
+                    ? ReminderStatus.Overdue
+                    : ReminderStatus.Pending
+            };
+        }
 
+        #region ==================== OCCURRENCE GENERATOR ====================
+
+        private IEnumerable<DateTime> GenerateOccurrencesWithIcalNet(
+        int reminderId,
+        DateTime startDate,
+        TimeSpan? baseTime,
+        string? rrule,
+        string? exdate,
+        DateTime? endDate,
+        string timeZoneId,
+        DateTime fromUtc,
+        DateTime toUtc)
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+
+            bool hasExplicitTimeInRrule = RruleHasExplicitTime(rrule);
+
+            TimeSpan? effectiveBaseTime = hasExplicitTimeInRrule ? null : baseTime;
+
+            var dtStartLocal = effectiveBaseTime.HasValue
+                ? startDate.Date + effectiveBaseTime.Value
+                : startDate.Date;
+
+            // ✅ حالة مرة واحدة فقط
+            if (string.IsNullOrWhiteSpace(rrule) || rrule.Contains("FREQ=ONCE"))
+                return new List<DateTime> { dtStartLocal };
+
+            var calendar = new Calendar();
+
+            var ev = new CalendarEvent
+            {
+                Uid = $"reminder-{reminderId}",
+                DtStart = new CalDateTime(dtStartLocal, timeZoneId),
+                DtStamp = new CalDateTime(DateTime.UtcNow, "Etc/UTC")
+            };
+
+            RecurrencePattern pattern;
             try
             {
-                // بناء الـ CalendarEvent زي الـ example الرسمي
-                var calendarEvent = new CalendarEvent
+                pattern = new RecurrencePattern(rrule.Trim().ToUpperInvariant());
+
+                if (pattern.Frequency == FrequencyType.None)
+                    return new List<DateTime> { dtStartLocal };
+            }
+            catch
+            {
+                return new List<DateTime> { dtStartLocal };
+            }
+
+            // ✅ UNTIL لازم DateTime وليس CalDateTime
+            if (endDate.HasValue)
+            {
+                var untilLocal = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                var untilUtc = TimeZoneInfo.ConvertTimeToUtc(untilLocal, tz);
+                pattern.Until = untilUtc;
+            }
+
+            ev.RecurrenceRules.Add(pattern);
+
+            // ✅ EXDATE
+            if (!string.IsNullOrWhiteSpace(exdate))
+            {
+                var periodList = new PeriodList();
+
+                foreach (var exStr in exdate.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 {
-                    DtStart = new CalDateTime(reminder.StartDate.Date + (reminder.BaseTime ?? TimeSpan.Zero)),
-                    RecurrenceRules = { new RecurrencePattern(reminder.RRULE) }
-                };
-
-                // الطريقة الرسمية من Wiki v5.x: GetOccurrences() بدون parameters
-                var allOccurrences = calendarEvent.GetOccurrences();
-
-                var tz = TimeZoneInfo.FindSystemTimeZoneById(reminder.TimeZoneId);
-
-                foreach (var occ in allOccurrences)
-                {
-                    
-                    if (results.Count > 10000)
+                    if (DateTime.TryParse(exStr.Trim(), out var exLocal))
                     {
-                        _logger.LogWarning("Too many occurrences generated for reminder {Id}, truncating results", reminder.Id);
-                        break; 
+                        periodList.Add(
+                            new Period(
+                                new CalDateTime(exLocal, timeZoneId)
+                            )
+                        );
                     }
-                    var localTime = TimeZoneInfo.ConvertTimeFromUtc(occ.Period.StartTime.AsUtc, tz);
-
-                    if (reminder.BaseTime.HasValue && reminder.BaseTime.Value != TimeSpan.Zero)
-                        localTime = localTime.Date + reminder.BaseTime.Value;
-
-                    // فلترة للنطاق المطلوب (بدل ما نمرر parameters للـ method)
-                    if (localTime >= fromUtc && localTime < toUtc)
-                        results.Add(localTime);
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "RRULE evaluation failed for reminder {Id}, using fallback", reminder.Id);
+
+                if (periodList.Any())
+                    ev.ExceptionDates.Add(periodList);
             }
 
-            // Fallback قوي وآمن دائمًا
-            if (!results.Any())
-            {
-                var current = reminder.StartDate.Date + (reminder.BaseTime ?? TimeSpan.FromHours(8));
-                while (current < toUtc)
-                {
-                    if (current >= fromUtc)
-                        results.Add(current);
-                    current = current.AddDays(1);
-                }
-            }
+            calendar.Events.Add(ev);
 
-            return results.OrderBy(d => d);
+            // ✅ ✅ التحويل الصحيح من CalDateTime → DateTime
+            var occurrences = calendar.GetOccurrences(fromUtc, toUtc)
+                .Select(o => o.Period.StartTime.AsSystemLocal)
+                .Where(dt => dt >= dtStartLocal)
+                .OrderBy(dt => dt)
+                .ToList();
+
+            return occurrences.Any()
+                ? occurrences
+                : new List<DateTime> { dtStartLocal };
         }
-
-
-        // 4. GET OCCURRENCE STATUS
-        private async Task<ReminderStatus> GetOccurrenceStatusAsync(int reminderId, DateTime dueLocal)
+        private bool RruleHasExplicitTime(string? rrule)
         {
-            var log = await _context.ReminderOccurrenceLogs
-                .FirstOrDefaultAsync(l => l.ReminderId == reminderId && l.DueDateTime == dueLocal);
+            if (string.IsNullOrWhiteSpace(rrule))
+                return false;
 
-            if (log != null) return log.Status;
+            var upper = rrule.ToUpperInvariant();
 
-            return dueLocal < DateTime.Now.AddMinutes(-30)
-                ? ReminderStatus.Overdue
-                : ReminderStatus.Pending;
+            return upper.Contains("BYHOUR")
+                || upper.Contains("BYMINUTE")
+                || upper.Contains("BYSECOND");
         }
 
-        // 5. CONFIRM / SNOOZE / SKIP
+
+        #endregion
+
+        #endregion
+
+        #region ==================== 3. Confirm / Snooze / Skip (مع تحديث الكاش فورًا) ====================
+
         public async Task ConfirmOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId, IntakeStatus intake = IntakeStatus.Taken)
         {
-            var reminder = await ValidateReminderAccess(reminderId, patientId);
+            await ValidateReminderAccess(reminderId, patientId);
 
             var log = await _context.ReminderOccurrenceLogs
                 .FirstOrDefaultAsync(l => l.ReminderId == reminderId && l.DueDateTime == dueDateTime)
@@ -261,12 +388,15 @@ namespace HealthCare_.Services
             if (log.Id == 0) _context.ReminderOccurrenceLogs.Add(log);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Dose CONFIRMED | Reminder {Id} | {Time}", reminderId, dueDateTime);
+            await _context.Database.ExecuteSqlRawAsync(
+                "UPDATE ReminderOccurrencesCache SET Status = 1 WHERE ReminderId = @p0 AND DueDateTime = @p1",
+                reminderId, dueDateTime);
         }
 
         public async Task SnoozeOccurrenceAsync(int reminderId, DateTime originalDue, int patientId, int minutes = 15)
         {
-            var reminder = await ValidateReminderAccess(reminderId, patientId);
+            await ValidateReminderAccess(reminderId, patientId);
+
             var newDue = originalDue.AddMinutes(minutes);
 
             var log = await _context.ReminderOccurrenceLogs
@@ -279,12 +409,18 @@ namespace HealthCare_.Services
             if (log.Id == 0) _context.ReminderOccurrenceLogs.Add(log);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Dose SNOOZED | Reminder {Id} | From {Old} → {New}", reminderId, originalDue, newDue);
+            await _context.Database.ExecuteSqlRawAsync(@"
+                DELETE FROM ReminderOccurrencesCache WHERE ReminderId = @p0 AND DueDateTime = @p1;
+                INSERT INTO ReminderOccurrencesCache (PatientId, ReminderId, DueDateTime, Title, Message, Type, Dosage, Status)
+                SELECT PatientId, ReminderId, @p2, Title, Message, Type, Dosage, 0
+                FROM ReminderOccurrencesCache
+                WHERE ReminderId = @p0 AND DueDateTime = @p1",
+                reminderId, originalDue, newDue);
         }
 
         public async Task SkipOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId)
         {
-            var reminder = await ValidateReminderAccess(reminderId, patientId);
+            await ValidateReminderAccess(reminderId, patientId);
 
             var log = await _context.ReminderOccurrenceLogs
                 .FirstOrDefaultAsync(l => l.ReminderId == reminderId && l.DueDateTime == dueDateTime)
@@ -297,54 +433,39 @@ namespace HealthCare_.Services
             if (log.Id == 0) _context.ReminderOccurrenceLogs.Add(log);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Dose SKIPPED | Reminder {Id} | {Time}", reminderId, dueDateTime);
+            await _context.Database.ExecuteSqlRawAsync(
+                "UPDATE ReminderOccurrencesCache SET Status = 2 WHERE ReminderId = @p0 AND DueDateTime = @p1",
+                reminderId, dueDateTime);
         }
 
+        #endregion
 
-        // 6. CRUD + HELPERS
+        #region ==================== 4. CRUD + Helpers ====================
+
         public async Task<ReminderV2Dto> GetByIdAsync(int reminderId, int patientId)
         {
             var reminder = await _context.ReminderV2s
+                .AsNoTracking()
                 .Include(r => r.PrescriptionMed)
                 .FirstOrDefaultAsync(r => r.Id == reminderId && r.PatientId == patientId)
                 ?? throw new KeyNotFoundException("Reminder not found");
 
-            return MapToDto(reminder);
+            return await MapToDtoAsync(reminder);
         }
 
         public async Task<List<ReminderV2Dto>> GetAllAsync(int patientId)
         {
             var reminders = await _context.ReminderV2s
+                .AsNoTracking()
                 .Where(r => r.PatientId == patientId)
                 .ToListAsync();
 
-            return reminders.Select(MapToDto).ToList();
-        }
-
-        public async Task UpdateAsync(int reminderId, int patientId, UpdateReminderV2Dto dto)
-        {
-            var reminder = await ValidateReminderAccess(reminderId, patientId);
-
-            if (!string.IsNullOrWhiteSpace(dto.Title)) reminder.Title = dto.Title;
-            if (dto.Message != null) reminder.Message = dto.Message;
-            if (dto.StartDate.HasValue) reminder.StartDate = dto.StartDate.Value.Date;
-            if (dto.EndDate.HasValue) reminder.EndDate = dto.EndDate.Value.Date;
-            if (dto.TimeZoneId != null) reminder.TimeZoneId = dto.TimeZoneId;
-            if (dto.IsActive.HasValue) reminder.IsActive = dto.IsActive.Value;
-
-            // === الجزء الجديد والمهم جدًا ===
-            if (!string.IsNullOrWhiteSpace(dto.RRULE))
+            var result = new List<ReminderV2Dto>();
+            foreach (var r in reminders)
             {
-                reminder.RRULE = dto.RRULE.Trim().ToUpperInvariant();
+                result.Add(await MapToDtoAsync(r));
             }
-            else if (dto.Simple != null)
-            {
-                reminder.RRULE = GenerateRRuleFromSimple(dto.Simple);
-            }
-            // === انتهى ===
-
-            reminder.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            return result;
         }
 
         public async Task SoftDeleteAsync(int reminderId, int patientId)
@@ -354,6 +475,8 @@ namespace HealthCare_.Services
             reminder.Status = ReminderStatus.Dismissed;
             reminder.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            BackgroundJob.Enqueue<ReminderOccurrencesGeneratorJob>(j => j.GenerateForPatientAsync(patientId));
         }
 
         private async Task<ReminderV2> ValidateReminderAccess(int reminderId, int patientId)
@@ -364,9 +487,19 @@ namespace HealthCare_.Services
             return reminder ?? throw new UnauthorizedAccessException("Access denied or reminder not found");
         }
 
-        private ReminderV2Dto MapToDto(ReminderV2 r)
+        private async Task<ReminderV2Dto> MapToDtoAsync(ReminderV2 r)
         {
-            var next = GenerateOccurrences(r, DateTime.UtcNow, DateTime.UtcNow.AddMonths(6)).FirstOrDefault();
+            var next = await _context.ReminderOccurrencesCache
+                .Where(c => c.ReminderId == r.Id && c.DueDateTime >= DateTime.Today)
+                .OrderBy(c => c.DueDateTime)
+                .Select(c => (DateTime?)c.DueDateTime)
+                .FirstOrDefaultAsync();
+
+            var taken = await _context.ReminderOccurrenceLogs
+                .CountAsync(l => l.ReminderId == r.Id && l.Status == ReminderStatus.Completed);
+
+            var total = await _context.ReminderOccurrenceLogs
+                .CountAsync(l => l.ReminderId == r.Id);
 
             return new ReminderV2Dto
             {
@@ -377,14 +510,98 @@ namespace HealthCare_.Services
                 EndDate = r.EndDate,
                 RRULE = r.RRULE,
                 TimeZoneId = r.TimeZoneId,
+                BaseTime = r.BaseTime,
                 NextOccurrence = next,
-                TakenCount = _context.ReminderOccurrenceLogs
-                    .Count(l => l.ReminderId == r.Id && l.Status == ReminderStatus.Completed),
-                TotalLogged = _context.ReminderOccurrenceLogs
-                    .Count(l => l.ReminderId == r.Id),
+                TakenCount = taken,
+                TotalLogged = total,
                 IsActive = r.IsActive
             };
         }
 
+        #endregion
+
+        #region ==================== Fast Fallback Generator (للـ Hybrid Mode) ====================
+
+        private IEnumerable<DateTime> FastGenerateOccurrences(
+            int reminderId,
+            DateTime startDate,
+            TimeSpan baseTime,
+            string rrule,
+            string timeZoneId,
+            DateTime fromUtc,
+            DateTime toUtc)
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            var startLocal = startDate.Date + baseTime;
+
+            var fromLocal = TimeZoneInfo.ConvertTimeFromUtc(fromUtc, tz);
+            var toLocal = TimeZoneInfo.ConvertTimeFromUtc(toUtc, tz);
+
+            // مرة واحدة
+            if (string.IsNullOrWhiteSpace(rrule) || rrule.Contains("FREQ=ONCE", StringComparison.OrdinalIgnoreCase))
+            {
+                if (startLocal >= fromLocal && startLocal < toLocal)
+                    yield return startLocal;
+                yield break;
+            }
+
+            // كل ساعات (مثلاً كل 8 ساعات)
+            if (rrule.Contains("FREQ=HOURLY"))
+            {
+                int interval = 24;
+                var parts = rrule.Split(';');
+                foreach (var p in parts)
+                {
+                    if (p.StartsWith("INTERVAL="))
+                        int.TryParse(p.Substring(9), out interval);
+                }
+
+                var current = startLocal.Date + baseTime;
+                while (current < toLocal)
+                {
+                    if (current >= fromLocal)
+                        yield return current;
+                    current = current.AddHours(interval);
+                }
+                yield break;
+            }
+
+            // يومي
+            if (rrule.Contains("FREQ=DAILY"))
+            {
+                var current = startLocal;
+                while (current < toLocal)
+                {
+                    if (current >= fromLocal)
+                        yield return current;
+                    current = current.AddDays(1);
+                }
+                yield break;
+            }
+
+            // أسبوعي
+            if (rrule.Contains("FREQ=WEEKLY"))
+            {
+                var current = startLocal;
+                while (current < toLocal)
+                {
+                    if (current >= fromLocal)
+                        yield return current;
+                    current = current.AddDays(7);
+                }
+                yield break;
+            }
+
+            // Fallback آمن: يومي
+            var fallback = startLocal;
+            while (fallback < toLocal)
+            {
+                if (fallback >= fromLocal)
+                    yield return fallback;
+                fallback = fallback.AddDays(1);
+            }
+        }
+
+        #endregion
     }
 }

@@ -1,7 +1,6 @@
 ﻿// Services/EmailService.cs
 using MailKit.Net.Smtp;
 using MimeKit;
-using Microsoft.Extensions.Logging;
 
 namespace HealthCare_.Services
 {

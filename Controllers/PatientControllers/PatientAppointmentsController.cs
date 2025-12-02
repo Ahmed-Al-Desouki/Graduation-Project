@@ -1,8 +1,4 @@
-﻿using HealthCare_.Interfaces;
-using HealthCare_.Models.Context;
-using HealthCare_.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
 
 namespace HealthCare_.Controllers.PatientControllers
 {

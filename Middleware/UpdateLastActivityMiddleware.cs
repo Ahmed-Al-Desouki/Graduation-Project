@@ -1,6 +1,4 @@
-﻿using HealthCare_.Models.sharedModels;
-using Microsoft.EntityFrameworkCore;
-namespace HealthCare_.Middleware
+﻿namespace HealthCare_.Middleware
 {
     public class UpdateLastActivityMiddleware
     {

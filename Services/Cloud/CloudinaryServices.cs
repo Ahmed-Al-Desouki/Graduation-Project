@@ -1,10 +1,7 @@
 ﻿// File: Services/SharedService/CloudinaryService.cs
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using System;
-using System.Threading.Tasks;
 
 namespace HealthCare_.Services.Cloud
 {

@@ -1,6 +1,4 @@
-﻿using HealthCare_.Models.DTOs.Email;
-using HealthCare_.Models.sharedModels;
-using static Google.Apis.Auth.OAuth2.Web.AuthorizationCodeWebApp;
+﻿using HealthCare_.Models.sharedModels;
 
 namespace HealthCare_.Services.Auth.Interfaces
 {

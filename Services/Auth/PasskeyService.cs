@@ -1,12 +1,7 @@
 ﻿// File: Services/Auth/PasskeyService.cs
-using HealthCare_.Models.DTOs.AuthModels;
 using HealthCare_.Models.DTOs.AuthModels.Login_register;
 using HealthCare_.Models.sharedModels;
 using HealthCare_.Services.Auth.Interfaces;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace HealthCare_.Services.Auth
 {

@@ -7,7 +7,6 @@ using HealthCare_.Interfaces.Patient;
 using HealthCare_.Interfaces.Patient.Medical_History;
 using HealthCare_.Interfaces.ReminderInterface;
 using HealthCare_.Middleware;
-using HealthCare_.Models.Context;
 using HealthCare_.Models.sharedModels;
 using HealthCare_.Services;
 using HealthCare_.Services.Auth;
@@ -23,11 +22,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;  // الصحيح
-using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,6 +42,7 @@ builder.Services.AddDbContext<HealthCarePlusContext>(options =>
 builder.Services.AddHangfire(config =>
     config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHangfireServer();
+
 
 // ====================== IDENTITY ======================
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -171,9 +168,10 @@ builder.Services.AddScoped<ICurrentMedicationService, CurrentMedicationService>(
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 builder.Services.AddScoped<AuthHelperService>();
-builder.Services.AddFluentValidationAutoValidation();           // مهم جدًا
-builder.Services.AddFluentValidationClientsideAdapters();       // اختياري للـ frontend
-builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // يسجل كل الـ validators تلقائي
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddScoped<ReminderOccurrencesGeneratorJob>();
 
 
 // ====================== CONTROLLERS & SWAGGER (الجزء الجديد) ======================
@@ -237,7 +235,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
 });
 
+
 var app = builder.Build();
+
+
+
 
 //app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -284,6 +286,11 @@ app.UseHangfireDashboard("/admin-secret-reminders-2025-xyz", new DashboardOption
     Authorization = new[] { new HangfireAuthorizationFilter() }
 });
 
+RecurringJob.AddOrUpdate<ReminderOccurrencesGeneratorJob>(
+    "Daily-Reminder-Cache-Rebuild",
+    job => job.GenerateForAllPatientsAsync(),
+    "0 3 * * *"); // كل يوم 3 الفجر
+
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
@@ -314,9 +321,9 @@ app.UseAuthorization();
 app.MapControllers();
 
 // ====================== HANGFIRE JOBS ======================
-RecurringJob.AddOrUpdate<ReminderService>("expire-reminders-daily",
-    service => service.ExpireRemindersAsync(), "0 0 0 * * *");
-RecurringJob.AddOrUpdate<ReminderService>("mark-overdue-hourly",
-    service => service.MarkOverdueAsync(), "0 0 * * *");
+//RecurringJob.AddOrUpdate<ReminderService>("expire-reminders-daily",
+//    service => service.ExpireRemindersAsync(), "0 0 0 * * *");
+//RecurringJob.AddOrUpdate<ReminderService>("mark-overdue-hourly",
+//    service => service.MarkOverdueAsync(), "0 0 * * *");
 
 app.Run();

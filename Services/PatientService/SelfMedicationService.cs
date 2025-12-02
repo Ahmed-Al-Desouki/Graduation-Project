@@ -3,7 +3,6 @@ using HealthCare_.Interfaces.Patient.Medical_History;
 using HealthCare_.Models.DTOs.PatientDot;
 using HealthCare_.Models.DTOs.PatientDTO;
 using HealthCare_.Services.Shared;
-using Microsoft.EntityFrameworkCore;
 
 namespace HealthCare_.Services.Patient
 {

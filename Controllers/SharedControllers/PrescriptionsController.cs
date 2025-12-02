@@ -1,9 +1,4 @@
-﻿using HealthCare_.Interfaces;
-using HealthCare_.Models.Context;
-using HealthCare_.Services;
-using Microsoft.AspNetCore.Mvc;
-
-namespace HealthCare_.Controllers.SharedControllers
+﻿namespace HealthCare_.Controllers.SharedControllers
 {
     [Route("api/[controller]")]
     [ApiController]

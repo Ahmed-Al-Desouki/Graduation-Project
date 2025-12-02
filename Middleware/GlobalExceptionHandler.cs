@@ -1,8 +1,6 @@
 ﻿// File: Middleware/GlobalExceptionMiddleware.cs
-using System.Net;
-using System.Text.Json;
 using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace HealthCare_.Middleware
 {

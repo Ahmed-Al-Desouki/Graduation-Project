@@ -1,10 +1,5 @@
 ﻿// File: Services/Cloud/FileUploadService.cs
-using HealthCare_.Interfaces;
 using HealthCare_.Models.DTOs.CloudinaryDTO;
-using HealthCare_.Models.EnumForModels;
-using HealthCare_.Models.sharedModels;
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 
 namespace HealthCare_.Services.Cloud
 {

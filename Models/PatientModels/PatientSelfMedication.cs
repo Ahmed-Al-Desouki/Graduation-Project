@@ -3,7 +3,7 @@
     public class PatientSelfMedication
     {
         public int ID { get; set; }
-        public int PatientID { get; set; }          
+        public int PatientID { get; set; }
         public string MedicationName { get; set; } = string.Empty;
         public string? Dosage { get; set; }
         public string? Instructions { get; set; }

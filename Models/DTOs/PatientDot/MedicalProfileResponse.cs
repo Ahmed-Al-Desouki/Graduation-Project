@@ -1,7 +1,6 @@
 ﻿// Models/DTOs/PatientDTO/MedicalProfileDtos.cs
 
 using HealthCare_.Models.DTOs.PatientDot;
-using HealthCare_.Models.EnumForModels;
 
 namespace HealthCare_.Models.DTOs.PatientDTO
 {

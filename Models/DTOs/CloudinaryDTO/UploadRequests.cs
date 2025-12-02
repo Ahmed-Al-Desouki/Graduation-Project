@@ -1,7 +1,4 @@
 ﻿// File: Models/DTOs/CloudinaryDTO/UploadRequests.cs
-using HealthCare_.Models.EnumForModels;
-using Microsoft.AspNetCore.Http;
-
 namespace HealthCare_.Models.DTOs.CloudinaryDTO
 {
     public class PatientUploadRequest

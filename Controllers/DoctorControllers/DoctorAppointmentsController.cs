@@ -41,7 +41,7 @@ namespace HealthCare_.Controllers.DoctorControllers
                 ? Ok(new { success = true, message = "Medical record created" })
                 : BadRequest(new { success = false, message = "Appointment not found or not yours" });
         }
-                [HttpPost("Medication/{prescriptionId}")]
+        [HttpPost("Medication/{prescriptionId}")]
         public async Task<IActionResult> UpsertMedication(int prescriptionId, [FromBody] CurrentMedicationDto request)
         {
             try

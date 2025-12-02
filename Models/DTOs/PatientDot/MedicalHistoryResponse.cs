@@ -38,8 +38,8 @@
 
 //        public MedicalHistoryResponse? MedicalHistory { get; set; }
 
-        // في المستقبل: سيتم إضافة الحجوزات والوصفات هنا
-        // public List<AppointmentSummary> UpcomingAppointments { get; set; } = new();
-        // public List<PrescriptionSummary> ActivePrescriptions { get; set; } = new();
+// في المستقبل: سيتم إضافة الحجوزات والوصفات هنا
+// public List<AppointmentSummary> UpcomingAppointments { get; set; } = new();
+// public List<PrescriptionSummary> ActivePrescriptions { get; set; } = new();
 //    }
 //}

@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using HealthCare_.Models.sharedModels;
 using HealthCare_.Services.Auth.Interfaces;
-using HealthCare_.Models.sharedModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HealthCare_.Controllers
 {
@@ -39,7 +39,7 @@ namespace HealthCare_.Controllers
         }
 
         [HttpPost("verify")]
-        public async Task<IActionResult> Verify([FromBody] VerifyMfaRequest request) 
+        public async Task<IActionResult> Verify([FromBody] VerifyMfaRequest request)
         {
             var userId = GetUserId();
             if (userId == 0) return Unauthorized();
@@ -51,7 +51,7 @@ namespace HealthCare_.Controllers
         }
 
         [HttpPost("resend")]
-        [AllowAnonymous]  
+        [AllowAnonymous]
         public async Task<IActionResult> Resend([FromBody] ResendMfaRequest request)
         {
             //  تحقق من mfa_token (اللي رجع من Login)
@@ -76,7 +76,7 @@ namespace HealthCare_.Controllers
             if (string.IsNullOrEmpty(token)) return null;
 
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]); 
+            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
 
             try
             {

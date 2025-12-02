@@ -1,8 +1,5 @@
 ﻿// File: Models/PatientModels/ReminderInstance.cs
 
-
-using HealthCare_.Models.EnumForModels;
-
 namespace HealthCare_.Models.PatientModels
 {
     public class ReminderInstance

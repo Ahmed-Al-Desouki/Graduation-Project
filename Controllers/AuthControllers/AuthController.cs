@@ -1,10 +1,6 @@
-﻿using HealthCare_.Models.DTOs.AuthModels;
-using HealthCare_.Models.DTOs.AuthModels.Login_register;
+﻿using HealthCare_.Models.DTOs.AuthModels.Login_register;
 using HealthCare_.Services.Auth.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HealthCare_.Controllers
 {
@@ -183,90 +179,90 @@ namespace HealthCare_.Controllers
                 : BadRequest(new { success = false, error = result.Error });
         }
 
-[HttpGet("token-status-v2")]
-[AllowAnonymous]
-public async Task<IActionResult> GetTokenStatusV2(
-    [FromHeader] string? Authorization,
-    [FromHeader] string? RefreshToken)
-{
-    var accessToken = Authorization?.StartsWith("Bearer ") == true
-        ? Authorization["Bearer ".Length..].Trim()
-        : null;
-
-    var refreshTokenHeader = RefreshToken; // من Header: RefreshToken: abc123
-    var refreshTokenCookie = Request.Cookies["refresh_token"];
-
-    var refreshToken = refreshTokenHeader ?? refreshTokenCookie;
-
-    var accessResult = new TokenCheckResult { Type = "access", Valid = false };
-    var refreshResult = new TokenCheckResult { Type = "refresh", Valid = false };
-
-    // === 1. فحص Access Token ===
-    if (!string.IsNullOrEmpty(accessToken))
-    {
-        var principal = _tokenService.ValidateJwtToken(accessToken);
-        if (principal != null)
+        [HttpGet("token-status-v2")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetTokenStatusV2(
+            [FromHeader] string? Authorization,
+            [FromHeader] string? RefreshToken)
         {
-            var jti = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-            var expClaim = principal.FindFirst("exp")?.Value;
+            var accessToken = Authorization?.StartsWith("Bearer ") == true
+                ? Authorization["Bearer ".Length..].Trim()
+                : null;
 
-            if (long.TryParse(expClaim, out long exp))
+            var refreshTokenHeader = RefreshToken; // من Header: RefreshToken: abc123
+            var refreshTokenCookie = Request.Cookies["refresh_token"];
+
+            var refreshToken = refreshTokenHeader ?? refreshTokenCookie;
+
+            var accessResult = new TokenCheckResult { Type = "access", Valid = false };
+            var refreshResult = new TokenCheckResult { Type = "refresh", Valid = false };
+
+            // === 1. فحص Access Token ===
+            if (!string.IsNullOrEmpty(accessToken))
             {
-                var expiry = DateTimeOffset.FromUnixTimeSeconds(exp);
-                var now = DateTime.UtcNow;
-
-                accessResult.Valid = expiry > now;
-                accessResult.ExpiresAt = expiry.UtcDateTime;
-                accessResult.ExpiresIn = (int)(expiry - now).TotalSeconds;
-
-                if (accessResult.Valid && !string.IsNullOrEmpty(jti))
+                var principal = _tokenService.ValidateJwtToken(accessToken);
+                if (principal != null)
                 {
-                    var isRevoked = await _context.RevokedTokens
-                        .AnyAsync(rt => rt.Jti == jti && rt.Expires > now);
-                    accessResult.Valid = !isRevoked;
-                    accessResult.Revoked = isRevoked;
+                    var jti = principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+                    var expClaim = principal.FindFirst("exp")?.Value;
+
+                    if (long.TryParse(expClaim, out long exp))
+                    {
+                        var expiry = DateTimeOffset.FromUnixTimeSeconds(exp);
+                        var now = DateTime.UtcNow;
+
+                        accessResult.Valid = expiry > now;
+                        accessResult.ExpiresAt = expiry.UtcDateTime;
+                        accessResult.ExpiresIn = (int)(expiry - now).TotalSeconds;
+
+                        if (accessResult.Valid && !string.IsNullOrEmpty(jti))
+                        {
+                            var isRevoked = await _context.RevokedTokens
+                                .AnyAsync(rt => rt.Jti == jti && rt.Expires > now);
+                            accessResult.Valid = !isRevoked;
+                            accessResult.Revoked = isRevoked;
+                        }
+                    }
                 }
             }
+
+            // === 2. فحص Refresh Token ===
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                var hash = _tokenService.ComputeHmacSha256Base64(refreshToken);
+                var stored = await _context.RefreshTokens
+                    .Include(rt => rt.UserSession)
+                    .FirstOrDefaultAsync(rt => rt.Token == hash);
+
+                if (stored != null && !stored.IsRevoked && !stored.IsUsed && stored.Expires > DateTime.UtcNow)
+                {
+                    refreshResult.Valid = true;
+                    refreshResult.ExpiresAt = stored.Expires;
+                    refreshResult.ExpiresIn = (int)(stored.Expires - DateTime.UtcNow).TotalSeconds;
+                }
+                else
+                {
+                    refreshResult.Reason = stored == null ? "not_found" :
+                                          stored.IsRevoked ? "revoked" :
+                                          stored.IsUsed ? "used" : "expired";
+                }
+            }
+
+            // === 3. النتيجة ===
+            var results = new List<TokenCheckResult>();
+            if (accessToken != null) results.Add(accessResult);
+            if (refreshToken != null) results.Add(refreshResult);
+
+            return Ok(new
+            {
+                checkedAt = DateTime.UtcNow,
+                tokens = results.Any() ? results : null,
+                summary = results.Any() ?
+                    (results.All(r => r.Valid) ? "all_valid" :
+                     results.Any(r => r.Valid) ? "partially_valid" : "all_invalid")
+                    : "no_tokens_provided"
+            });
         }
-    }
-
-    // === 2. فحص Refresh Token ===
-    if (!string.IsNullOrEmpty(refreshToken))
-    {
-        var hash = _tokenService.ComputeHmacSha256Base64(refreshToken);
-        var stored = await _context.RefreshTokens
-            .Include(rt => rt.UserSession)
-            .FirstOrDefaultAsync(rt => rt.Token == hash);
-
-        if (stored != null && !stored.IsRevoked && !stored.IsUsed && stored.Expires > DateTime.UtcNow)
-        {
-            refreshResult.Valid = true;
-            refreshResult.ExpiresAt = stored.Expires;
-            refreshResult.ExpiresIn = (int)(stored.Expires - DateTime.UtcNow).TotalSeconds;
-        }
-        else
-        {
-            refreshResult.Reason = stored == null ? "not_found" :
-                                  stored.IsRevoked ? "revoked" :
-                                  stored.IsUsed ? "used" : "expired";
-        }
-    }
-
-    // === 3. النتيجة ===
-    var results = new List<TokenCheckResult>();
-    if (accessToken != null) results.Add(accessResult);
-    if (refreshToken != null) results.Add(refreshResult);
-
-    return Ok(new
-    {
-        checkedAt = DateTime.UtcNow,
-        tokens = results.Any() ? results : null,
-        summary = results.Any() ? 
-            (results.All(r => r.Valid) ? "all_valid" :
-             results.Any(r => r.Valid) ? "partially_valid" : "all_invalid") 
-            : "no_tokens_provided"
-    });
-}
         private void SetRefreshTokenCookie(string token)
         {
             Response.Cookies.Append("refresh_token", token, new CookieOptions

@@ -1,7 +1,6 @@
 ﻿// Validators/Patient/CreateSurgeryRequestValidator.cs
 using FluentValidation;
 using HealthCare_.Models.DTOs.PatientDot;
-using HealthCare_.Models.DTOs.PatientDTO;
 
 namespace HealthCare_.Validators.Patient.MedicalHistory
 {

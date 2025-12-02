@@ -1,5 +1,4 @@
 ﻿using HealthCare_.Interfaces.IAuth;
-using HealthCare_.Models.PatientModels; 
 using HealthCare_.Models.sharedModels;
 using HealthCare_.Services.Auth.Interfaces;
 using HealthCare_.Services.Cloud;

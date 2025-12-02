@@ -21,6 +21,7 @@
 
             //Important: أضفنا الحقل ده عشان الـ MapToDto يشتغل
             public bool IsActive { get; set; }
+            public TimeSpan? BaseTime { get; internal set; }
         }
     }
 }

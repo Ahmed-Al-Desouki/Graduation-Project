@@ -1,5 +1,4 @@
-﻿using HealthCare_.Models.DTOs.ReminderDTO;
-using HealthCare_.Models.DTOs.V2;
+﻿using HealthCare_.Models.DTOs.V2;
 using HealthCare_.Models.DTOs.V2.HealthCare_.Models.DTOs.V2;
 using HealthCare_.Models.V2;
 

@@ -19,7 +19,7 @@ namespace HealthCare_.Controllers
         }
 
         [HttpPost("forgot")]
-        public async Task<IActionResult> Forgot([FromBody] ForgotPasswordRequest request) 
+        public async Task<IActionResult> Forgot([FromBody] ForgotPasswordRequest request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -34,7 +34,7 @@ namespace HealthCare_.Controllers
         }
 
         [HttpPost("reset")]
-        public async Task<IActionResult> Reset([FromBody] ResetPasswordRequest request) 
+        public async Task<IActionResult> Reset([FromBody] ResetPasswordRequest request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 

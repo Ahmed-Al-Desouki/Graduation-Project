@@ -40,7 +40,7 @@
 //            string? deviceInfo = null,
 //            string? ipAddress = null);
 
-       
+
 //        Task GenerateAndSendOtpAsync(ApplicationUser user, IEmailService emailService);
 //    }
 //}

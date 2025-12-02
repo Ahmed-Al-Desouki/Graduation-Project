@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations;
-
-namespace HealthCare_.Models.SharedModels
+﻿namespace HealthCare_.Models.SharedModels
 {
 
     public class ApplicationRole : IdentityRole<int>

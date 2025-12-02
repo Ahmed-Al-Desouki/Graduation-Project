@@ -2,7 +2,6 @@
 using HealthCare_.Models.sharedModels;
 using HealthCare_.Services.Auth.Interfaces;
 using Microsoft.AspNetCore.WebUtilities;
-using System.Text;
 
 namespace HealthCare_.Services.Auth
 {

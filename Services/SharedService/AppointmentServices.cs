@@ -1,9 +1,7 @@
 ﻿// File: Services/SharedService/AppointmentService.cs
-using HealthCare_.Interfaces;
 using HealthCare_.Models.DTOs.AppointmentDTO;
 using HealthCare_.Models.DTOs.PatientDTO;
 using HealthCare_.Services.Shared;
-using Microsoft.EntityFrameworkCore;
 
 namespace HealthCare_.Services.SharedService
 {
