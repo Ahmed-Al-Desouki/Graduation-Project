@@ -37,7 +37,8 @@ namespace HealthCare_.Models.Context
         public DbSet<ReminderV2> ReminderV2s { get; set; }
         public DbSet<ReminderOccurrenceLog> ReminderOccurrenceLogs { get; set; }
         public DbSet<ReminderOccurrencesCache> ReminderOccurrencesCache { get; set; }
-
+        public DbSet<NotificationLog> NotificationLogs { get; set; }
+        public DbSet<PatientDevice> PatientDevices { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -530,6 +531,58 @@ namespace HealthCare_.Models.Context
                 entity.HasIndex(f => new { f.PatientID, f.DoctorID, f.MedicalHistoryID });
                 entity.HasIndex(f => new { f.CategoryType, f.CategoryValue });
             });
+
+            // Configure NotificationLog
+            modelBuilder.Entity<NotificationLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id)
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(e => e.PatientId)
+                    .IsRequired();
+
+                entity.Property(e => e.ReminderId)
+                    .IsRequired();
+
+                entity.Property(e => e.OccurrenceId)
+                    .IsRequired();
+
+                entity.Property(e => e.FcmToken)
+                    .IsRequired()
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.ScheduledTime)
+                    .IsRequired();
+
+                entity.Property(e => e.SentAt)
+                    .IsRequired(false);
+
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired()
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                // ✅ CRITICAL INDEX: For fast querying of unsent, due notifications
+                entity.HasIndex(e => new { e.PatientId, e.ScheduledTime, e.SentAt })
+                    .HasName("IX_NotificationLogs_Due")
+                    .HasFilter("[SentAt] IS NULL");
+
+                // Foreign key to PatientDevices (optional, for referential integrity)
+                // If your PatientDevice has a PatientId, you might want:
+                // entity.HasOne<PatientDevice>()
+                //     .WithMany()
+                //     .HasForeignKey(e => e.FcmToken)
+                //     .IsRequired(false);
+            });
+
+            modelBuilder.Entity<ReminderV2>()
+                .Property(r => r.EndDateUtc)
+                .HasConversion(
+                    v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : (DateTime?)null,
+                    v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : (DateTime?)null
+                );
         }
+
     }
 }

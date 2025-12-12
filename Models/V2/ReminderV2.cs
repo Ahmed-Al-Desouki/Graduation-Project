@@ -1,4 +1,8 @@
 ﻿// File: Models/V2/ReminderV2.cs
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using HealthCare_.Models.EnumForModels;
+
 namespace HealthCare_.Models.V2
 {
     public class ReminderV2
@@ -16,22 +20,20 @@ namespace HealthCare_.Models.V2
         [StringLength(500)]
         public string? Message { get; set; }
 
-        public DateTime StartDate { get; set; } = DateTime.Today;
+        // ✅ جميع التواريخ الآن UTC
+        public DateTime StartDateUtc { get; set; } = DateTime.UtcNow;
+        public DateTime? EndDateUtc { get; set; } // null = مدى الحياة
 
-        public DateTime? EndDate { get; set; } // null = مدى الحياة
+        // RRULE / EXDATE يعتمد على UTC داخليًا
+        public string? RRULE { get; set; } = "FREQ=DAILY";
+        public string? EXDATE { get; set; }
 
-        // القاعدة السحرية
-        public string RRULE { get; set; } = "FREQ=DAILY"; // iCal RFC-5545
-
-        public string? EXDATE { get; set; } // استثناءات: 2025-04-01T00:00:00Z,2025-04-01T00:00:00Z
-
-        public TimeSpan? BaseTime { get; set; } // للـ Simple cases (كل يوم 8 الصبح)
-
+        // TimeZone للمريض / التذكير
         public string TimeZoneId { get; set; } = "Africa/Cairo";
 
         // روابط
         public int? PrescriptionMedId { get; set; }
-        public PrescriptionMed? PrescriptionMed { get; set; }  // مهم جدًا
+        public PrescriptionMed? PrescriptionMed { get; set; }
 
         public int? AppointmentId { get; set; }
         public Appointment? Appointment { get; set; }
@@ -45,6 +47,8 @@ namespace HealthCare_.Models.V2
 
         // Navigation
         public ICollection<ReminderOccurrenceLog> Logs { get; set; } = new List<ReminderOccurrenceLog>();
+        public bool IsSimpleEveryXHours { get; set; } = false;
+        public TimeSpan? FirstDoseTime { get; set; }   // Local time للعرض
+        public int? IntervalHours { get; set; }        // للـ EveryXHours
     }
-
 }

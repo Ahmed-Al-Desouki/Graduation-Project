@@ -1,4 +1,5 @@
 ﻿using HealthCare_.Models.DTOs.AuthModels.Login_register;
+using HealthCare_.Models.V2;
 using HealthCare_.Services.Auth.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 
@@ -272,6 +273,52 @@ namespace HealthCare_.Controllers
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTimeOffset.UtcNow.AddDays(7)
             });
+        }
+
+
+        // 1- اعملي كلاس صغير جنب الكونترولر أو في مجلد Dtos
+        public class FcmTokenRequest
+        {
+            public string fcmToken { get; set; } = null!;
+        }
+
+        // 2- غيّري الـ endpoint كده بس:
+
+        [Authorize]
+        [HttpPost("register-device")]
+        public async Task<IActionResult> RegisterDevice([FromBody] FcmTokenRequest request)
+        {
+            var userId = int.Parse(User.FindFirst("UserID")!.Value);
+
+            var exists = await _context.PatientDevices
+                .AnyAsync(x => x.PatientId == userId && x.FcmToken == request.fcmToken);
+
+            if (!exists)
+            {
+                _context.PatientDevices.Add(new PatientDevice
+                {
+                    PatientId = userId,
+                    FcmToken = request.fcmToken
+                });
+                await _context.SaveChangesAsync();
+            }
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpDelete("unregister-device")]
+        public async Task<IActionResult> UnregisterDevice([FromBody] FcmTokenRequest request)
+        {
+            var userId = int.Parse(User.FindFirst("UserID")!.Value);
+
+            var devices = await _context.PatientDevices
+                .Where(x => x.PatientId == userId && x.FcmToken == request.fcmToken)
+                .ToListAsync();
+
+            _context.PatientDevices.RemoveRange(devices);
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
     }
 }

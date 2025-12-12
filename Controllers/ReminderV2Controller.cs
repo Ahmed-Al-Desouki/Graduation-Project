@@ -1,10 +1,12 @@
 ﻿using HealthCare_.Interfaces.ReminderInterface;
 using HealthCare_.Models.DTOs.V2;
-using HealthCare_.Models.DTOs.V2.HealthCare_.Models.DTOs.V2;
 using HealthCare_.Models.V2;
-using HealthCare_.Services.Background;
+using HealthCare_.Services.Background.Reminder;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Extensions;
+using System.Security.Claims;
 using static HealthCare_.Models.DTOs.V2.ConfirmIntakeRequests;
 
 [Authorize]
@@ -15,30 +17,63 @@ public class ReminderV2Controller : ControllerBase
 {
     private readonly IReminderV2Service _reminderV2Service;
     private readonly IConfiguration _config;
+    private readonly HealthCarePlusContext _context;
 
-    public ReminderV2Controller(IReminderV2Service reminderV2Service, IConfiguration config)
+    public ReminderV2Controller(
+        IReminderV2Service reminderV2Service,
+        IConfiguration config,
+        HealthCarePlusContext context)
     {
         _reminderV2Service = reminderV2Service;
         _config = config;
+        _context = context;
     }
 
     private bool IsOwnerOrAdmin(int patientId) =>
         User.FindFirstValue("UserID") == patientId.ToString() || User.IsInRole("Admin");
 
+    // ✅ CRITICAL: Convert user timezone to UTC (for incoming requests)
+    private DateTime ConvertUserTimezoneToUtc(DateTime userDateTime, string timeZoneId)
+    {
+        var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId ?? "Africa/Cairo");
+        return TimeZoneInfo.ConvertTimeToUtc(
+            DateTime.SpecifyKind(userDateTime, DateTimeKind.Unspecified),
+            tz
+        );
+    }
+
+    // Helper to get reminder's timezone
+    private async Task<string> GetReminderTimeZoneAsync(int reminderId)
+    {
+        var timeZone = await _context.ReminderV2s
+            .Where(r => r.Id == reminderId)
+            .Select(r => r.TimeZoneId)
+            .FirstOrDefaultAsync();
+        return timeZone ?? "Africa/Cairo";
+    }
+
     [HttpPost]
     [ProducesResponseType(typeof(ReminderV2), 201)]
     [ProducesResponseType(400)]
     [ProducesResponseType(403)]
-    public async Task<ActionResult<ReminderV2>> Create(int patientId, [FromBody] CreateReminderV2Dto dto)
+    public async Task<ActionResult<ReminderV2>> Create(
+        int patientId,
+        [FromBody] CreateReminderV2Dto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
 
+        // Note: Service handles timezone conversion during Create
         var reminder = await _reminderV2Service.CreateAsync(patientId, dto);
-        return CreatedAtAction(nameof(GetById), new { patientId, reminderId = reminder.Id }, reminder);
+        return CreatedAtAction(
+            nameof(GetById),
+            new { patientId, reminderId = reminder.Id },
+            reminder
+        );
     }
 
     [HttpGet]
+    [ProducesResponseType(typeof(List<ReminderV2Dto>), 200)]
     public async Task<ActionResult<List<ReminderV2Dto>>> GetAll(int patientId)
     {
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
@@ -47,6 +82,7 @@ public class ReminderV2Controller : ControllerBase
     }
 
     [HttpGet("{reminderId}")]
+    [ProducesResponseType(typeof(ReminderV2Dto), 200)]
     public async Task<ActionResult<ReminderV2Dto>> GetById(int patientId, int reminderId)
     {
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
@@ -55,7 +91,10 @@ public class ReminderV2Controller : ControllerBase
     }
 
     [HttpGet("upcoming")]
-    public async Task<ActionResult<List<UpcomingOccurrenceDto>>> GetUpcoming(int patientId, [FromQuery] int days = 30)
+    [ProducesResponseType(typeof(List<UpcomingOccurrenceDto>), 200)]
+    public async Task<ActionResult<List<UpcomingOccurrenceDto>>> GetUpcoming(
+        int patientId,
+        [FromQuery] int days = 30)
     {
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
         var list = await _reminderV2Service.GetUpcomingAsync(patientId, days);
@@ -63,6 +102,7 @@ public class ReminderV2Controller : ControllerBase
     }
 
     [HttpGet("today")]
+    [ProducesResponseType(typeof(List<UpcomingOccurrenceDto>), 200)]
     public async Task<ActionResult<List<UpcomingOccurrenceDto>>> GetToday(int patientId)
     {
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
@@ -71,6 +111,7 @@ public class ReminderV2Controller : ControllerBase
     }
 
     [HttpPost("occurrences/confirm")]
+    [ProducesResponseType(200)]
     public async Task<IActionResult> ConfirmOccurrence(
         int patientId,
         [FromQuery] DateTime occurrenceDateTime,
@@ -79,8 +120,16 @@ public class ReminderV2Controller : ControllerBase
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
 
+        // ✅ Get the reminder's timezone and convert incoming user time to UTC
+        var timeZone = await GetReminderTimeZoneAsync(request.ReminderId);
+        var occurrenceDateTimeUtc = ConvertUserTimezoneToUtc(occurrenceDateTime, timeZone);
+
         await _reminderV2Service.ConfirmOccurrenceAsync(
-            request.ReminderId, occurrenceDateTime, patientId, request.Status);
+            request.ReminderId,
+            occurrenceDateTimeUtc,
+            patientId,
+            request.Status
+        );
 
         return Ok(new
         {
@@ -91,6 +140,7 @@ public class ReminderV2Controller : ControllerBase
     }
 
     [HttpPost("occurrences/snooze")]
+    [ProducesResponseType(200)]
     public async Task<IActionResult> Snooze(
         int patientId,
         [FromQuery] DateTime occurrenceDateTime,
@@ -100,7 +150,16 @@ public class ReminderV2Controller : ControllerBase
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
 
-        await _reminderV2Service.SnoozeOccurrenceAsync(request.ReminderId, occurrenceDateTime, patientId, minutes);
+        // ✅ Get the reminder's timezone and convert incoming user time to UTC
+        var timeZone = await GetReminderTimeZoneAsync(request.ReminderId);
+        var occurrenceDateTimeUtc = ConvertUserTimezoneToUtc(occurrenceDateTime, timeZone);
+
+        await _reminderV2Service.SnoozeOccurrenceAsync(
+            request.ReminderId,
+            occurrenceDateTimeUtc,
+            patientId,
+            minutes
+        );
 
         return Ok(new
         {
@@ -111,6 +170,7 @@ public class ReminderV2Controller : ControllerBase
     }
 
     [HttpPost("occurrences/skip")]
+    [ProducesResponseType(200)]
     public async Task<IActionResult> Skip(
         int patientId,
         [FromQuery] DateTime occurrenceDateTime,
@@ -119,58 +179,85 @@ public class ReminderV2Controller : ControllerBase
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
 
-        await _reminderV2Service.SkipOccurrenceAsync(request.ReminderId, occurrenceDateTime, patientId);
+        // ✅ Get the reminder's timezone and convert incoming user time to UTC
+        var timeZone = await GetReminderTimeZoneAsync(request.ReminderId);
+        var occurrenceDateTimeUtc = ConvertUserTimezoneToUtc(occurrenceDateTime, timeZone);
+
+        await _reminderV2Service.SkipOccurrenceAsync(
+            request.ReminderId,
+            occurrenceDateTimeUtc,
+            patientId
+        );
 
         return Ok(new { success = true, message = "Dose skipped" });
     }
 
     [HttpPut("{reminderId}")]
-    public async Task<IActionResult> Update(int patientId, int reminderId, [FromBody] UpdateReminderV2Dto dto)
+    [ProducesResponseType(204)]
+    public async Task<IActionResult> Update(
+        int patientId,
+        int reminderId,
+        [FromBody] UpdateReminderV2Dto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
 
+        // Note: Service handles timezone conversion during Update
         await _reminderV2Service.UpdateAsync(reminderId, patientId, dto);
         return NoContent();
     }
 
     [HttpDelete("{reminderId}")]
+    [ProducesResponseType(204)]
     public async Task<IActionResult> Delete(int patientId, int reminderId)
     {
         if (!IsOwnerOrAdmin(patientId)) return Forbid();
+
         await _reminderV2Service.SoftDeleteAsync(reminderId, patientId);
         return NoContent();
     }
 
     [HttpPost("rebuild-cache")]
+    [ProducesResponseType(200)]
     public async Task<IActionResult> RebuildCache(
-      int patientId,  // اضفنا patientId في الـ route أو query
-      [FromServices] ReminderOccurrencesGeneratorJob job,
-      [FromServices] IWebHostEnvironment env)
+        int patientId,
+        [FromServices] ReminderOccurrencesGeneratorJob job,
+        [FromServices] IWebHostEnvironment env)
     {
-        if (!env.IsDevelopment())
-        {
-            if (Request.Query["key"] != "123456789")
-                return Unauthorized("Go away");
-        }
+        if (!env.IsDevelopment() && Request.Query["key"] != "123456789")
+            return Unauthorized("Go away");
 
-        // بدل GenerateForAllPatientsAsync → نستخدم GenerateForPatientAsync للمريض بس
         await job.GenerateForPatientAsync(patientId);
 
         return Ok(new
         {
             success = true,
-            message = $"Cache rebuilt instantly for patient {patientId}",
-            time = DateTime.UtcNow
+            message = $"Cache rebuilt for patient {patientId}"
         });
     }
 
     [HttpPost("rebuild-all")]
+    [ProducesResponseType(200)]
     public async Task<IActionResult> RebuildAll(
-    [FromServices] ReminderOccurrencesGeneratorJob job)
+        [FromServices] ReminderOccurrencesGeneratorJob job)
     {
         await job.GenerateForAllPatientsAsync();
-        return Ok("All cache rebuilt instantly");
+        return Ok(new { success = true, message = "All cache rebuilt instantly" });
     }
 
+    [HttpPost("mark-sent")]
+    [ProducesResponseType(200)]
+    public async Task<IActionResult> MarkAsSent([FromBody] MarkSentDto dto)
+    {
+        await _context.Database.ExecuteSqlRawAsync(
+            "UPDATE ReminderOccurrencesCache SET Status = 1 WHERE Id = @p0 AND Status = 0",
+            dto.OccurrenceId
+        );
+        return Ok(new { success = true });
+    }
+
+    public class MarkSentDto
+    {
+        public int OccurrenceId { get; set; }
+    }
 }

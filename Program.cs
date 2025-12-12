@@ -1,8 +1,12 @@
 ﻿using AspNetCoreRateLimit;
+using FirebaseAdmin;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Google.Apis.Auth.OAuth2;
 using Hangfire;
+using Hangfire.Dashboard;
 using HealthCare_.Interfaces.IAuth;
+using HealthCare_.Interfaces.Notifications;
 using HealthCare_.Interfaces.Patient;
 using HealthCare_.Interfaces.Patient.Medical_History;
 using HealthCare_.Interfaces.ReminderInterface;
@@ -12,9 +16,11 @@ using HealthCare_.Services;
 using HealthCare_.Services.Auth;
 using HealthCare_.Services.Auth.Interfaces;
 using HealthCare_.Services.Background;
+using HealthCare_.Services.Background.Reminder;
 using HealthCare_.Services.BackGround;
 using HealthCare_.Services.Cloud;
 using HealthCare_.Services.DoctorDervice;
+using HealthCare_.Services.Notifications;
 using HealthCare_.Services.Patient;
 using HealthCare_.Services.Reminder;
 using HealthCare_.Services.Shared;
@@ -24,7 +30,10 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;  // الصحيح
+using System.ComponentModel;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +52,10 @@ builder.Services.AddHangfire(config =>
     config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHangfireServer();
 
+FirebaseApp.Create(new AppOptions
+{
+    Credential = GoogleCredential.FromFile(".Config/firebase-service-account.json")
+});
 
 // ====================== IDENTITY ======================
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -172,12 +185,29 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddScoped<ReminderOccurrencesGeneratorJob>();
+builder.Services.AddScoped<ReminderJobOrchestrator>();
+builder.Services.AddHostedService<ReminderCacheHealthCheckService>();
+builder.Services.AddScoped<ReminderNotificationDispatcherJob>();
+builder.Services.AddScoped<FirebaseNotificationService>();
 
+
+// HttpClient for FCM
+builder.Services.AddHttpClient("fcm")
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        // خيارات handler إن احتجت (proxy, certs ...)
+    });
 
 // ====================== CONTROLLERS & SWAGGER (الجزء الجديد) ======================
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
+    });
+
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -236,6 +266,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 
+
 var app = builder.Build();
 
 
@@ -281,15 +312,54 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/static"
 });
 
-app.UseHangfireDashboard("/admin-secret-reminders-2025-xyz", new DashboardOptions
+//app.UseHangfireDashboard("/admin-secret-reminders-2025-xyz", new DashboardOptions
+//{
+//    Authorization = new[] { new HangfireAuthorizationFilter() }
+//});
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-    Authorization = new[] { new HangfireAuthorizationFilter() }
+    Authorization = new[] { new HangfireAuthorizationFilter() }, // لو عندك authorization
+    DashboardTitle = "HealthCare+ Reminders Dashboard",
+    IsReadOnlyFunc = (DashboardContext context) => false
 });
 
-RecurringJob.AddOrUpdate<ReminderOccurrencesGeneratorJob>(
-    "Daily-Reminder-Cache-Rebuild",
-    job => job.GenerateForAllPatientsAsync(),
-    "0 3 * * *"); // كل يوم 3 الفجر
+// مهم جدًا جدًا جدًا: نضيف الـ static files للـ dashboard
+app.Map("/hangfire", appBuilder =>
+{
+    appBuilder.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new HangfireAuthorizationFilter() }
+    });
+
+    // الحل السحري: نعمل forward للـ static files
+    appBuilder.UseStaticFiles();
+});
+
+
+// ✅ Notification dispatcher - every minute for precise timing
+RecurringJob.AddOrUpdate<ReminderNotificationDispatcherJob>(
+    "notification-dispatcher-minutely",
+    j => j.DispatchDueRemindersAsync(),
+    Cron.Minutely); // Runs every minute
+
+// ✅ Cleanup old logs - daily at 3 AM
+RecurringJob.AddOrUpdate<ReminderNotificationDispatcherJob>(
+    "notification-cleanup-daily",
+    j => j.CleanupOldNotificationsAsync(),
+    Cron.Daily(3)); // 3 AM every day
+
+RecurringJob.AddOrUpdate<ReminderJobOrchestrator>(
+    "daily-reminder-generator",
+    j => j.RunDailyGenerationAsync(),
+    Cron.Daily(3)   //  الساعة 3 فجرًا
+);
+
+RecurringJob.AddOrUpdate<ReminderNotificationDispatcherJob>(
+    "Notification-Dispatcher",
+    j => j.DispatchDueRemindersAsync(),
+    Cron.Minutely
+);
+
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
@@ -327,3 +397,16 @@ app.MapControllers();
 //    service => service.MarkOverdueAsync(), "0 0 * * *");
 
 app.Run();
+public class DateTimeConverter : JsonConverter<DateTime>
+{
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return DateTime.Parse(reader.GetString()!);
+    }
+
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+    {
+        // Write as local time without timezone indicator
+        writer.WriteStringValue(value.ToString("yyyy-MM-ddTHH:mm:ss"));
+    }
+}

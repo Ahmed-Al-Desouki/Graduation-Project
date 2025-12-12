@@ -1,20 +1,28 @@
 ﻿// File: Models/V2/ReminderOccurrenceLog.cs
-using HealthCare_.Models.V2;
+using System.ComponentModel.DataAnnotations;
+using HealthCare_.Models.EnumForModels;
 
-public class ReminderOccurrenceLog
+namespace HealthCare_.Models.V2
 {
-    [Key]
-    public long Id { get; set; } // long عشان يستحمل ملايين السجلات
+    public class ReminderOccurrenceLog
+    {
+        [Key]
+        public long Id { get; set; } // long عشان يستحمل ملايين السجلات
 
-    public int ReminderId { get; set; }
-    public ReminderV2 Reminder { get; set; } = null!;
+        public int ReminderId { get; set; }
+        public ReminderV2 Reminder { get; set; } = null!;
 
-    public DateTime DueDateTime { get; set; } // التوقيت المحلي للمريض
+        // Local للعرض
+        public DateTime DueDateTime { get; set; }
 
-    public ReminderStatus Status { get; set; } = ReminderStatus.Pending;
+        // UTC للتخزين والحسابات
+        public DateTime DueDateTimeUtc { get; set; }
 
-    public DateTime? ConfirmedAt { get; set; }
-    public IntakeStatus? IntakeStatus { get; set; } // Taken / Missed / Skipped
+        public ReminderStatus Status { get; set; } = ReminderStatus.Pending;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? ConfirmedAt { get; set; }
+        public IntakeStatus? IntakeStatus { get; set; } // Taken / Missed / Skipped
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
 }

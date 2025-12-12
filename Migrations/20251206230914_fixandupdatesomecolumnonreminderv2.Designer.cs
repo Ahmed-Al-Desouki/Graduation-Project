@@ -4,6 +4,7 @@ using HealthCare_.Models.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthCare_.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    partial class HealthCarePlusContextModelSnapshot : ModelSnapshot
+    [Migration("20251206230914_fixandupdatesomecolumnonreminderv2")]
+    partial class fixandupdatesomecolumnonreminderv2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1207,52 +1210,6 @@ namespace HealthCare_.Migrations
                     b.ToTable("Reviews");
                 });
 
-            modelBuilder.Entity("HealthCare_.Models.V2.NotificationLog", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<string>("FcmToken")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<long>("OccurrenceId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("PatientId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReminderId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ScheduledTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("SentAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("TimeZoneId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PatientId", "ScheduledTime", "SentAt")
-                        .HasDatabaseName("IX_NotificationLogs_Due")
-                        .HasFilter("[SentAt] IS NULL");
-
-                    b.ToTable("NotificationLogs");
-                });
-
             modelBuilder.Entity("HealthCare_.Models.V2.PatientDevice", b =>
                 {
                     b.Property<long>("Id")
@@ -1346,10 +1303,6 @@ namespace HealthCare_.Migrations
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");
 
-                    b.Property<string>("TimeZoneId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1438,6 +1391,29 @@ namespace HealthCare_.Migrations
                     b.HasIndex("PrescriptionMedId");
 
                     b.ToTable("ReminderV2s");
+                });
+
+            modelBuilder.Entity("HealthCare_.Models.V2.SentNotificationsLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("ReminderOccurrenceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReminderOccurrenceId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_SentNotificationsLog_ReminderOccurrenceId");
+
+                    b.ToTable("SentNotificationsLog");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.sharedModels.ApplicationUser", b =>

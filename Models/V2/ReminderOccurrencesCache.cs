@@ -1,4 +1,9 @@
-﻿namespace HealthCare_.Models.V2
+﻿// File: Models/V2/ReminderOccurrencesCache.cs
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using HealthCare_.Models.EnumForModels;
+
+namespace HealthCare_.Models.V2
 {
     [Table("ReminderOccurrencesCache")]
     public class ReminderOccurrencesCache
@@ -10,7 +15,12 @@
 
         public int ReminderId { get; set; }
 
-        public DateTime DueDateTime { get; set; }   // Local time بتاع المريض
+        // Local time للعرض
+        public DateTime DueDateTime { get; set; }
+
+        // UTC للتخزين والحسابات الداخلية
+        public DateTime DueDateTimeUtc { get; set; }
+        public string TimeZoneId { get; set; } = "Africa/Cairo";
 
         [Required, MaxLength(200)]
         public string Title { get; set; } = null!;
@@ -28,7 +38,7 @@
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation (اختياري لو حابب)
+        // Navigation (اختياري)
         public ReminderV2? Reminder { get; set; }
     }
 }
