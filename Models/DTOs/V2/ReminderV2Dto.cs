@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public string Title { get; set; } = "";
-        public ReminderType Type { get; set; }
+        public Enums.ReminderType Type { get; set; }
         public string? Message { get; set; }  // أضفناه
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }

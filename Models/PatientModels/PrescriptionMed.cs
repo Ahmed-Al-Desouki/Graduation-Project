@@ -1,4 +1,6 @@
-﻿namespace HealthCare_.Models.PatientModels
+﻿using HealthCare_.Models.V2;
+
+namespace HealthCare_.Models.PatientModels
 {
     [Table("PrescriptionMeds")]
     public class PrescriptionMed
@@ -23,6 +25,6 @@
         public DateTime? UpdatedAt { get; set; }
 
         public ICollection<MedicationsIntake> MedicationsIntakes { get; set; }
-        public ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
+        public ICollection<ReminderV2> Reminders { get; set; } = new List<ReminderV2>();
     }
 }

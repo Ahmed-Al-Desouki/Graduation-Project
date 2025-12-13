@@ -22,7 +22,7 @@ namespace HealthCare_.Models.PatientModels
 
         // جديد: ربط بالـ instance
         public int? ReminderInstanceID { get; set; }
-        [ForeignKey(nameof(ReminderInstanceID))]
-        public ReminderInstance? ReminderInstance { get; set; }
+        //[ForeignKey(nameof(ReminderInstanceID))]
+        //public ReminderInstance? ReminderInstance { get; set; }
     }
 }

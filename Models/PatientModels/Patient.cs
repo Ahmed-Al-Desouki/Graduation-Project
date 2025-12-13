@@ -1,4 +1,5 @@
 ﻿using HealthCare_.Models.sharedModels;
+using HealthCare_.Models.V2;
 
 
 namespace HealthCare_.Models.PatientModels
@@ -27,7 +28,7 @@ namespace HealthCare_.Models.PatientModels
         public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
         public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
         public ICollection<MedicationsIntake> MedicationsIntakes { get; set; } = new List<MedicationsIntake>();
-        public ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
+        public ICollection<ReminderV2> Reminders { get; set; } = new List<ReminderV2>();
     }
 
 }

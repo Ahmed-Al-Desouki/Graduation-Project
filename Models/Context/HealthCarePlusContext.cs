@@ -20,8 +20,8 @@ namespace HealthCare_.Models.Context
         public DbSet<Prescription> Prescriptions { get; set; } = null!;
         public DbSet<PrescriptionMed> PrescriptionMeds { get; set; } = null!;
         public DbSet<MedicationsIntake> MedicationsIntakes { get; set; } = null!;
-        public DbSet<Reminder> Reminders { get; set; } = null!;
-        public DbSet<ReminderInstance> ReminderInstances { get; set; } = null!;
+        //public DbSet<Reminder> Reminders { get; set; } = null!;
+        //public DbSet<ReminderInstance> ReminderInstances { get; set; } = null!;
         public DbSet<DoctorWeeklySchedule> DoctorWeeklySchedules { get; set; } = null!;
         public DbSet<DosingSchedule> DosingSchedules { get; set; } = null!;
         public DbSet<Review> Reviews { get; set; } = null!;
@@ -389,84 +389,84 @@ namespace HealthCare_.Models.Context
                       .OnDelete(DeleteBehavior.Cascade)
                       .IsRequired();
 
-                entity.HasOne(mi => mi.ReminderInstance)
-                      .WithOne(ri => ri.Intake)
-                      .HasForeignKey<MedicationsIntake>(mi => mi.ReminderInstanceID)
-                      .OnDelete(DeleteBehavior.SetNull)
-                      .IsRequired(false);
+                //entity.HasOne(mi => mi.ReminderInstance)
+                //      .WithOne(ri => ri.Intake)
+                //      .HasForeignKey<MedicationsIntake>(mi => mi.ReminderInstanceID)
+                //      .OnDelete(DeleteBehavior.SetNull)
+                //      .IsRequired(false);
 
                 entity.HasIndex(mi => mi.PrescriptionMedID);
                 entity.HasIndex(mi => mi.ReminderInstanceID);
             });
 
             // ─────────────────────── Reminder ───────────────────────
-            modelBuilder.Entity<Reminder>(entity =>
-            {
-                entity.HasKey(r => r.ReminderID);
-                entity.Property(r => r.Type).IsRequired().HasConversion<string>();
-                entity.Property(r => r.Name).HasMaxLength(100);
-                entity.Property(r => r.StartDate).IsRequired();
-                entity.Property(r => r.EndDate);
-                entity.Property(r => r.Frequency).IsRequired().HasConversion<string>();
-                entity.Property(r => r.IntervalHours);
-                entity.Property(r => r.BaseTime).IsRequired();
-                entity.Property(r => r.Message).HasMaxLength(500);
-                entity.Property(r => r.Status).IsRequired().HasConversion<string>();
-                entity.Property(r => r.IsActive).HasDefaultValue(true);
-                entity.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            //modelBuilder.Entity<Reminder>(entity =>
+            //{
+            //    entity.HasKey(r => r.ReminderID);
+            //    entity.Property(r => r.Type).IsRequired().HasConversion<string>();
+            //    entity.Property(r => r.Name).HasMaxLength(100);
+            //    entity.Property(r => r.StartDate).IsRequired();
+            //    entity.Property(r => r.EndDate);
+            //    entity.Property(r => r.Frequency).IsRequired().HasConversion<string>();
+            //    entity.Property(r => r.IntervalHours);
+            //    entity.Property(r => r.BaseTime).IsRequired();
+            //    entity.Property(r => r.Message).HasMaxLength(500);
+            //    entity.Property(r => r.Status).IsRequired().HasConversion<string>();
+            //    entity.Property(r => r.IsActive).HasDefaultValue(true);
+            //    entity.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
 
-                entity.HasOne(r => r.Patient)
-                      .WithMany(p => p.Reminders)
-                      .HasForeignKey(r => r.PatientID)
-                      .OnDelete(DeleteBehavior.Restrict)
-                      .IsRequired();
+            //    entity.HasOne(r => r.Patient)
+            //          .WithMany(p => p.Reminders)
+            //          .HasForeignKey(r => r.PatientID)
+            //          .OnDelete(DeleteBehavior.Restrict)
+            //          .IsRequired();
 
-                entity.HasOne(r => r.PrescriptionMed)
-                      .WithMany(pm => pm.Reminders)
-                      .HasForeignKey(r => r.PrescriptionMedID)
-                      .OnDelete(DeleteBehavior.SetNull)
-                      .IsRequired(false);
+            //    entity.HasOne(r => r.PrescriptionMed)
+            //          .WithMany(pm => pm.Reminders)
+            //          .HasForeignKey(r => r.PrescriptionMedID)
+            //          .OnDelete(DeleteBehavior.SetNull)
+            //          .IsRequired(false);
 
-                entity.HasOne(r => r.Appointment)
-                      .WithMany(a => a.Reminders)
-                      .HasForeignKey(r => r.AppointmentID)
-                      .OnDelete(DeleteBehavior.SetNull)
-                      .IsRequired(false);
+            //    entity.HasOne(r => r.Appointment)
+            //          .WithMany(a => a.Reminders)
+            //          .HasForeignKey(r => r.AppointmentID)
+            //          .OnDelete(DeleteBehavior.SetNull)
+            //          .IsRequired(false);
 
-                entity.HasMany(r => r.Instances)
-                      .WithOne(i => i.Reminder)
-                      .HasForeignKey(i => i.ReminderID)
-                      .OnDelete(DeleteBehavior.Cascade);
+            //    entity.HasMany(r => r.Instances)
+            //          .WithOne(i => i.Reminder)
+            //          .HasForeignKey(i => i.ReminderID)
+            //          .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasIndex(r => r.PatientID);
-                entity.HasIndex(r => new { r.PrescriptionMedID, r.AppointmentID });
-            });
+            //    entity.HasIndex(r => r.PatientID);
+            //    entity.HasIndex(r => new { r.PrescriptionMedID, r.AppointmentID });
+            //});
 
             // ─────────────────────── ReminderInstance ───────────────────────
-            modelBuilder.Entity<ReminderInstance>(entity =>
-            {
-                entity.HasKey(i => i.InstanceID);
-                entity.Property(i => i.DueDateTime).IsRequired();
-                entity.Property(i => i.Status).IsRequired().HasConversion<string>();
-                entity.Property(i => i.ConfirmedAt);
-                entity.Property(i => i.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            //modelBuilder.Entity<ReminderInstance>(entity =>
+            //{
+            //    entity.HasKey(i => i.InstanceID);
+            //    entity.Property(i => i.DueDateTime).IsRequired();
+            //    entity.Property(i => i.Status).IsRequired().HasConversion<string>();
+            //    entity.Property(i => i.ConfirmedAt);
+            //    entity.Property(i => i.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
 
-                entity.HasOne(i => i.Reminder)
-                      .WithMany(r => r.Instances)
-                      .HasForeignKey(i => i.ReminderID)
-                      .OnDelete(DeleteBehavior.Cascade)
-                      .IsRequired();
+            //    entity.HasOne(i => i.Reminder)
+            //          .WithMany(r => r.Instances)
+            //          .HasForeignKey(i => i.ReminderID)
+            //          .OnDelete(DeleteBehavior.Cascade)
+            //          .IsRequired();
 
-                entity.HasOne(i => i.Intake)
-                      .WithOne(mi => mi.ReminderInstance)
-                      .HasForeignKey<MedicationsIntake>(mi => mi.ReminderInstanceID)
-                      .OnDelete(DeleteBehavior.SetNull)
-                      .IsRequired(false);
+            //    entity.HasOne(i => i.Intake)
+            //          .WithOne(mi => mi.ReminderInstance)
+            //          .HasForeignKey<MedicationsIntake>(mi => mi.ReminderInstanceID)
+            //          .OnDelete(DeleteBehavior.SetNull)
+            //          .IsRequired(false);
 
-                entity.HasIndex(i => i.ReminderID);
-                entity.HasIndex(i => i.DueDateTime);
-                entity.HasIndex(i => i.Status);
-            });
+            //    entity.HasIndex(i => i.ReminderID);
+            //    entity.HasIndex(i => i.DueDateTime);
+            //    entity.HasIndex(i => i.Status);
+            //});
 
             // ─────────────────────── Review ───────────────────────
             modelBuilder.Entity<Review>(entity =>

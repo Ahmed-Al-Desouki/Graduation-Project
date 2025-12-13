@@ -1,4 +1,7 @@
-﻿namespace HealthCare_.Models.DTOs.ReminderDTO
+﻿using ReminderStatus = HealthCare_.Models.EnumForModels.Enums.ReminderStatus;
+using ReminderType = HealthCare_.Models.EnumForModels.Enums.ReminderType;
+
+namespace HealthCare_.Models.DTOs.ReminderDTO
 {
     public class ReminderInstanceDto
     {

@@ -5,7 +5,7 @@ namespace HealthCare_.Models.DTOs.V2
     // DTOs/V2/CreateReminderV2Dto.cs
     public class CreateReminderV2Dto
     {
-        public ReminderType Type { get; set; } = ReminderType.Medication;
+        public Enums.ReminderType Type { get; set; } = Enums.ReminderType.Medication;
         public string Title { get; set; } = "";
         public string? Message { get; set; }
 

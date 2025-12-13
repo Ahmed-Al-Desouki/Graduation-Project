@@ -1,5 +1,6 @@
 ﻿using HealthCare_.Models.DTOs.V2;
 using HealthCare_.Models.V2;
+using IntakeStatus = HealthCare_.Models.EnumForModels.Enums.IntakeStatus;
 
 namespace HealthCare_.Interfaces.ReminderInterface
 {
@@ -13,9 +14,8 @@ namespace HealthCare_.Interfaces.ReminderInterface
 
         Task<List<UpcomingOccurrenceDto>> GetUpcomingAsync(int patientId, int daysAhead = 30);
         Task<List<UpcomingOccurrenceDto>> GetTodayAsync(int patientId);
-
         Task ConfirmOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId, IntakeStatus intake = IntakeStatus.Taken);
-        Task SnoozeOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId, int minutes = 15);
+        Task SnoozeOccurrenceAsync(int reminderId, DateTime originalDue, int patientId, int minutes = 15);
         Task SkipOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId);
     }
 }

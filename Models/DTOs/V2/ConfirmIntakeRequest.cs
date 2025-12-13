@@ -5,7 +5,7 @@
         public class ConfirmIntakeRequest
         {
             public int ReminderId { get; set; }
-            public IntakeStatus Status { get; set; } = IntakeStatus.Taken;
+            public Enums.IntakeStatus Status { get; set; } = Enums.IntakeStatus.Taken;
         }
 
         public class RequiredReminderIdRequest

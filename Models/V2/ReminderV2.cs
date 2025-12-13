@@ -12,7 +12,7 @@ namespace HealthCare_.Models.V2
 
         public int PatientId { get; set; }
 
-        public ReminderType Type { get; set; } = ReminderType.Medication;
+        public Enums.ReminderType Type { get; set; } = Enums.ReminderType.Medication;
 
         [StringLength(150)]
         public string Title { get; set; } = "Taking medication";
@@ -40,7 +40,7 @@ namespace HealthCare_.Models.V2
 
         // حالة عامة
         public bool IsActive { get; set; } = true;
-        public ReminderStatus Status { get; set; } = ReminderStatus.Active;
+        public Enums.ReminderStatus Status { get; set; } = Enums.ReminderStatus.Active;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }

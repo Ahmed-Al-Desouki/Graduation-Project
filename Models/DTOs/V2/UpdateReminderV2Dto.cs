@@ -22,6 +22,6 @@ namespace HealthCare_.Models.DTOs.V2
 
         public string? TimeZoneId { get; set; }
         public bool? IsActive { get; set; }
-        public ReminderStatus? Status { get; set; }
+        public Enums.ReminderStatus? Status { get; set; }
     }
 }

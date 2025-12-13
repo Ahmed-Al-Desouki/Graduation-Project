@@ -7,6 +7,12 @@ using Ical.Net;
 using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
+using HealthCare_.Models.EnumForModels;
+using IntakeStatus = HealthCare_.Models.EnumForModels.Enums.IntakeStatus;
+using OccurrenceStatus = HealthCare_.Models.EnumForModels.Enums.OccurrenceStatus;
+using ReminderStatus = HealthCare_.Models.EnumForModels.Enums.ReminderStatus;
+using ReminderType = HealthCare_.Models.EnumForModels.Enums.ReminderType;
 
 namespace HealthCare_.Services
 {
@@ -244,32 +250,45 @@ namespace HealthCare_.Services
                 }
             }
 
-            return cached.Select(x => new UpcomingOccurrenceDto
+            return cached.Select(x =>
             {
-                ReminderId = x.ReminderId,
-                Title = x.Title,
-                Message = x.Message ?? string.Empty,
-                DueDateTime = x.DueDateTime,
-                TimeZoneId = x.TimeZoneId,
-                Type = x.Type,
-                IsMedication = x.Type == ReminderType.Medication,
-                Dosage = x.Dosage,
-                Status = GetStatus(x.Status, EnsureUtc(x.DueDateTimeUtc), nowUtc),
-                CanSnooze = x.Status == 0
+                var displayStatus = DeriveDisplayStatus(x.Status, EnsureUtc(x.DueDateTimeUtc), nowUtc);
+                var (canConfirm, canSnooze, canSkip, reason) = EvaluateActionAvailability(
+                    displayStatus,
+                    EnsureUtc(x.DueDateTimeUtc),
+                    nowUtc
+                );
+
+                return new UpcomingOccurrenceDto
+                {
+                    ReminderId = x.ReminderId,
+                    Title = x.Title,
+                    Message = x.Message ?? string.Empty,
+                    DueDateTime = x.DueDateTime,
+                    TimeZoneId = x.TimeZoneId,
+                    Type = x.Type,
+                    IsMedication = x.Type == Enums.ReminderType.Medication,
+                    Dosage = x.Dosage,
+                    Status = displayStatus,
+                    CanConfirm = canConfirm,
+                    CanSnooze = canSnooze,
+                    CanSkip = canSkip,
+                    ActionUnavailableReason = reason
+                };
             }).ToList();
         }
 
-        private static ReminderStatus GetStatus(byte status, DateTime dueDateTimeUtc, DateTime nowUtc)
-        {
-            return status switch
-            {
-                1 => ReminderStatus.Completed,
-                2 => ReminderStatus.Skipped,
-                _ => dueDateTimeUtc < nowUtc.AddMinutes(-30)
-                    ? ReminderStatus.Overdue
-                    : ReminderStatus.Pending
-            };
-        }
+        //private static Enums.ReminderStatus GetStatus(byte status, DateTime dueDateTimeUtc, DateTime nowUtc)
+        //{
+        //    return status switch
+        //    {
+        //        1 => Enums.ReminderStatus.Completed,
+        //        2 => Enums.ReminderStatus.Skipped,
+        //        _ => dueDateTimeUtc < nowUtc.AddMinutes(-30)
+        //            ? ReminderStatus.Dismissed
+        //            : ReminderStatus.Pending    
+        //    };
+        //}
 
         #endregion
 
@@ -337,8 +356,39 @@ namespace HealthCare_.Services
             {
                 try
                 {
-                    // Generate occurrences (implementation in background job)
-                    // This is just for cache miss - should rarely be called
+                    var occurrences = GenerateOccurrencesWithIcalNetFull(reminder, fromUtcInclusive, toUtcExclusive);
+
+                    foreach (var dtUtc in occurrences)
+                    {
+                        var displayStatus = dtUtc < nowUtc.AddMinutes(-30)
+                            ? OccurrenceStatus.Missed    // ✅ FIXED
+                            : OccurrenceStatus.Pending;  // ✅ FIXED
+
+                        var (canConfirm, canSnooze, canSkip, reason) = EvaluateActionAvailability(
+                            displayStatus,
+                            dtUtc,
+                            nowUtc
+                        );
+
+                        result.Add(new UpcomingOccurrenceDto
+                        {
+                            ReminderId = reminder.Id,
+                            Title = reminder.Title,
+                            Message = reminder.Message ?? string.Empty,
+                            DueDateTime = ConvertUtcToUserTimezone(EnsureUtc(dtUtc), reminder.TimeZoneId),
+                            TimeZoneId = reminder.TimeZoneId,
+                            Type = reminder.Type,
+                            IsMedication = reminder.Type == ReminderType.Medication,
+                            Dosage = reminder.PrescriptionMed != null
+                                ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
+                                : null,
+                            Status = displayStatus,       // ✅ FIXED
+                            CanConfirm = canConfirm,
+                            CanSnooze = canSnooze,
+                            CanSkip = canSkip,
+                            ActionUnavailableReason = reason
+                        });
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -350,16 +400,14 @@ namespace HealthCare_.Services
         }
 
 
-        /// <summary>
         /// ✅ CORRECT IMPLEMENTATION:
         /// - SIMPLE MODE (IsSimpleEveryXHours=true, RRULE=NULL): Use FirstDoseTime + IntervalHours directly
         /// - RRULE MODE (IsSimpleEveryXHours=false, RRULE!=NULL): Parse RRULE string with full iCalendar power
         /// NO CONVERSION between modes - keep them completely separate
-        /// </summary>
         private IEnumerable<DateTime> GenerateOccurrencesWithIcalNetFull(
-            ReminderV2 reminder,
-            DateTime fromUtcInclusive,
-            DateTime toUtcExclusive)
+             ReminderV2 reminder,
+             DateTime fromUtcInclusive,
+             DateTime toUtcExclusive)
         {
             try
             {
@@ -384,13 +432,9 @@ namespace HealthCare_.Services
                     var dtStartUtc = TimeZoneInfo.ConvertTimeToUtc(
                         DateTime.SpecifyKind(dtStart, DateTimeKind.Unspecified), tz);
 
-                    //if (dtStartUtc.Date < reminder.StartDateUtc.Date)
-                    //    dtStart = dtStart.AddDays(1);
-
                     ev.DtStart = new CalDateTime(dtStart, timeZoneId);
                     ev.Summary = reminder.Title;
 
-                    // ✅ Generate RRULE from simple parameters
                     var rruleStr = $"FREQ=HOURLY;INTERVAL={reminder.IntervalHours.Value}";
                     if (reminder.EndDateUtc.HasValue)
                     {
@@ -411,19 +455,39 @@ namespace HealthCare_.Services
                         "Reminder {Id} RRULE MODE: {RRULE}",
                         reminder.Id, reminder.RRULE);
 
-                    var dtStart = DateTime.SpecifyKind(reminder.StartDateUtc.Date, DateTimeKind.Unspecified);
+                    // ************** MODIFIED BLOCK START **************
+
+                    // Convert original UTC StartDate to LOCAL TIME
+                    var startLocal = TimeZoneInfo.ConvertTimeFromUtc(reminder.StartDateUtc, tz);
+
+                    // Default dtStart = full local datetime (date + time)
+                    var dtStart = DateTime.SpecifyKind(startLocal, DateTimeKind.Unspecified);
+
                     var rrule = reminder.RRULE.ToUpperInvariant();
 
-                    // If RRULE doesn't specify time, default to 9 AM
-                    if (!rrule.Contains("BYHOUR") && !rrule.Contains("BYTIME"))
+                    // If RRULE contains BYHOUR: override dtStart time
+                    if (rrule.Contains("BYHOUR"))
                     {
-                        dtStart = dtStart.AddHours(9);
+                        var match = Regex.Match(rrule, @"BYHOUR=(\d+)");
+                        if (match.Success)
+                        {
+                            var hour = int.Parse(match.Groups[1].Value);
+                            dtStart = new DateTime(dtStart.Year, dtStart.Month, dtStart.Day, hour, 0, 0);
+                            dtStart = DateTime.SpecifyKind(dtStart, DateTimeKind.Unspecified);
+                        }
                     }
+                    else
+                    {
+                        // Default to 9 AM
+                        dtStart = new DateTime(dtStart.Year, dtStart.Month, dtStart.Day, 9, 0, 0);
+                        dtStart = DateTime.SpecifyKind(dtStart, DateTimeKind.Unspecified);
+                    }
+
+                    // ************** MODIFIED BLOCK END **************
 
                     ev.DtStart = new CalDateTime(dtStart, timeZoneId);
                     ev.Summary = reminder.Title;
 
-                    // ✅ Parse user's RRULE directly - Ical.Net handles ALL iCalendar features
                     try
                     {
                         ev.RecurrenceRules.Add(new RecurrencePattern(rrule));
@@ -434,7 +498,7 @@ namespace HealthCare_.Services
                         _logger.LogError(ex,
                             "Failed to parse RRULE for Reminder {ReminderId}: {RRULE}. Error: {Error}",
                             reminder.Id, reminder.RRULE, ex.Message);
-                        throw; // Don't silently fail - let caller know there's bad data
+                        throw;
                     }
                 }
                 else
@@ -491,79 +555,224 @@ namespace HealthCare_.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Critical error generating occurrences for reminder {ReminderId}", reminder.Id);
-                throw; // Re-throw to let background job handle it
+                throw;
             }
         }
+
 
         #endregion
 
         #region ==================== CONFIRM / SNOOZE / SKIP ====================
 
-        public async Task ConfirmOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId, IntakeStatus intake = IntakeStatus.Taken)
+        public async Task ConfirmOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId, Enums.IntakeStatus intake = IntakeStatus.Taken)
         {
-            await ValidateReminderAccess(reminderId, patientId);
-            var dueDateTimeUtc = EnsureUtc(dueDateTime);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // ✅ Get reminder to access timezone
+                var reminder = await ValidateReminderAccess(reminderId, patientId);
 
-            var log = await _context.ReminderOccurrenceLogs
-                .FirstOrDefaultAsync(l => l.ReminderId == reminderId && l.DueDateTime == dueDateTimeUtc)
-                ?? new ReminderOccurrenceLog { ReminderId = reminderId, DueDateTime = dueDateTimeUtc };
+                // ✅ CORRECT: Convert user's local time to UTC
+                var dueDateTimeUtc = ConvertUserTimezoneToUtc(dueDateTime, reminder.TimeZoneId);
+                var nowUtc = DateTime.UtcNow;
 
-            log.Status = ReminderStatus.Completed;
-            log.IntakeStatus = intake;
-            log.ConfirmedAt = DateTime.UtcNow;
+                _logger.LogInformation(
+                    "Confirming: Reminder={ReminderId}, DueLocal={DueLocal}, DueUtc={DueUtc}, Patient={PatientId}",
+                    reminderId, dueDateTime, dueDateTimeUtc, patientId);
 
-            if (log.Id == 0) _context.ReminderOccurrenceLogs.Add(log);
-            await _context.SaveChangesAsync();
+                // ✅ Validate timing
+                ValidateActionTiming(dueDateTimeUtc, "confirm");
 
-            await _context.Database.ExecuteSqlRawAsync(
-                "UPDATE ReminderOccurrencesCache SET Status = 1 WHERE ReminderId = @p0 AND DueDateTime = @p1",
-                reminderId, dueDateTimeUtc);
+                // Check for duplicate
+                var existingLog = await _context.ReminderOccurrenceLogs
+                    .FirstOrDefaultAsync(l => l.ReminderId == reminderId && l.DueDateTimeUtc == dueDateTimeUtc);
+
+                if (existingLog?.Status == OccurrenceStatus.Taken)
+                {
+                    _logger.LogInformation("Idempotent confirm - already taken: {ReminderId} at {Due}", reminderId, dueDateTimeUtc);
+                    await transaction.CommitAsync();
+                    return;
+                }
+
+                var log = existingLog ?? new ReminderOccurrenceLog
+                {
+                    ReminderId = reminderId,
+                    DueDateTimeUtc = dueDateTimeUtc,
+                    DueDateTime = dueDateTime,
+                    PatientId = patientId
+                };
+
+                log.Status = OccurrenceStatus.Taken;
+                log.IntakeStatus = intake;
+                log.ConfirmedAt = nowUtc;
+                log.ActionedAt = nowUtc;
+                log.ActionedWithinWindow = true;
+
+                if (log.Id == 0)
+                    _context.ReminderOccurrenceLogs.Add(log);
+
+                await _context.SaveChangesAsync();
+
+                // ✅ Update cache with validation
+                var rowsAffected = await _context.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE ReminderOccurrencesCache 
+            SET Status = {(byte)OccurrenceStatus.Taken}, 
+                UpdatedAt = GETUTCDATE()
+            WHERE ReminderId = {reminderId} 
+              AND DueDateTimeUtc = {dueDateTimeUtc}");
+
+                if (rowsAffected == 0)
+                {
+                    _logger.LogWarning(
+                        "Cache miss on confirm: Reminder={ReminderId}, Due={Due}. Queuing regeneration.",
+                        reminderId, dueDateTimeUtc);
+                }
+
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    "Confirmed occurrence: Reminder={ReminderId}, DueUtc={Due}, CacheHit={Hit}",
+                    reminderId, dueDateTimeUtc, rowsAffected > 0);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to confirm: Reminder={ReminderId}, DueLocal={Due}, Patient={PatientId}",
+                    reminderId, dueDateTime, patientId);
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task SnoozeOccurrenceAsync(int reminderId, DateTime originalDue, int patientId, int minutes = 15)
         {
-            await ValidateReminderAccess(reminderId, patientId);
-            var originalDueUtc = EnsureUtc(originalDue);
-            var newDueUtc = originalDueUtc.AddMinutes(minutes);
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            var log = await _context.ReminderOccurrenceLogs
-                .FirstOrDefaultAsync(l => l.ReminderId == reminderId && l.DueDateTime == originalDueUtc)
-                ?? new ReminderOccurrenceLog { ReminderId = reminderId, DueDateTime = originalDueUtc };
+            try
+            {
+                // ✅ FIX: Get reminder FIRST to access timezone
+                var reminder = await ValidateReminderAccess(reminderId, patientId);
 
-            log.DueDateTime = newDueUtc;
-            log.Status = ReminderStatus.Pending;
+                // ✅ FIX: Convert user's local time to UTC properly
+                var originalDueUtc = ConvertUserTimezoneToUtc(originalDue, reminder.TimeZoneId);
+                var newDueUtc = originalDueUtc.AddMinutes(minutes);
 
-            if (log.Id == 0) _context.ReminderOccurrenceLogs.Add(log);
-            await _context.SaveChangesAsync();
+                _logger.LogInformation(
+                    "Snoozing occurrence: Reminder={ReminderId}, OriginalDueLocal={OriginalLocal}, OriginalDueUtc={OriginalUtc}, Minutes={Minutes}",
+                    reminderId, originalDue, originalDueUtc, minutes);
 
-            await _context.Database.ExecuteSqlRawAsync(@"
-                DELETE FROM ReminderOccurrencesCache WHERE ReminderId = @p0 AND DueDateTime = @p1;
-                INSERT INTO ReminderOccurrencesCache (PatientId, ReminderId, DueDateTime, Title, Message, Type, Dosage, Status, CreatedAt)
-                SELECT PatientId, ReminderId, @p2, Title, Message, Type, Dosage, 0, GETUTCDATE()
-                FROM ReminderOccurrencesCache
-                WHERE ReminderId = @p0 AND DueDateTime = @p1",
-                reminderId, originalDueUtc, newDueUtc);
+                // ✅ Validate timing
+                ValidateActionTiming(originalDueUtc, "snooze");
+
+                // Mark original as snoozed
+                var log = await _context.ReminderOccurrenceLogs
+                    .FirstOrDefaultAsync(l => l.ReminderId == reminderId && l.DueDateTimeUtc == originalDueUtc)
+                    ?? new ReminderOccurrenceLog
+                    {
+                        ReminderId = reminderId,
+                        DueDateTimeUtc = originalDueUtc,
+                        DueDateTime = originalDue,
+                        PatientId = patientId
+                    };
+
+                log.Status = OccurrenceStatus.Snoozed;
+                log.ActionedAt = DateTime.UtcNow;
+
+                if (log.Id == 0)
+                    _context.ReminderOccurrenceLogs.Add(log);
+
+                // Create new occurrence
+                var newDueLocal = ConvertUtcToUserTimezone(newDueUtc, reminder.TimeZoneId);
+
+                var newLog = new ReminderOccurrenceLog
+                {
+                    ReminderId = reminderId,
+                    PatientId = patientId,
+                    DueDateTimeUtc = newDueUtc,
+                    DueDateTime = newDueLocal,
+                    Status = OccurrenceStatus.Pending,
+                    IsSnoozeFromOriginal = true,
+                    OriginalDueDateTime = originalDueUtc,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.ReminderOccurrenceLogs.Add(newLog);
+
+                await _context.SaveChangesAsync();
+
+                // Update cache
+                await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                    UPDATE ReminderOccurrencesCache 
+                    SET Status = {(byte)OccurrenceStatus.Snoozed}
+                    WHERE ReminderId = {reminderId} AND DueDateTimeUtc = {originalDueUtc};
+                    
+                    INSERT INTO ReminderOccurrencesCache 
+                        (PatientId, ReminderId, DueDateTimeUtc, DueDateTime, Title, Message, Type, Status, TimeZoneId, CreatedAt)
+                    SELECT PatientId, ReminderId, {newDueUtc}, {newDueLocal}, Title, Message, Type, {(byte)OccurrenceStatus.Pending}, TimeZoneId, GETUTCDATE()
+                    FROM ReminderOccurrencesCache
+                    WHERE ReminderId = {reminderId} AND DueDateTimeUtc = {originalDueUtc};
+                ");
+
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    "Successfully snoozed occurrence: Reminder={ReminderId}, OriginalDue={Original}, NewDue={New}",
+                    reminderId, originalDueUtc, newDueUtc);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to snooze occurrence: Reminder={ReminderId}, DueLocal={Due}, Patient={PatientId}",
+                    reminderId, originalDue, patientId);
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task SkipOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId)
         {
-            await ValidateReminderAccess(reminderId, patientId);
             var dueDateTimeUtc = EnsureUtc(dueDateTime);
 
-            var log = await _context.ReminderOccurrenceLogs
-                .FirstOrDefaultAsync(l => l.ReminderId == reminderId && l.DueDateTime == dueDateTimeUtc)
-                ?? new ReminderOccurrenceLog { ReminderId = reminderId, DueDateTime = dueDateTimeUtc };
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            log.Status = ReminderStatus.Skipped;
-            log.IntakeStatus = IntakeStatus.Skipped;
-            log.ConfirmedAt = DateTime.UtcNow;
+            try
+            {
+                await ValidateReminderAccess(reminderId, patientId);
 
-            if (log.Id == 0) _context.ReminderOccurrenceLogs.Add(log);
-            await _context.SaveChangesAsync();
+                // Skip is ALWAYS allowed (for record-keeping)
 
-            await _context.Database.ExecuteSqlRawAsync(
-                "UPDATE ReminderOccurrencesCache SET Status = 2 WHERE ReminderId = @p0 AND DueDateTime = @p1",
-                reminderId, dueDateTimeUtc);
+                var log = await _context.ReminderOccurrenceLogs
+                    .FirstOrDefaultAsync(l => l.ReminderId == reminderId && l.DueDateTimeUtc == dueDateTimeUtc)
+                    ?? new ReminderOccurrenceLog
+                    {
+                        ReminderId = reminderId,
+                        DueDateTimeUtc = dueDateTimeUtc,
+                        DueDateTime = dueDateTime,
+                        PatientId = patientId
+                    };
+
+                log.Status = OccurrenceStatus.Skipped;
+                log.IntakeStatus = IntakeStatus.Skipped;
+                log.ActionedAt = DateTime.UtcNow;
+
+                if (log.Id == 0)
+                    _context.ReminderOccurrenceLogs.Add(log);
+
+                await _context.SaveChangesAsync();
+
+                await _context.Database.ExecuteSqlInterpolatedAsync($@"
+            UPDATE ReminderOccurrencesCache 
+            SET Status = {(byte)OccurrenceStatus.Skipped}, 
+                UpdatedAt = GETUTCDATE()
+            WHERE ReminderId = {reminderId} 
+              AND DueDateTimeUtc = {dueDateTimeUtc}");
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         #endregion
@@ -600,7 +809,7 @@ namespace HealthCare_.Services
         {
             var reminder = await ValidateReminderAccess(reminderId, patientId);
             reminder.IsActive = false;
-            reminder.Status = ReminderStatus.Dismissed;
+            reminder.Status = Enums.ReminderStatus.Dismissed;
             reminder.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
@@ -618,18 +827,21 @@ namespace HealthCare_.Services
         {
             var todayUtc = DateTime.UtcNow.Date;
             var next = await _context.ReminderOccurrencesCache
-                .Where(c => c.ReminderId == r.Id && c.DueDateTime >= todayUtc)
-                .OrderBy(c => c.DueDateTime)
-                .Select(c => (DateTime?)c.DueDateTime)
+                .Where(c => c.ReminderId == r.Id && c.DueDateTimeUtc >= todayUtc)
+                .OrderBy(c => c.DueDateTimeUtc)
+                .Select(c => (DateTime?)c.DueDateTimeUtc)
                 .FirstOrDefaultAsync();
 
+            // ✅ FIX: Use OccurrenceStatus.Taken instead of ReminderStatus.Completed
             var taken = await _context.ReminderOccurrenceLogs
-                .CountAsync(l => l.ReminderId == r.Id && l.Status == ReminderStatus.Completed);
+                .CountAsync(l => l.ReminderId == r.Id && l.Status == OccurrenceStatus.Taken);
 
             var total = await _context.ReminderOccurrenceLogs
                 .CountAsync(l => l.ReminderId == r.Id);
 
-            var nextOccurrence = next.HasValue ? ConvertUtcToUserTimezone(EnsureUtc(next.Value), r.TimeZoneId) : (DateTime?)null;
+            var nextOccurrence = next.HasValue
+                ? ConvertUtcToUserTimezone(EnsureUtc(next.Value), r.TimeZoneId)
+                : (DateTime?)null;
 
             return new ReminderV2Dto
             {
@@ -650,6 +862,89 @@ namespace HealthCare_.Services
                 TotalLogged = total,
                 IsActive = r.IsActive
             };
+        }
+
+        #endregion
+
+        // Add this at the top of ReminderV2Service.cs, inside the class
+
+        #region ==================== TEMPORAL VALIDATION HELPERS ====================
+
+        private const int WINDOW_OPENS_MINUTES = 30;
+        private const int GRACE_PERIOD_HOURS = 2;
+        private const int OVERDUE_THRESHOLD_MINUTES = 30;
+
+        private void ValidateActionTiming(DateTime dueTimeUtc, string actionName)
+        {
+            var nowUtc = DateTime.UtcNow;
+            var minutesFromDue = (nowUtc - dueTimeUtc).TotalMinutes;
+
+            if (minutesFromDue < -WINDOW_OPENS_MINUTES)
+            {
+                var minutesUntilAvailable = Math.Abs(minutesFromDue + WINDOW_OPENS_MINUTES);
+                throw new InvalidOperationException(
+                    $"Cannot {actionName} medication {Math.Abs(minutesFromDue):F0} minutes before scheduled time. " +
+                    $"Available in {minutesUntilAvailable:F0} minutes.");
+            }
+
+            if (actionName != "skip" && minutesFromDue > (GRACE_PERIOD_HOURS * 60))
+            {
+                throw new InvalidOperationException(
+                    $"Action window expired {(minutesFromDue - (GRACE_PERIOD_HOURS * 60)):F0} minutes ago. " +
+                    $"Please skip if medication was not taken.");
+            }
+        }
+
+        private static Enums.OccurrenceStatus DeriveDisplayStatus(Enums.OccurrenceStatus storedStatus, DateTime dueTimeUtc, DateTime nowUtc)
+        {
+            // If already in final state, return as-is
+            if (storedStatus is OccurrenceStatus.Taken or OccurrenceStatus.Skipped or OccurrenceStatus.Snoozed)
+                return storedStatus;
+
+            var minutesFromDue = (nowUtc - dueTimeUtc).TotalMinutes;
+
+            // Scheduled → Pending transition
+            if (storedStatus == OccurrenceStatus.Scheduled && minutesFromDue >= -WINDOW_OPENS_MINUTES)
+                return OccurrenceStatus.Pending;
+
+            // Pending → Missed transition
+            if (storedStatus == OccurrenceStatus.Pending && minutesFromDue > OVERDUE_THRESHOLD_MINUTES)
+                return OccurrenceStatus.Missed;
+
+            // Missed → Expired transition
+            if (storedStatus == OccurrenceStatus.Missed && minutesFromDue > (GRACE_PERIOD_HOURS * 60))
+                return OccurrenceStatus.Expired;
+
+            return storedStatus;
+        }
+
+        private static (bool canConfirm, bool canSnooze, bool canSkip, string? reason) EvaluateActionAvailability(
+            OccurrenceStatus status,
+            DateTime dueTimeUtc,
+            DateTime nowUtc)
+        {
+            // Final states - no actions allowed except skip for record-keeping
+            if (status is OccurrenceStatus.Taken or OccurrenceStatus.Skipped)
+                return (false, false, false, "Already completed");
+
+            if (status == OccurrenceStatus.Snoozed)
+                return (false, false, false, "Already snoozed");
+
+            var minutesFromDue = (nowUtc - dueTimeUtc).TotalMinutes;
+
+            // Too early
+            if (minutesFromDue < -WINDOW_OPENS_MINUTES)
+            {
+                var minutesUntil = Math.Abs(minutesFromDue + WINDOW_OPENS_MINUTES);
+                return (false, false, false, $"Available in {minutesUntil:F0} minutes");
+            }
+
+            // Expired
+            if (minutesFromDue > (GRACE_PERIOD_HOURS * 60))
+                return (false, false, true, "Window expired");
+
+            // Within action window
+            return (true, true, true, null);
         }
 
         #endregion

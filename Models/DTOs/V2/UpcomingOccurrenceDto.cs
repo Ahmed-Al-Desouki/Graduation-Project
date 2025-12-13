@@ -1,24 +1,33 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using HealthCare_.Models.EnumForModels;
 
 namespace HealthCare_.Models.DTOs.V2
 {
-
     public class UpcomingOccurrenceDto
     {
         public int ReminderId { get; set; }
         public string Title { get; set; } = "";
         public string? Message { get; set; }
+
         [JsonConverter(typeof(DateTimeWithoutTimezoneConverter))]
-        public DateTime DueDateTime { get; set; } 
-        public ReminderType Type { get; set; }
+        public DateTime DueDateTime { get; set; }
+
+        public string TimeZoneId { get; set; } = "Africa/Cairo";
+        public Enums.ReminderType Type { get; set; }
         public bool IsMedication { get; set; }
         public string? Dosage { get; set; }
-        public ReminderStatus Status { get; set; } // Pending / Taken / Missed / Snoozed
-        public string TimeZoneId { get; set; } = "Africa/Cairo";
-        public bool CanSnooze { get; set; } = true;
-        public bool CanConfirm => Status == ReminderStatus.Pending || Status == ReminderStatus.Active;
+
+        // ✅ FIX: Use OccurrenceStatus
+        public Enums.OccurrenceStatus Status { get; set; }
+
+        // ✅ FIX: Remove hardcoded CanConfirm, make them settable properties
+        public bool CanConfirm { get; set; }
+        public bool CanSnooze { get; set; }
+        public bool CanSkip { get; set; } = true; // Skip always allowed for record-keeping
+        public string? ActionUnavailableReason { get; set; }
     }
+
     public class DateTimeWithoutTimezoneConverter : JsonConverter<DateTime>
     {
         public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -28,7 +37,6 @@ namespace HealthCare_.Models.DTOs.V2
 
         public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
         {
-            // Write DateTime without timezone suffix (no Z)
             writer.WriteStringValue(value.ToString("yyyy-MM-ddTHH:mm:ss"));
         }
     }

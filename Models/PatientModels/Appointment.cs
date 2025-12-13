@@ -1,4 +1,6 @@
-﻿namespace HealthCare_.Models.PatientModels
+﻿using HealthCare_.Models.V2;
+
+namespace HealthCare_.Models.PatientModels
 {
     public class Appointment
     {
@@ -36,7 +38,7 @@
 
         // Added missing navigation property
         public ICollection<Review> Reviews { get; set; } // Already added previously
-        public ICollection<Reminder> Reminders { get; set; } // Added this to fix the error
+        public ICollection<ReminderV2> Reminders { get; set; } // Added this to fix the error
                                                              // أضف ده مع باقي الـ navigation properties
         public Prescription? Prescription { get; set; }
     }
