@@ -149,7 +149,10 @@ class _ConditionsAllergiesSectionState
             opacity: _isEditing ? 0.5 : 1.0,
             child: IgnorePointer(
               ignoring: _isEditing,
-              child: DottedAddButton(onTap: _showAddTypeDialog),
+              child: DottedAddButton(
+                onTap: _showAddTypeDialog,
+                text: "Add New Condition or Allergy",
+              ),
             ),
           ),
         ],

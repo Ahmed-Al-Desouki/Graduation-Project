@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 
 class SecurityItem extends StatelessWidget {
@@ -18,12 +19,12 @@ class SecurityItem extends StatelessWidget {
       children: [
         SvgPicture.asset(
           icon,
-          height: 20,
-          width: 20,
+          height: 20.h, // responsive height
+          width: 20.w,
           colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
         ),
-        SizedBox(width: 6),
-        Text(text, style: TextStyle(color: Colors.black54)),
+        SizedBox(width: 6.w),
+        Text(text, style: TextStyle(color: Colors.black54, fontSize: 13)),
       ],
     );
   }

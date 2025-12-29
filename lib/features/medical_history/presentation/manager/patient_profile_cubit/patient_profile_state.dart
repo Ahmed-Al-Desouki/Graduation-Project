@@ -50,3 +50,15 @@ final class PatientDeleteFailure extends PatientProfileState {
   final String errMessage;
   PatientDeleteFailure({required this.errMessage});
 }
+
+final class PatientOperationLoading extends PatientProfileState {}
+
+final class PatientOperationSuccess extends PatientProfileState {
+  final String message;
+  PatientOperationSuccess({required this.message});
+}
+
+final class PatientOperationFailure extends PatientProfileState {
+  final String errMessage;
+  PatientOperationFailure({required this.errMessage});
+}

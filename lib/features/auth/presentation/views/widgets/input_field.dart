@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
 class InputField extends StatefulWidget {
@@ -8,6 +9,7 @@ class InputField extends StatefulWidget {
   final bool isPassword;
   final TextEditingController controller;
   final String? Function(String?)? validator;
+  final double? hintSize;
 
   const InputField({
     super.key,
@@ -17,6 +19,7 @@ class InputField extends StatefulWidget {
     this.isPassword = false,
     required this.controller,
     this.validator,
+    this.hintSize,
   });
 
   @override
@@ -31,10 +34,13 @@ class _InputFieldState extends State<InputField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: AppStyles.styleSemiBold14Dark),
-        const SizedBox(height: 8),
+        Text(
+          widget.label,
+          style: AppStyles.styleSemiBold14Dark.copyWith(fontSize: 14.sp),
+        ),
+        SizedBox(height: 8.h),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: TextFormField(
             controller: widget.controller,
             validator: widget.validator,
@@ -53,24 +59,29 @@ class _InputFieldState extends State<InputField> {
                               ? Icons.visibility_off
                               : Icons.visibility,
                           color: const Color(0xFF9CA3AF),
+                          size: 24.sp,
                         ),
                         onPressed: () {
                           setState(() => _obscureText = !_obscureText);
                         },
                       )
                       : null,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 20,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 20.w,
+                vertical: 20.h,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(15.r),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide(color: Color(0xFF16A34A), width: 2.0),
+                borderRadius: BorderRadius.circular(15.r),
+                borderSide: BorderSide(color: Color(0xFF16A34A), width: 2.w),
               ),
               hintText: widget.hint,
+              hintStyle: TextStyle(
+                fontSize: (widget.hintSize ?? 15).sp,
+                color: Colors.black54,
+              ),
             ),
           ),
         ),

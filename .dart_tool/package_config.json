@@ -128,6 +128,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "equatable",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/equatable-2.0.7",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "fake_async",
       "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/fake_async-1.3.3",
       "packageUri": "lib/",
@@ -212,6 +218,30 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "firebase_messaging",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/firebase_messaging-16.0.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "firebase_messaging_platform_interface",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/firebase_messaging_platform_interface-4.7.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "firebase_messaging_web",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/firebase_messaging_web-4.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "fixnum",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/fixnum-1.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
       "name": "flutter",
       "rootUri": "file:///C:/src/flutter/packages/flutter",
       "packageUri": "lib/",
@@ -234,6 +264,12 @@
       "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.31",
       "packageUri": "lib/",
       "languageVersion": "3.7"
+    },
+    {
+      "name": "flutter_screenutil",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_screenutil-5.9.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
     },
     {
       "name": "flutter_secure_storage",
@@ -357,7 +393,7 @@
     },
     {
       "name": "http",
-      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/http-1.5.0",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/http-1.6.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -369,9 +405,9 @@
     },
     {
       "name": "image_picker",
-      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/image_picker-1.2.0",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/image_picker-1.2.1",
       "packageUri": "lib/",
-      "languageVersion": "3.6"
+      "languageVersion": "3.7"
     },
     {
       "name": "image_picker_android",
@@ -579,7 +615,7 @@
     },
     {
       "name": "passkeys_platform_interface",
-      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/passkeys_platform_interface-2.4.0",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/passkeys_platform_interface-2.5.0",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -710,6 +746,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "showcaseview",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/showcaseview-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
+    },
+    {
       "name": "sky_engine",
       "rootUri": "file:///C:/src/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
@@ -762,6 +804,12 @@
       "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/ua_client_hints-1.4.1",
       "packageUri": "lib/",
       "languageVersion": "2.17"
+    },
+    {
+      "name": "uuid",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/uuid-4.5.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "vector_graphics",

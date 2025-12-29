@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
@@ -20,32 +21,40 @@ class LoginHeader extends StatelessWidget {
     return Column(
       children: [
         CircleAvatar(
-          radius: 50,
+          radius: 50.r, // responsive radius
           backgroundColor: Colors.white,
           child: SvgPicture.asset(
             iconPath,
-            height: 50,
-            width: 50,
+            height: 50.h, // responsive height
+            width: 50.w, // responsive width
             colorFilter: const ColorFilter.mode(
               Color(0xff26A69A),
               BlendMode.srcIn,
             ),
           ),
         ),
-        SizedBox(height: 20),
-        Text(title, style: AppStyles.styleBold30.copyWith(fontSize: 40)),
-        SizedBox(height: 8),
+        SizedBox(height: 20.h), // responsive spacing
+        Text(
+          title,
+          style: AppStyles.styleBold30.copyWith(
+            fontSize: 40.sp, // responsive font
+          ),
+        ),
+        SizedBox(height: 8.h),
         Text(
           subtitle,
-          style: AppStyles.styleRegular16GrayDark.copyWith(fontSize: 18),
+          style: AppStyles.styleRegular16GrayDark.copyWith(
+            fontSize: 18.sp, // responsive font
+          ),
+          textAlign: TextAlign.center,
         ),
-        SizedBox(height: 30),
+        SizedBox(height: 30.h),
         ClipRRect(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(15.r), // responsive border radius
           child: Image.asset(
             imagePath,
-            height: 200,
-            width: 200,
+            height: 200.h, // responsive height
+            width: 200.w, // responsive width
             fit: BoxFit.cover,
           ),
         ),

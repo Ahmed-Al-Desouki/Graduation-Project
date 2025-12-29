@@ -18,6 +18,7 @@ class RegistrationForm extends StatefulWidget {
   final TextEditingController passwordController;
   // String? gender;
   bool isDoctor;
+  final Function(File?) onImagePicked;
 
   RegistrationForm({
     super.key,
@@ -30,6 +31,7 @@ class RegistrationForm extends StatefulWidget {
     required this.passwordController,
     // this.gender,
     this.isDoctor = false,
+    required this.onImagePicked,
   });
 
   @override
@@ -47,6 +49,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
       setState(() {
         _profileImage = File(picked.path);
       });
+      widget.onImagePicked(_profileImage);
     }
   }
 
@@ -264,60 +267,59 @@ class _RegistrationFormState extends State<RegistrationForm> {
           //   },
           //   autovalidateMode: AutovalidateMode.onUserInteraction,
           // ),
-          if (widget.isDoctor)
-            Column(
-              children: [
-                const SizedBox(height: 30),
-                HeadersFieldInRegistration(
-                  imagePath: Assets.imagesCamera,
-                  title: "Profile Picture (Optional)",
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    width: double.infinity,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xffd1d5db)),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child:
-                        _profileImage == null
-                            ? const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_a_photo_outlined,
-                                    color: Colors.grey,
-                                    size: 40,
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    "Upload your professional photo\nJPG, PNG or GIF (max. 5MB)",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                            : ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.file(
-                                _profileImage!,
-                                width: double.infinity,
-                                height: 150,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
+          Column(
+            children: [
+              const SizedBox(height: 30),
+              HeadersFieldInRegistration(
+                imagePath: Assets.imagesCamera,
+                title: "Profile Picture (Optional)",
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  width: double.infinity,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xffd1d5db)),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child:
+                      _profileImage == null
+                          ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_a_photo_outlined,
+                                  color: Colors.grey,
+                                  size: 40,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "Upload your professional photo\nJPG, PNG or GIF (max. 5MB)",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                          : ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              _profileImage!,
+                              width: double.infinity,
+                              height: 150,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
         ],
       ),

@@ -109,4 +109,19 @@ class AuthWebServices {
     final response = await _apiService.post('mfa/resend', body);
     return response;
   }
+
+  Future<void> registerDevice(String deviceId) async {
+    await _apiService.post('auth/register-device', {"fcmToken": deviceId});
+  }
+
+  Future<void> unregisterDevice(String deviceId) async {
+    await _apiService.delete(
+      'auth/unregister-device',
+      body: {"fcmToken": deviceId},
+    );
+  }
+
+  Future<void> logout({required int userId, required String jti}) async {
+    await _apiService.post('auth/logout', {"userId": userId, "jti": jti});
+  }
 }

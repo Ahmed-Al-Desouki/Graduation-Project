@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
@@ -29,7 +30,7 @@ class _SplashBodyState extends State<SplashBody>
   static const double totalAppearanceFactor =
       nameAppearanceDurationFactor + logoAppearanceDurationFactor;
   static const double fadeOutStartTime = 0.93;
-  static const int totalDurationMs = 5500;
+  static const int totalDurationMs = 5000;
 
   @override
   void initState() {
@@ -121,16 +122,20 @@ class _SplashBodyState extends State<SplashBody>
     Color color = (index < 3) ? darkBlue : brightGreen;
     Widget text = Text(
       letter,
-      style: TextStyle(color: color, fontSize: 40, fontWeight: FontWeight.bold),
+      style: TextStyle(
+        color: color,
+        fontSize: 40.sp,
+        fontWeight: FontWeight.bold,
+      ),
     );
     if (letter == '+') {
       text = Transform.translate(
-        offset: const Offset(0, -8),
+        offset: Offset(0, -8.h),
         child: Text(
           letter,
           style: TextStyle(
             color: color,
-            fontSize: 28,
+            fontSize: 28.sp,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -154,14 +159,17 @@ class _SplashBodyState extends State<SplashBody>
                 opacity: _logoOpacityAnimation,
                 child: Image.asset(
                   Assets.imagesLogooo,
-                  width: 300,
-                  height: 300,
+                  width: 0.5.sw, // **تم تعديل width ليكون 50% من عرض الشاشة**
+                  height: 0.5.sw, // **تم تعديل height ليكون متناسب مع العرض**
                   fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(height: 30),
+              SizedBox(
+                height: 0.05.sh,
+              ), // **مسافة ديناميكية 5% من ارتفاع الشاشة**
               Row(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center, // **تم التوسيط**
                 children: [
                   for (int i = 0; i < _nameLetters.length; i++)
                     _buildLetter(_nameLetters[i], i),

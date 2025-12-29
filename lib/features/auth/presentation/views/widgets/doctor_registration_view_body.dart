@@ -8,6 +8,7 @@ import 'package:graduation_project/features/auth/presentation/views/widgets/cust
 import 'package:graduation_project/features/auth/presentation/views/widgets/custom_registration_header.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/registration_form.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/custom_button.dart';
+import 'package:image_picker/image_picker.dart';
 
 class DoctorRegistrationViewBody extends StatefulWidget {
   const DoctorRegistrationViewBody({super.key});
@@ -27,7 +28,7 @@ class _DoctorRegistrationViewBodyState
   final TextEditingController passwordController = TextEditingController();
   // final TextEditingController nationalIdController = TextEditingController();
   // String? gender;
-
+  XFile? _selectedProfileImage;
   void _submitRegistration() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthCubit>().register(
@@ -35,6 +36,7 @@ class _DoctorRegistrationViewBodyState
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
         role: "Doctor",
+        profileImage: _selectedProfileImage,
       );
     }
   }
@@ -102,6 +104,13 @@ class _DoctorRegistrationViewBodyState
                         isDoctor: true,
                         // gender: gender,
                         // onGenderChanged: (val) => setState(() => gender = val),
+                        onImagePicked: (file) {
+                          if (file != null) {
+                            setState(() {
+                              _selectedProfileImage = XFile(file.path);
+                            });
+                          }
+                        },
                       ),
                       const SizedBox(height: 25),
                       Padding(

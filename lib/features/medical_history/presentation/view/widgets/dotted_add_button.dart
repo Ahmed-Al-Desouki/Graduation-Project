@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 class DottedAddButton extends StatelessWidget {
   final VoidCallback onTap;
-
-  const DottedAddButton({super.key, required this.onTap});
+  final String text;
+  const DottedAddButton({super.key, required this.onTap, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,7 @@ class DottedAddButton extends StatelessWidget {
         ),
         child: CustomPaint(
           painter: _DottedBorderPainter(),
-          child: const Center(
+          child: Center(
             child: Padding(
               padding: EdgeInsets.all(16.0),
               child: Row(
@@ -28,7 +28,7 @@ class DottedAddButton extends StatelessWidget {
                   Icon(Icons.add, color: Colors.grey),
                   SizedBox(width: 8),
                   Text(
-                    "Add New Condition or Allergy",
+                    text,
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 16,

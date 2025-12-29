@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
@@ -9,6 +10,7 @@ import 'package:graduation_project/features/auth/presentation/views/widgets/cust
 import 'package:graduation_project/features/auth/presentation/views/widgets/custom_registration_appbar.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/custom_registration_header.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/registration_form.dart';
+import 'package:image_picker/image_picker.dart';
 
 class PatientRegistrationViewBody extends StatefulWidget {
   const PatientRegistrationViewBody({super.key});
@@ -25,6 +27,7 @@ class _PatientRegistrationViewBodyState
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  XFile? _selectedProfileImage;
   void _submitRegistration() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthCubit>().register(
@@ -32,6 +35,7 @@ class _PatientRegistrationViewBodyState
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
         role: "Patient",
+        profileImage: _selectedProfileImage,
       );
     }
   }
@@ -89,7 +93,7 @@ class _PatientRegistrationViewBodyState
                   Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(left: 16.0),
+                        padding: EdgeInsets.only(left: 16.w, top: 15.h),
                         child: Container(
                           alignment: Alignment.centerLeft,
                           child: Text(
@@ -114,6 +118,13 @@ class _PatientRegistrationViewBodyState
                         nameController: nameController,
                         emailController: emailController,
                         passwordController: passwordController,
+                        onImagePicked: (file) {
+                          if (file != null) {
+                            setState(() {
+                              _selectedProfileImage = XFile(file.path);
+                            });
+                          }
+                        },
                       ),
                       const SizedBox(height: 20),
                       Padding(

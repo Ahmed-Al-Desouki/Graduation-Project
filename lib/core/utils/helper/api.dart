@@ -286,9 +286,9 @@ class ApiService {
     }
   }
 
-  Future<dynamic> delete(String endpoint) async {
+  Future<dynamic> delete(String endpoint, {dynamic body}) async {
     try {
-      final response = await _dio.delete(endpoint);
+      final response = await _dio.delete(endpoint, data: body);
       return response.data;
     } catch (e) {
       rethrow;

@@ -4,8 +4,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:graduation_project/core/utils/helper/api.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
+import 'package:graduation_project/features/reminder/data/repo/reminder_repo.dart';
+import 'package:graduation_project/features/reminder/data/repo/reminder_repo_impl.dart';
 import 'package:graduation_project/features/auth/data/services/auth_web_service.dart';
+import 'package:graduation_project/features/reminder/data/services/reminder_web_service.dart';
 import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
+import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/medical_history/data/repository/patient_repo_impl.dart';
 import 'package:graduation_project/features/medical_history/data/service/patient_web_service.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
@@ -37,6 +41,10 @@ void setupServiceLocator() {
     () => AuthWebServices(getIt<ApiService>()),
   );
 
+  getIt.registerLazySingleton<ReminderWebService>(
+    () => ReminderWebService(getIt<ApiService>()),
+  );
+
   // Repository
   getIt.registerLazySingleton<AuthRepositoryimpl>(
     () => AuthRepositoryimpl(getIt<AuthWebServices>()),
@@ -44,6 +52,14 @@ void setupServiceLocator() {
 
   getIt.registerFactory<AuthCubit>(
     () => AuthCubit(getIt<AuthRepositoryimpl>()),
+  );
+
+  getIt.registerLazySingleton<ReminderRepository>(
+    () => ReminderRepositoryImpl(getIt<ReminderWebService>()),
+  );
+
+  getIt.registerFactory<ReminderCubit>(
+    () => ReminderCubit(getIt<ReminderRepository>()),
   );
 
   getIt.registerLazySingleton<SessionManager>(

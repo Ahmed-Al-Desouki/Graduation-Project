@@ -20,28 +20,28 @@ class PastAppointmentsSection extends StatelessWidget {
         imagePath: "https://i.pravatar.cc/150?img=11", // صورة تجريبية
         cardColor: const Color(0xFF3B82F6), // أزرق
       ),
-      AppointmentModel(
-        doctorName: "Dr. Sarah Williams",
-        specialty: "Cardiologist",
-        date: "Sep 22, 2023",
-        title: "Hypertension Management",
-        description: "Blood pressure monitoring and medication review",
-        duration: "30 minutes",
-        location: "Cardiology Wing",
-        imagePath: "https://i.pravatar.cc/150?img=5",
-        cardColor: const Color(0xFFEF4444), // أحمر
-      ),
-      AppointmentModel(
-        doctorName: "Dr. James Rodriguez",
-        specialty: "Pulmonologist",
-        date: "Aug 10, 2023",
-        title: "Asthma Review",
-        description: "Lung function test and inhaler technique review",
-        duration: "60 minutes",
-        location: "Pulmonary Lab",
-        imagePath: "https://i.pravatar.cc/150?img=3",
-        cardColor: const Color(0xFF14B8A6), // تيل (Teal)
-      ),
+      // AppointmentModel(
+      //   doctorName: "Dr. Sarah Williams",
+      //   specialty: "Cardiologist",
+      //   date: "Sep 22, 2023",
+      //   title: "Hypertension Management",
+      //   description: "Blood pressure monitoring and medication review",
+      //   duration: "30 minutes",
+      //   location: "Cardiology Wing",
+      //   imagePath: "https://i.pravatar.cc/150?img=5",
+      //   cardColor: const Color(0xFFEF4444), // أحمر
+      // ),
+      // AppointmentModel(
+      //   doctorName: "Dr. James Rodriguez",
+      //   specialty: "Pulmonologist",
+      //   date: "Aug 10, 2023",
+      //   title: "Asthma Review",
+      //   description: "Lung function test and inhaler technique review",
+      //   duration: "60 minutes",
+      //   location: "Pulmonary Lab",
+      //   imagePath: "https://i.pravatar.cc/150?img=3",
+      //   cardColor: const Color(0xFF14B8A6), // تيل (Teal)
+      // ),
     ];
 
     return Container(

@@ -58,18 +58,53 @@ class SessionManager {
     }
   }
 
+  // Future<void> _saveNewTokensAndUserData(AuthTokenModel tokenModel) async {
+  //   await SecureStorageHelper.updateTokens(
+  //     newAccessToken: tokenModel.accessToken,
+  //     newRefreshToken: tokenModel.refreshToken,
+  //   );
+
+  //   Map<String, dynamic> payload = JwtDecoder.decode(tokenModel.accessToken);
+  //   final role =
+  //       (payload['role'] ?? payload['Role'] ?? '').toString().toLowerCase();
+  //   final uid =
+  //       (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '').toString();
+
+  //   await SecureStorageHelper.saveUserRoleAndId(role: role, userId: uid);
+  // }
+
   Future<void> _saveNewTokensAndUserData(AuthTokenModel tokenModel) async {
+    // 1. حفظ التوكنات الجديدة
     await SecureStorageHelper.updateTokens(
       newAccessToken: tokenModel.accessToken,
       newRefreshToken: tokenModel.refreshToken,
     );
 
+    // 2. فك التشفير واستخراج كل البيانات
     Map<String, dynamic> payload = JwtDecoder.decode(tokenModel.accessToken);
-    final role =
-        (payload['role'] ?? payload['Role'] ?? '').toString().toLowerCase();
-    final uid =
-        (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '').toString();
 
-    await SecureStorageHelper.saveUserRoleAndId(role: role, userId: uid);
+    final role = (payload['Role'] ?? payload['role'] ?? '').toString();
+    final userId = (payload['UserID'] ?? payload['uid'] ?? '').toString();
+    final jti = (payload['jti'] ?? '').toString();
+    final name = (payload['Name'] ?? payload['name'] ?? '').toString();
+    final email = (payload['Email'] ?? payload['email'] ?? '').toString();
+
+    // 3. تخزين البيانات في السكيور ستورج
+    // await SecureStorageHelper.saveFullUserData(
+    //   role: role.toLowerCase(), // توحيد الرول
+    //   userId: userId,
+    //   jti: jti,
+    //   name: name,
+    //   email: email,
+    // );
+    await SecureStorageHelper.saveFullUserData(
+      accessToken: tokenModel.accessToken,
+      refreshToken: tokenModel.refreshToken,
+      role: (payload['Role'] ?? payload['role'] ?? '').toString().toLowerCase(),
+      userId: (payload['UserID'] ?? payload['uid'] ?? '').toString(),
+      jti: (payload['jti'] ?? '').toString(),
+      name: (payload['Name'] ?? payload['name'] ?? '').toString(),
+      email: (payload['Email'] ?? payload['email'] ?? '').toString(),
+    );
   }
 }

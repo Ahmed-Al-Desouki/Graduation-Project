@@ -73,3 +73,12 @@ final class ResetPasswordSuccess extends AuthState {
   final String message;
   ResetPasswordSuccess({required this.message});
 }
+
+final class LogoutLoading extends AuthState {}
+
+final class LogoutSuccess extends AuthState {}
+
+final class LogoutFailure extends AuthState {
+  final String errMessage;
+  LogoutFailure({required this.errMessage});
+}

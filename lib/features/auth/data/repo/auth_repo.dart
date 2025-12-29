@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:graduation_project/core/errors/failures.dart';
 import 'package:graduation_project/features/auth/data/models/auth_token_model.dart';
+import 'package:image_picker/image_picker.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, String>> register({
@@ -8,6 +9,7 @@ abstract class AuthRepository {
     required String email,
     required String password,
     required String role,
+    XFile? profileImage,
   });
 
   Future<Either<Failure, dynamic>> login({
@@ -41,4 +43,6 @@ abstract class AuthRepository {
   Future<Either<Failure, Map<String, dynamic>>> resendOtp({
     required String mfaToken,
   });
+
+  Future<Either<Failure, void>> logout();
 }

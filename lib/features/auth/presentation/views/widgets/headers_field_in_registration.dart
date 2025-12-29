@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
@@ -29,7 +30,10 @@ class HeadersFieldInRegistration extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Text(title, style: AppStyles.styleSemiBold18Dark),
+        Padding(
+          padding: EdgeInsets.only(top: 15.h),
+          child: Text(title, style: AppStyles.styleSemiBold18Dark),
+        ),
       ],
     );
   }
