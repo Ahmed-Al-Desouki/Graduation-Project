@@ -10,18 +10,21 @@ abstract class ReminderRepository {
   Future<Either<Failure, ReminderModel>> createReminder({
     required String patientId,
     required String type,
-    required String name,
-    required String startDate,
-    required String endDate,
-    required String frequency,
-    required String intervalHours,
-    required String baseTime,
+    required String title,
+    required DateTime startDate,    // ← بقى DateTime
+  required DateTime endDate,
+    String? rrule,
+    SimpleModel? simple,
     required String message,
   });
 
-  Future<Either<Failure, ReminderInstanceModel>> getUpcomingReminders({
+  // Future<Either<Failure, List<ReminderInstanceModel>>> getUpcomingReminders({
+  //   required String patientId,
+  //   required int hours,
+  // });
+
+  Future<Either<Failure, List<ReminderInstanceModel>>> getTodayReminders({
     required String patientId,
-    required int hours,
   });
 
   Future<Either<Failure, ReminderModel>> updateReminder({
@@ -34,6 +37,11 @@ abstract class ReminderRepository {
     required String intervalHours,
     required String baseTime,
     required String message,
+  });
+
+  Future<Either<Failure, void>> deleteReminder({
+    required String patientId,
+    required String reminderId,
   });
 }
 

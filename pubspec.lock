@@ -170,7 +170,7 @@ packages:
     source: hosted
     version: "2.1.1"
   equatable:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: equatable
       sha256: "567c64b3cb4cf82397aac55f4f0cbd3ca20d77c6c03bedbc4ceaddc08904aef7"
@@ -395,6 +395,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_timezone:
+    dependency: "direct main"
+    description:
+      name: flutter_timezone
+      sha256: "978192f2f9ea6d019a4de4f0211d76a9af955ca24865828fa98ca4e20cf0cb3c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.1"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
@@ -904,6 +912,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.5+1"
+  rrule:
+    dependency: "direct main"
+    description:
+      name: rrule
+      sha256: b7425410c594d4b6717c9f17ec8ef83c9d1ff2e513c428a135b5924fc2e8e045
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.17"
+  rrule_generator:
+    dependency: "direct main"
+    description:
+      name: rrule_generator
+      sha256: "3970b2bcff49e7cbce8cc864f20c10ac274db51caf96f51363d77c41b7e07cd0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.9.7"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -1013,6 +1037,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.4"
+  time:
+    dependency: transitive
+    description:
+      name: time
+      sha256: "370572cf5d1e58adcb3e354c47515da3f7469dac3a95b447117e728e7be6f461"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.5"
+  timezone:
+    dependency: "direct main"
+    description:
+      name: timezone
+      sha256: dd14a3b83cfd7cb19e7888f1cbc20f258b8d71b54c06f79ac585f14093a287d1
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.1"
   typed_data:
     dependency: transitive
     description:

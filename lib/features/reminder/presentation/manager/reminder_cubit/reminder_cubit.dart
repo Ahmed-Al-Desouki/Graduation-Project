@@ -215,6 +215,8 @@
 // }
 // -----------------------------------------------------
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
+import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
 import 'package:graduation_project/features/reminder/data/repo/reminder_repo.dart';
 import 'reminder_state.dart';
 
@@ -226,12 +228,11 @@ class ReminderCubit extends Cubit<ReminderState> {
   Future<void> createReminder({
     required String patientId,
     required String type,
-    required String name,
-    required String startDate,
-    required String endDate,
-    required String frequency,
-    required String intervalHours,
-    required String baseTime,
+    required String title,
+    required DateTime startDate,    // ← بقى DateTime
+  required DateTime endDate,
+    required String? rrule,
+    required SimpleModel? simple,
     required String message,
   }) async {
     emit(ReminderLoading());
@@ -239,37 +240,86 @@ class ReminderCubit extends Cubit<ReminderState> {
     final result = await repo.createReminder(
       patientId: patientId,
       type: type,
-      name: name,
+      title: title,
       startDate: startDate,
       endDate: endDate,
-      frequency: frequency,
-      intervalHours: intervalHours,
-      baseTime: baseTime,
+      rrule: rrule,
+      simple: simple,
       message: message,
     );
 
     result.fold(
-      (failure) => emit(ReminderCreateFailure(failure.errmessage)),
-      (reminder) => emit(ReminderCreateSuccess(reminder)),
+      (failure) {
+    // طبّع الإيرور في الكونسول عشان نشوف إيه اللي بيحصل بالظبط
+    print("CREATE REMINDER FAILED: ${failure.errmessage}");
+    emit(ReminderCreateFailure(errMessage: failure.errmessage));
+  },
+      // (reminder) => emit(ReminderCreateSuccess(reminder: reminder)),
+      (reminder) {
+    // حتى لو الـ reminder ناقص بيانات، خلينا نعتبره ناجح
+    emit(ReminderCreateSuccess(reminder: reminder));
+    // نعيد تحميل التذكيرات اليومية عشان تظهر فورًا
+    getTodayReminders(patientId: patientId);
+  },
     );
   }
 
-  Future<void> getUpcomingReminders({
+  // Future<void> getUpcomingReminders({
+  //   required String patientId,
+  //   required int hours,
+  // }) async {
+  //   emit(ReminderLoading());
+
+  //   final result = await repo.getUpcomingReminders(
+  //     patientId: patientId,
+  //     hours: hours,
+  //   );
+
+  //   result.fold(
+  //     (failure) => emit(UpcomingRemindersFailure(errMessage: failure.errmessage)),
+  //     (allReminders) {
+  //       final meds = allReminders
+  //           .where((element) => element.type == 'Medication')
+  //           .toList();
+  //       final appts = allReminders
+  //           .where((element) => element.type == 'Appointment')
+  //           .toList();
+
+  //       emit(UpcomingRemindersSuccess(
+  //         medications: meds,
+  //         appointments: appts,
+  //       ));
+  //     },
+  //   );
+  // }
+
+  Future<void> getTodayReminders({
     required String patientId,
-    required int hours,
   }) async {
-    emit(ReminderLoading());
+  emit(ReminderLoading());
 
-    final result = await repo.getUpcomingReminders(
-      patientId: patientId,
-      hours: hours,
-    );
+  final result = await repo.getTodayReminders(patientId: patientId);
 
-    result.fold(
-      (failure) => emit(UpcomingRemindersFailure(failure.errmessage)),
-      (instance) => emit(UpcomingRemindersSuccess(instance)),
-    );
-  }
+  result.fold(
+    (failure) => emit(UpcomingRemindersFailure(errMessage: failure.errmessage)),
+    (allReminders) {
+      final meds = allReminders
+            .where((element) => element.type == 'Medication')
+            .toList();
+      final appts = allReminders
+            .where((element) => element.type == 'Appointment')
+            .toList();
+      final customs = allReminders
+            .where((element) => element.type != 'Medication' && element.type != 'Appointment')
+            .toList();
+      emit(UpcomingRemindersSuccess(
+        medications: meds,
+        appointments: appts,
+        customs: customs,
+      ));
+    },
+  );
+}
 
   Future<void> updateReminder({
     required String patientId,
@@ -297,8 +347,34 @@ class ReminderCubit extends Cubit<ReminderState> {
     );
 
     result.fold(
-      (failure) => emit(ReminderUpdateFailure(failure.errmessage)),
-      (reminder) => emit(ReminderUpdateSuccess(reminder)),
+      (failure) => emit(ReminderUpdateFailure(errMessage: failure.errmessage)),
+      (reminder) => emit(ReminderUpdateSuccess(reminder: reminder)),
+    );
+  }
+
+  Future<void> deleteReminder({
+    required String reminderId,
+  }) async {
+    final patientId = await SecureStorageHelper.getUserId();
+    if (patientId == null || patientId.isEmpty) {
+      emit(ReminderDeleteFailure(errMessage: "User ID is missing or invalid."));
+      return;
+    }
+
+    emit(ReminderDeleteLoading());
+    
+    final result = await repo.deleteReminder(
+      patientId: patientId,
+      reminderId: reminderId,
+    );
+
+    result.fold(
+      (failure) => emit(ReminderDeleteFailure(errMessage: failure.errmessage)),
+      (_) => emit(
+        ReminderDeleteSuccess(
+          message: 'Reminder deleted successfully',
+        ),
+      ),
     );
   }
 }

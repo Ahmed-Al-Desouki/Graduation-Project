@@ -28,9 +28,10 @@ class ReminderMedicationCard extends StatelessWidget {
       cardColor = Colors.white;
     }
     return Container(
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Colors.green.shade300),
         borderRadius: BorderRadius.circular(12),
         color: cardColor,
       ),
@@ -40,18 +41,21 @@ class ReminderMedicationCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
               Text(
                 'Next: $next',
                 style: const TextStyle(color: Colors.green, fontSize: 12),
               ),
             ],
           ),
-          Text(subtitle, style: const TextStyle(color: Colors.grey)),
+          Text(subtitle, style: const TextStyle(color: Colors.black45)),
           const SizedBox(height: 6),
           Row(
             children: [
-              Icon(Icons.access_time_filled, size: 18, color: Colors.blue),
+              Icon(Icons.access_time_filled, size: 18, color: Colors.green.shade700),
               SizedBox(width: 5),
               Text('Times: $time'),
             ],

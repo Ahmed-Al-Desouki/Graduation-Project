@@ -163,16 +163,16 @@ class PatientQuickActionCard extends StatelessWidget {
                 isSvg
                 ? SvgPicture.asset(
                     imageAsset,
-                    height: 60.h,
-                    width: 60.w,
+                    height: 70.h,
+                    width: 70.w,
                     colorFilter: iconColor != null
                         ? ColorFilter.mode(iconColor!, BlendMode.srcIn)
                         : null,
                   )
                 : Image.asset(
                     imageAsset,
-                    height: 60.h,
-                    width: 60.w,
+                    height: 70.h,
+                    width: 70.w,
                   ),
               ],
             ),

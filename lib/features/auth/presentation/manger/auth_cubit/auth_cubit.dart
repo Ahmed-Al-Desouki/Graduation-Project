@@ -125,7 +125,7 @@ class AuthCubit extends Cubit<AuthState> {
                     .toString()
                     .toLowerCase();
             final uid =
-                (payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '')
+                (payload['UserID'] ?? payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '')
                     .toString();
 
             await SecureStorageHelper.saveTokens(

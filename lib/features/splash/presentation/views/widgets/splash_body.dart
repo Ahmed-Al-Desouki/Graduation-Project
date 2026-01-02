@@ -159,17 +159,17 @@ class _SplashBodyState extends State<SplashBody>
                 opacity: _logoOpacityAnimation,
                 child: Image.asset(
                   Assets.imagesLogooo,
-                  width: 0.5.sw, // **تم تعديل width ليكون 50% من عرض الشاشة**
-                  height: 0.5.sw, // **تم تعديل height ليكون متناسب مع العرض**
+                  width: 0.5.sw,
+                  height: 0.5.sw,
                   fit: BoxFit.contain,
                 ),
               ),
               SizedBox(
                 height: 0.05.sh,
-              ), // **مسافة ديناميكية 5% من ارتفاع الشاشة**
+              ),
               Row(
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center, // **تم التوسيط**
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   for (int i = 0; i < _nameLetters.length; i++)
                     _buildLetter(_nameLetters[i], i),

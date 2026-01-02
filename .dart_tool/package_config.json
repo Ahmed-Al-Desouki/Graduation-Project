@@ -302,6 +302,12 @@
       "languageVersion": "3.7"
     },
     {
+      "name": "flutter_timezone",
+      "rootUri": "file:///C:/Users/elkhedewy-group/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_timezone-5.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "flutter_web_plugins",
       "rootUri": "file:///C:/src/flutter/packages/flutter_web_plugins",
       "packageUri": "lib/",
@@ -686,6 +692,18 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "rrule",
+      "rootUri": "file:///C:/Users/elkhedewy-group/AppData/Local/Pub/Cache/hosted/pub.dev/rrule-0.2.17",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "rrule_generator",
+      "rootUri": "file:///C:/Users/elkhedewy-group/AppData/Local/Pub/Cache/hosted/pub.dev/rrule_generator-0.9.7",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
+    },
+    {
       "name": "shared_preferences",
       "rootUri": "file:///C:/Users/elkhedewy-group/AppData/Local/Pub/Cache/hosted/pub.dev/shared_preferences-2.5.3",
       "packageUri": "lib/",
@@ -768,6 +786,18 @@
       "rootUri": "file:///C:/Users/elkhedewy-group/AppData/Local/Pub/Cache/hosted/pub.dev/test_api-0.7.4",
       "packageUri": "lib/",
       "languageVersion": "3.5"
+    },
+    {
+      "name": "time",
+      "rootUri": "file:///C:/Users/elkhedewy-group/AppData/Local/Pub/Cache/hosted/pub.dev/time-2.1.5",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "timezone",
+      "rootUri": "file:///C:/Users/elkhedewy-group/AppData/Local/Pub/Cache/hosted/pub.dev/timezone-0.10.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.19"
     },
     {
       "name": "typed_data",
@@ -854,7 +884,7 @@
       "languageVersion": "3.7"
     }
   ],
-  "generated": "2025-11-26T13:05:09.703475Z",
+  "generated": "2025-12-13T17:08:54.202814Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///C:/src/flutter",

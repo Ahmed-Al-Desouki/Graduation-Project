@@ -38,6 +38,7 @@ class PatientHomeView extends StatelessWidget {
               subtitle: 'Schedule with your doctor',
               gradientColor: const Color(0xFF9333EA),
               imageAsset: Assets.imagesClipartDoctorPerson1,
+              isSvg: false,
             ),
             SizedBox(height: 20.h),
             PatientQuickActionCard(

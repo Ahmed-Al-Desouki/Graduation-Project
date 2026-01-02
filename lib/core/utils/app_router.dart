@@ -41,7 +41,7 @@ abstract class AppRouter {
   static const kOtpScreen = '/otpScreen';
   static const kMedicalHistory = '/medicalHistory';
   // static const kMedicalHistory = '/';
-  // https://nonvolitional-unstuccoed-wilfred.ngrok-free.dev/api/
+  // https://medicare-plus.runasp.net/api/
   static final router = GoRouter(
     routes: [
       GoRoute(path: kSplash, builder: (context, state) => const SplashBody()),
@@ -117,8 +117,7 @@ abstract class AppRouter {
         path: kReminder,
         builder:
             (context, state) => BlocProvider(
-              create:
-                  (_) => getIt<ReminderCubit>(),
+              create: (_) => getIt<ReminderCubit>(),
               child: const ReminderView(),
             ),
       ),
