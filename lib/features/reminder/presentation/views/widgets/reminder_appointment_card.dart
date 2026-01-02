@@ -19,11 +19,12 @@ class ReminderAppointmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Color(0xffE8F7F2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Colors.blue.shade300),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

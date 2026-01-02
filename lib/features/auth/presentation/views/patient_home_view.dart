@@ -127,6 +127,7 @@ class _PatientHomeViewState extends State<PatientHomeView> {
                     subtitle: 'Schedule with your doctor',
                     gradientColor: const Color(0xFF9333EA),
                     imageAsset: Assets.imagesClipartDoctorPerson1,
+                    isSvg: false,
                   ),
                 ),
 

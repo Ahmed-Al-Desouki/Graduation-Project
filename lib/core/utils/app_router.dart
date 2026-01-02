@@ -51,7 +51,7 @@ abstract class AppRouter {
   static const kAllFamilyHistory = '/medicalHistory/allFamilyHistory';
   static const kLabResults = '/medicalHistory/labResults';
   // static const kMedicalHistory = '/';
-  // https://nonvolitional-unstuccoed-wilfred.ngrok-free.dev/api/
+  // https://medicare-plus.runasp.net/api/
   static final router = GoRouter(
     routes: [
       GoRoute(path: kSplash, builder: (context, state) => const SplashBody()),

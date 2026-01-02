@@ -313,6 +313,7 @@ class AuthCubit extends Cubit<AuthState> {
     final role =
         (payload['Role'] ?? payload['role'] ?? '').toString().toLowerCase();
     final userId = (payload['UserID'] ?? payload['uid'] ?? '').toString();
+    // (payload['UserID'] ?? payload['uid'] ?? payload['userId'] ?? payload['id'] ?? '')
     final jti = (payload['jti'] ?? '').toString();
     final name = (payload['Name'] ?? payload['name'] ?? '').toString();
     final email = (payload['Email'] ?? payload['email'] ?? '').toString();

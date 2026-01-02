@@ -15,24 +15,22 @@ class ReminderRepositoryImpl implements ReminderRepository {
   Future<Either<Failure, ReminderModel>> createReminder({
     required String patientId,
     required String type,
-    required String name,
-    required String startDate,
-    required String endDate,
-    required String frequency,
-    required String intervalHours,
-    required String baseTime,
+    required String title,
+    required DateTime startDate,    // ← بقى DateTime
+  required DateTime endDate,
+    String? rrule,
+  SimpleModel? simple,
     required String message,
   }) async {
     try {
       final res = await _webService.createReminder(
         patientId,
         type: type,
-        name: name,
-        startDate: startDate,
-        endDate: endDate,
-        frequency: frequency,
-        intervalHours: intervalHours,
-        baseTime: baseTime,
+        title: title,
+        startDate: startDate,    // DateTime
+  endDate: endDate,
+        rrule: rrule,
+        simple: simple,
         message: message,
       );
 
@@ -44,13 +42,27 @@ class ReminderRepositoryImpl implements ReminderRepository {
     }
   }
 
+  // @override
+  // Future<Either<Failure, List<ReminderInstanceModel>>> getUpcomingReminders({
+  //   required String patientId,
+  //   required int hours,
+  // }) async {
+  //   try {
+  //     final res = await _webService.getUpcomingReminders(patientId);
+  //     return Right(res);
+  //   } on DioException catch (e) {
+  //     return Left(ServerFailure.fromDioException(e));
+  //   } catch (e) {
+  //     return Left(ServerFailure(e.toString()));
+  //   }
+  // }
+
   @override
-  Future<Either<Failure, ReminderInstanceModel>> getUpcomingReminders({
+  Future<Either<Failure, List<ReminderInstanceModel>>> getTodayReminders({
     required String patientId,
-    required int hours,
   }) async {
     try {
-      final res = await _webService.getUpcomingReminders(patientId);
+      final res = await _webService.getTodayReminders(patientId);
       return Right(res);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioException(e));
@@ -85,6 +97,25 @@ class ReminderRepositoryImpl implements ReminderRepository {
       );
 
       return Right(res);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioException(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteReminder({
+    required String patientId,
+    required String reminderId,
+  }) async {
+    try {
+      await _webService.deleteReminder(
+        patientId: patientId,
+        reminderId: reminderId,
+      );
+      // إذا نجحت الدالة، نرجع Right(null)
+      return Right(null);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioException(e));
     } catch (e) {

@@ -14,7 +14,7 @@ class PatientHomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100.h,
+      height: 105.h,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF00BCD4), Color(0xff66BB6A)],
@@ -28,7 +28,7 @@ class PatientHomeHeader extends StatelessWidget {
       ),
       child: Center(
         child: Padding(
-          padding: EdgeInsets.only(left: 25.w, top: 15.h, right: 15.w),
+          padding: EdgeInsets.only(left: 25.w, top: 25.h, right: 15.w),
           child: Row(
             children: [
               CircleAvatar(

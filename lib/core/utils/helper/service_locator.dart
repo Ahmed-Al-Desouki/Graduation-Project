@@ -22,7 +22,7 @@ void setupServiceLocator() {
   getIt.registerLazySingleton<Dio>(
     () => Dio(
       BaseOptions(
-        baseUrl: 'https://nonvolitional-unstuccoed-wilfred.ngrok-free.dev/api/',
+        baseUrl: 'https://medicare-plus.runasp.net/api/',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
       ),
@@ -31,9 +31,7 @@ void setupServiceLocator() {
 
   // ApiService
   getIt.registerLazySingleton<ApiService>(
-    () => ApiService(
-      baseUrl: 'https://nonvolitional-unstuccoed-wilfred.ngrok-free.dev/api/',
-    ),
+    () => ApiService(baseUrl: 'https://medicare-plus.runasp.net/api/'),
   );
 
   // Web Services
