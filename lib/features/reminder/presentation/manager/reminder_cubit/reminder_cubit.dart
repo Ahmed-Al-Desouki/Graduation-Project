@@ -229,8 +229,8 @@ class ReminderCubit extends Cubit<ReminderState> {
     required String patientId,
     required String type,
     required String title,
-    required DateTime startDate,    // ← بقى DateTime
-  required DateTime endDate,
+    required DateTime startDate,
+  required DateTime? endDate,
     required String? rrule,
     required SimpleModel? simple,
     required String message,

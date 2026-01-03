@@ -1319,90 +1319,104 @@ class _AddReminderViewState extends State<AddReminderView> {
   // ==================== SAVE LOGIC ====================
 
   void _saveReminder() async {
-    if (titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Please enter a title"),backgroundColor: Colors.red,),
-      );
-      return;
-    }
-
-    final String? patientId = await SecureStorageHelper.getUserId();
-    if (patientId == null || patientId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Error: No Patient ID"),backgroundColor: Colors.red,),
-      );
-      return;
-    }
-
-    // ✅ التحقق من Weekly: يجب اختيار يوم واحد على الأقل
-    if (selectedFrequency == 'Weekly' && selectedWeekDays.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Please select at least one day"),backgroundColor: Colors.red,),
-      );
-      return;
-    }
-
-    final DateTime dtStart = DateTime(
-      startDate.year,
-      startDate.month,
-      startDate.day,
-      selectedTimes[0].hour,
-      selectedTimes[0].minute,
-      0,
+  if (titleController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("❌ Please enter a title"),
+        backgroundColor: Colors.red,
+      ),
     );
+    return;
+  }
 
-    final DateTime startD = DateTime(
-      startDate.year,
-      startDate.month,
-      startDate.day,
+  final String? patientId = await SecureStorageHelper.getUserId();
+  if (patientId == null || patientId.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("❌ Error: No Patient ID"),
+        backgroundColor: Colors.red,
+      ),
     );
-    final DateTime endD = isLifetime
-        ? DateTime(2099, 12, 31)
-        : (selectedFrequency == 'Once Only'
-            ? startD.add(const Duration(hours: 1))
-            : endDate ?? DateTime(2099, 12, 31));
+    return;
+  }
 
-    String? rruleString;
-    SimpleModel? simple;
+  // ✅ التحقق من Weekly: يجب اختيار يوم واحد على الأقل
+  if (selectedFrequency == 'Weekly' && selectedWeekDays.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("❌ Please select at least one day"),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
 
-    if (selectedFrequency == 'Every X Hours') {
-      final int interval = int.tryParse(intervalController.text) ?? 8;
-      if (interval < 1 || interval > 48) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("الفاصل يجب أن يكون بين 1 و48 ساعة")),
+  // ✅ بناء التاريخ والوقت للبداية
+  final DateTime dtStart = DateTime(
+    startDate.year,
+    startDate.month,
+    startDate.day,
+    selectedTimes[0].hour,
+    selectedTimes[0].minute,
+    0,
+  );
+
+  // ✅ التعديل الجديد: Lifetime = null بدلاً من 2099
+  final DateTime? endD = isLifetime
+      ? null  // 🔥 Lifetime يساوي null
+      : (selectedFrequency == 'Once Only'
+          ? dtStart.add(const Duration(hours: 1))
+          : endDate ?? DateTime.now().add(const Duration(days: 7)));
+
+  String? rruleString;
+  SimpleModel? simple;
+
+  // ==================== 🔥 بناء RRULE أو Simple ====================
+  if (selectedFrequency == 'Every X Hours') {
+    // ✅ استخدام Simple Model
+    final int interval = int.tryParse(intervalController.text) ?? 8;
+    if (interval < 1 || interval > 48) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("❌ الفاصل يجب أن يكون بين 1 و48 ساعة"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    simple = SimpleModel(
+      intervalHours: interval,
+      firstDoseTime:
+          "${selectedTimes[0].hour.toString().padLeft(2, '0')}:${selectedTimes[0].minute.toString().padLeft(2, '0')}:00",
+    );
+  } else if (selectedFrequency == 'Once Only') {
+    // ✅ Once Only: بناء RRULE بسيط لمرة واحدة فقط
+    rruleString = "FREQ=DAILY;COUNT=1";
+  } else {
+    // ✅ باقي الأنواع (Daily, Weekly, Monthly)
+    rruleString = _buildRRuleString();
+  }
+
+  // ✅ بناء الـ RRULE النهائي للإرسال
+  String? finalRRuleToSend;
+
+  if (rruleString != null) {
+    finalRRuleToSend = "DTSTART:${_formatToICalString(dtStart)}\nRRULE:$rruleString";
+  }
+
+  // ✅ إرسال البيانات للـ Backend
+  if (mounted) {
+    context.read<ReminderCubit>().createReminder(
+          patientId: patientId,
+          type: selectedType,
+          title: titleController.text.trim(),
+          message: messageController.text.trim(),
+          startDate: dtStart,
+          endDate: endD,  // 🔥 يمكن أن يكون null الآن
+          rrule: finalRRuleToSend,
+          simple: simple,
         );
-        return;
-      }
-      simple = SimpleModel(
-        intervalHours: interval,
-        firstDoseTime:
-            "${selectedTimes[0].hour.toString().padLeft(2, '0')}:${selectedTimes[0].minute.toString().padLeft(2, '0')}:00",
-      );
-    } else if (selectedFrequency != 'Once Only') {
-      rruleString = _buildRRuleString();
-    }
-
-    String? finalRRuleToSend;
-
-    if (selectedFrequency == 'Once Only') {
-      finalRRuleToSend = "DTSTART:${_formatToICalString(dtStart)}";
-    } else if (rruleString != null) {
-      finalRRuleToSend =
-          "DTSTART:${_formatToICalString(dtStart)}\nRRULE:$rruleString";
-    }
-
-    if (mounted) {
-      context.read<ReminderCubit>().createReminder(
-            patientId: patientId,
-            type: selectedType,
-            title: titleController.text.trim(),
-            message: messageController.text.trim(),
-            startDate: dtStart,
-            endDate: endD,
-            rrule: finalRRuleToSend,
-            simple: simple,
-          );
-    }
+  }
 
     print("✅ Sending RRule: $finalRRuleToSend");
     print("✅ Sending reminder:");
@@ -1411,93 +1425,89 @@ class _AddReminderViewState extends State<AddReminderView> {
     print("  RRULE: $rruleString");
     print("  Simple: ${simple?.toJson()}");
     print("  Start: $dtStart");
-    print("  End: $dtEnd");
+    print("  End: ${endD ?? 'null'}");
   }
 
   String _buildRRuleString() {
-    String freq = "";
-    String byday = "";
-    String bymonthday = "";
+  String freq = "";
+  String byday = "";
+  String bymonthday = "";
 
-    // ✅ استخدام selectedTimes بدلاً من firstDoseTime
-    final int hour = selectedTimes[0].hour;
-    final int minute = selectedTimes[0].minute;
+  // ✅ استخدام selectedTimes بدلاً من firstDoseTime
+  final int hour = selectedTimes[0].hour;
+  final int minute = selectedTimes[0].minute;
 
-    // ✅ دعم Multiple Times للـ Daily, Weekly, Monthly
-    String byhour = "";
-    String byminute = "";
+  // ✅ دعم Multiple Times للـ Daily, Weekly, Monthly
+  String byhour = "";
+  String byminute = "";
 
-    if (selectedTimes.length > 1) {
-      // ✅ إذا كان هناك أكثر من وقت، نستخدم BYHOUR و BYMINUTE كقائمة
-      byhour = ";BYHOUR=${selectedTimes.map((t) => t.hour).join(',')}";
-      byminute = ";BYMINUTE=${selectedTimes.map((t) => t.minute).join(',')}";
-    } else {
-      // ✅ وقت واحد فقط
-      byhour = ";BYHOUR=$hour";
-      byminute = ";BYMINUTE=$minute";
-    }
-
-    switch (selectedFrequency) {
-      case 'Daily':
-        freq = "FREQ=DAILY";
-        break;
-
-      case 'Weekly':
-        freq = "FREQ=WEEKLY";
-        final daysMap = {
-          DateTime.monday: 'MO',
-          DateTime.tuesday: 'TU',
-          DateTime.wednesday: 'WE',
-          DateTime.thursday: 'TH',
-          DateTime.friday: 'FR',
-          DateTime.saturday: 'SA',
-          DateTime.sunday: 'SU',
-        };
-        final selectedDaysStr = selectedWeekDays
-            .map((day) => daysMap[day])
-            .where((d) => d != null)
-            .join(',');
-        byday = ";BYDAY=$selectedDaysStr";
-        break;
-
-      case 'Monthly':
-        freq = "FREQ=MONTHLY";
-        bymonthday = ";BYMONTHDAY=$selectedMonthDay";
-        break;
-
-      default:
-        freq = "FREQ=DAILY";
-    }
-
-    String until = "";
-    if (!isLifetime) {
-      final DateTime endD = endDate ?? DateTime(2099, 12, 31);
-      final DateTime dtEndFixed = DateTime(
-        endD.year,
-        endD.month,
-        endD.day,
-        23,
-        59,
-        59,
-      );
-
-      until = ";UNTIL=${_formatToICalString(dtEndFixed)}";
-    }
-
-    return "$freq$byday$bymonthday$byhour$byminute$until";
+  if (selectedTimes.length > 1) {
+    // ✅ إذا كان هناك أكثر من وقت، نستخدم BYHOUR و BYMINUTE كقائمة
+    byhour = ";BYHOUR=${selectedTimes.map((t) => t.hour).join(',')}";
+    byminute = ";BYMINUTE=${selectedTimes.map((t) => t.minute).join(',')}";
+  } else {
+    // ✅ وقت واحد فقط
+    byhour = ";BYHOUR=$hour";
+    byminute = ";BYMINUTE=$minute";
   }
 
-  DateTime get dtEnd {
-    return isLifetime
-        ? DateTime(2099, 12, 31, 23, 59, 59)
-        : DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59);
+  switch (selectedFrequency) {
+    case 'Daily':
+      freq = "FREQ=DAILY";
+      break;
+
+    case 'Weekly':
+      freq = "FREQ=WEEKLY";
+      final daysMap = {
+        DateTime.monday: 'MO',
+        DateTime.tuesday: 'TU',
+        DateTime.wednesday: 'WE',
+        DateTime.thursday: 'TH',
+        DateTime.friday: 'FR',
+        DateTime.saturday: 'SA',
+        DateTime.sunday: 'SU',
+      };
+      final selectedDaysStr = selectedWeekDays
+          .map((day) => daysMap[day])
+          .where((d) => d != null)
+          .join(',');
+      byday = ";BYDAY=$selectedDaysStr";
+      break;
+
+    case 'Monthly':
+      freq = "FREQ=MONTHLY";
+      bymonthday = ";BYMONTHDAY=$selectedMonthDay";
+      break;
+
+    default:
+      freq = "FREQ=DAILY";
   }
 
-  @override
-  void dispose() {
-    titleController.dispose();
-    messageController.dispose();
-    intervalController.dispose();
-    super.dispose();
+  // 🔥 التعديل الأساسي: معالجة endDate بشكل صحيح
+  String until = "";
+  if (!isLifetime && endDate != null) {  // ✅ تحقق من أن endDate ليست null
+    final DateTime dtEndFixed = DateTime(
+      endDate!.year,
+      endDate!.month,
+      endDate!.day,
+      23,
+      59,
+      59,
+    );
+    until = ";UNTIL=${_formatToICalString(dtEndFixed)}";
   }
+
+  return "$freq$byday$bymonthday$byhour$byminute$until";
+}
+
+// 🔥 احذف دالة dtEnd تماماً - لم تعد مستخدمة ولا ضرورية
+// ❌ DateTime get dtEnd { ... }
+
+@override
+void dispose() {
+  titleController.dispose();
+  messageController.dispose();
+  intervalController.dispose();
+  super.dispose();
+}
 }

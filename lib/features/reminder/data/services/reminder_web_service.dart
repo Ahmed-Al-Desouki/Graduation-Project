@@ -81,7 +81,7 @@ class ReminderWebService {
   required String type,
   required String title,
   required DateTime startDate,    // ← DateTime
-  required DateTime endDate,
+  required DateTime? endDate,
   String? rrule,           // ← جديد
   SimpleModel? simple,
   required String message,
@@ -94,7 +94,7 @@ class ReminderWebService {
     "title": title,
     "message": message.isEmpty ? null : message,
     "startDate": startDate.toIso8601String().split('.').first,
-    "endDate": endDate.toIso8601String().split('.').first,
+    "endDate": endDate?.toIso8601String().split('.').first,
     "timeZoneId": timeZone,
   };
 

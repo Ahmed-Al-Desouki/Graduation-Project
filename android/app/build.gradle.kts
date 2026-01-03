@@ -37,7 +37,7 @@ android {
 
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -45,12 +45,7 @@ android {
 
     signingConfigs {
         // ✅ التعديل هنا: getByName بدلاً من create لأن debug موجود أصلاً
-        getByName("debug") {
-            storeFile = file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
+        
 
         // ✅ هنا create لأن release مش موجود افتراضياً
         create("release") {

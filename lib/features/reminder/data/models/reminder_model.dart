@@ -37,7 +37,7 @@ class ReminderModel {
   final String type;
   final String title;
   final DateTime startDate;
-  final DateTime endDate;
+  final DateTime? endDate;
   final String? message;
   final int patientID;
   final bool isActive;
@@ -53,7 +53,7 @@ class ReminderModel {
     required this.type,
     required this.title,
     required this.startDate,
-    required this.endDate,
+    this.endDate,
     this.message,
     required this.patientID,
     this.isActive = true,
@@ -71,7 +71,7 @@ class ReminderModel {
       "type": type,
       "title": title,
       "startDate": startDate.toIso8601String(),
-      "endDate": endDate.toIso8601String(),
+      if (endDate != null) "endDate": endDate!.toIso8601String(),
       "message": message,
       // "status": status,
       // "isActive": isActive,
@@ -91,7 +91,9 @@ class ReminderModel {
       type: json['type'] ?? '',
       title: json['title'] ?? '',
       startDate: DateTime.tryParse(json['startDate'] ?? '') ?? DateTime.now(),
-      endDate: DateTime.tryParse(json['endDate'] ?? '') ?? DateTime.now(),
+      endDate: json['endDate'] != null 
+          ? DateTime.tryParse(json['endDate']) 
+          : null,
       message: json['message'],
       status: json['status'] ?? 'Pending',
       isActive: json['isActive'] ?? true,
