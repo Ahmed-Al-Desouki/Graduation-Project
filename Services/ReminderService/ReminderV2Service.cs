@@ -65,8 +65,8 @@ namespace HealthCare_.Services
                 Type = dto.Type,
                 Title = dto.Title.Trim(),
                 Message = dto.Message?.Trim(),
-                StartDateUtc = startDateUtc,  // ✅ Full UTC datetime
-                EndDateUtc = endDateUtc,      // ✅ Full UTC datetime
+                StartDateUtc = startDateUtc,  //  Full UTC datetime
+                EndDateUtc = endDateUtc,      //  Full UTC datetime
                 TimeZoneId = userTimeZone,
                 PrescriptionMedId = dto.PrescriptionMedId,
                 AppointmentId = dto.AppointmentId,
@@ -361,8 +361,8 @@ namespace HealthCare_.Services
                     foreach (var dtUtc in occurrences)
                     {
                         var displayStatus = dtUtc < nowUtc.AddMinutes(-30)
-                            ? OccurrenceStatus.Missed    // ✅ FIXED
-                            : OccurrenceStatus.Pending;  // ✅ FIXED
+                            ? OccurrenceStatus.Missed    //  FIXED
+                            : OccurrenceStatus.Pending;  //  FIXED
 
                         var (canConfirm, canSnooze, canSkip, reason) = EvaluateActionAvailability(
                             displayStatus,
@@ -382,7 +382,7 @@ namespace HealthCare_.Services
                             Dosage = reminder.PrescriptionMed != null
                                 ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
                                 : null,
-                            Status = displayStatus,       // ✅ FIXED
+                            Status = displayStatus,       // FIXED
                             CanConfirm = canConfirm,
                             CanSnooze = canSnooze,
                             CanSkip = canSkip,
@@ -511,7 +511,7 @@ namespace HealthCare_.Services
                         $"RRULE={reminder.RRULE}");
                 }
 
-                // ✅ Add end date limit if not already in RRULE
+                //  Add end date limit if not already in RRULE
                 if (reminder.EndDateUtc.HasValue && !reminder.RRULE?.ToUpperInvariant().Contains("UNTIL") == true)
                 {
                     if (ev.RecurrenceRules.Any())
@@ -569,10 +569,10 @@ namespace HealthCare_.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // ✅ Get reminder to access timezone
+                //  Get reminder to access timezone
                 var reminder = await ValidateReminderAccess(reminderId, patientId);
 
-                // ✅ CORRECT: Convert user's local time to UTC
+                //  CORRECT: Convert user's local time to UTC
                 var dueDateTimeUtc = ConvertUserTimezoneToUtc(dueDateTime, reminder.TimeZoneId);
                 var nowUtc = DateTime.UtcNow;
 
@@ -580,7 +580,7 @@ namespace HealthCare_.Services
                     "Confirming: Reminder={ReminderId}, DueLocal={DueLocal}, DueUtc={DueUtc}, Patient={PatientId}",
                     reminderId, dueDateTime, dueDateTimeUtc, patientId);
 
-                // ✅ Validate timing
+                // Validate timing
                 ValidateActionTiming(dueDateTimeUtc, "confirm");
 
                 // Check for duplicate
@@ -613,7 +613,7 @@ namespace HealthCare_.Services
 
                 await _context.SaveChangesAsync();
 
-                // ✅ Update cache with validation
+                // Update cache with validation
                 var rowsAffected = await _context.Database.ExecuteSqlInterpolatedAsync($@"
             UPDATE ReminderOccurrencesCache 
             SET Status = {(byte)OccurrenceStatus.Taken}, 
@@ -650,10 +650,10 @@ namespace HealthCare_.Services
 
             try
             {
-                // ✅ FIX: Get reminder FIRST to access timezone
+                // FIX: Get reminder FIRST to access timezone
                 var reminder = await ValidateReminderAccess(reminderId, patientId);
 
-                // ✅ FIX: Convert user's local time to UTC properly
+                // FIX: Convert user's local time to UTC properly
                 var originalDueUtc = ConvertUserTimezoneToUtc(originalDue, reminder.TimeZoneId);
                 var newDueUtc = originalDueUtc.AddMinutes(minutes);
 
@@ -661,7 +661,7 @@ namespace HealthCare_.Services
                     "Snoozing occurrence: Reminder={ReminderId}, OriginalDueLocal={OriginalLocal}, OriginalDueUtc={OriginalUtc}, Minutes={Minutes}",
                     reminderId, originalDue, originalDueUtc, minutes);
 
-                // ✅ Validate timing
+                // Validate timing
                 ValidateActionTiming(originalDueUtc, "snooze");
 
                 // Mark original as snoozed
@@ -832,7 +832,7 @@ namespace HealthCare_.Services
                 .Select(c => (DateTime?)c.DueDateTimeUtc)
                 .FirstOrDefaultAsync();
 
-            // ✅ FIX: Use OccurrenceStatus.Taken instead of ReminderStatus.Completed
+            // FIX: Use OccurrenceStatus.Taken instead of ReminderStatus.Completed
             var taken = await _context.ReminderOccurrenceLogs
                 .CountAsync(l => l.ReminderId == r.Id && l.Status == OccurrenceStatus.Taken);
 
@@ -874,26 +874,54 @@ namespace HealthCare_.Services
         private const int GRACE_PERIOD_HOURS = 2;
         private const int OVERDUE_THRESHOLD_MINUTES = 30;
 
+        //private void ValidateActionTiming(DateTime dueTimeUtc, string actionName)
+        //{
+        //    var nowUtc = DateTime.UtcNow;
+        //    var minutesFromDue = (nowUtc - dueTimeUtc).TotalMinutes;
+
+        //    if (minutesFromDue < -WINDOW_OPENS_MINUTES)
+        //    {
+        //        var minutesUntilAvailable = Math.Abs(minutesFromDue + WINDOW_OPENS_MINUTES);
+        //        throw new InvalidOperationException(
+        //            $"Cannot {actionName} medication {Math.Abs(minutesFromDue):F0} minutes before scheduled time. " +
+        //            $"Available in {minutesUntilAvailable:F0} minutes.");
+        //    }
+
+        //    if (actionName != "skip" && minutesFromDue > (GRACE_PERIOD_HOURS * 60))
+        //    {
+        //        throw new InvalidOperationException(
+        //            $"Action window expired {(minutesFromDue - (GRACE_PERIOD_HOURS * 60)):F0} minutes ago. " +
+        //            $"Please skip if medication was not taken.");
+        //    }
+        //}
         private void ValidateActionTiming(DateTime dueTimeUtc, string actionName)
         {
             var nowUtc = DateTime.UtcNow;
             var minutesFromDue = (nowUtc - dueTimeUtc).TotalMinutes;
 
-            if (minutesFromDue < -WINDOW_OPENS_MINUTES)
+            const int ALLOWED_BEFORE_MINUTES = 30;
+            const int ALLOWED_AFTER_HOURS = 24;
+
+            // Too early: earlier than due - 30 minutes
+            if (minutesFromDue < -ALLOWED_BEFORE_MINUTES)
             {
-                var minutesUntilAvailable = Math.Abs(minutesFromDue + WINDOW_OPENS_MINUTES);
+                var minutesUntilAllowed = Math.Abs(minutesFromDue + ALLOWED_BEFORE_MINUTES);
+
                 throw new InvalidOperationException(
-                    $"Cannot {actionName} medication {Math.Abs(minutesFromDue):F0} minutes before scheduled time. " +
-                    $"Available in {minutesUntilAvailable:F0} minutes.");
+                    $"Cannot {actionName} medication yet. " +
+                    $"Available in {minutesUntilAllowed:F0} minutes."
+                );
             }
 
-            if (actionName != "skip" && minutesFromDue > (GRACE_PERIOD_HOURS * 60))
+            // Too late: later than due + 24 hours
+            if (minutesFromDue > ALLOWED_AFTER_HOURS * 60)
             {
                 throw new InvalidOperationException(
-                    $"Action window expired {(minutesFromDue - (GRACE_PERIOD_HOURS * 60)):F0} minutes ago. " +
-                    $"Please skip if medication was not taken.");
+                    $"Action window expired {(minutesFromDue - ALLOWED_AFTER_HOURS * 60):F0} minutes ago."
+                );
             }
         }
+
 
         private static Enums.OccurrenceStatus DeriveDisplayStatus(Enums.OccurrenceStatus storedStatus, DateTime dueTimeUtc, DateTime nowUtc)
         {

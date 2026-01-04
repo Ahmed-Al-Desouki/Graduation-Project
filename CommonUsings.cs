@@ -32,7 +32,40 @@ global using System.Security.Cryptography;
 global using System.Text;
 global using System.Threading.Tasks;
 global using static HealthCare_.Models.EnumForModels.Enums;
-
+global using AspNetCoreRateLimit;
+global using FirebaseAdmin;
+global using FluentValidation;
+global using FluentValidation.AspNetCore;
+global using Google.Apis.Auth.OAuth2;
+global using Hangfire;
+global using Hangfire.Dashboard;
+global using HealthCare_.Interfaces.IAuth;
+global using HealthCare_.Interfaces.Notifications;
+global using HealthCare_.Interfaces.Patient;
+global using HealthCare_.Interfaces.Patient.Medical_History;
+global using HealthCare_.Interfaces.ReminderInterface;
+global using HealthCare_.Middleware;
+global using HealthCare_.Models.sharedModels;
+global using HealthCare_.Services;
+global using HealthCare_.Services.Auth;
+global using HealthCare_.Services.Auth.Interfaces;
+global using HealthCare_.Services.Background;
+global using HealthCare_.Services.Background.Reminder;
+global using HealthCare_.Services.BackGround;
+global using HealthCare_.Services.Cloud;
+global using HealthCare_.Services.DoctorDervice;
+global using HealthCare_.Services.Notifications;
+global using HealthCare_.Services.Patient;
+global using HealthCare_.Services.Shared;
+global using Microsoft.AspNetCore.Authentication.Cookies;
+global using Microsoft.AspNetCore.Authentication.JwtBearer;
+global using Microsoft.AspNetCore.DataProtection;
+global using Microsoft.AspNetCore.HttpOverrides;
+global using Microsoft.Extensions.FileProviders;
+global using Microsoft.OpenApi.Models;  
+global using System.ComponentModel;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
 
 
 

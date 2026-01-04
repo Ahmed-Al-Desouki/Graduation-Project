@@ -12,16 +12,28 @@ namespace HealthCare_.Models.V2
         public int PatientId { get; set; }
         public int ReminderId { get; set; }
         public long OccurrenceId { get; set; } // Reference to ReminderOccurrencesCache.Id
-        public string TimeZoneId { get; set; } = "Africa/Cairo"; // Add this column
+
+        public string TimeZoneId { get; set; } = "Africa/Cairo";
 
         [Required]
         public string FcmToken { get; set; } = null!;
 
-        public DateTime ScheduledTime { get; set; } // When it should be sent (UTC)
-        public DateTime? SentAt { get; set; }       // When it was actually sent
+        //  CRITICAL: ScheduledTime is when the notification should be sent (UTC)
+        public DateTime ScheduledTime { get; set; }
+
+        //  CRITICAL: SentAt is when it was actually sent (NULL = not sent yet)
+        public DateTime? SentAt { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        //  COMPUTED PROPERTIES - For code use only, NOT for database queries
+        [NotMapped]
         public bool IsSent => SentAt.HasValue;
+
+        [NotMapped]
         public bool IsDue => DateTime.UtcNow >= ScheduledTime && !IsSent;
+
+        [NotMapped]
+        public int DaysUntilDue => (int)(ScheduledTime - DateTime.UtcNow).TotalDays;
     }
 }

@@ -15,7 +15,7 @@ namespace HealthCare_.Services.Background.Reminder
             _logger = logger;
         }
 
-        // ✅ يُنَفّذ يوميًا الساعة 3 فجرًا
+        //  يُنَفّذ يوميًا الساعة 3 فجرًا
         public async Task RunDailyGenerationAsync()
         {
             _logger.LogInformation("⏳ Daily Reminder Orchestration started");
@@ -48,7 +48,7 @@ namespace HealthCare_.Services.Background.Reminder
         }
 
 
-        // ✅ Health Check للكاش
+        //  Health Check للكاش
         public async Task<bool> CacheHealthCheckAsync()
         {
             try

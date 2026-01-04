@@ -7,7 +7,7 @@ namespace HealthCare_.Models.V2
     public class PatientDevice
     {
         [Key]
-        public long Id { get; set; }
+        public long DeviceId { get; set; }
 
         public int PatientId { get; set; }
 
@@ -15,5 +15,6 @@ namespace HealthCare_.Models.V2
         public string FcmToken { get; set; } = null!;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime LastUpdated { get; set; } 
     }
 }

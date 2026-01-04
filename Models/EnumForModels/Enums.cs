@@ -1,7 +1,7 @@
 ﻿// File: Models/EnumForModels/Enums.cs
 namespace HealthCare_.Models.EnumForModels
 {
-     //✅ Status for individual occurrence instances(cache + logs)
+     // Status for individual occurrence instances(cache + logs)
     public enum OccurrenceStatus : byte
     {
         Scheduled = 0,    // Future, not yet actionable
@@ -13,7 +13,7 @@ namespace HealthCare_.Models.EnumForModels
         Expired = 6       // Too late to act (>2h grace)
     }
 
-    // ✅ Status for the master reminder entity
+    //  Status for the master reminder entity
     public enum ReminderStatus
     {
         Active = 0,
@@ -45,7 +45,7 @@ namespace HealthCare_.Models.EnumForModels
         EveryXHours = 3
     }
 
-    // ✅ KEEP the static Enums wrapper for backward compatibility
+    //  KEEP the static Enums wrapper for backward compatibility
     public static class Enums
     {
         // Expose all enums as nested types

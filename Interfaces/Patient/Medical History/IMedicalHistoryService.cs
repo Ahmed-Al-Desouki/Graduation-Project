@@ -6,6 +6,7 @@ namespace HealthCare_.Interfaces.Patient
     public interface IMedicalProfileService
     {
         Task<MedicalProfileResponse> GetMedicalProfileAsync();
+        Task<MedicalProfileResponse> GetMedicalProfileByPatientIdAsync(int patientId);
         Task<MedicalProfileResponse> UpdateMedicalProfileAsync(UpdateMedicalProfileRequest request);
     }
 }

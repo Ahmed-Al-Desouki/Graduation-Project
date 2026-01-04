@@ -533,8 +533,8 @@ public class ReminderV2Controller : ControllerBase
         [FromServices] ReminderOccurrencesGeneratorJob job,
         [FromServices] IWebHostEnvironment env)
     {
-        if (!env.IsDevelopment() && Request.Query["key"] != "123456789")
-            return Unauthorized("Go away");
+        //if (!env.IsDevelopment() && Request.Query["key"] != "123456789")
+        //    return Unauthorized("Go away");
 
         await job.GenerateForPatientAsync(patientId);
 

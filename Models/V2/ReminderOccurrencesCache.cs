@@ -32,7 +32,7 @@ namespace HealthCare_.Models.V2
         [MaxLength(100)]
         public string? Dosage { get; set; }
 
-        // ✅ FIX: Use OccurrenceStatus instead of byte
+        //  FIX: Use OccurrenceStatus instead of byte
         public Enums.OccurrenceStatus Status { get; set; } = Enums.OccurrenceStatus.Scheduled;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -1,10 +1,4 @@
-﻿// Changes:
-// 1. Extract DTSTART from RRULE if provided
-// 2. Use BYHOUR/BYMINUTE to set DtStart time if provided
-// 3. Full iCal.NET capability enabled
-// ============================================================================
-
-using Hangfire;
+﻿using Hangfire;
 using HealthCare_.Models.V2;
 using Ical.Net;
 using Ical.Net.CalendarComponents;
@@ -42,6 +36,7 @@ namespace HealthCare_.Services.Background.Reminder
 
             _logger.LogInformation("Starting cache generation for {Count} patients", patientIds.Count);
 
+
             foreach (var patientId in patientIds)
             {
                 try
@@ -61,8 +56,9 @@ namespace HealthCare_.Services.Background.Reminder
             var context = scope.ServiceProvider.GetRequiredService<HealthCarePlusContext>();
             await GenerateForPatientAsync(context, patientId);
         }
-
-        private async Task GenerateForPatientAsync(HealthCarePlusContext context, int patientId)
+        private async Task GenerateForPatientAsync(
+    HealthCarePlusContext context,
+    int patientId)
         {
             var nowUtc = DateTime.UtcNow;
             var todayUtc = nowUtc.Date;
@@ -72,6 +68,19 @@ namespace HealthCare_.Services.Background.Reminder
             _logger.LogInformation(
                 "Generating cache for Patient {PatientId}: From {From} to {To} UTC",
                 patientId, fromUtc, toUtc);
+
+            // ============================
+            // DELETE past
+            // ============================
+            await context.Database.ExecuteSqlRawAsync(
+                @"DELETE FROM ReminderOccurrencesCache
+          WHERE PatientId = {0}
+            AND DueDateTimeUtc < {1}",
+                patientId, todayUtc);
+
+            _logger.LogInformation(
+                "Deleted past occurrences for Patient {PatientId} before {Today}",
+                patientId, todayUtc);
 
             var reminders = await context.ReminderV2s
                 .AsNoTracking()
@@ -94,7 +103,8 @@ namespace HealthCare_.Services.Background.Reminder
                         reminder.IsSimpleEveryXHours,
                         reminder.RRULE ?? "NULL");
 
-                    var occurrences = GenerateOccurrencesWithIcalNetFull(reminder, fromUtc, toUtc);
+                    var occurrences = GenerateOccurrencesWithIcalNetFull(
+                        reminder, fromUtc, toUtc);
 
                     foreach (var dtUtc in occurrences)
                     {
@@ -139,23 +149,273 @@ namespace HealthCare_.Services.Background.Reminder
 
             if (!newEntries.Any())
             {
-                _logger.LogInformation("No new occurrences for Patient {PatientId}", patientId);
+                _logger.LogInformation(
+                    "No new occurrences for Patient {PatientId}",
+                    patientId);
                 return;
             }
 
+            // ============================
+            //  DELETE [today → +60d]
+            // ============================
             await context.Database.ExecuteSqlRawAsync(
                 @"DELETE FROM ReminderOccurrencesCache
-                  WHERE PatientId = {0}
-                    AND DueDateTimeUtc >= {1}
-                    AND DueDateTimeUtc < {2}",
+          WHERE PatientId = {0}
+            AND DueDateTimeUtc >= {1}
+            AND DueDateTimeUtc < {2}",
                 patientId, fromUtc, toUtc);
 
+            // ============================
+            // INSERT new [today → +60d]
+            // ============================
             await BulkInsertOccurrences(context, newEntries);
 
             _logger.LogInformation(
                 "Successfully generated {Count} occurrences for Patient {PatientId}",
                 newEntries.Count,
                 patientId);
+
+            try
+            {
+                await InitializeNotificationsForNewOccurrencesAsync(
+                    context, patientId, newEntries);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error initializing notifications for patient {PatientId}. Occurrences created but notifications may not be sent.",
+                    patientId);
+            }
+        }
+
+        //private async Task GenerateForPatientAsync(HealthCarePlusContext context, int patientId)
+        //{
+        //    var nowUtc = DateTime.UtcNow;
+        //    var todayUtc = nowUtc.Date;
+        //    var fromUtc = todayUtc;
+        //    var toUtc = todayUtc.AddDays(60);
+
+        //    _logger.LogInformation(
+        //        "Generating cache for Patient {PatientId}: From {From} to {To} UTC",
+        //        patientId, fromUtc, toUtc);
+
+        //    var reminders = await context.ReminderV2s
+        //        .AsNoTracking()
+        //        .Include(r => r.PrescriptionMed)
+        //        .Where(r => r.PatientId == patientId && r.IsActive)
+        //        .ToListAsync();
+
+        //    var newEntries = new List<ReminderOccurrencesCache>();
+
+        //    foreach (var reminder in reminders)
+        //    {
+        //        try
+        //        {
+        //            ValidateReminderIntegrity(reminder);
+
+        //            _logger.LogInformation(
+        //                "Processing Reminder {ReminderId}: StartDateUtc={StartUtc}, IsSimple={IsSimple}, RRULE={RRULE}",
+        //                reminder.Id,
+        //                reminder.StartDateUtc,
+        //                reminder.IsSimpleEveryXHours,
+        //                reminder.RRULE ?? "NULL");
+
+        //            var occurrences = GenerateOccurrencesWithIcalNetFull(reminder, fromUtc, toUtc);
+
+        //            foreach (var dtUtc in occurrences)
+        //            {
+        //                var timeZoneId = reminder.TimeZoneId ?? "Africa/Cairo";
+        //                var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+
+        //                var localTime = TimeZoneInfo.ConvertTimeFromUtc(
+        //                    DateTime.SpecifyKind(dtUtc, DateTimeKind.Utc),
+        //                    tz);
+
+        //                newEntries.Add(new ReminderOccurrencesCache
+        //                {
+        //                    CreatedAt = DateTime.UtcNow,
+        //                    PatientId = patientId,
+        //                    ReminderId = reminder.Id,
+        //                    DueDateTimeUtc = DateTime.SpecifyKind(dtUtc, DateTimeKind.Utc),
+        //                    DueDateTime = localTime,
+        //                    TimeZoneId = timeZoneId,
+        //                    Title = reminder.Title,
+        //                    Message = reminder.Message ?? "",
+        //                    Type = reminder.Type,
+        //                    Dosage = reminder.PrescriptionMed != null
+        //                        ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
+        //                        : null,
+        //                    Status = 0
+        //                });
+        //            }
+
+        //            _logger.LogInformation(
+        //                "Generated {Count} occurrences for Reminder {ReminderId}",
+        //                occurrences.Count(),
+        //                reminder.Id);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(
+        //                ex,
+        //                "Failed generating occurrences for Reminder {ReminderId}",
+        //                reminder.Id);
+        //        }
+        //    }
+
+        //    if (!newEntries.Any())
+        //    {
+        //        _logger.LogInformation("No new occurrences for Patient {PatientId}", patientId);
+        //        return;
+        //    }
+
+        //    //  Clear old cache
+        //    await context.Database.ExecuteSqlRawAsync(
+        //        @"DELETE FROM ReminderOccurrencesCache
+        //          WHERE PatientId = {0}
+        //            AND DueDateTimeUtc >= {1}
+        //            AND DueDateTimeUtc < {2}",
+        //        patientId, fromUtc, toUtc);
+
+        //    //  Bulk insert occurrences
+        //    await BulkInsertOccurrences(context, newEntries);
+
+        //    _logger.LogInformation(
+        //        "Successfully generated {Count} occurrences for Patient {PatientId}",
+        //        newEntries.Count,
+        //        patientId);
+
+        //    //  CRITICAL: Initialize notifications for all new occurrences
+        //    try
+        //    {
+        //        await InitializeNotificationsForNewOccurrencesAsync(context, patientId, newEntries);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(
+        //            ex,
+        //            "Error initializing notifications for patient {PatientId}. Occurrences created but notifications may not be sent.",
+        //            patientId);
+        //        // Don't throw - occurrences were created successfully, just notify about notification init failure
+        //    }
+        //}
+
+        ///  CRITICAL: Initialize notifications for all new occurrences
+        /// Creates one NotificationLog per device per occurrence
+        //  FIXED VERSION - يتأكد إن الـ Notifications بتتعمل صح
+
+        private async Task InitializeNotificationsForNewOccurrencesAsync(
+            HealthCarePlusContext context,
+            int patientId,
+            List<ReminderOccurrencesCache> newOccurrences)
+        {
+            try
+            {
+                //  CRITICAL FIX: Reload occurrences from database to get correct IDs
+                // The IDs are generated by SQL Server after SaveChanges(), not before!
+                var occurrenceIds = newOccurrences.Select(o => o.Id).ToList();
+
+                //  If IDs are still 0, reload from database
+                if (occurrenceIds.All(id => id == 0))
+                {
+                    _logger.LogWarning(
+                        "Occurrence IDs are 0, reloading from database for patient {PatientId}",
+                        patientId);
+
+                    // Reload occurrences that were just inserted
+                    var now = DateTime.UtcNow;
+                    var reloadedOccurrences = await context.ReminderOccurrencesCache
+                        .Where(o => o.PatientId == patientId &&
+                                   o.CreatedAt >= now.AddMinutes(-5)) // Just created
+                        .OrderBy(o => o.DueDateTimeUtc)
+                        .ToListAsync();
+
+                    if (!reloadedOccurrences.Any())
+                    {
+                        _logger.LogError(
+                            "Could not reload occurrences from database for patient {PatientId}",
+                            patientId);
+                        return;
+                    }
+
+                    newOccurrences = reloadedOccurrences;
+                    _logger.LogInformation(
+                        "Reloaded {Count} occurrences with valid IDs for patient {PatientId}",
+                        reloadedOccurrences.Count,
+                        patientId);
+                }
+
+                //  Get all devices for this patient
+                var devices = await context.PatientDevices
+                    .Where(d => d.PatientId == patientId)
+                    .ToListAsync();
+
+                if (!devices.Any())
+                {
+                    _logger.LogWarning(
+                        "No devices registered for patient {PatientId}. Occurrences created but no notifications will be sent.",
+                        patientId);
+                    return;
+                }
+
+                //  Create one NotificationLog per device per occurrence
+                var notificationLogs = new List<NotificationLog>();
+
+                foreach (var occurrence in newOccurrences)
+                {
+                    //  Validate occurrence ID
+                    if (occurrence.Id <= 0)
+                    {
+                        _logger.LogError(
+                            "Invalid occurrence ID {OccurrenceId} for patient {PatientId}, skipping",
+                            occurrence.Id,
+                            patientId);
+                        continue;
+                    }
+
+                    foreach (var device in devices)
+                    {
+                        notificationLogs.Add(new NotificationLog
+                        {
+                            PatientId = patientId,
+                            ReminderId = occurrence.ReminderId,
+                            OccurrenceId = occurrence.Id,
+                            FcmToken = device.FcmToken,
+                            TimeZoneId = occurrence.TimeZoneId,
+                            ScheduledTime = occurrence.DueDateTimeUtc,
+                            SentAt = null
+                        });
+                    }
+                }
+
+                if (notificationLogs.Any())
+                {
+                    context.NotificationLogs.AddRange(notificationLogs);
+                    await context.SaveChangesAsync();
+
+                    _logger.LogInformation(
+                        " Initialized {Count} notifications for patient {PatientId}: {Occurrences} occurrences × {Devices} devices",
+                        notificationLogs.Count,
+                        patientId,
+                        newOccurrences.Count,
+                        devices.Count);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "No notification logs created for patient {PatientId}",
+                        patientId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error initializing notifications for patient {PatientId}",
+                    patientId);
+                throw; // Re-throw to ensure we know about this critical error
+            }
         }
 
         private void ValidateReminderIntegrity(ReminderV2 reminder)
@@ -178,9 +438,7 @@ namespace HealthCare_.Services.Background.Reminder
             }
         }
 
-        /// <summary>
-        /// ✅ COMPLETE FIX: Full iCal.NET support with DTSTART extraction and BYHOUR/BYMINUTE handling
-        /// </summary>
+        ///  COMPLETE FIX: Full iCal.NET support with DTSTART extraction and BYHOUR/BYMINUTE handling
         private IEnumerable<DateTime> GenerateOccurrencesWithIcalNetFull(
             ReminderV2 reminder,
             DateTime fromUtcInclusive,
@@ -245,14 +503,14 @@ namespace HealthCare_.Services.Background.Reminder
 
                     var rrule = reminder.RRULE.ToUpperInvariant();
 
-                    // ✅ FIX #1: Extract DTSTART from RRULE if provided
+                    // FIX #1: Extract DTSTART from RRULE if provided
                     DateTime? dtStartFromRRule = ExtractDtStartFromRRule(reminder.RRULE, timeZoneId);
 
                     DateTime dtStartLocal;
 
                     if (dtStartFromRRule.HasValue)
                     {
-                        // ✅ Use DTSTART from RRULE
+                        //  Use DTSTART from RRULE
                         dtStartLocal = DateTime.SpecifyKind(dtStartFromRRule.Value, DateTimeKind.Unspecified);
 
                         _logger.LogInformation(
@@ -261,7 +519,7 @@ namespace HealthCare_.Services.Background.Reminder
                     }
                     else
                     {
-                        // ✅ FIX #2: Extract time from BYHOUR/BYMINUTE if provided
+                        // FIX #2: Extract time from BYHOUR/BYMINUTE if provided
                         var (hour, minute) = ExtractTimeFromRRule(rrule);
 
                         // Convert StartDateUtc to local timezone
@@ -272,7 +530,7 @@ namespace HealthCare_.Services.Background.Reminder
                         // Use DATE component from StartDateUtc
                         dtStartLocal = DateTime.SpecifyKind(startLocal.Date, DateTimeKind.Unspecified);
 
-                        // ✅ FIX #3: Apply BYHOUR/BYMINUTE to DtStart
+                        // FIX #3: Apply BYHOUR/BYMINUTE to DtStart
                         if (hour.HasValue)
                         {
                             dtStartLocal = dtStartLocal.AddHours(hour.Value);
@@ -302,7 +560,7 @@ namespace HealthCare_.Services.Background.Reminder
                     ev.DtStart = new CalDateTime(dtStartLocal, timeZoneId);
                     ev.Summary = reminder.Title;
 
-                    // ✅ FIX #4: Parse RRULE with full iCal.NET capability
+                    // FIX #4: Parse RRULE with full iCal.NET capability
                     try
                     {
                         // Remove DTSTART if it exists in the RRULE string (we already extracted it)
@@ -382,10 +640,8 @@ namespace HealthCare_.Services.Background.Reminder
             }
         }
 
-        /// <summary>
-        /// ✅ NEW: Extract DTSTART from RRULE string if provided
+        /// NEW: Extract DTSTART from RRULE string if provided
         /// Example: "DTSTART:20251213T080000;RRULE:FREQ=WEEKLY;BYDAY=MO"
-        /// </summary>
         private DateTime? ExtractDtStartFromRRule(string rrule, string timeZoneId)
         {
             if (string.IsNullOrWhiteSpace(rrule))
@@ -411,9 +667,7 @@ namespace HealthCare_.Services.Background.Reminder
             return null;
         }
 
-        /// <summary>
-        /// ✅ NEW: Extract BYHOUR and BYMINUTE from RRULE
-        /// </summary>
+        /// NEW: Extract BYHOUR and BYMINUTE from RRULE
         private (int? hour, int? minute) ExtractTimeFromRRule(string rrule)
         {
             int? hour = null;
@@ -439,9 +693,7 @@ namespace HealthCare_.Services.Background.Reminder
             return (hour, minute);
         }
 
-        /// <summary>
-        /// ✅ NEW: Remove DTSTART from RRULE string before parsing
-        /// </summary>
+        /// NEW: Remove DTSTART from RRULE string before parsing
         private string RemoveDtStartFromRRule(string rrule)
         {
             if (string.IsNullOrWhiteSpace(rrule))
@@ -451,6 +703,64 @@ namespace HealthCare_.Services.Background.Reminder
             return Regex.Replace(rrule, @"DTSTART:\d{8}T\d{6};?", "", RegexOptions.IgnoreCase).Trim();
         }
 
+        //private async Task BulkInsertOccurrences(
+        //    HealthCarePlusContext context,
+        //    List<ReminderOccurrencesCache> entries)
+        //{
+        //    var dataTable = new DataTable();
+        //    dataTable.Columns.Add("CreatedAt", typeof(DateTime));
+        //    dataTable.Columns.Add("PatientId", typeof(int));
+        //    dataTable.Columns.Add("ReminderId", typeof(int));
+        //    dataTable.Columns.Add("DueDateTimeUtc", typeof(DateTime));
+        //    dataTable.Columns.Add("DueDateTime", typeof(DateTime));
+        //    dataTable.Columns.Add("TimeZoneId", typeof(string));
+        //    dataTable.Columns.Add("Title", typeof(string));
+        //    dataTable.Columns.Add("Message", typeof(string));
+        //    dataTable.Columns.Add("Type", typeof(int));
+        //    dataTable.Columns.Add("Dosage", typeof(string));
+        //    dataTable.Columns.Add("Status", typeof(byte));
+
+        //    foreach (var e in entries)
+        //    {
+        //        dataTable.Rows.Add(
+        //            e.CreatedAt,
+        //            e.PatientId,
+        //            e.ReminderId,
+        //            e.DueDateTimeUtc,
+        //            e.DueDateTime,
+        //            e.TimeZoneId ?? "Africa/Cairo",
+        //            e.Title,
+        //            e.Message,
+        //            (int)e.Type,
+        //            e.Dosage,
+        //            e.Status);
+        //    }
+
+        //    await using var connection = context.Database.GetDbConnection();
+        //    if (connection.State != ConnectionState.Open)
+        //        await connection.OpenAsync();
+
+        //    using var bulkCopy = new SqlBulkCopy((SqlConnection)connection)
+        //    {
+        //        DestinationTableName = "ReminderOccurrencesCache",
+        //        EnableStreaming = true,
+        //        BatchSize = 1000
+        //    };
+
+        //    bulkCopy.ColumnMappings.Add("CreatedAt", "CreatedAt");
+        //    bulkCopy.ColumnMappings.Add("PatientId", "PatientId");
+        //    bulkCopy.ColumnMappings.Add("ReminderId", "ReminderId");
+        //    bulkCopy.ColumnMappings.Add("DueDateTimeUtc", "DueDateTimeUtc");
+        //    bulkCopy.ColumnMappings.Add("DueDateTime", "DueDateTime");
+        //    bulkCopy.ColumnMappings.Add("TimeZoneId", "TimeZoneId");
+        //    bulkCopy.ColumnMappings.Add("Title", "Title");
+        //    bulkCopy.ColumnMappings.Add("Message", "Message");
+        //    bulkCopy.ColumnMappings.Add("Type", "Type");
+        //    bulkCopy.ColumnMappings.Add("Dosage", "Dosage");
+        //    bulkCopy.ColumnMappings.Add("Status", "Status");
+
+        //    await bulkCopy.WriteToServerAsync(dataTable);
+        //}
         private async Task BulkInsertOccurrences(
             HealthCarePlusContext context,
             List<ReminderOccurrencesCache> entries)
@@ -484,7 +794,8 @@ namespace HealthCare_.Services.Background.Reminder
                     e.Status);
             }
 
-            await using var connection = context.Database.GetDbConnection();
+            var connection = context.Database.GetDbConnection();
+
             if (connection.State != ConnectionState.Open)
                 await connection.OpenAsync();
 
@@ -509,5 +820,6 @@ namespace HealthCare_.Services.Background.Reminder
 
             await bulkCopy.WriteToServerAsync(dataTable);
         }
+
     }
 }

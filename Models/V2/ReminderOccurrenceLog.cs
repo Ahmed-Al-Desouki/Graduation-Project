@@ -19,7 +19,7 @@ namespace HealthCare_.Models.V2
         // UTC for storage and calculations
         public DateTime DueDateTimeUtc { get; set; }
 
-        // ✅ FIX: Use OccurrenceStatus
+        // FIX: Use OccurrenceStatus
         public Enums.OccurrenceStatus Status { get; set; } = Enums.OccurrenceStatus.Pending;
 
         public DateTime? ConfirmedAt { get; set; }
@@ -27,10 +27,10 @@ namespace HealthCare_.Models.V2
 
         public Enums.IntakeStatus? IntakeStatus { get; set; }
 
-        // ✅ ADDED: Track if action was within valid window
+        // ADDED: Track if action was within valid window
         public bool ActionedWithinWindow { get; set; } = true;
 
-        // ✅ ADDED: For snoozed occurrences
+        // ADDED: For snoozed occurrences
         public bool IsSnoozeFromOriginal { get; set; } = false;
         public DateTime? OriginalDueDateTime { get; set; }
 

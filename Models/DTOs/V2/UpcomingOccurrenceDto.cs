@@ -18,10 +18,10 @@ namespace HealthCare_.Models.DTOs.V2
         public bool IsMedication { get; set; }
         public string? Dosage { get; set; }
 
-        // ✅ FIX: Use OccurrenceStatus
+        //  FIX: Use OccurrenceStatus
         public Enums.OccurrenceStatus Status { get; set; }
 
-        // ✅ FIX: Remove hardcoded CanConfirm, make them settable properties
+        //  FIX: Remove hardcoded CanConfirm, make them settable properties
         public bool CanConfirm { get; set; }
         public bool CanSnooze { get; set; }
         public bool CanSkip { get; set; } = true; // Skip always allowed for record-keeping

@@ -1,40 +1,4 @@
-﻿using AspNetCoreRateLimit;
-using FirebaseAdmin;
-using FluentValidation;
-using FluentValidation.AspNetCore;
-using Google.Apis.Auth.OAuth2;
-using Hangfire;
-using Hangfire.Dashboard;
-using HealthCare_.Interfaces.IAuth;
-using HealthCare_.Interfaces.Notifications;
-using HealthCare_.Interfaces.Patient;
-using HealthCare_.Interfaces.Patient.Medical_History;
-using HealthCare_.Interfaces.ReminderInterface;
-using HealthCare_.Middleware;
-using HealthCare_.Models.sharedModels;
-using HealthCare_.Services;
-using HealthCare_.Services.Auth;
-using HealthCare_.Services.Auth.Interfaces;
-using HealthCare_.Services.Background;
-using HealthCare_.Services.Background.Reminder;
-using HealthCare_.Services.BackGround;
-using HealthCare_.Services.Cloud;
-using HealthCare_.Services.DoctorDervice;
-using HealthCare_.Services.Notifications;
-using HealthCare_.Services.Patient;
-using HealthCare_.Services.Shared;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.OpenApi.Models;  // الصحيح
-using System.ComponentModel;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
-
-var builder = WebApplication.CreateBuilder(args);
+﻿var builder = WebApplication.CreateBuilder(args);
 
 // ====================== LOGGING ======================
 builder.Logging.ClearProviders();
@@ -169,7 +133,6 @@ builder.Services.AddScoped<FileUploadService>();
 builder.Services.AddScoped<UserManager<ApplicationUser>>();
 builder.Services.AddScoped<SignInManager<ApplicationUser>>();
 builder.Services.AddScoped<RoleManager<ApplicationRole>>();
-//builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddScoped<IReminderV2Service, ReminderV2Service>();
 builder.Services.AddScoped<IMedicalProfileService, MedicalProfileService>();
 builder.Services.AddScoped<ISurgeryService, SurgeryService>();
@@ -188,6 +151,8 @@ builder.Services.AddScoped<ReminderJobOrchestrator>();
 builder.Services.AddHostedService<ReminderCacheHealthCheckService>();
 builder.Services.AddScoped<ReminderNotificationDispatcherJob>();
 builder.Services.AddScoped<FirebaseNotificationService>();
+builder.Services.AddSingleton<HangfireAuthorizationFilter>();
+builder.Services.AddScoped<IShareTokenService, ShareTokenService>();
 
 
 // HttpClient for FCM
@@ -197,7 +162,7 @@ builder.Services.AddHttpClient("fcm")
         // خيارات handler إن احتجت (proxy, certs ...)
     });
 
-// ====================== CONTROLLERS & SWAGGER (الجزء الجديد) ======================
+// ====================== CONTROLLERS & SWAGGER ======================
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -207,10 +172,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
     });
 
-
 builder.Services.AddEndpointsApiExplorer();
 
-// SWAGGER 6.5.0 – شغال 100% بدون أي خطأ
+// SWAGGER 6.5.0
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v2", new OpenApiInfo
@@ -264,40 +228,14 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
 });
 
-
-
 var app = builder.Build();
 
-
-
-
-//app.UseMiddleware<GlobalExceptionMiddleware>();
-
-// Global Exception Handler
-//app.UseExceptionHandler(errorApp =>
-//{
-//    errorApp.Run(async context =>
-//    {
-//        context.Response.StatusCode = 500;
-//        context.Response.ContentType = "application/json";
-//        var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-//        if (error != null)
-//        {
-//            await context.Response.WriteAsJsonAsync(new
-//            {
-//                message = error.Error.Message,
-//                inner = error.Error.InnerException?.Message
-//            });
-//        }
-//    });
-//});
-
-// SWAGGER UI – يفتح على الـ root تلقائيًا
+// SWAGGER UI
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v2/swagger.json", "HealthCare+ API V2");
-    c.RoutePrefix = string.Empty; // السطر السحري
+    c.RoutePrefix = string.Empty;
     c.DocumentTitle = "HealthCare+ API";
 });
 
@@ -311,54 +249,75 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/static"
 });
 
-//app.UseHangfireDashboard("/admin-secret-reminders-2025-xyz", new DashboardOptions
-//{
-//    Authorization = new[] { new HangfireAuthorizationFilter() }
-//});
+//  Hangfire Dashboard - بدون DI
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
-    Authorization = new[] { new HangfireAuthorizationFilter() }, // لو عندك authorization
+    Authorization = new[]
+    {
+        app.Services.GetRequiredService<HangfireAuthorizationFilter>()
+    },
     DashboardTitle = "HealthCare+ Reminders Dashboard",
     IsReadOnlyFunc = (DashboardContext context) => false
 });
 
-// مهم جدًا جدًا جدًا: نضيف الـ static files للـ dashboard
-app.Map("/hangfire", appBuilder =>
-{
-    appBuilder.UseHangfireDashboard("/hangfire", new DashboardOptions
-    {
-        Authorization = new[] { new HangfireAuthorizationFilter() }
-    });
+var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+//  1. Dispatch notifications every minute
+recurringJobManager.AddOrUpdate<ReminderNotificationDispatcherJob>(
+    "dispatch-due-notifications",
+    job => job.DispatchDueRemindersAsync(),
+    Cron.Minutely);
 
-    // الحل السحري: نعمل forward للـ static files
-    appBuilder.UseStaticFiles();
-});
+//  2. NEW: Sync missing notifications every 5 minutes
+// This ensures all devices get notifications for all occurrences
+recurringJobManager.AddOrUpdate<ReminderNotificationDispatcherJob>(
+    "sync-missing-notifications",
+    job => job.SyncMissingNotificationsAsync(),
+    Cron.MinuteInterval(5));
 
+//  3. Generate occurrences daily at 2 AM
+recurringJobManager.AddOrUpdate<ReminderOccurrencesGeneratorJob>(
+    "generate-reminder-occurrences",
+    job => job.GenerateForAllPatientsAsync(),
+    Cron.Daily(2));
 
-// ✅ Notification dispatcher - every minute for precise timing
-RecurringJob.AddOrUpdate<ReminderNotificationDispatcherJob>(
-    "notification-dispatcher-minutely",
-    j => j.DispatchDueRemindersAsync(),
-    Cron.Minutely); // Runs every minute
+//  4. Cleanup old notifications daily at 3 AM
+recurringJobManager.AddOrUpdate<ReminderNotificationDispatcherJob>(
+    "cleanup-old-notifications",
+    job => job.CleanupOldNotificationsAsync(),
+    Cron.Daily(3));
 
-// ✅ Cleanup old logs - daily at 3 AM
-RecurringJob.AddOrUpdate<ReminderNotificationDispatcherJob>(
-    "notification-cleanup-daily",
-    j => j.CleanupOldNotificationsAsync(),
-    Cron.Daily(3)); // 3 AM every day
+Console.WriteLine(" Hangfire Jobs Configured:");
+Console.WriteLine("   - Dispatch notifications: Every minute");
+Console.WriteLine("   - Sync missing notifications: Every 5 minutes");
+Console.WriteLine("   - Generate occurrences: Daily at 2:00 AM");
+Console.WriteLine("   - Cleanup old notifications: Daily at 3:00 AM");
 
-RecurringJob.AddOrUpdate<ReminderJobOrchestrator>(
-    "daily-reminder-generator",
-    j => j.RunDailyGenerationAsync(),
-    Cron.Daily(3)   //  الساعة 3 فجرًا
-);
+// ✅ 2. NEW: Sync missing notifications every 5 minutes
+// This ensures all devices get notifications for all occurrences
+//recurringJobManager.AddOrUpdate<ReminderNotificationDispatcherJob>(
+//    "sync-missing-notifications",
+//    job => job.SyncMissingNotificationsAsync(),
+//    Cron.MinuteInterval(5));
+//// Schedule recurring jobs
+//RecurringJob.AddOrUpdate<ReminderOccurrencesGeneratorJob>(
+//    "generate-occurrences",
+//    x => x.GenerateForAllPatientsAsync(),
+//    Cron.Hourly);
 
-RecurringJob.AddOrUpdate<ReminderNotificationDispatcherJob>(
-    "Notification-Dispatcher",
-    j => j.DispatchDueRemindersAsync(),
-    Cron.Minutely
-);
+//RecurringJob.AddOrUpdate<ReminderNotificationDispatcherJob>(
+//    "dispatch-notifications",
+//    x => x.DispatchDueRemindersAsync(),
+//    Cron.Minutely);
 
+//RecurringJob.AddOrUpdate<ReminderNotificationDispatcherJob>(
+//    "cleanup-notifications",
+//    x => x.CleanupOldNotificationsAsync(),
+//    Cron.Daily(3));
+
+//RecurringJob.AddOrUpdate<ReminderJobOrchestrator>(
+//    "daily-reminder-generator",
+//    j => j.RunDailyGenerationAsync(),
+//    Cron.Daily(3));
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
@@ -389,13 +348,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// ====================== HANGFIRE JOBS ======================
-//RecurringJob.AddOrUpdate<ReminderService>("expire-reminders-daily",
-//    service => service.ExpireRemindersAsync(), "0 0 0 * * *");
-//RecurringJob.AddOrUpdate<ReminderService>("mark-overdue-hourly",
-//    service => service.MarkOverdueAsync(), "0 0 * * *");
-
 app.Run();
+
 public class DateTimeConverter : JsonConverter<DateTime>
 {
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -405,7 +359,6 @@ public class DateTimeConverter : JsonConverter<DateTime>
 
     public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
     {
-        // Write as local time without timezone indicator
         writer.WriteStringValue(value.ToString("yyyy-MM-ddTHH:mm:ss"));
     }
 }

@@ -563,7 +563,7 @@ namespace HealthCare_.Models.Context
                     .IsRequired()
                     .HasDefaultValueSql("GETUTCDATE()");
 
-                // ✅ CRITICAL INDEX: For fast querying of unsent, due notifications
+                //  CRITICAL INDEX: For fast querying of unsent, due notifications
                 entity.HasIndex(e => new { e.PatientId, e.ScheduledTime, e.SentAt })
                     .HasName("IX_NotificationLogs_Due")
                     .HasFilter("[SentAt] IS NULL");

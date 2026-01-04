@@ -20,7 +20,7 @@ namespace HealthCare_.Models.V2
         [StringLength(500)]
         public string? Message { get; set; }
 
-        // ✅ جميع التواريخ الآن UTC
+        // جميع التواريخ الآن UTC
         public DateTime StartDateUtc { get; set; } = DateTime.UtcNow;
         public DateTime? EndDateUtc { get; set; } // null = مدى الحياة
 
