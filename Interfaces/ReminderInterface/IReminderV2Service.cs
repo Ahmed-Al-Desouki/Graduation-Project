@@ -10,7 +10,8 @@ namespace HealthCare_.Interfaces.ReminderInterface
         Task<ReminderV2Dto> GetByIdAsync(int reminderId, int patientId);
         Task<List<ReminderV2Dto>> GetAllAsync(int patientId);
         Task UpdateAsync(int reminderId, int patientId, UpdateReminderV2Dto dto);
-        Task SoftDeleteAsync(int reminderId, int patientId);
+        //Task SoftDeleteAsync(int reminderId, int patientId);
+        Task DeleteAsync(int reminderId, int patientId);
 
         Task<List<UpcomingOccurrenceDto>> GetUpcomingAsync(int patientId, int daysAhead = 30);
         Task<List<UpcomingOccurrenceDto>> GetTodayAsync(int patientId);

@@ -1,8 +1,10 @@
 ﻿// Services/Patient/MedicalProfileService.cs
 using HealthCare_.Interfaces.Patient;
+using HealthCare_.Interfaces.Patient.Medical_History;
 using HealthCare_.Models.DTOs.PatientDot;
-using HealthCare_.Models.DTOs.PatientDTO;
+using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using HealthCare_.Models.PatientModels;
+using HealthCare_.Models.PatientModels.MedicalHistoryModels;
 using HealthCare_.Services.Shared;
 
 namespace HealthCare_.Services.Patient
@@ -11,16 +13,32 @@ namespace HealthCare_.Services.Patient
     {
         private readonly HealthCarePlusContext _context;
         private readonly AuthHelperService _authHelper;
+        private readonly ISurgeryService _surgeryService;
+        private readonly IFamilyHistoryService _familyHistoryService;
+        private readonly ISocialHistoryService _socialHistoryService;
+        private readonly ISelfMedicationService _selfMedicationService;
+        private readonly ICurrentMedicationService _currentMedicationService;
         private readonly ILogger<MedicalProfileService> _logger;
 
         public MedicalProfileService(
             HealthCarePlusContext context,
             AuthHelperService authHelper,
-            ILogger<MedicalProfileService> logger)
+            ILogger<MedicalProfileService> logger,
+            ISurgeryService surgeryService,
+            IFamilyHistoryService familyHistoryService,
+            ISocialHistoryService socialHistoryService,
+            ISelfMedicationService selfMedicationService,
+            ICurrentMedicationService currentMedicationService
+        )
         {
             _context = context;
             _authHelper = authHelper;
             _logger = logger;
+            _surgeryService = surgeryService;
+            _familyHistoryService = familyHistoryService;
+            _socialHistoryService = socialHistoryService;
+            _selfMedicationService = selfMedicationService;
+            _currentMedicationService = currentMedicationService;
         }
 
         public async Task<MedicalProfileResponse> GetMedicalProfileAsync()
@@ -133,9 +151,9 @@ namespace HealthCare_.Services.Patient
                 CurrentMedications = new List<CurrentMedicationDto>()
             };
         }
-        public async Task<MedicalProfileResponse> GetMedicalProfileByPatientIdAsync(int patientId)
+        public async Task<MedicalProfileResponse> GetCompleteMedicalProfileAsync(int patientId)
         {
-            _logger.LogInformation("Fetching medical profile for PatientID: {PatientID}", patientId);
+            _logger.LogInformation("Fetching complete medical profile for PatientID: {PatientID}", patientId);
 
             var patient = await _context.Patients
                 .AsNoTracking()
@@ -157,6 +175,9 @@ namespace HealthCare_.Services.Patient
 
             var history = patient.MedicalHistory ?? throw new InvalidOperationException("Medical history not initialized.");
 
+            // -----------------------------
+            // Files (Lab & Radiology)
+            // -----------------------------
             var labTests = history.Files
                 .Where(f => f.CategoryValue == "LabTest")
                 .Select(f => new FileDto
@@ -181,6 +202,9 @@ namespace HealthCare_.Services.Patient
                     Description = f.Description
                 }).ToList();
 
+            // -----------------------------
+            // Appointments & Prescriptions
+            // -----------------------------
             var pastAppointments = patient.Appointments
                 .Where(a => a.AppointmentDate < DateTime.UtcNow && a.Status == "Completed")
                 .Select(a => new PastAppointmentDto
@@ -203,6 +227,9 @@ namespace HealthCare_.Services.Patient
                     } : null
                 }).OrderByDescending(a => a.AppointmentDate).ToList();
 
+            // -----------------------------
+            // Medical Records
+            // -----------------------------
             var medicalRecords = history.MedicalRecords
                 .Select(mr => new MedicalRecordDto
                 {
@@ -214,6 +241,18 @@ namespace HealthCare_.Services.Patient
                     Notes = mr.Notes ?? "",
                 }).OrderByDescending(r => r.VisitDate).ToList();
 
+            // -----------------------------
+            // Other sections via services
+            // -----------------------------
+            var surgeries = await _surgeryService.GetSurgeriesForShareAsync(history.HistoryID);
+            var familyHistory = await _familyHistoryService.GetFamilyHistoryForShareAsync(history.HistoryID);
+            var socialHistory = await _socialHistoryService.GetSocialHistoryForShareAsync(history.HistoryID);
+            var selfMedications = await _selfMedicationService.GetSelfMedicationsForShareAsync(patient.PatientID);
+            var currentMedications = await _currentMedicationService.GetCurrentMedicationsForShareAsync(history.HistoryID);
+
+            // -----------------------------
+            // Construct final response
+            // -----------------------------
             return new MedicalProfileResponse
             {
                 PatientID = patient.PatientID,
@@ -233,11 +272,11 @@ namespace HealthCare_.Services.Patient
                 RadiologyFiles = radiologyFiles,
                 PastAppointments = pastAppointments,
                 MedicalRecords = medicalRecords,
-                Surgeries = new List<SurgeryDto>(),
-                FamilyHistory = new List<FamilyHistoryDto>(),
-                SocialHistory = new List<SocialHistoryDto>(),
-                PatientSelfMedications = new List<SelfMedicationDto>(),
-                CurrentMedications = new List<CurrentMedicationDto>()
+                Surgeries = surgeries,
+                FamilyHistory = familyHistory,
+                SocialHistory = socialHistory,
+                PatientSelfMedications = selfMedications,
+                CurrentMedications = currentMedications
             };
         }
         public async Task<MedicalProfileResponse> UpdateMedicalProfileAsync(UpdateMedicalProfileRequest request)

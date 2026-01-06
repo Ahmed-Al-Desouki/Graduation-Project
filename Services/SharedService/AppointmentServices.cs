@@ -1,6 +1,8 @@
 ﻿// File: Services/SharedService/AppointmentService.cs
+using HealthCare_.Interfaces.Patient.AppointmentAndRecords;
 using HealthCare_.Models.DTOs.AppointmentDTO;
-using HealthCare_.Models.DTOs.PatientDTO;
+using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
+using HealthCare_.Models.PatientModels.Prescriptions;
 using HealthCare_.Services.Shared;
 
 namespace HealthCare_.Services.SharedService

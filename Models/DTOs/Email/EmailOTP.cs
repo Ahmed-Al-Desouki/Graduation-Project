@@ -1,4 +1,4 @@
-﻿using HealthCare_.Models.sharedModels;
+﻿using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 
 namespace HealthCare_.Models.DTOs.Email
 {

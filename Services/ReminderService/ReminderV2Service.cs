@@ -804,17 +804,29 @@ namespace HealthCare_.Services
             }
             return result;
         }
+        // soft delete
+        //public async Task SoftDeleteAsync(int reminderId, int patientId)
+        //{
+        //    var reminder = await ValidateReminderAccess(reminderId, patientId);
+        //    reminder.IsActive = false;
+        //    reminder.Status = Enums.ReminderStatus.Dismissed;
+        //    reminder.UpdatedAt = DateTime.UtcNow;
+        //    await _context.SaveChangesAsync();
 
-        public async Task SoftDeleteAsync(int reminderId, int patientId)
+        //    BackgroundJob.Enqueue<ReminderOccurrencesGeneratorJob>(j => j.GenerateForPatientAsync(patientId));
+        //}
+        public async Task DeleteAsync(int reminderId, int patientId)
         {
             var reminder = await ValidateReminderAccess(reminderId, patientId);
-            reminder.IsActive = false;
-            reminder.Status = Enums.ReminderStatus.Dismissed;
-            reminder.UpdatedAt = DateTime.UtcNow;
+
+            _context.ReminderV2s.Remove(reminder);
             await _context.SaveChangesAsync();
 
-            BackgroundJob.Enqueue<ReminderOccurrencesGeneratorJob>(j => j.GenerateForPatientAsync(patientId));
+            BackgroundJob.Enqueue<ReminderOccurrencesGeneratorJob>(
+                j => j.GenerateForPatientAsync(patientId)
+            );
         }
+
 
         private async Task<ReminderV2> ValidateReminderAccess(int reminderId, int patientId)
         {

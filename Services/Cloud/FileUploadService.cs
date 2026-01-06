@@ -1,4 +1,5 @@
 ﻿// File: Services/Cloud/FileUploadService.cs
+using HealthCare_.Interfaces.FileUplade;
 using HealthCare_.Models.DTOs.CloudinaryDTO;
 
 namespace HealthCare_.Services.Cloud

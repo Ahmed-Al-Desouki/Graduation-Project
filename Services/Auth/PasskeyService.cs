@@ -1,7 +1,8 @@
 ﻿// File: Services/Auth/PasskeyService.cs
+using HealthCare_.Interfaces.IAuth.PKeyAndPassowrd;
+using HealthCare_.Interfaces.IAuth.TokenAndCoreAuth;
 using HealthCare_.Models.DTOs.AuthModels.Login_register;
-using HealthCare_.Models.sharedModels;
-using HealthCare_.Services.Auth.Interfaces;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 
 namespace HealthCare_.Services.Auth
 {

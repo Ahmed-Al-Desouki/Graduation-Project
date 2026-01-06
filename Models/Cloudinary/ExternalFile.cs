@@ -1,5 +1,6 @@
 ﻿// File: Models/DTOs/Cloudinary/ExternalFile.cs
-using HealthCare_.Models.sharedModels;
+using HealthCare_.Models.PatientModels.MedicalHistoryModels;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using System.Text.Json.Serialization;
 
 public class ExternalFile

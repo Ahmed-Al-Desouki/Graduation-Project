@@ -1,6 +1,6 @@
 ﻿// Validators/Patient/CreateFamilyHistoryRequestValidator.cs
 using FluentValidation;
-using HealthCare_.Models.DTOs.PatientDot;
+using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 
 namespace HealthCare_.Validators.Patient.MedicalHistory
 {

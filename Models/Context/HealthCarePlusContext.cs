@@ -1,6 +1,10 @@
 ﻿
 using HealthCare_.Models.DTOs.Email;
-using HealthCare_.Models.sharedModels;
+using HealthCare_.Models.PatientModels.MedicalHistoryModels;
+using HealthCare_.Models.PatientModels.MedIntakeAndRecords;
+using HealthCare_.Models.PatientModels.Prescriptions;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
+using HealthCare_.Models.sharedModels.Reviews;
 using HealthCare_.Models.V2;
 
 namespace HealthCare_.Models.Context

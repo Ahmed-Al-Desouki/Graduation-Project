@@ -1,7 +1,7 @@
 ﻿// File: Controllers/PasskeyController.cs
+using HealthCare_.Interfaces.IAuth.PKeyAndPassowrd;
 using HealthCare_.Models.DTOs.AuthModels.Login_register;
 using HealthCare_.Services.Auth;
-using HealthCare_.Services.Auth.Interfaces;
 
 namespace HealthCare_.Controllers
 {

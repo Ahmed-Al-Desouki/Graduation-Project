@@ -1,6 +1,8 @@
-﻿using HealthCare_.Interfaces.IAuth;
-using HealthCare_.Models.sharedModels;
-using HealthCare_.Services.Auth.Interfaces;
+﻿using HealthCare_.Interfaces.Email;
+using HealthCare_.Interfaces.IAuth.MFA;
+using HealthCare_.Interfaces.IAuth.TokenAndCoreAuth;
+using HealthCare_.Models.PatientModels.MedicalHistoryModels;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using HealthCare_.Services.Cloud;
 
 
@@ -89,7 +91,7 @@ namespace HealthCare_.Services.Auth
                         UpdatedAt = DateTime.UtcNow
                     };
 
-                    var medicalHistory = new HealthCare_.Models.PatientModels.MedicalHistory
+                    var medicalHistory = new MedicalHistory
                     {
                         PatientID = user.Id,
                         DateOfBirth = null,

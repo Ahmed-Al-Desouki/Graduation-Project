@@ -1,5 +1,6 @@
-﻿using HealthCare_.Models.sharedModels;
-using HealthCare_.Services.Auth.Interfaces;
+﻿using HealthCare_.Interfaces.Email;
+using HealthCare_.Interfaces.IAuth.MFA;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.AspNetCore.Authorization;
 
 namespace HealthCare_.Controllers

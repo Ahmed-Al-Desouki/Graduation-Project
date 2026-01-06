@@ -8,7 +8,6 @@ global using HealthCare_.Models.DTOs.AuthModels;
 global using HealthCare_.Models.DTOs.AuthModels.MFA_Passkeys;
 global using HealthCare_.Models.EnumForModels;
 global using HealthCare_.Models.PatientModels;
-global using HealthCare_.Models.SharedModels;
 global using HealthCare_.Services.SharedService;
 global using Microsoft.AspNetCore.Identity;
 global using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -48,13 +47,10 @@ global using HealthCare_.Middleware;
 global using HealthCare_.Models.sharedModels;
 global using HealthCare_.Services;
 global using HealthCare_.Services.Auth;
-global using HealthCare_.Services.Auth.Interfaces;
 global using HealthCare_.Services.Background;
 global using HealthCare_.Services.Background.Reminder;
 global using HealthCare_.Services.BackGround;
 global using HealthCare_.Services.Cloud;
-global using HealthCare_.Services.DoctorDervice;
-global using HealthCare_.Services.Notifications;
 global using HealthCare_.Services.Patient;
 global using HealthCare_.Services.Shared;
 global using Microsoft.AspNetCore.Authentication.Cookies;
@@ -66,6 +62,8 @@ global using Microsoft.OpenApi.Models;
 global using System.ComponentModel;
 global using System.Text.Json;
 global using System.Text.Json.Serialization;
+global using HealthCare_.Models.PatientModels.Appointments;
+global using HealthCare_.Models.PatientModels.MedicalHistoryModels;
 
 
 

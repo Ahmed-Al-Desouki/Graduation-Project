@@ -1,6 +1,7 @@
-﻿using HealthCare_.Models.DTOs.AuthModels.Login_register;
+﻿using HealthCare_.Interfaces.Email;
+using HealthCare_.Interfaces.IAuth.TokenAndCoreAuth;
+using HealthCare_.Models.DTOs.AuthModels.Login_register;
 using HealthCare_.Models.V2;
-using HealthCare_.Services.Auth.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 
 namespace HealthCare_.Controllers

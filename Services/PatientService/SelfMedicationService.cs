@@ -1,7 +1,7 @@
 ﻿// Services/Patient/SelfMedicationService.cs
 using HealthCare_.Interfaces.Patient.Medical_History;
-using HealthCare_.Models.DTOs.PatientDot;
-using HealthCare_.Models.DTOs.PatientDTO;
+using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
+using HealthCare_.Models.PatientModels.MedicalHistoryModels;
 using HealthCare_.Services.Shared;
 
 namespace HealthCare_.Services.Patient
@@ -129,5 +129,23 @@ namespace HealthCare_.Services.Patient
                 selfMedicationId, userId
             );
         }
-    }
+        public async Task<List<SelfMedicationDto>> GetSelfMedicationsForShareAsync(int PatientId)
+        {
+        // هنا مش محتاج userId أو authHelper
+            return await _context.PatientSelfMedications
+                .AsNoTracking()
+                .Where(m => m.PatientID == PatientId && !m.IsDeleted)
+                .Select(m => new SelfMedicationDto
+                {
+                    ID = m.ID,
+                    MedicationName = m.MedicationName,
+                    Dosage = m.Dosage,
+                    Instructions = m.Instructions,
+                    StartDate = m.StartDate,
+                    EndDate = m.EndDate
+                })
+                .ToListAsync();
+                }
+
+        }
 }

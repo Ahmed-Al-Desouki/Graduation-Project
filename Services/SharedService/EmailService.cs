@@ -1,4 +1,5 @@
 ﻿// Services/EmailService.cs
+using HealthCare_.Interfaces.Email;
 using MailKit.Net.Smtp;
 using MimeKit;
 

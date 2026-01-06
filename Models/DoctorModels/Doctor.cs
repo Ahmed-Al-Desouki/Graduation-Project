@@ -1,4 +1,7 @@
-﻿using HealthCare_.Models.sharedModels;
+﻿
+using HealthCare_.Models.PatientModels.MedIntakeAndRecords;
+using HealthCare_.Models.PatientModels.Prescriptions;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 
 namespace HealthCare_.Models.DoctorModels
 {

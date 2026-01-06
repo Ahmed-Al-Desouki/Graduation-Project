@@ -1,7 +1,8 @@
 ﻿using Google.Apis.Auth;
-using HealthCare_.Models.sharedModels;
+using HealthCare_.Interfaces.Email;
+using HealthCare_.Interfaces.IAuth.TokenAndCoreAuth;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using HealthCare_.Services.Auth;
-using HealthCare_.Services.Auth.Interfaces;
 
 
 namespace HealthCare_.Controllers
@@ -152,7 +153,7 @@ namespace HealthCare_.Controllers
                                 };
 
                                 // 2. إنشاء الـ MedicalHistory (كل البيانات الطبية والشخصية هنا)
-                                var medicalHistory = new HealthCare_.Models.PatientModels.MedicalHistory
+                                var medicalHistory = new MedicalHistory
                                 {
                                     PatientID = user.Id,
                                     DateOfBirth = null,     // أو خد من الـ request لو موجود

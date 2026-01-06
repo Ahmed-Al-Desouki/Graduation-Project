@@ -1,4 +1,6 @@
-﻿namespace HealthCare_.Models.DoctorModels
+﻿
+
+namespace HealthCare_.Models.DoctorModels
 {
     public class DoctorSlot
     {

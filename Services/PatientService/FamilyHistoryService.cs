@@ -1,6 +1,7 @@
 ﻿// Services/Patient/FamilyHistoryService.cs
 using HealthCare_.Interfaces.Patient.Medical_History;
-using HealthCare_.Models.DTOs.PatientDot;
+using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
+using HealthCare_.Models.PatientModels.MedicalHistoryModels;
 using HealthCare_.Services.Shared;
 
 namespace HealthCare_.Services.Patient
@@ -132,5 +133,22 @@ namespace HealthCare_.Services.Patient
                 familyHistoryId, historyId
             );
         }
+        public async Task<List<FamilyHistoryDto>> GetFamilyHistoryForShareAsync(int medicalHistoryId)
+        {
+            return await _context.FamilyHistoryEntries
+                .AsNoTracking()
+                .Where(f => f.HistoryID == medicalHistoryId && !f.IsDeleted)
+                .Select(f => new FamilyHistoryDto
+                {
+                    FamilyHistoryID = f.FamilyHistoryID,
+                    Condition = f.Condition,
+                    Relative = f.Relative,
+                    OnsetAge = f.OnsetAge,
+                    Notes = f.Notes,
+                    IsVerified = f.IsVerified
+                })
+                .ToListAsync();
+        }
+
     }
 }

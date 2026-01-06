@@ -1,6 +1,7 @@
-﻿using HealthCare_.Models.DTOs.ForgetPassword;
-using HealthCare_.Models.sharedModels;
-using HealthCare_.Services.Auth.Interfaces;
+﻿using HealthCare_.Interfaces.Email;
+using HealthCare_.Interfaces.IAuth.PKeyAndPassowrd;
+using HealthCare_.Models.DTOs.AuthModels.ForgetPassword;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace HealthCare_.Services.Auth

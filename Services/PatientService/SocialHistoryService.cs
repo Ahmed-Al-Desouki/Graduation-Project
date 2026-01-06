@@ -1,6 +1,6 @@
 ﻿// Services/Patient/SocialHistoryService.cs
 using HealthCare_.Interfaces.Patient.Medical_History;
-using HealthCare_.Models.DTOs.PatientDot;
+using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using HealthCare_.Services.Shared;
 
 namespace HealthCare_.Services.Patient
@@ -127,5 +127,32 @@ namespace HealthCare_.Services.Patient
                 socialHistoryId, historyId
             );
         }
+        public async Task<List<SocialHistoryDto>> GetSocialHistoryForShareAsync(int patientId)
+        {
+            // هنا مش محتاجين نتأكد من current user لأنه جاي من التوكن
+            var historyId = await _context.MedicalHistories
+                .Where(mh => mh.PatientID == patientId)
+                .Select(mh => mh.HistoryID)
+                .FirstOrDefaultAsync();
+
+            if (historyId == 0)
+                return new List<SocialHistoryDto>(); // لو مفيش history
+
+            return await _context.SocialHistories
+                .AsNoTracking()
+                .Where(s => s.HistoryID == historyId && !s.IsDeleted)
+                .Select(s => new SocialHistoryDto
+                {
+                    SocialHistoryID = s.SocialHistoryID,
+                    SmokingStatus = s.SmokingStatus,
+                    SmokingDetails = s.SmokingDetails,
+                    AlcoholUse = s.AlcoholUse,
+                    DrugUse = s.DrugUse,
+                    Occupation = s.Occupation,
+                    Exercise = s.Exercise,
+                    Notes = s.Notes
+                }).ToListAsync();
+        }
+
     }
 }

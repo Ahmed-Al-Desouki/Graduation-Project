@@ -761,11 +761,17 @@ namespace HealthCare_.Migrations
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("HistoryId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Instructions")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<int>("MedicalHistoryIdHistoryID")
+                        .HasColumnType("int");
 
                     b.Property<string>("MedicationName")
                         .IsRequired()
@@ -781,6 +787,8 @@ namespace HealthCare_.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("MedicalHistoryIdHistoryID");
 
                     b.HasIndex("PatientID");
 
@@ -1790,7 +1798,7 @@ namespace HealthCare_.Migrations
             modelBuilder.Entity("HealthCare_.Models.PatientModels.FamilyHistoryEntry", b =>
                 {
                     b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
-                        .WithMany()
+                        .WithMany("FamilyHistories")
                         .HasForeignKey("HistoryID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1856,11 +1864,19 @@ namespace HealthCare_.Migrations
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.PatientSelfMedication", b =>
                 {
+                    b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistoryId")
+                        .WithMany("SelfMedications")
+                        .HasForeignKey("MedicalHistoryIdHistoryID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("HealthCare_.Models.PatientModels.Patient", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("MedicalHistoryId");
 
                     b.Navigation("Patient");
                 });
@@ -1898,7 +1914,7 @@ namespace HealthCare_.Migrations
             modelBuilder.Entity("HealthCare_.Models.PatientModels.SocialHistory", b =>
                 {
                     b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
-                        .WithMany()
+                        .WithMany("SocialHistories")
                         .HasForeignKey("HistoryID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1909,7 +1925,7 @@ namespace HealthCare_.Migrations
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Surgery", b =>
                 {
                     b.HasOne("HealthCare_.Models.PatientModels.MedicalHistory", "MedicalHistory")
-                        .WithMany()
+                        .WithMany("Surgeries")
                         .HasForeignKey("HistoryID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2082,9 +2098,17 @@ namespace HealthCare_.Migrations
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalHistory", b =>
                 {
+                    b.Navigation("FamilyHistories");
+
                     b.Navigation("Files");
 
                     b.Navigation("MedicalRecords");
+
+                    b.Navigation("SelfMedications");
+
+                    b.Navigation("SocialHistories");
+
+                    b.Navigation("Surgeries");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.Patient", b =>

@@ -1,4 +1,7 @@
-﻿using HealthCare_.Models.sharedModels;
+﻿using HealthCare_.Models.PatientModels.Appointments;
+using HealthCare_.Models.PatientModels.MedIntakeAndRecords;
+using HealthCare_.Models.PatientModels.Prescriptions;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using HealthCare_.Models.V2;
 
 
@@ -9,16 +12,6 @@ namespace HealthCare_.Models.PatientModels
         [Key]
         [Required]
         public int PatientID { get; set; }
-
-        //[Required]
-        //public DateTime DateOfBirth { get; set; }
-
-        //[Required, StringLength(30)]
-        //[MaxLength(20)]
-        //public string Gender { get; set; } = "Unknown";
-
-        //[StringLength(200)]
-        //public string CurrentLocation { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }

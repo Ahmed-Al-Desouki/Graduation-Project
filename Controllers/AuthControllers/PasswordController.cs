@@ -1,5 +1,5 @@
-﻿using HealthCare_.Models.DTOs.ForgetPassword;
-using HealthCare_.Services.Auth.Interfaces;
+﻿using HealthCare_.Interfaces.IAuth.PKeyAndPassowrd;
+using HealthCare_.Models.DTOs.AuthModels.ForgetPassword;
 
 namespace HealthCare_.Controllers
 {

@@ -1,6 +1,6 @@
 ﻿// Services/Patient/SurgeryService.cs
 using HealthCare_.Interfaces.Patient.Medical_History;
-using HealthCare_.Models.DTOs.PatientDot;
+using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using HealthCare_.Services.Shared;
 
 namespace HealthCare_.Services.Patient
@@ -119,5 +119,29 @@ namespace HealthCare_.Services.Patient
                 surgeryId, historyId
             );
         }
+        public async Task<List<SurgeryDto>> GetSurgeriesForShareAsync(int patientId)
+        {
+            // نجلب أولًا HistoryID الخاص بالـ patient
+            var historyId = await _context.MedicalHistories
+                .Where(mh => mh.PatientID == patientId)
+                .Select(mh => mh.HistoryID)
+                .FirstOrDefaultAsync();
+
+            if (historyId == 0)
+                return new List<SurgeryDto>(); // لو مفيش history
+
+            return await _context.Surgeries
+                .AsNoTracking()
+                .Where(s => s.HistoryID == historyId && !s.IsDeleted)
+                .Select(s => new SurgeryDto
+                {
+                    SurgeryID = s.SurgeryID,
+                    Name = s.Name,
+                    Date = s.Date,
+                    Notes = s.Notes,
+                    Complications = s.Complications
+                }).ToListAsync();
+        }
+
     }
 }

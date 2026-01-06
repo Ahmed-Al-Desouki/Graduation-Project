@@ -1,4 +1,6 @@
-﻿using HealthCare_.Models.DTOs.AppointmentDTO;
+﻿using HealthCare_.Interfaces.Patient.AppointmentAndRecords;
+using HealthCare_.Models.DTOs.AppointmentDTO;
+using HealthCare_.Models.PatientModels.MedIntakeAndRecords;
 
 namespace HealthCare_.Services.SharedService
 {
