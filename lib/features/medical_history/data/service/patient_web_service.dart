@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/utils/helper/api.dart';
 import 'dart:io';
@@ -59,6 +61,7 @@ class PatientWebServices {
   Future<Map<String, dynamic>> upsertSocialHistory(
     Map<String, dynamic> body,
   ) async {
+    print("📤 Sending Social History Data: ${jsonEncode(body)}");
     return await _apiService.post('PatientMedicalProfile/social-history', body);
   }
 
@@ -113,5 +116,29 @@ class PatientWebServices {
     return await _apiService.delete(
       'PatientMedicalProfile/self-medications/$selfMedId',
     );
+  }
+
+  // ضيف دي في MedicalHistoryWebService
+  Future<String> generateMedicalHistoryQr({
+    required String patientId,
+    required int medicalHistoryId,
+  }) async {
+    // الـ API حسب التوثيق اللي بعته
+    final response = await _apiService.post(
+      "/api/ShareMediHistoryQrCode/generate-qr",
+      {
+        "PatientId": int.parse(
+          patientId,
+        ), // تأكد لو الباك بيقبلها int ولا String
+        "MedicalHistoryId": medicalHistoryId,
+      },
+    );
+
+    // الـ Response بيرجع json فيه token و qrCodeBase64
+    if (response['qrCodeBase64'] != null) {
+      return response['qrCodeBase64'];
+    } else {
+      throw Exception("Failed to generate QR Code");
+    }
   }
 }

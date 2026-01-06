@@ -1,12 +1,15 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:graduation_project/core/database/local_database_service.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/features/auth/data/models/auth_token_model.dart';
 
 import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
 import 'package:graduation_project/features/auth/data/services/auth_web_service.dart';
+import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:meta/meta.dart';
@@ -82,76 +85,6 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // Future<void> login({
-  //   required String email,
-  //   required String password,
-  //   String? otpCode,
-  // }) async {
-  //   emit(LoginLoading());
-
-  //   final result = await _authRepository.login(
-  //     email: email,
-  //     password: password,
-  //     otpCode: otpCode,
-  //   );
-
-  //   result.fold((failure) => emit(LoginFailure(errMessage: failure.errmessage)), (
-  //     response,
-  //   ) async {
-  //     if (response is Map<String, dynamic>) {
-  //       emit(
-  //         LoginOtpRequired(
-  //           message: response["message"],
-  //           mfaToken: response["mfaToken"],
-  //         ),
-  //       );
-  //       print("MFA TOKEN IN CUBIT: ${response["mfaToken"]}");
-  //     } else if (response is AuthTokenModel) {
-  //       try {
-  //         await SecureStorageHelper.saveTokens(
-  //           accessToken: response.accessToken,
-  //           refreshToken: response.refreshToken,
-  //         );
-  //         Map<String, dynamic> payload = JwtDecoder.decode(
-  //           response.accessToken,
-  //         );
-  //         final role = (payload['Role'] ?? '').toString().toLowerCase();
-  //         final userId = (payload['UserID'] ?? '').toString();
-  //         final jti = (payload['jti'] ?? '').toString();
-  //         final name = (payload['Name'] ?? '').toString();
-  //         final emailFromToken = (payload['Email'] ?? '').toString();
-
-  //         await SecureStorageHelper.saveFullUserData(
-  //           role: role,
-  //           userId: userId,
-  //           jti: jti,
-  //           name: name,
-  //           email: emailFromToken,
-  //         );
-
-  //         final deviceId = await _getDeviceToken();
-  //         if (deviceId != null) {
-  //           try {
-  //             // هنا لازم نعمل AccessToken جديد في الـ Services عشان نقدر نبعت الريكويست ده
-  //             // أو نعتمد على الانترسبتور (وده الأصح)
-  //             await getIt<AuthWebServices>().registerDevice(deviceId);
-  //             print("✅ Device Registered Successfully");
-  //           } catch (e) {
-  //             print("⚠️ Failed to register device: $e");
-  //             // مش هنوقف اللوجن عشان دي خطوة إضافية
-  //           }
-  //         }
-
-  //         emit(LoginSuccess(uid: userId, email: email, role: role));
-  //       } catch (e) {
-  //         emit(LoginFailure(errMessage: 'Failed to save tokens: $e'));
-  //       }
-  //     } else {
-  //       emit(LoginFailure(errMessage: 'Unknown response type from repository'));
-  //     }
-  //   });
-  // }
-
   Future<void> login({
     required String email,
     required String password,
@@ -195,10 +128,41 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
+  // Future<void> logout() async {
+  //   emit(LogoutLoading());
+  //   try {
+  //     // 1. إلغاء تسجيل الجهاز (قبل مسح التوكن)
+  //     final deviceId = await SecureStorageHelper.getDeviceId();
+  //     if (deviceId != null) {
+  //       try {
+  //         await getIt<AuthWebServices>().unregisterDevice(deviceId);
+  //       } catch (_) {}
+  //     }
+
+  //     // 2. مناداة الـ API Logout (الريبو هيجيب الـ jti من الستورج)
+  //     await _authRepository.logout();
+
+  //     // 3. جوجل
+  //     if (await _googleSignIn.isSignedIn()) {
+  //       await _googleSignIn.signOut();
+  //     }
+  //   } catch (e) {
+  //     print("Logout Error: $e");
+  //   } finally {
+  //     // 4. مسح كل حاجة
+  //     await SecureStorageHelper.clearAll();
+
+  //     // تصفير إعدادات البصمة
+  //     // await Hive.box('settings').put('biometric_enabled', false);
+
+  //     emit(LogoutSuccess());
+  //   }
+  // }
+
   Future<void> logout() async {
     emit(LogoutLoading());
     try {
-      // 1. إلغاء تسجيل الجهاز (قبل مسح التوكن)
+      // 1. إلغاء تسجيل الجهاز من السيرفر (Push Notifications)
       final deviceId = await SecureStorageHelper.getDeviceId();
       if (deviceId != null) {
         try {
@@ -206,21 +170,28 @@ class AuthCubit extends Cubit<AuthState> {
         } catch (_) {}
       }
 
-      // 2. مناداة الـ API Logout (الريبو هيجيب الـ jti من الستورج)
+      // 2. مناداة الـ API Logout لتعطيل الـ Session على السيرفر
       await _authRepository.logout();
 
-      // 3. جوجل
+      // 3. تسجيل الخروج من جوجل إذا كان مستخدماً
       if (await _googleSignIn.isSignedIn()) {
         await _googleSignIn.signOut();
       }
+
+      // ✅ 4. تنظيف البيانات المحلية المرتبطة بالريمندر
+      // مسح جدول الـ Occurrences من الـ SQLite [cite: 199, 201]
+      await LocalDatabaseService.instance.clearAllData();
+
+      // إلغاء كافة المنبهات المجدولة في نظام التشغيل لمنع رنينها بعد الخروج
+      await AwesomeNotifications().cancelAll();
     } catch (e) {
       print("Logout Error: $e");
     } finally {
-      // 4. مسح كل حاجة
-      await SecureStorageHelper.clearTokens();
+      // 5. مسح بيانات الجلسة من الـ Secure Storage (Tokens, UserID, Role)
+      await SecureStorageHelper.clearAll();
 
-      // تصفير إعدادات البصمة
-      // await Hive.box('settings').put('biometric_enabled', false);
+      // 6. تصفير إعدادات Hive (البصمة، والـ Tutorial) لضمان خصوصية المريض القادم
+      await Hive.box('settings').clear();
 
       emit(LogoutSuccess());
     }

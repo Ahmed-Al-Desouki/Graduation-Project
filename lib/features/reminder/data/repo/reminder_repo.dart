@@ -11,8 +11,8 @@ abstract class ReminderRepository {
     required String patientId,
     required String type,
     required String title,
-    required DateTime startDate,    // ← بقى DateTime
-  required DateTime endDate,
+    required DateTime startDate, // ← بقى DateTime
+    required DateTime endDate,
     String? rrule,
     SimpleModel? simple,
     required String message,
@@ -43,6 +43,13 @@ abstract class ReminderRepository {
     required String patientId,
     required String reminderId,
   });
+
+  Future<Either<Failure, List<ReminderInstanceModel>>> getUpcomingReminders({
+    required String patientId,
+    int days = 14,
+  });
+
+  Future<Either<Failure, void>> syncOfflineActions();
 }
 
 // import '../services/reminder_web_service.dart';

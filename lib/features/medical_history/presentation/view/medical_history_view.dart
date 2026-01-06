@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/widgets/section_showcase_wrapper.dart';
 import 'package:graduation_project/core/widgets/tutorial_tooltip_widget.dart';
+import 'package:graduation_project/features/medical_history/presentation/manager/medical_qr/medicalqr_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/conditions_allergies_section.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/family_history_section.dart';
@@ -15,6 +18,7 @@ import 'package:graduation_project/features/medical_history/presentation/view/wi
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/social_history_section.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/surgeries_section.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:showcaseview/showcaseview.dart';
 // Imports
 import 'package:graduation_project/core/utils/app_images.dart';
@@ -100,10 +104,123 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
     }
   }
 
+  void _showQrDialog(BuildContext context) {
+    final medicalQrCubit = context.read<MedicalqrCubit>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return BlocProvider.value(
+          value: medicalQrCubit,
+          child: Builder(
+            builder: (context) {
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                contentPadding: const EdgeInsets.all(20),
+
+                // 🔥 الحل هنا: نغلف الـ Column بـ SizedBox ونديله عرض ثابت (أو عرض الشاشة)
+                content: SizedBox(
+                  width:
+                      MediaQuery.of(context).size.width *
+                      0.8, // 👈 إجبار العرض على 80% من الشاشة
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Share Medical History",
+                        style: AppStyles.styleBold20Dark,
+                      ),
+                      const SizedBox(height: 20),
+
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: BlocBuilder<MedicalqrCubit, MedicalqrState>(
+                            builder: (context, state) {
+                              if (state is MedicalQrLoading) {
+                                return const SizedBox(
+                                  height: 200,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              } else if (state is MedicalQrSuccess) {
+                                return Column(
+                                  mainAxisSize:
+                                      MainAxisSize.min, // 👈 مهمة برضه هنا
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: QrImageView(
+                                        data:
+                                            'https://healthcare-9dd79.web.app/share-history?token=${state.token}',
+                                        // data:
+                                        // 'http://localhost:64844/share-history?token=${state.token}',
+                                        version: QrVersions.auto,
+                                        size: 200.0,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 15),
+                                    const Text(
+                                      "Let the doctor scan this code.\nValid for 10 minutes.",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              } else if (state is MedicalQrFailure) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 20,
+                                  ),
+                                  child: Text(
+                                    state.errMessage,
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                );
+                              }
+                              return const SizedBox(height: 200);
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text("Close"),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<PatientProfileCubit>()..getProfile(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => getIt<PatientProfileCubit>()..getProfile(),
+        ),
+        BlocProvider(create: (context) => getIt<MedicalqrCubit>()),
+      ],
       child: ShowCaseWidget(
         autoPlay: false,
         enableAutoScroll: true,
@@ -296,6 +413,30 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
         onPressed: () => context.go(AppRouter.kHomePatient),
       ),
       actions: [
+        BlocBuilder<PatientProfileCubit, PatientProfileState>(
+          builder: (context, state) {
+            if (state is PatientProfileSuccess) {
+              return IconButton(
+                icon: const Icon(
+                  Icons.qr_code_2_rounded,
+                  color: Color(0xFF111827),
+                  size: 28,
+                ),
+                onPressed: () {
+                  // 1. اطلب توليد الكود
+                  context.read<MedicalqrCubit>().generateQrCode(
+                    state.profile.medicalHistoryID,
+                  );
+                  // 2. افتح الديالوج
+                  _showQrDialog(context);
+                },
+              );
+            }
+            return const SizedBox.shrink(); // لو لسه بيحمل منظهرش الزرار
+          },
+        ),
+
+        const SizedBox(width: 8), // مسافة صغيرة
         Showcase.withWidget(
           key: _drawerBtnKey,
           // هنا ممكن نثبت الحجم لأنه زرار صغير

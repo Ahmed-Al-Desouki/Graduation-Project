@@ -76,6 +76,10 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
         }
         
         getByName("debug") {

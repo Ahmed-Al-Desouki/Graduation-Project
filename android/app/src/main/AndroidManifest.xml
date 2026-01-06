@@ -2,7 +2,12 @@
 <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 <uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+<uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <application
         android:label="graduation_project"
         android:name="${applicationName}"
@@ -35,9 +40,17 @@
     <category android:name="android.intent.category.BROWSABLE" />
     <data
         android:scheme="https"
-        android:host="nonvolitional-unstuccoed-wilfred.ngrok-free.dev"
+        android:host="medicare-plus.runasp.net"
         android:pathPrefix="/reset-password" />
             </intent-filter>
+            <intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    
+    <data android:scheme="https" android:host="healthcare-9dd79.web.app" />
+    <data android:pathPrefix="/share-history" />
+</intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

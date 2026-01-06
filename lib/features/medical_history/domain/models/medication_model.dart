@@ -1,53 +1,3 @@
-// class MedicationModel {
-//   final int? currentMedicationID;
-//   final int historyID;
-//   final String medicationName;
-//   final String dosage;
-//   final String doseInstruction;
-//   final String? startDate;
-//   final String? endDate;
-//   final String? notes;
-
-//   MedicationModel({
-//     this.currentMedicationID,
-//     required this.historyID,
-//     required this.medicationName,
-//     required this.dosage,
-//     required this.doseInstruction,
-//     this.startDate,
-//     this.endDate,
-//     this.notes,
-//   });
-
-//   factory MedicationModel.fromJson(Map<String, dynamic> json) {
-//     return MedicationModel(
-//       currentMedicationID: json['currentMedicationID'],
-//       historyID: json['historyID'] ?? 0,
-//       medicationName: json['medicationName'] ?? '',
-//       dosage: json['dosage'] ?? '',
-//       doseInstruction:
-//           json['doseinstruction'] ?? '', // لاحظ الـ spelling من الباك
-//       startDate: json['startDate'],
-//       endDate: json['endDate'],
-//       notes: json['notes'],
-//     );
-//   }
-
-//   Map<String, dynamic> toJson() {
-//     return {
-//       if (currentMedicationID != null)
-//         'currentMedicationID': currentMedicationID,
-//       'historyID': historyID,
-//       'medicationName': medicationName,
-//       'dosage': dosage,
-//       'doseinstruction': doseInstruction,
-//       'startDate': startDate,
-//       'endDate': endDate,
-//       'notes': notes,
-//     };
-//   }
-// }
-
 class MedicationModel {
   final int? currentMedicationID;
   final int historyID;
@@ -88,22 +38,6 @@ class MedicationModel {
     );
   }
 
-  // Map<String, dynamic> toJson() {
-  //   return {
-  //     if (currentMedicationID != null)
-  //       'currentMedicationID': currentMedicationID,
-  //     'historyID': historyID,
-  //     'medicationName': medicationName,
-  //     'dosage': dosage,
-  //     'doseinstruction': doseInstruction,
-  //     'startDate': startDate,
-  //     'endDate': endDate,
-  //     'notes': notes,
-  //   };
-  // }
-
-  // features/medical_history/domain/models/medication_model.dart
-
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
       'historyID': historyID,
@@ -120,11 +54,6 @@ class MedicationModel {
 
     // ✅ التعديل الجوهري هنا:
     if (currentMedicationID != null) {
-      // لو الدوا ده self medication، لازم نبعت المفتاح selfMedicationID
-      // لو هو دوا دكتور، غالباً مش بنعدله (أو بنبعت currentMedicationID)
-      // بس بما إن الـ Upsert ده لـ Self Medications بس (حسب الدوكيمنتشن)
-      // يبقى لازم نبعت selfMedicationID
-
       data['selfMedicationID'] = currentMedicationID;
     }
 

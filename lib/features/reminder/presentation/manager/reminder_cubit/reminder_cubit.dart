@@ -1,221 +1,6 @@
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:graduation_project/features/auth/data/repo/reminder_repo.dart';
-// import 'package:graduation_project/features/auth/presentation/manger/reminder_cubit/reminder_state.dart';
-// import 'reminder_states.dart';
-
-// class ReminderCubit extends Cubit<ReminderState> {
-//   final ReminderRepository _repo;
-
-//   ReminderCubit(this._repo) : super(ReminderInitial());
-
-//   Future<void> createReminder(
-//     String patientId, {
-//     required String type,
-//     required String name,
-//     required String startDate,
-//     required String endDate,
-//     required String frequency,
-//     required String intervalHours,
-//     required String baseTime,
-//     required String message,
-//   }) async {
-//     emit(ReminderLoading());
-
-//     final result = await _repo.createReminder(
-//       patientId,
-//       type: type,
-//       name: name,
-//       startDate: startDate,
-//       endDate: endDate,
-//       frequency: frequency,
-//       intervalHours: intervalHours,
-//       baseTime: baseTime,
-//       message: message,
-//     );
-
-//     result.fold(
-//       (failure) => emit(ReminderError(failure.message)),
-//       (reminder) => emit(ReminderCreated(reminder)),
-//     );
-//   }
-
-//   Future<void> getUpcomingReminders(String patientId) async {
-//     emit(ReminderLoading());
-
-//     final res = await _repo.getUpcomingReminders(patientId);
-
-//     res.fold(
-//       (failure) => emit(ReminderError(failure.message)),
-//       (instance) => emit(UpcomingRemindersLoaded(instance)),
-//     );
-//   }
-
-//   Future<void> updateReminder(
-//     String patientId,
-//     String reminderId, {
-//     required String name,
-//     required String startDate,
-//     required String endDate,
-//     required String frequency,
-//     required String intervalHours,
-//     required String baseTime,
-//     required String message,
-//   }) async {
-//     emit(ReminderLoading());
-
-//     final res = await _repo.updateReminder(
-//       patientId,
-//       reminderId,
-//       name: name,
-//       startDate: startDate,
-//       endDate: endDate,
-//       frequency: frequency,
-//       intervalHours: intervalHours,
-//       baseTime: baseTime,
-//       message: message,
-//     );
-
-//     res.fold(
-//       (failure) => emit(ReminderError(failure.message)),
-//       (reminder) => emit(ReminderUpdated(reminder)),
-//     );
-//   }
-// }
-// ---------------------------------------------------------------------
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:meta/meta.dart';
-// import '../../../data/repo/reminder_repo.dart';
-
-// part 'reminder_state.dart';
-
-// class ReminderCubit extends Cubit<ReminderState> {
-//   final ReminderRepository repo;
-
-//   ReminderCubit(this.repo) : super(ReminderInitial());
-
-//   Future<void> addReminder(String patientId, Map<String, dynamic> data) async {
-//     emit(ReminderLoading());
-
-//     final result = await repo.createReminder(patientId, data);
-
-//     result.fold(
-//       (failure) => emit(ReminderFailure(failure.errmessage)),
-//       (_) => loadUpcoming(patientId),
-//     );
-//   }
-
-//   Future<void> loadUpcoming(String patientId) async {
-//     emit(ReminderLoading());
-
-//     final result = await repo.getUpcoming(patientId);
-
-//     result.fold(
-//       (failure) => emit(ReminderFailure(failure.errmessage)),
-//       (reminders) => emit(ReminderLoaded(reminders)),
-//     );
-//   }
-// }
-// lib/features/auth/presentation/manger/reminder_cubit/reminder_cubit.dart
-// ----------------------------------------------------------------
-// import 'package:bloc/bloc.dart';
-// import 'package:equatable/equatable.dart';
-// import 'package:dartz/dartz.dart';
-
-// import 'package:graduation_project/core/errors/failures.dart';
-// import 'package:graduation_project/features/auth/data/models/reminder_model.dart';
-// import 'package:graduation_project/features/auth/data/models/reminder_instance_model.dart';
-// import 'package:graduation_project/features/auth/data/repo/reminder_repo.dart';
-
-// part 'reminder_state.dart';
-
-// class ReminderCubit extends Cubit<ReminderState> {
-//   final ReminderRepository _repository;
-
-//   ReminderCubit(this._repository) : super(ReminderInitial());
-
-//   /// Create a new reminder on server
-//   Future<void> createReminder({
-//     required String patientId,
-//     required String type,
-//     required String name,
-//     required String startDate, // ISO string expected by backend
-//     required String endDate,
-//     required String frequency,
-//     required String intervalHours, // pass string if repo expects string
-//     required String baseTime, // e.g. "08:00:00"
-//     required String message,
-//   }) async {
-//     emit(ReminderLoading());
-
-//     final Either<Failure, ReminderModel> result = await _repository.createReminder(
-//       patientId: patientId,
-//       type: type,
-//       name: name,
-//       startDate: startDate,
-//       endDate: endDate,
-//       frequency: frequency,
-//       intervalHours: intervalHours,
-//       baseTime: baseTime,
-//       message: message,
-//     );
-
-//     result.fold(
-//       (failure) => emit(ReminderError(failure.errmessage)),
-//       (reminder) => emit(ReminderCreated(reminder)),
-//     );
-//   }
-
-//   /// Fetch upcoming reminder instances for a patient (hours parameter optional / repo-dependent)
-//   Future<void> getUpcomingReminders({
-//     required String patientId,
-//     int hours = 24,
-//   }) async {
-//     emit(ReminderLoading());
-
-//     final Either<Failure, ReminderInstanceModel> result =
-//         await _repository.getUpcomingReminders(patientId: patientId, hours: hours);
-
-//     result.fold(
-//       (failure) => emit(ReminderError(failure.errmessage)),
-//       (instance) => emit(UpcomingRemindersLoaded(instance)),
-//     );
-//   }
-
-//   /// Update an existing reminder
-//   Future<void> updateReminder({
-//     required String patientId,
-//     required String reminderId,
-//     required String name,
-//     required String startDate,
-//     required String endDate,
-//     required String frequency,
-//     required String intervalHours,
-//     required String baseTime,
-//     required String message,
-//   }) async {
-//     emit(ReminderLoading());
-
-//     final Either<Failure, ReminderModel> result = await _repository.updateReminder(
-//       patientId: patientId,
-//       reminderId: reminderId,
-//       name: name,
-//       startDate: startDate,
-//       endDate: endDate,
-//       frequency: frequency,
-//       intervalHours: intervalHours,
-//       baseTime: baseTime,
-//       message: message,
-//     );
-
-//     result.fold(
-//       (failure) => emit(ReminderError(failure.errmessage)),
-//       (reminder) => emit(ReminderUpdated(reminder)),
-//     );
-//   }
-// }
-// -----------------------------------------------------
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
+import 'package:graduation_project/features/reminder/data/models/reminder_instance_model.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
 import 'package:graduation_project/features/reminder/data/repo/reminder_repo.dart';
 import 'reminder_state.dart';
@@ -229,8 +14,8 @@ class ReminderCubit extends Cubit<ReminderState> {
     required String patientId,
     required String type,
     required String title,
-    required DateTime startDate,    // ← بقى DateTime
-  required DateTime endDate,
+    required DateTime startDate, // ← بقى DateTime
+    required DateTime endDate,
     required String? rrule,
     required SimpleModel? simple,
     required String message,
@@ -250,76 +35,75 @@ class ReminderCubit extends Cubit<ReminderState> {
 
     result.fold(
       (failure) {
-    // طبّع الإيرور في الكونسول عشان نشوف إيه اللي بيحصل بالظبط
-    print("CREATE REMINDER FAILED: ${failure.errmessage}");
-    emit(ReminderCreateFailure(errMessage: failure.errmessage));
-  },
-      // (reminder) => emit(ReminderCreateSuccess(reminder: reminder)),
-      (reminder) {
-    // حتى لو الـ reminder ناقص بيانات، خلينا نعتبره ناجح
-    emit(ReminderCreateSuccess(reminder: reminder));
-    // نعيد تحميل التذكيرات اليومية عشان تظهر فورًا
-    getTodayReminders(patientId: patientId);
-  },
+        // طبّع الإيرور في الكونسول عشان نشوف إيه اللي بيحصل بالظبط
+        print("CREATE REMINDER FAILED: ${failure.errmessage}");
+        emit(ReminderCreateFailure(errMessage: failure.errmessage));
+      },
+      (reminder) async {
+        // حتى لو الـ reminder ناقص بيانات، خلينا نعتبره ناجح
+        emit(ReminderCreateSuccess(reminder: reminder));
+        // نعيد تحميل التذكيرات اليومية عشان تظهر فورًا
+        // getTodayReminders(patientId: patientId);
+        // نطلب المزامنة فوراً (ده هيجيب الداتا ويجدول المنبه ويعرضه)
+        await getUpcomingReminders(patientId: patientId);
+      },
     );
   }
 
-  // Future<void> getUpcomingReminders({
-  //   required String patientId,
-  //   required int hours,
-  // }) async {
+  // Future<void> getTodayReminders({required String patientId}) async {
+  //   if (isClosed) return;
   //   emit(ReminderLoading());
 
-  //   final result = await repo.getUpcomingReminders(
-  //     patientId: patientId,
-  //     hours: hours,
-  //   );
+  //   // 1. اسحب الداتا من الـ SQLite
+  //   final result = await repo.getTodayReminders(patientId: patientId);
+
+  //   if (isClosed) return;
 
   //   result.fold(
-  //     (failure) => emit(UpcomingRemindersFailure(errMessage: failure.errmessage)),
+  //     (failure) =>
+  //         emit(UpcomingRemindersFailure(errMessage: failure.errmessage)),
   //     (allReminders) {
-  //       final meds = allReminders
-  //           .where((element) => element.type == 'Medication')
-  //           .toList();
-  //       final appts = allReminders
-  //           .where((element) => element.type == 'Appointment')
-  //           .toList();
-
-  //       emit(UpcomingRemindersSuccess(
-  //         medications: meds,
-  //         appointments: appts,
-  //       ));
+  //       // ✅ الصح: نادي _emitSuccess دايماً حتى لو القائمة فاضية []
+  //       // الـ UI هيستلم قائمة فاضية ويوقف الـ Loading ويعرض "No Reminders"
+  //       _emitSuccess(allReminders);
   //     },
   //   );
   // }
 
-  Future<void> getTodayReminders({
-    required String patientId,
-  }) async {
-  emit(ReminderLoading());
+  // دالة جلب اليوم (قراءة + تحديث خلفي)
+  Future<void> getTodayReminders({required String patientId}) async {
+    if (isClosed) return;
+    emit(ReminderLoading());
 
-  final result = await repo.getTodayReminders(patientId: patientId);
+    // 1. اعرض اللوكال فوراً (عشان المستخدم ميحسش ببطء)
+    final localData = await repo.getTodayReminders(patientId: patientId);
+    localData.fold((failure) {
+      /* لا تفعل شيء، انتظر السيرفر */
+    }, (allReminders) => _emitSuccess(allReminders));
 
-  result.fold(
-    (failure) => emit(UpcomingRemindersFailure(errMessage: failure.errmessage)),
-    (allReminders) {
-      final meds = allReminders
-            .where((element) => element.type == 'Medication')
+    // 2. دلوقتي روح هات التحديثات من السيرفر (في الخلفية)
+    // الدالة دي هي اللي هتحدث الـ SQLite وتجدول المنبهات
+    await getUpcomingReminders(patientId: patientId);
+  }
+
+  // دالة مساعدة عشان م نكررش الكود
+  void _emitSuccess(List<ReminderInstanceModel> allReminders) {
+    if (isClosed) return;
+    final meds = allReminders.where((e) => e.type == 'Medication').toList();
+    final appts = allReminders.where((e) => e.type == 'Appointment').toList();
+    final customs =
+        allReminders
+            .where((e) => e.type != 'Medication' && e.type != 'Appointment')
             .toList();
-      final appts = allReminders
-            .where((element) => element.type == 'Appointment')
-            .toList();
-      final customs = allReminders
-            .where((element) => element.type != 'Medication' && element.type != 'Appointment')
-            .toList();
-      emit(UpcomingRemindersSuccess(
+
+    emit(
+      UpcomingRemindersSuccess(
         medications: meds,
         appointments: appts,
         customs: customs,
-      ));
-    },
-  );
-}
+      ),
+    );
+  }
 
   Future<void> updateReminder({
     required String patientId,
@@ -352,9 +136,7 @@ class ReminderCubit extends Cubit<ReminderState> {
     );
   }
 
-  Future<void> deleteReminder({
-    required String reminderId,
-  }) async {
+  Future<void> deleteReminder({required String reminderId}) async {
     final patientId = await SecureStorageHelper.getUserId();
     if (patientId == null || patientId.isEmpty) {
       emit(ReminderDeleteFailure(errMessage: "User ID is missing or invalid."));
@@ -362,7 +144,7 @@ class ReminderCubit extends Cubit<ReminderState> {
     }
 
     emit(ReminderDeleteLoading());
-    
+
     final result = await repo.deleteReminder(
       patientId: patientId,
       reminderId: reminderId,
@@ -370,11 +152,62 @@ class ReminderCubit extends Cubit<ReminderState> {
 
     result.fold(
       (failure) => emit(ReminderDeleteFailure(errMessage: failure.errmessage)),
-      (_) => emit(
-        ReminderDeleteSuccess(
-          message: 'Reminder deleted successfully',
-        ),
-      ),
+      (_) =>
+          emit(ReminderDeleteSuccess(message: 'Reminder deleted successfully')),
+    );
+  }
+
+  // داخل reminder_cubit.dart
+
+  Future<void> getUpcomingReminders({required String patientId}) async {
+    // لا نحتاج لعمل emit لـ Loading هنا لأن العملية تحدث في الخلفية عند فتح الهوم
+    final result = await repo.getUpcomingReminders(
+      patientId: patientId,
+      days: 14,
+    );
+
+    result.fold(
+      (failure) =>
+          print("❌ Failed to sync upcoming reminders: ${failure.errmessage}"),
+      (instances) async {
+        // print("✅ Successfully synced ${instances.length} occurrences");
+        // getTodayReminders(patientId: patientId);
+        print("✅ Synced ${instances.length} reminders");
+
+        // 3. بعد ما السيرفر حدث الـ SQLite، اقرأ منها تاني وحدث الـ UI
+        final updatedData = await repo.getTodayReminders(patientId: patientId);
+        updatedData.fold(
+          (failure) => null, // خلاص عرضنا القديم
+          (allReminders) => _emitSuccess(allReminders), // اعرض الجديد
+        );
+      },
+    );
+  }
+
+  // Future<void> syncOfflineActions() async {
+  //   // لا نحتاج لإصدار حالات Loading لأن المزامنة تتم في الخلفية
+  //   try {
+  //     // استدعاء دالة المزامنة من الـ Repository
+  //     await repo.syncOfflineActions();
+  //     print("✅ Offline actions synced successfully.");
+  //   } catch (e) {
+  //     print("❌ Sync error: $e");
+  //   }
+  // }
+
+  Future<void> syncOfflineActions() async {
+    // بننادي الريبو ونشوف النتيجة
+    final result = await repo.syncOfflineActions();
+
+    result.fold(
+      (failure) {
+        // هيطبع الفشل لو النت فاصل
+        print("⚠️ Offline sync failed: ${failure.errmessage}");
+      },
+      (_) {
+        // هيطبع النجاح فقط لو الداتا اترفعت فعلاً أو القائمة كانت فاضية
+        print("✅ Offline actions processed successfully.");
+      },
     );
   }
 }

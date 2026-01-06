@@ -1,9 +1,12 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:graduation_project/core/database/local_database_service.dart';
 import 'package:graduation_project/core/errors/failures.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/features/auth/data/models/auth_token_model.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
+import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/auth_web_service.dart';
 
@@ -213,22 +216,45 @@ class AuthRepositoryimpl implements AuthRepository {
     }
   }
 
+  // Future<Either<Failure, void>> logout() async {
+  //   try {
+  //     // ✅ جلب البيانات المخزنة مباشرة (بدون فك تشفير)
+  //     final userIdString = await SecureStorageHelper.getUserId();
+  //     final jti = await SecureStorageHelper.getJti();
+
+  //     final userId = int.tryParse(userIdString ?? "0") ?? 0;
+
+  //     if (jti != null && userId != 0) {
+  //       // مناداة السيرفيس
+  //       await _authService.logout(userId: userId, jti: jti);
+  //     }
+
+  //     return const Right(null);
+  //   } catch (e) {
+  //     return const Right(null);
+  //   }
+  // }
+
+  @override
   Future<Either<Failure, void>> logout() async {
     try {
-      // ✅ جلب البيانات المخزنة مباشرة (بدون فك تشفير)
-      final userIdString = await SecureStorageHelper.getUserId();
-      final jti = await SecureStorageHelper.getJti();
+      // 1. مسح التوكنات وبيانات المستخدم من الـ Secure Storage
+      await SecureStorageHelper.clearAll();
+      // await SecureStorageHelper.clearUserData(); // مسح الـ Role والـ UserId
 
-      final userId = int.tryParse(userIdString ?? "0") ?? 0;
+      // 2. مسح قاعدة البيانات المحلية (الريمندرات المخزنة لـ 60 يوم)
+      await LocalDatabaseService.instance.clearAllData();
 
-      if (jti != null && userId != 0) {
-        // مناداة السيرفيس
-        await _authService.logout(userId: userId, jti: jti);
-      }
+      // 3. مسح إعدادات المستخدم من Hive (مثل تفعيل البصمة)
+      var settingsBox = Hive.box('settings');
+      await settingsBox.clear();
+
+      // 4. إلغاء كل الإشعارات المجدولة في نظام التشغيل
+      await AwesomeNotifications().cancelAll();
 
       return const Right(null);
     } catch (e) {
-      return const Right(null);
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

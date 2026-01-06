@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/errors/failures.dart';
-import 'package:graduation_project/features/medical_history/data/repository/patient_repo.dart';
+import 'package:graduation_project/features/medical_history/data/repository/patient_repo/patient_repo.dart';
 import 'package:graduation_project/features/medical_history/data/service/patient_web_service.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medication_model.dart';
@@ -181,6 +181,10 @@ class PatientRepositoryImpl implements PatientRepository {
       );
       final data = response['data'] ?? response;
       return Right(SocialHistoryModel.fromJson(data));
+    } on DioException catch (e) {
+      // هذه الأسطر ستخبرك بالضبط ما هو الحقل المرفوض ولماذا
+      print("❌ Server Validation Error: ${e.response?.data}");
+      return Left(ServerFailure.fromDioException(e));
     } catch (e) {
       if (e is DioException) return Left(ServerFailure.fromDioException(e));
       return Left(ServerFailure(e.toString()));

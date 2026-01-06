@@ -1,4 +1,6 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart'; // ✅ تأكد من وجوده
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
@@ -8,6 +10,7 @@ import 'package:graduation_project/features/auth/presentation/views/widgets/next
 import 'package:graduation_project/features/auth/presentation/views/widgets/patient_home_header.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/patient_quick_action_card.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/upcoming_appointments.dart';
+import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:showcaseview/showcaseview.dart';
 
@@ -24,6 +27,28 @@ class _PatientHomeViewState extends State<PatientHomeView> {
   final GlobalKey _historyKey = GlobalKey();
 
   final int totalSteps = 4;
+
+  @override
+  void initState() {
+    super.initState();
+    AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+      if (!isAllowed) {
+        // يظهر رسالة للمريض يطلب منه تفعيل الإشعارات
+        AwesomeNotifications().requestPermissionToSendNotifications();
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final patientId =
+          await SecureStorageHelper.getUserId(); // إضافة await هنا
+      if (patientId != null && mounted) {
+        context.read<ReminderCubit>().getUpcomingReminders(
+          patientId: patientId,
+        );
+        // ولا تنسى تشغيل الـ Sync للأكشنز القديمة أيضاً
+        context.read<ReminderCubit>().syncOfflineActions();
+      }
+    });
+  }
 
   void _checkAndStartShowcase(BuildContext localContext) async {
     String? userId = await SecureStorageHelper.getUserId();

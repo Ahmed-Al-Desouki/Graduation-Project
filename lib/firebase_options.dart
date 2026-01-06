@@ -17,19 +17,13 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -59,4 +53,25 @@ class DefaultFirebaseOptions {
     projectId: 'healthcare-9dd79',
     storageBucket: 'healthcare-9dd79.firebasestorage.app',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBM2X2YE9gUhGzfafD3VJmhJDDfQHZcAec',
+    appId: '1:68726068226:web:4efa6a2399b4674584431b',
+    messagingSenderId: '68726068226',
+    projectId: 'healthcare-9dd79',
+    authDomain: 'healthcare-9dd79.firebaseapp.com',
+    storageBucket: 'healthcare-9dd79.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyAwWCmLEPsN2iKxkDqE1Os09R0qK6doQwk',
+    appId: '1:68726068226:ios:6aca95087fa2166184431b',
+    messagingSenderId: '68726068226',
+    projectId: 'healthcare-9dd79',
+    storageBucket: 'healthcare-9dd79.firebasestorage.app',
+    androidClientId: '68726068226-2ngco7ptaaf3lfftb3pdc0kll80jtoo0.apps.googleusercontent.com',
+    iosClientId: '68726068226-1bc7ucl4plfob3pkd8rijg5aqn48jjf8.apps.googleusercontent.com',
+    iosBundleId: 'com.example.graduationProject',
+  );
+
 }

@@ -1,125 +1,3 @@
-// import 'package:dio/dio.dart';
-
-// class ApiService {
-//   final Dio _dio;
-//   // https://medicare-plus.runasp.net/api/
-//   ApiService({String? baseUrl})
-//     : _dio = Dio(
-//         BaseOptions(
-//           baseUrl:
-//               baseUrl ??
-//               'https://medicare-plus.runasp.net/api/',
-//           connectTimeout: const Duration(seconds: 15),
-//           receiveTimeout: const Duration(seconds: 15),
-//           headers: {'Content-Type': 'application/json'},
-//           // headers: {'Content-Type': 'multipart/form-data'},
-//         ),
-//       ) {
-//     _dio.interceptors.add(
-//       InterceptorsWrapper(
-//         onRequest: (options, handler) {
-//           print('➡️ [REQUEST] ${options.method} ${options.path}');
-//           print('Body: ${options.data}');
-
-//           return handler.next(options);
-//         },
-//         onResponse: (response, handler) {
-//           print('✅ [RESPONSE] ${response.statusCode}');
-//           return handler.next(response);
-//         },
-//         onError: (DioError e, handler) {
-//           print('❌ [ERROR] ${e.response?.statusCode} | ${e.message}');
-//           return handler.next(e);
-//         },
-//       ),
-//     );
-//   }
-
-//   // Future<dynamic> get(String endpoint, {String? token}) async {
-//   //   try {
-//   //     final response = await _dio.get(
-//   //       endpoint,
-//   //       options: Options(
-//   //         headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-//   //       ),
-//   //     );
-//   //     return response.data;
-//   //   } catch (e) {
-//   //     rethrow;
-//   //   }
-//   // }
-//   Future<dynamic> get(
-//     String endpoint, {
-//     String? bearerToken,
-//     String? refreshCookie,
-//   }) async {
-//     try {
-//       final Map<String, dynamic> headers = {};
-//       // print('Bearer Token: $bearerToken');
-//       // print('Refresh Cookie: $refreshCookie');
-//       if (bearerToken != null) {
-//         print('Bearer Token: $bearerToken');
-
-//         headers['Authorization'] = 'Bearer $bearerToken';
-//       }
-
-//       if (refreshCookie != null) {
-//         print('Refresh Cookie: $refreshCookie');
-
-//         headers['Cookie'] = 'refresh_token=$refreshCookie';
-//       }
-
-//       final response = await _dio.get(
-//         endpoint,
-//         options: Options(headers: headers),
-//       );
-
-//       return response.data;
-//     } catch (e) {
-//       rethrow;
-//     }
-//   }
-
-//   Future<dynamic> post(String endpoint, dynamic body, {String? token}) async {
-//     try {
-//       print('Sending data type: ${body.runtimeType}');
-//       if (body is FormData) {
-//         body.fields.forEach((e) => print('➡️ ${e.key}: ${e.value}'));
-//       }
-
-//       final response = await _dio.post(
-//         endpoint,
-//         data: body,
-//         options: Options(
-//           headers: {
-//             if (token != null) 'Authorization': 'Bearer $token',
-//             'Content-Type':
-//                 body is FormData ? 'multipart/form-data' : 'application/json',
-//           },
-//         ),
-//       );
-//       return response.data;
-//     } catch (e) {
-//       rethrow;
-//     }
-//   }
-
-//   Future<dynamic> put(String endpoint, dynamic body, {String? token}) async {
-//     try {
-//       final response = await _dio.put(
-//         endpoint,
-//         data: body,
-//         options: Options(
-//           headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-//         ),
-//       );
-//       return response.data;
-//     } catch (e) {
-//       rethrow;
-//     }
-//   }
-// }
-
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
@@ -144,12 +22,21 @@ class ApiService {
       QueuedInterceptorsWrapper(
         // 1. وانت باعت الريكويست: ضيف التوكن أوتوماتيك
         onRequest: (options, handler) async {
+          if (options.path.contains(
+            'ShareMediHistoryQrCode/share-medical-history',
+          )) {
+            print('ℹ️ Skipping Auth Token for Shared Profile request');
+            return handler.next(
+              options,
+            ); // انتقل للخطوة التالية بدون إضافة التوكن
+          }
           final token = await SecureStorageHelper.getAccessToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
           print('➡️ [REQUEST] ${options.method} ${options.path}');
+          print('➡️ [FULL URL]: ${options.uri}');
           return handler.next(options);
         },
 
@@ -236,7 +123,7 @@ class ApiService {
     DioException e,
   ) async {
     print("⛔ Session Expired. Logging out...");
-    await SecureStorageHelper.clearTokens();
+    await SecureStorageHelper.clearAll();
 
     // توجيه المستخدم لصفحة الدخول
     AppRouter.router.go(AppRouter.kLogin);

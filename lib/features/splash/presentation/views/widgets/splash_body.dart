@@ -1,3 +1,4 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -35,6 +36,22 @@ class _SplashBodyState extends State<SplashBody>
   @override
   void initState() {
     super.initState();
+    AwesomeNotifications().isNotificationAllowed().then((isAllowed) async {
+      if (!isAllowed) {
+        await AwesomeNotifications().requestPermissionToSendNotifications();
+      }
+      List<NotificationPermission> allowedPermissions =
+          await AwesomeNotifications().checkPermissionList(
+            channelKey: 'medication_channel',
+            permissions: [
+              NotificationPermission.PreciseAlarms,
+              NotificationPermission.Alert,
+            ],
+          );
+      if (!allowedPermissions.contains(NotificationPermission.PreciseAlarms)) {
+        await AwesomeNotifications().showAlarmPage();
+      }
+    });
     _controller = AnimationController(
       duration: const Duration(milliseconds: totalDurationMs),
       vsync: this,
@@ -164,9 +181,7 @@ class _SplashBodyState extends State<SplashBody>
                   fit: BoxFit.contain,
                 ),
               ),
-              SizedBox(
-                height: 0.05.sh,
-              ),
+              SizedBox(height: 0.05.sh),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
