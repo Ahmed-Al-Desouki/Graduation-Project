@@ -99,7 +99,6 @@ import 'package:meta/meta.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_instance_model.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
 
-// 🔴 تم إزالة extends Equatable
 @immutable
 sealed class ReminderState {}
 
@@ -146,9 +145,25 @@ final class UpcomingRemindersFailure extends ReminderState {
   UpcomingRemindersFailure({required this.errMessage});
 }
 
+// final class AllRemindersSuccess extends ReminderState {
+//   final List<ReminderModel> reminders;
+//   AllRemindersSuccess({required this.reminders});
+// }
 
-// 🚀 الحالات الجديدة للحذف (Delete)
-// ---------------------------------
+// final class AllRemindersFailure extends ReminderState {
+//   final String errMessage;
+//   AllRemindersFailure({required this.errMessage});
+// }
+
+final class GetAllRemindersLoading extends ReminderState {}
+final class GetAllRemindersSuccess extends ReminderState {
+  final List<ReminderModel> reminders;
+  GetAllRemindersSuccess({required this.reminders});
+}
+final class GetAllRemindersFailure extends ReminderState {
+  final String errMessage;
+  GetAllRemindersFailure({required this.errMessage});
+}
 
 final class ReminderDeleteLoading extends ReminderState {}
 

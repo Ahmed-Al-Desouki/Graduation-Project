@@ -44,7 +44,7 @@ class ReminderModel {
   final String status;
   final int? prescriptionMedID;
   final String? dosage;
-  final String? reminderID;
+  final String? reminderId;
   final String? rrule;
   final SimpleModel? simple;
   final String timeZoneId;
@@ -60,7 +60,7 @@ class ReminderModel {
     this.status = "Pending",
     this.prescriptionMedID,
     this.dosage,
-    this.reminderID,
+    this.reminderId,
     this.rrule,
     this.simple,
     this.timeZoneId = "Africa/Cairo",
@@ -84,10 +84,11 @@ class ReminderModel {
 
   factory ReminderModel.fromJson(Map<String, dynamic> json) {
     return ReminderModel(
+      reminderId: json['id']?.toString() ?? json['reminderId']?.toString() ?? json['reminderID']?.toString(),
       patientID:
-          json['patientID'] is String
-              ? int.parse(json['patientID'])
-              : (json['patientID'] ?? 0),
+          json['patientId'] is String
+              ? int.parse(json['patientId'])
+              : (json['patientId'] ?? 0),
       type: json['type'] ?? '',
       title: json['title'] ?? '',
       startDate: DateTime.tryParse(json['startDate'] ?? '') ?? DateTime.now(),

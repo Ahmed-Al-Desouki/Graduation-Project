@@ -292,6 +292,16 @@ class ReminderCubit extends Cubit<ReminderState> {
   //     },
   //   );
   // }
+  Future<void> getAllReminders({required String patientId}) async {
+  emit(GetAllRemindersLoading());
+
+  final result = await repo.getAllReminders(patientId: patientId);
+
+  result.fold(
+    (failure) => emit(GetAllRemindersFailure(errMessage: failure.errmessage)),
+    (reminders) => emit(GetAllRemindersSuccess(reminders: reminders)),
+  );
+}
 
   Future<void> getTodayReminders({
     required String patientId,
@@ -321,29 +331,61 @@ class ReminderCubit extends Cubit<ReminderState> {
   );
 }
 
+  // Future<void> updateReminder({
+  //   required String patientId,
+  //   required String reminderId,
+  //   required String name,
+  //   required String startDate,
+  //   required String endDate,
+  //   required String frequency,
+  //   required String intervalHours,
+  //   required String baseTime,
+  //   required String message,
+  // }) async {
+  //   emit(ReminderLoading());
+
+  //   final result = await repo.updateReminder(
+  //     patientId: patientId,
+  //     reminderId: reminderId,
+  //     name: name,
+  //     startDate: startDate,
+  //     endDate: endDate,
+  //     frequency: frequency,
+  //     intervalHours: intervalHours,
+  //     baseTime: baseTime,
+  //     message: message,
+  //   );
+
+  //   result.fold(
+  //     (failure) => emit(ReminderUpdateFailure(errMessage: failure.errmessage)),
+  //     (reminder) => emit(ReminderUpdateSuccess(reminder: reminder)),
+  //   );
+  // }
+
+  // --- Update Reminder (المحدثة) ---
   Future<void> updateReminder({
     required String patientId,
     required String reminderId,
-    required String name,
-    required String startDate,
-    required String endDate,
-    required String frequency,
-    required String intervalHours,
-    required String baseTime,
+    required String title,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? rrule,
+    SimpleModel? simple,
     required String message,
+    required bool isEveryXHours, // للتمييز وإرسالها للريبو
   }) async {
-    emit(ReminderLoading());
+    emit(ReminderLoading()); // أو ReminderUpdateLoading لو عايز تفصلهم
 
     final result = await repo.updateReminder(
       patientId: patientId,
       reminderId: reminderId,
-      name: name,
+      title: title,
       startDate: startDate,
       endDate: endDate,
-      frequency: frequency,
-      intervalHours: intervalHours,
-      baseTime: baseTime,
+      rrule: rrule,
+      simple: simple,
       message: message,
+      isSimpleEveryXHours: isEveryXHours,
     );
 
     result.fold(
@@ -353,13 +395,13 @@ class ReminderCubit extends Cubit<ReminderState> {
   }
 
   Future<void> deleteReminder({
-    required String reminderId,
+    required String reminderId, required String patientId,
   }) async {
-    final patientId = await SecureStorageHelper.getUserId();
-    if (patientId == null || patientId.isEmpty) {
-      emit(ReminderDeleteFailure(errMessage: "User ID is missing or invalid."));
-      return;
-    }
+    // final patientId = await SecureStorageHelper.getUserId();
+    // if (patientId == null || patientId.isEmpty) {
+    //   emit(ReminderDeleteFailure(errMessage: "User ID is missing or invalid."));
+    //   return;
+    // }
 
     emit(ReminderDeleteLoading());
     

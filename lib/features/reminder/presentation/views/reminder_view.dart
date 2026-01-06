@@ -352,6 +352,7 @@ import 'package:graduation_project/features/reminder/data/models/reminder_instan
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_state.dart';
 import 'package:graduation_project/features/reminder/presentation/views/add_reminder_view.dart';
+import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_dialog.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_appointment_card.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_custom_card.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_header.dart';
@@ -399,18 +400,45 @@ class _ReminderViewState extends State<ReminderView> {
             AppRouter.router.go(AppRouter.kHomePatient);
           },
         ),
-        actions: const [
+        actions:[
+          // Padding(
+          //   padding: EdgeInsets.only(right: 16.0),
+          //   child: Icon(Icons.notifications, color: Colors.black),
+          // ),
           Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: Icon(Icons.notifications, color: Colors.black),
+            padding: const EdgeInsets.only(right: 10),
+            child: TextButton(
+                  onPressed: () {
+                    showDialog(
+      context: context,
+      // نمرر الـ Cubit للـ Dialog عشان يقدر يجيب ويحذف
+      builder: (_) => BlocProvider.value(
+        value: context.read<ReminderCubit>(),
+        child: const AllRemindersDialog(),
+      ),
+    );
+                  },
+                  child: const Text(
+                    "View All",
+                    style: TextStyle(
+                      color: Color(0xFF2563EB),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
           ),
         ],
       ),
       body: BlocConsumer<ReminderCubit, ReminderState>(
         listener: (context, state) {
           // إذا تم إضافة تذكير بنجاح (والعودة لهذه الصفحة)، نعيد تحميل القائمة
-          if (state is ReminderCreateSuccess) {
-            _fetchReminders();
+          // if (state is ReminderCreateSuccess) {
+          //   _fetchReminders();
+          // }
+          if (state is ReminderCreateSuccess || 
+              state is ReminderUpdateSuccess || 
+              state is ReminderDeleteSuccess) {
+            _fetchReminders(); // إعادة تحميل الصفحة الرئيسية
           }
         },
         builder: (context, state) {
@@ -477,6 +505,7 @@ class _ReminderViewState extends State<ReminderView> {
                 for (var reminder in meds)
                   ReminderMedicationCard(
                     title: reminder.title,
+                    date: reminder.dueDateTime.split('T')[0],
                     subtitle: reminder.message ?? "Take as prescribed",
                     time: _formatTime(reminder.dueDateTime),
                     next: _formatTime(reminder.dueDateTime),
@@ -501,6 +530,7 @@ class _ReminderViewState extends State<ReminderView> {
                 for (var custom in customs)
                   ReminderCustomCard(
                     title: custom.title,
+                    date: custom.dueDateTime.split('T')[0],
                     subtitle: custom.message ?? "Don't forget!",
                     time: _formatTime(custom.dueDateTime),
                     next: _formatTime(custom.dueDateTime),

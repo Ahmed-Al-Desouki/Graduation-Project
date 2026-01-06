@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 class ReminderCustomCard extends StatelessWidget {
-  final String title, subtitle, time, next;
+  final String title, subtitle, time, next, date;
 
   const ReminderCustomCard({
     super.key,
     required this.title,
+    required this.date,
     required this.subtitle,
     required this.time,
     required this.next,
@@ -43,7 +44,10 @@ class ReminderCustomCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Row(
-            children: [
+            children: [Icon(Icons.calendar_month, size: 18, color: Colors.orange),
+              SizedBox(width: 5),
+              Text(date),
+              SizedBox(width: 15),
               Icon(Icons.access_time_filled, size: 18, color: Colors.orange.shade700),
               const SizedBox(width: 5),
               Text('Time: $time',),
