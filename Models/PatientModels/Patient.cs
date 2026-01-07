@@ -22,6 +22,7 @@ namespace HealthCare_.Models.PatientModels
         public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
         public ICollection<MedicationsIntake> MedicationsIntakes { get; set; } = new List<MedicationsIntake>();
         public ICollection<ReminderV2> Reminders { get; set; } = new List<ReminderV2>();
+        public ICollection<PatientSelfMedication> SelfMedications { get; set; }
     }
 
 }

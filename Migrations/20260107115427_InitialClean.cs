@@ -1,15 +1,52 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace HealthCare_.Migrations
 {
     /// <inheritdoc />
-    public partial class FinalNoCascadeError : Migration
+    public partial class InitialClean : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "NotificationLogs",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    ReminderId = table.Column<int>(type: "int", nullable: false),
+                    OccurrenceId = table.Column<long>(type: "bigint", nullable: false),
+                    TimeZoneId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FcmToken = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    ScheduledTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PatientDevices",
+                columns: table => new
+                {
+                    DeviceId = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    FcmToken = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PatientDevices", x => x.DeviceId);
+                });
+
             migrationBuilder.CreateTable(
                 name: "RevokedTokens",
                 columns: table => new
@@ -286,6 +323,7 @@ namespace HealthCare_.Migrations
                     FileType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     FileSize = table.Column<long>(type: "bigint", nullable: false),
                     UploadedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DoctorID = table.Column<int>(type: "int", nullable: true),
                     PatientID = table.Column<int>(type: "int", nullable: true),
                     MedicalHistoryID = table.Column<int>(type: "int", nullable: true),
@@ -440,7 +478,7 @@ namespace HealthCare_.Migrations
                     HistoryID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PatientID = table.Column<int>(type: "int", nullable: false),
-                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Gender = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CurrentLocation = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BloodType = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
@@ -540,6 +578,34 @@ namespace HealthCare_.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FamilyHistoryEntries",
+                columns: table => new
+                {
+                    FamilyHistoryID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    HistoryID = table.Column<int>(type: "int", nullable: false),
+                    Condition = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Relative = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    OnsetAge = table.Column<int>(type: "int", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    IsVerified = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FamilyHistoryEntries", x => x.FamilyHistoryID);
+                    table.ForeignKey(
+                        name: "FK_FamilyHistoryEntries_MedicalHistories_HistoryID",
+                        column: x => x.HistoryID,
+                        principalTable: "MedicalHistories",
+                        principalColumn: "HistoryID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "MedicalRecords",
                 columns: table => new
                 {
@@ -575,6 +641,100 @@ namespace HealthCare_.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PatientSelfMedications",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatientID = table.Column<int>(type: "int", nullable: false),
+                    HistoryID = table.Column<int>(type: "int", nullable: false),
+                    MedicationName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Dosage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Instructions = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PatientSelfMedications", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_PatientSelfMedications_MedicalHistories_HistoryID",
+                        column: x => x.HistoryID,
+                        principalTable: "MedicalHistories",
+                        principalColumn: "HistoryID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PatientSelfMedications_Patients_PatientID",
+                        column: x => x.PatientID,
+                        principalTable: "Patients",
+                        principalColumn: "PatientID",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SocialHistories",
+                columns: table => new
+                {
+                    SocialHistoryID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    HistoryID = table.Column<int>(type: "int", nullable: false),
+                    SmokingStatus = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    SmokingDetails = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    AlcoholUse = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    DrugUse = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Occupation = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Exercise = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SocialHistories", x => x.SocialHistoryID);
+                    table.ForeignKey(
+                        name: "FK_SocialHistories_MedicalHistories_HistoryID",
+                        column: x => x.HistoryID,
+                        principalTable: "MedicalHistories",
+                        principalColumn: "HistoryID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Surgeries",
+                columns: table => new
+                {
+                    SurgeryID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    HistoryID = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Complications = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Source = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    AppointmentID = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Surgeries", x => x.SurgeryID);
+                    table.ForeignKey(
+                        name: "FK_Surgeries_MedicalHistories_HistoryID",
+                        column: x => x.HistoryID,
+                        principalTable: "MedicalHistories",
+                        principalColumn: "HistoryID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PrescriptionMeds",
                 columns: table => new
                 {
@@ -597,76 +757,6 @@ namespace HealthCare_.Migrations
                         column: x => x.PrescriptionID,
                         principalTable: "Prescriptions",
                         principalColumn: "PrescriptionID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Reminders",
-                columns: table => new
-                {
-                    ReminderID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PatientID = table.Column<int>(type: "int", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Frequency = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IntervalHours = table.Column<int>(type: "int", nullable: true),
-                    BaseTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    Message = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    PrescriptionMedID = table.Column<int>(type: "int", nullable: true),
-                    AppointmentID = table.Column<int>(type: "int", nullable: true),
-                    IsLocalNotification = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Reminders", x => x.ReminderID);
-                    table.ForeignKey(
-                        name: "FK_Reminders_Appointments_AppointmentID",
-                        column: x => x.AppointmentID,
-                        principalTable: "Appointments",
-                        principalColumn: "AppointmentID",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_Reminders_Patients_PatientID",
-                        column: x => x.PatientID,
-                        principalTable: "Patients",
-                        principalColumn: "PatientID",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Reminders_PrescriptionMeds_PrescriptionMedID",
-                        column: x => x.PrescriptionMedID,
-                        principalTable: "PrescriptionMeds",
-                        principalColumn: "ID",
-                        onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ReminderInstances",
-                columns: table => new
-                {
-                    InstanceID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ReminderID = table.Column<int>(type: "int", nullable: false),
-                    DueDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IntakeID = table.Column<int>(type: "int", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ReminderInstances", x => x.InstanceID);
-                    table.ForeignKey(
-                        name: "FK_ReminderInstances_Reminders_ReminderID",
-                        column: x => x.ReminderID,
-                        principalTable: "Reminders",
-                        principalColumn: "ReminderID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -698,12 +788,112 @@ namespace HealthCare_.Migrations
                         principalTable: "PrescriptionMeds",
                         principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReminderV2s",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    StartDateUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDateUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RRULE = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    EXDATE = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TimeZoneId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PrescriptionMedId = table.Column<int>(type: "int", nullable: true),
+                    AppointmentId = table.Column<int>(type: "int", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsSimpleEveryXHours = table.Column<bool>(type: "bit", nullable: false),
+                    FirstDoseTime = table.Column<TimeSpan>(type: "time", nullable: true),
+                    IntervalHours = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReminderV2s", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MedicationsIntakes_ReminderInstances_ReminderInstanceID",
-                        column: x => x.ReminderInstanceID,
-                        principalTable: "ReminderInstances",
-                        principalColumn: "InstanceID",
-                        onDelete: ReferentialAction.SetNull);
+                        name: "FK_ReminderV2s_Appointments_AppointmentId",
+                        column: x => x.AppointmentId,
+                        principalTable: "Appointments",
+                        principalColumn: "AppointmentID");
+                    table.ForeignKey(
+                        name: "FK_ReminderV2s_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "PatientID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ReminderV2s_PrescriptionMeds_PrescriptionMedId",
+                        column: x => x.PrescriptionMedId,
+                        principalTable: "PrescriptionMeds",
+                        principalColumn: "ID");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReminderOccurrenceLogs",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    ReminderId = table.Column<int>(type: "int", nullable: false),
+                    DueDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DueDateTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false),
+                    ConfirmedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActionedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IntakeStatus = table.Column<int>(type: "int", nullable: true),
+                    ActionedWithinWindow = table.Column<bool>(type: "bit", nullable: false),
+                    IsSnoozeFromOriginal = table.Column<bool>(type: "bit", nullable: false),
+                    OriginalDueDateTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReminderOccurrenceLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReminderOccurrenceLogs_ReminderV2s_ReminderId",
+                        column: x => x.ReminderId,
+                        principalTable: "ReminderV2s",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ReminderOccurrencesCache",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    ReminderId = table.Column<int>(type: "int", nullable: false),
+                    DueDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DueDateTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TimeZoneId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Dosage = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ReminderOccurrencesCache", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReminderOccurrencesCache_ReminderV2s_ReminderId",
+                        column: x => x.ReminderId,
+                        principalTable: "ReminderV2s",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -794,6 +984,16 @@ namespace HealthCare_.Migrations
                 columns: new[] { "PatientID", "DoctorID", "MedicalHistoryID" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ExternalFiles_UploadedById",
+                table: "ExternalFiles",
+                column: "UploadedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FamilyHistoryEntries_HistoryID",
+                table: "FamilyHistoryEntries",
+                column: "HistoryID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MedicalHistories_PatientID",
                 table: "MedicalHistories",
                 column: "PatientID",
@@ -822,15 +1022,29 @@ namespace HealthCare_.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_MedicationsIntakes_ReminderInstanceID",
                 table: "MedicationsIntakes",
-                column: "ReminderInstanceID",
-                unique: true,
-                filter: "[ReminderInstanceID] IS NOT NULL");
+                column: "ReminderInstanceID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationLogs_Due",
+                table: "NotificationLogs",
+                columns: new[] { "PatientId", "ScheduledTime", "SentAt" },
+                filter: "[SentAt] IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Patients_PatientID",
                 table: "Patients",
                 column: "PatientID",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PatientSelfMedications_HistoryID",
+                table: "PatientSelfMedications",
+                column: "HistoryID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PatientSelfMedications_PatientID",
+                table: "PatientSelfMedications",
+                column: "PatientID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PrescriptionMeds_PrescriptionID",
@@ -874,34 +1088,29 @@ namespace HealthCare_.Migrations
                 column: "UserSessionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ReminderInstances_DueDateTime",
-                table: "ReminderInstances",
-                column: "DueDateTime");
+                name: "IX_ReminderOccurrenceLogs_ReminderId",
+                table: "ReminderOccurrenceLogs",
+                column: "ReminderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ReminderInstances_ReminderID",
-                table: "ReminderInstances",
-                column: "ReminderID");
+                name: "IX_ReminderOccurrencesCache_ReminderId",
+                table: "ReminderOccurrencesCache",
+                column: "ReminderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ReminderInstances_Status",
-                table: "ReminderInstances",
-                column: "Status");
+                name: "IX_ReminderV2s_AppointmentId",
+                table: "ReminderV2s",
+                column: "AppointmentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Reminders_AppointmentID",
-                table: "Reminders",
-                column: "AppointmentID");
+                name: "IX_ReminderV2s_PatientId",
+                table: "ReminderV2s",
+                column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Reminders_PatientID",
-                table: "Reminders",
-                column: "PatientID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Reminders_PrescriptionMedID_AppointmentID",
-                table: "Reminders",
-                columns: new[] { "PrescriptionMedID", "AppointmentID" });
+                name: "IX_ReminderV2s_PrescriptionMedId",
+                table: "ReminderV2s",
+                column: "PrescriptionMedId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reviews_AppointmentID",
@@ -930,6 +1139,16 @@ namespace HealthCare_.Migrations
                 name: "IX_SessionTypes_DoctorID",
                 table: "SessionTypes",
                 column: "DoctorID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SocialHistories_HistoryID",
+                table: "SocialHistories",
+                column: "HistoryID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Surgeries_HistoryID",
+                table: "Surgeries",
+                column: "HistoryID");
 
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",
@@ -1062,6 +1281,13 @@ namespace HealthCare_.Migrations
                 principalTable: "Patients",
                 principalColumn: "PatientID",
                 onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_ExternalFiles_Users_UploadedById",
+                table: "ExternalFiles",
+                column: "UploadedById",
+                principalTable: "Users",
+                principalColumn: "UserID");
         }
 
         /// <inheritdoc />
@@ -1078,6 +1304,10 @@ namespace HealthCare_.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_MedicalHistories_Patients_PatientID",
                 table: "MedicalHistories");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_ExternalFiles_Users_UploadedById",
+                table: "ExternalFiles");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
@@ -1104,13 +1334,31 @@ namespace HealthCare_.Migrations
                 name: "EmailOtps");
 
             migrationBuilder.DropTable(
+                name: "FamilyHistoryEntries");
+
+            migrationBuilder.DropTable(
                 name: "MedicalRecords");
 
             migrationBuilder.DropTable(
                 name: "MedicationsIntakes");
 
             migrationBuilder.DropTable(
+                name: "NotificationLogs");
+
+            migrationBuilder.DropTable(
+                name: "PatientDevices");
+
+            migrationBuilder.DropTable(
+                name: "PatientSelfMedications");
+
+            migrationBuilder.DropTable(
                 name: "RefreshTokens");
+
+            migrationBuilder.DropTable(
+                name: "ReminderOccurrenceLogs");
+
+            migrationBuilder.DropTable(
+                name: "ReminderOccurrencesCache");
 
             migrationBuilder.DropTable(
                 name: "Reviews");
@@ -1122,16 +1370,19 @@ namespace HealthCare_.Migrations
                 name: "SessionTypes");
 
             migrationBuilder.DropTable(
-                name: "Roles");
+                name: "SocialHistories");
 
             migrationBuilder.DropTable(
-                name: "ReminderInstances");
+                name: "Surgeries");
+
+            migrationBuilder.DropTable(
+                name: "Roles");
 
             migrationBuilder.DropTable(
                 name: "UserSessions");
 
             migrationBuilder.DropTable(
-                name: "Reminders");
+                name: "ReminderV2s");
 
             migrationBuilder.DropTable(
                 name: "Appointments");

@@ -42,13 +42,6 @@ namespace HealthCare_.Controllers.PatientControllers.MedicalHistory
         {
             _logger.LogInformation("API call: GetProfile");
             var profile = await _medicalProfileService.GetMedicalProfileAsync();
-
-            profile.Surgeries = await _surgeryService.GetSurgeriesAsync(profile.MedicalHistoryID);
-            profile.FamilyHistory = await _familyHistoryService.GetFamilyHistoryAsync(profile.MedicalHistoryID);
-            profile.SocialHistory = await _socialHistoryService.GetSocialHistoryAsync(profile.MedicalHistoryID);
-            profile.PatientSelfMedications = await _selfMedicationService.GetSelfMedicationsAsync();
-            profile.CurrentMedications = await _currentMedicationService.GetCurrentMedicationsAsync(profile.MedicalHistoryID);
-
             return Ok(profile);
         }
 

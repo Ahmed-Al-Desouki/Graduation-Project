@@ -22,13 +22,14 @@ namespace HealthCare_.Services.Patient
             _logger = logger;
         }
 
-        public async Task<List<SelfMedicationDto>> GetSelfMedicationsAsync()
+        public async Task<List<SelfMedicationDto>> GetSelfMedicationsAsync(int historyId)
         {
             var userId = _authHelper.GetCurrentUserId();
+            await _authHelper.EnsureHistoryBelongsToCurrentUser(historyId);
 
             return await _context.PatientSelfMedications
                 .AsNoTracking()
-                .Where(m => m.PatientID == userId && !m.IsDeleted)
+                .Where(m => m.PatientID == userId && m.HistoryID == historyId && !m.IsDeleted)
                 .Select(m => new SelfMedicationDto
                 {
                     ID = m.ID,
@@ -56,11 +57,14 @@ namespace HealthCare_.Services.Patient
             {
                 selfMed = await _context.PatientSelfMedications.FirstOrDefaultAsync(m =>
                     m.ID == request.SelfMedicationID.Value &&
-                    m.PatientID == userId);
+                    m.PatientID == userId &&
+                    m.HistoryID == request.HistoryID);
             }
 
             if (selfMed != null)
             {
+                selfMed.PatientID = request.PatientId;
+                selfMed.HistoryID = request.HistoryID;
                 selfMed.MedicationName = request.MedicationName ?? selfMed.MedicationName;
                 selfMed.Dosage = request.Dosage ?? selfMed.Dosage;
                 selfMed.Instructions = request.Instructions ?? selfMed.Instructions;
@@ -73,6 +77,7 @@ namespace HealthCare_.Services.Patient
                 selfMed = new PatientSelfMedication
                 {
                     PatientID = userId,
+                    HistoryID = request.HistoryID,
                     MedicationName = request.MedicationName,
                     Dosage = request.Dosage,
                     Instructions = request.Instructions,

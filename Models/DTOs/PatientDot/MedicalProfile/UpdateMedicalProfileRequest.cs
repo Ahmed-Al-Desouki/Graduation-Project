@@ -105,6 +105,8 @@
 
     public class CreateSelfMedicationRequest
     {
+        public int HistoryID { get; set; }
+        public int PatientId { get; set; }
         public int? SelfMedicationID { get; set; }
         public string MedicationName { get; set; } = string.Empty;
         public string? Dosage { get; set; }

@@ -71,14 +71,6 @@ namespace HealthCare_.Controllers.PatientControllers.MedicalHistory
             {
                 // هنا بنستخدم service الحالي اللي فيه كل logic
                 var profile = await _shareTokenService.GetMedicalProfileFromShareTokenAsync(token);
-
-                // بعدها نجيب كل البيانات من الخدمات الأخرى
-                profile.Surgeries = await _surgeryService.GetSurgeriesForShareAsync(profile.MedicalHistoryID);
-                profile.FamilyHistory = await _familyHistoryService.GetFamilyHistoryForShareAsync(profile.MedicalHistoryID);
-                profile.SocialHistory = await _socialHistoryService.GetSocialHistoryForShareAsync(profile.MedicalHistoryID);
-                profile.PatientSelfMedications = await _selfMedicationService.GetSelfMedicationsForShareAsync(profile.PatientID);
-                profile.CurrentMedications = await _currentMedicationService.GetCurrentMedicationsForShareAsync(profile.MedicalHistoryID);
-
                 return Ok(new
                 {
                     success = true,

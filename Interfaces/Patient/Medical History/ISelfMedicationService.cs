@@ -4,7 +4,7 @@ namespace HealthCare_.Interfaces.Patient.Medical_History
 {
     public interface ISelfMedicationService
     {
-        Task<List<SelfMedicationDto>> GetSelfMedicationsAsync();
+        Task<List<SelfMedicationDto>> GetSelfMedicationsAsync(int historyId);
         Task<SelfMedicationDto> UpsertSelfMedicationAsync(CreateSelfMedicationRequest request);
         Task SoftDeleteSelfMedicationAsync(int selfMedicationId);
         Task<List<SelfMedicationDto>> GetSelfMedicationsForShareAsync(int PatientId);

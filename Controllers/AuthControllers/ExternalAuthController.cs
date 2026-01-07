@@ -287,7 +287,8 @@ namespace HealthCare_.Controllers
                     return new GooglePayload
                     {
                         Email = payload.Email,
-                        Name = payload.Name
+                        Name = payload.Name,
+                        Picture = payload.Picture
                     };
                 }
                 catch (Exception ex)
@@ -302,6 +303,7 @@ namespace HealthCare_.Controllers
         {
             public string Email { get; set; } = string.Empty;
             public string? Name { get; set; }
+            public string? Picture { get; set; }
         }
     }
 }

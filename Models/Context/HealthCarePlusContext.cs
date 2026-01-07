@@ -262,7 +262,24 @@ namespace HealthCare_.Models.Context
 
                 entity.HasIndex(mh => mh.PatientID).IsUnique();
             });
+            // ─────────────────────── SelfMedication ───────────────────────
+            modelBuilder.Entity<PatientSelfMedication>(entity =>
+            {
+                entity.HasKey(psm => psm.ID);
 
+                entity.HasOne(psm => psm.MedicalHistory)
+                      .WithMany(mh => mh.SelfMedications)
+                      .HasForeignKey(psm => psm.HistoryID)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(psm => psm.Patient)
+                      .WithMany(p => p.SelfMedications)
+                      .HasForeignKey(psm => psm.PatientID)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(psm => psm.HistoryID);
+                entity.HasIndex(psm => psm.PatientID);
+            });
             // ─────────────────────── MedicalRecord ───────────────────────
             modelBuilder.Entity<MedicalRecord>(entity =>
             {

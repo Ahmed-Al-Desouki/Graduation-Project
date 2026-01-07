@@ -123,6 +123,12 @@ namespace HealthCare_.Services.Patient
                     Notes = mr.Notes ?? "",
                 }).OrderByDescending(r => r.VisitDate).ToList();
 
+            var surgeries = await _surgeryService.GetSurgeriesAsync(history.HistoryID);
+            var familyHistory = await _familyHistoryService.GetFamilyHistoryAsync(history.HistoryID);
+            var socialHistory = await _socialHistoryService.GetSocialHistoryAsync(history.HistoryID);
+            var selfMedications = await _selfMedicationService.GetSelfMedicationsAsync(history.HistoryID);
+            var currentMedications = await _currentMedicationService.GetCurrentMedicationsAsync(history.HistoryID);
+
             _logger.LogInformation("Fetched complete medical profile for PatientID: {PatientID}", userId);
 
             return new MedicalProfileResponse
@@ -144,11 +150,11 @@ namespace HealthCare_.Services.Patient
                 RadiologyFiles = radiologyFiles,
                 PastAppointments = pastAppointments,
                 MedicalRecords = medicalRecords,
-                Surgeries = new List<SurgeryDto>(),
-                FamilyHistory = new List<FamilyHistoryDto>(),
-                SocialHistory = new List<SocialHistoryDto>(),
-                PatientSelfMedications = new List<SelfMedicationDto>(),
-                CurrentMedications = new List<CurrentMedicationDto>()
+                Surgeries = surgeries,
+                FamilyHistory = familyHistory,
+                SocialHistory = socialHistory,
+                PatientSelfMedications = selfMedications,
+                CurrentMedications = currentMedications
             };
         }
         public async Task<MedicalProfileResponse> GetCompleteMedicalProfileAsync(int patientId)
@@ -175,9 +181,7 @@ namespace HealthCare_.Services.Patient
 
             var history = patient.MedicalHistory ?? throw new InvalidOperationException("Medical history not initialized.");
 
-            // -----------------------------
             // Files (Lab & Radiology)
-            // -----------------------------
             var labTests = history.Files
                 .Where(f => f.CategoryValue == "LabTest")
                 .Select(f => new FileDto
@@ -202,9 +206,7 @@ namespace HealthCare_.Services.Patient
                     Description = f.Description
                 }).ToList();
 
-            // -----------------------------
             // Appointments & Prescriptions
-            // -----------------------------
             var pastAppointments = patient.Appointments
                 .Where(a => a.AppointmentDate < DateTime.UtcNow && a.Status == "Completed")
                 .Select(a => new PastAppointmentDto
@@ -227,9 +229,7 @@ namespace HealthCare_.Services.Patient
                     } : null
                 }).OrderByDescending(a => a.AppointmentDate).ToList();
 
-            // -----------------------------
             // Medical Records
-            // -----------------------------
             var medicalRecords = history.MedicalRecords
                 .Select(mr => new MedicalRecordDto
                 {
@@ -241,18 +241,14 @@ namespace HealthCare_.Services.Patient
                     Notes = mr.Notes ?? "",
                 }).OrderByDescending(r => r.VisitDate).ToList();
 
-            // -----------------------------
             // Other sections via services
-            // -----------------------------
             var surgeries = await _surgeryService.GetSurgeriesForShareAsync(history.HistoryID);
             var familyHistory = await _familyHistoryService.GetFamilyHistoryForShareAsync(history.HistoryID);
             var socialHistory = await _socialHistoryService.GetSocialHistoryForShareAsync(history.HistoryID);
             var selfMedications = await _selfMedicationService.GetSelfMedicationsForShareAsync(patient.PatientID);
             var currentMedications = await _currentMedicationService.GetCurrentMedicationsForShareAsync(history.HistoryID);
 
-            // -----------------------------
             // Construct final response
-            // -----------------------------
             return new MedicalProfileResponse
             {
                 PatientID = patient.PatientID,
