@@ -14,7 +14,7 @@ class PatientHomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 105.h,
+      height: 150.h,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF00BCD4), Color(0xff66BB6A)],
