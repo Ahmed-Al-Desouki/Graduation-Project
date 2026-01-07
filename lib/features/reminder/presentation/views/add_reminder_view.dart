@@ -617,12 +617,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:graduation_project/core/utils/helper/rrule_helper.dart'; // ✅ تأكد من وجود الـ Helper هنا
+import 'package:graduation_project/core/utils/helper/rrule_helper.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_state.dart';
-// import 'package:rrule/rrule.dart'; // قد لا نحتاجه إذا كان rrule_helper يقوم بالواجب، لكن سأبقيه احتياطاً
 
 class AddReminderView extends StatefulWidget {
   // ✅ إضافة متغير لاستقبال الريمندر في حالة التعديل
@@ -799,60 +798,63 @@ class _AddReminderViewState extends State<AddReminderView> {
   //   }
   // }
   void _initDataForEditing() {
-    try {
-      final r = widget.reminderToEdit!;
-      // 1. ملء الحقول النصية
-      titleController.text = r.title;
-      messageController.text = r.message ?? "";
+  try {
+    final r = widget.reminderToEdit!;
+    print("StartDate Hour: ${r.startDate.hour}, Minute: ${r.startDate.minute}");
+    // 1. ملء الحقول النصية
+    titleController.text = r.title;
+    messageController.text = r.message ?? "";
 
-      setState(() {
-        selectedType = r.type;
-        startDate = r.startDate;
-        endDate = r.endDate;
+    setState(() {
+      selectedType = r.type;
+      startDate = r.startDate;
+      endDate = r.endDate;
 
-        // تحديد Lifetime
-        if (endDate == null || endDate!.year >= 2099) {
-          isLifetime = true;
-          endDate = null;
-        } else {
-          isLifetime = false;
-        }
+      // تحديد Lifetime - أضف تحقق إضافي لـ Once Only
+      if (endDate == null || endDate!.year >= 2099 || (r.rrule != null && r.rrule!.contains('COUNT=1'))) {
+        isLifetime = true;
+        endDate = null;
+      } else {
+        isLifetime = false;
+      }
 
-        // 2. معالجة التكرار والوقت
-        if (r.simple != null) {
-          // --- حالة Simple (Every X Hours) ---
-          selectedFrequency = 'Every X Hours';
-          intervalController.text = r.simple!.intervalHours.toString();
-          try {
-            final parts = r.simple!.firstDoseTime.split(':');
-            selectedTimes = [
-              TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
-            ];
-          } catch (_) {
-            selectedTimes = [TimeOfDay(hour: r.startDate.hour, minute: r.startDate.minute)];
-          }
-        } 
-        else if (r.rrule != null && r.rrule!.isNotEmpty) {
-          // --- حالة RRULE (Daily, Weekly, Monthly) ---
-          try {
-            _extractDataFromRRule(r.rrule!);
-          } catch (e) {
-            print("❌ RRule Parsing Error: $e");
-            // Fallback لو فشل التحليل
-            selectedFrequency = 'Daily';
-            selectedTimes = [TimeOfDay(hour: r.startDate.hour, minute: r.startDate.minute)];
-          }
-        } 
-        else {
-          // --- حالة Once Only ---
-          selectedFrequency = 'Once Only';
+      // 2. معالجة التكرار والوقت
+      if (r.simple != null) {
+        // --- حالة Simple (Every X Hours) ---
+        selectedFrequency = 'Every X Hours';
+        intervalController.text = r.simple!.intervalHours.toString();
+        try {
+          final parts = r.simple!.firstDoseTime.split(':');
+          selectedTimes = [
+            TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
+          ];
+        } catch (_) {
+          // ✅ تعديل: أزل toLocal()، استخدم hour/minute مباشرة (الآن local)
           selectedTimes = [TimeOfDay(hour: r.startDate.hour, minute: r.startDate.minute)];
         }
-      });
-    } catch (e) {
-      print("❌ General Initialization Error: $e");
-    }
+      } else if (r.rrule != null && r.rrule!.isNotEmpty) {
+        // --- حالة RRULE (Daily, Weekly, Monthly, Once Only) ---
+        try {
+          _extractDataFromRRule(r.rrule!);
+        } catch (e) {
+          print("❌ RRule Parsing Error: $e");
+          selectedFrequency = 'Daily'; // Fallback
+          // ✅ تعديل: أزل toLocal()، استخدم hour/minute مباشرة
+          selectedTimes = [TimeOfDay(hour: r.startDate.hour, minute: r.startDate.minute)];
+        }
+      } else {
+        // --- حالة Once Only (Fallback إذا مش لاقي rrule أو simple) ---
+        selectedFrequency = 'Once Only';
+        // ✅ تعديل: أزل toLocal()، استخدم hour/minute مباشرة
+        selectedTimes = [TimeOfDay(hour: r.startDate.hour, minute: r.startDate.minute)];
+        isLifetime = false; // Once Only ليس Lifetime
+        endDate = null; // أو اجعله يساوي startDate إذا كان مطلوب
+      }
+    });
+  } catch (e) {
+    print("❌ General Initialization Error: $e");
   }
+}
 
   // 🔹 دالة مساعدة جديدة لاستخراج البيانات باستخدام RRuleHelper
   // void _extractDataFromRRule(String rruleStr) {
@@ -983,75 +985,72 @@ class _AddReminderViewState extends State<AddReminderView> {
 //   });
 // }
 void _extractDataFromRRule(String rruleStr) {
-    final String cleanRule = rruleStr.toUpperCase();
+  final String cleanRule = rruleStr.toUpperCase();
 
-    // 1. استخراج التردد (Frequency)
-    if (cleanRule.contains('FREQ=DAILY')) {
-      selectedFrequency = 'Daily';
-    } else if (cleanRule.contains('FREQ=WEEKLY')) {
-      selectedFrequency = 'Weekly';
-    } else if (cleanRule.contains('FREQ=MONTHLY')) {
-      selectedFrequency = 'Monthly';
-    } else if (cleanRule.contains('COUNT=1')) {
-      selectedFrequency = 'Once Only';
-    }
+  // 1. استخراج التردد (Frequency) - ضع COUNT=1 أولاً لمسك Once Only
+  if (cleanRule.contains('COUNT=1')) {
+    selectedFrequency = 'Once Only';
+  } else if (cleanRule.contains('FREQ=DAILY')) {
+    selectedFrequency = 'Daily';
+  } else if (cleanRule.contains('FREQ=WEEKLY')) {
+    selectedFrequency = 'Weekly';
+  } else if (cleanRule.contains('FREQ=MONTHLY')) {
+    selectedFrequency = 'Monthly';
+  } else {
+    selectedFrequency = 'Daily'; // Fallback
+  }
 
-    // 2. استخراج الأوقات (يدعم التعدد)
-    // ⚠️ التغيير هنا: استخدام [^;]+ بدلاً من \d+ ليأخذ الأرقام والفواصل
-    final hourMatch = RegExp(r'BYHOUR=([^;]+)').firstMatch(cleanRule);
-    final minuteMatch = RegExp(r'BYMINUTE=([^;]+)').firstMatch(cleanRule);
+  // 2. استخراج الأوقات (يدعم التعدد) - مع fallback أفضل
+  final hourMatch = RegExp(r'BYHOUR=([^;]+)').firstMatch(cleanRule);
+  final minuteMatch = RegExp(r'BYMINUTE=([^;]+)').firstMatch(cleanRule);
 
-    if (hourMatch != null && minuteMatch != null) {
-      // تحويل النص "8,20" إلى قائمة [8, 20]
-      final List<int> hours = hourMatch.group(1)!.split(',').map(int.parse).toList();
-      final List<int> minutes = minuteMatch.group(1)!.split(',').map(int.parse).toList();
+  if (hourMatch != null && minuteMatch != null) {
+    final List<int> hours = hourMatch.group(1)!.split(',').map(int.parse).toList();
+    final List<int> minutes = minuteMatch.group(1)!.split(',').map(int.parse).toList();
 
-      selectedTimes = [];
+    selectedTimes = [];
 
-      // منطق دمج الساعات والدقائق
-      if (hours.length == minutes.length) {
-        // كل ساعة لها دقيقة مقابلة (الحالة المثالية)
-        for (int i = 0; i < hours.length; i++) {
-          selectedTimes.add(TimeOfDay(hour: hours[i], minute: minutes[i]));
-        }
-      } else if (minutes.length == 1) {
-        // دقائق واحدة تتكرر لكل الساعات (شائع جداً)
-        // مثال: الساعة 8 والساعة 20، والدقيقة 0
-        for (int h in hours) {
-          selectedTimes.add(TimeOfDay(hour: h, minute: minutes[0]));
-        }
-      } else {
-        // حالة نادرة: نعتمد على أول قيمة لتجنب الأخطاء
-        selectedTimes.add(TimeOfDay(hour: hours[0], minute: minutes[0]));
+    if (hours.length == minutes.length) {
+      for (int i = 0; i < hours.length; i++) {
+        selectedTimes.add(TimeOfDay(hour: hours[i], minute: minutes[i]));
       }
-    } else {
-      // Fallback لو لم يجد ساعات في الـ RRULE
-      selectedTimes = [TimeOfDay(hour: startDate.hour, minute: startDate.minute)];
-    }
-
-    // 3. استخراج أيام الأسبوع (للـ Weekly)
-    if (selectedFrequency == 'Weekly') {
-      final byDayMatch = RegExp(r'BYDAY=([^;]+)').firstMatch(cleanRule);
-      if (byDayMatch != null) {
-        final daysStr = byDayMatch.group(1)!;
-        final daysCodes = daysStr.split(',');
-        final daysMap = {'MO': 1, 'TU': 2, 'WE': 3, 'TH': 4, 'FR': 5, 'SA': 6, 'SU': 7};
-        
-        selectedWeekDays.clear();
-        for (var code in daysCodes) {
-          if (daysMap.containsKey(code)) selectedWeekDays.add(daysMap[code]!);
-        }
+    } else if (minutes.length == 1) {
+      for (int h in hours) {
+        selectedTimes.add(TimeOfDay(hour: h, minute: minutes[0]));
       }
+    } else if (hours.isNotEmpty && minutes.isNotEmpty) {
+      // حالة نادرة: استخدم أول قيمة
+      selectedTimes.add(TimeOfDay(hour: hours[0], minute: minutes[0]));
     }
+  } else {
+    // Fallback إذا مش لاقي BYHOUR/BYMINUTE (شائع في Once Only)
+    // ✅ تعديل: أزل toLocal()، استخدم hour/minute مباشرة
+    selectedTimes = [TimeOfDay(hour: startDate.hour, minute: startDate.minute)];
+  }
 
-    // 4. استخراج يوم الشهر (للـ Monthly)
-    if (selectedFrequency == 'Monthly') {
-      final monthDayMatch = RegExp(r'BYMONTHDAY=(\d+)').firstMatch(cleanRule);
-      if (monthDayMatch != null) {
-        selectedMonthDay = int.parse(monthDayMatch.group(1)!);
+  // 3. استخراج أيام الأسبوع (للـ Weekly)
+  if (selectedFrequency == 'Weekly') {
+    final byDayMatch = RegExp(r'BYDAY=([^;]+)').firstMatch(cleanRule);
+    if (byDayMatch != null) {
+      final daysStr = byDayMatch.group(1)!;
+      final daysCodes = daysStr.split(',');
+      final daysMap = {'MO': 1, 'TU': 2, 'WE': 3, 'TH': 4, 'FR': 5, 'SA': 6, 'SU': 7};
+      
+      selectedWeekDays.clear();
+      for (var code in daysCodes) {
+        if (daysMap.containsKey(code)) selectedWeekDays.add(daysMap[code]!);
       }
     }
   }
+
+  // 4. استخراج يوم الشهر (للـ Monthly)
+  if (selectedFrequency == 'Monthly') {
+    final monthDayMatch = RegExp(r'BYMONTHDAY=(\d+)').firstMatch(cleanRule);
+    if (monthDayMatch != null) {
+      selectedMonthDay = int.parse(monthDayMatch.group(1)!);
+    }
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -1065,7 +1064,7 @@ void _extractDataFromRRule(String rruleStr) {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          isEditing ? "Edit Reminder" : "Add Reminder", // ✅ تغيير العنوان
+          isEditing ? "Edit Reminder" : "Add Reminder",
           style: const TextStyle(color: Colors.black),
         ),
         centerTitle: true,
@@ -1761,6 +1760,16 @@ void _extractDataFromRRule(String rruleStr) {
       return;
     }
 
+    if (selectedFrequency == 'Every X Hours' && intervalController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("❌ Please enter an interval"),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
     final String? patientId = await SecureStorageHelper.getUserId();
     if (patientId == null || patientId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1816,10 +1825,10 @@ void _extractDataFromRRule(String rruleStr) {
     // بناء اللوجيك (RRule vs Simple)
     if (selectedFrequency == 'Every X Hours') {
       final int interval = int.tryParse(intervalController.text) ?? 8;
-      if (interval < 1 || interval > 48) {
+      if (interval < 1 || interval > 23) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("❌ الفاصل يجب أن يكون بين 1 و48 ساعة"),
+            content: Text("❌ The interval must be between 1 and 23 hours"),
             backgroundColor: Colors.red,
           ),
         );
@@ -1984,9 +1993,6 @@ void _extractDataFromRRule(String rruleStr) {
         );
     }
   }
-
-  // 🔥 احذف دالة dtEnd تماماً - لم تعد مستخدمة ولا ضرورية
-  // ❌ DateTime get dtEnd { ... }
 
   @override
   void dispose() {

@@ -406,27 +406,30 @@ class _ReminderViewState extends State<ReminderView> {
           //   child: Icon(Icons.notifications, color: Colors.black),
           // ),
           Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: TextButton(
-                  onPressed: () {
-                    showDialog(
-      context: context,
-      // نمرر الـ Cubit للـ Dialog عشان يقدر يجيب ويحذف
-      builder: (_) => BlocProvider.value(
-        value: context.read<ReminderCubit>(),
-        child: const AllRemindersDialog(),
+  padding: const EdgeInsets.only(right: 10),
+  child: TextButton(
+    onPressed: () async {  // ✅ أضف async هنا
+      final result = await showDialog(  // ✅ استخدم await للانتظار حتى الـ pop
+        context: context,
+        builder: (_) => BlocProvider.value(
+          value: context.read<ReminderCubit>(),
+          child: const AllRemindersDialog(),
+        ),
+      );
+      // ✅ بعد الـ pop (إغلاق الـ Dialog)، أعد تحميل البيانات
+      if (result == null) {  // result == null لو أغلق بالإكس (بدون delete/update)
+        _fetchReminders();
+      }
+    },
+    child: const Text(
+      "View All",
+      style: TextStyle(
+        color: Color(0xFF2563EB),
+        fontWeight: FontWeight.bold,
       ),
-    );
-                  },
-                  child: const Text(
-                    "View All",
-                    style: TextStyle(
-                      color: Color(0xFF2563EB),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-          ),
+    ),
+  ),
+),
         ],
       ),
       body: BlocConsumer<ReminderCubit, ReminderState>(

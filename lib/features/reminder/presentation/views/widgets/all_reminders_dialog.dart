@@ -78,7 +78,15 @@ class _AllRemindersDialogState extends State<AllRemindersDialog> {
                   } else if (state is GetAllRemindersSuccess) {
                     final allList = state.reminders;
                     if (allList.isEmpty) {
-                      return const Center(child: Text("No reminders found."));
+                      return Center(
+                        child: Text(
+                          "No reminders found.",
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                      );
                     }
 
                     // 🔹 الفلترة (Grouping)
@@ -91,12 +99,12 @@ class _AllRemindersDialogState extends State<AllRemindersDialog> {
 
                     return ListView(
                       children: [
-                        if (medications.isNotEmpty)
-                          _buildSection("Medications", medications),
                         if (appointments.isNotEmpty)
-                          _buildSection("Appointments", appointments),
+                          _buildSection("Appointments:", appointments),
+                        if (medications.isNotEmpty)
+                          _buildSection("Medications:", medications),
                         if (customs.isNotEmpty)
-                          _buildSection("Customs", customs),
+                          _buildSection("Customs:", customs),
                       ],
                     );
                   }
@@ -111,25 +119,59 @@ class _AllRemindersDialogState extends State<AllRemindersDialog> {
   }
 
   // قسم (عنوان + قائمة)
+  // Widget _buildSection(String title, List<ReminderModel> items) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Padding(
+  //         padding: const EdgeInsets.symmetric(vertical: 10),
+  //         child: Text(
+  //           title,
+  //           style: const TextStyle(
+  //             fontSize: 16,
+  //             fontWeight: FontWeight.bold,
+  //             color: Colors.green,
+  //           ),
+  //         ),
+  //       ),
+  //       ...items.map((reminder) => _buildReminderItem(reminder)),
+  //     ],
+  //   );
+  // }
   Widget _buildSection(String title, List<ReminderModel> items) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.green,
-            ),
+  Color titleColor;
+  switch (title) {
+    case "Appointments:":
+      titleColor = Colors.blue.shade700;
+      break;
+    case "Medications:":
+      titleColor = Colors.green;
+      break;
+    case "Customs:":
+      titleColor = Colors.orange;
+      break;
+    default:
+      titleColor = Colors.green;
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: titleColor,
           ),
         ),
-        ...items.map((reminder) => _buildReminderItem(reminder)),
-      ],
-    );
-  }
+      ),
+      ...items.map((reminder) => _buildReminderItem(reminder)),
+    ],
+  );
+}
 
   // عنصر القائمة الواحد
   Widget _buildReminderItem(ReminderModel reminder) {
@@ -199,7 +241,7 @@ class _AllRemindersDialogState extends State<AllRemindersDialog> {
       builder:
           (ctx) => AlertDialog(
             title: const Text("Delete Reminder?"),
-            content: const Text("Are you sure? This action cannot be undone."),
+            content: const Text("Are you sure?\nThis action cannot be undone."),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
