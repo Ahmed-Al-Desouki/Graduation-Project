@@ -58,6 +58,32 @@ namespace HealthCare_.Services.Cloud
                 FileSize = file.Length
             };
         }
+        public async Task<CloudinaryUploadResult> UploadUrlToCloudinaryAsync(string fileUrl, string folder = "healthcare_files")
+        {
+            if (string.IsNullOrEmpty(fileUrl))
+                throw new ArgumentException("URL is required.");
+
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(fileUrl), // هنا URL مباشر للصورة
+                Folder = folder
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+            if (uploadResult.Error != null)
+                throw new Exception($"Failed to upload file to Cloudinary: {uploadResult.Error.Message}");
+
+            return new CloudinaryUploadResult
+            {
+                Url = uploadResult.SecureUrl?.ToString() ?? string.Empty,
+                PublicId = uploadResult.PublicId ?? string.Empty,
+                FileType = "image/jpeg",
+                FileSize = 0 // مفيش طريقة مباشرة تعرف حجم الصورة من URL
+            };
+        }
+
+
 
         public async Task DeleteFileAsync(string publicId)
         {
