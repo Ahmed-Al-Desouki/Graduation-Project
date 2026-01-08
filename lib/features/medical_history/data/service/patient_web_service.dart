@@ -78,6 +78,7 @@ class PatientWebServices {
   Future<Map<String, dynamic>> upsertSelfMedication(
     Map<String, dynamic> body,
   ) async {
+    print("📡 Sending Medication Data: $body");
     return await _apiService.post(
       'PatientMedicalProfile/self-medications',
       body,

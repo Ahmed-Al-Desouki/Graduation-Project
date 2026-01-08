@@ -1,38 +1,3 @@
-// class ReminderModel {
-//   final String type;
-//   final String name;
-//   final DateTime startDate;
-//   final DateTime endDate;
-//   final String frequency;
-//   final int? intervalHours;
-//   final String baseTime;
-//   final String? message;
-
-//   ReminderModel({
-//     required this.type,
-//     required this.name,
-//     required this.startDate,
-//     required this.endDate,
-//     required this.frequency,
-//     this.intervalHours,
-//     required this.baseTime,
-//     this.message,
-//   });
-
-//   Map<String, dynamic> toJson() {
-//     return {
-//       "type": type,
-//       "name": name,
-//       "startDate": startDate.toUtc().toIso8601String(),
-//       "endDate": endDate.toUtc().toIso8601String(),
-//       "frequency": frequency,
-//       "intervalHours": intervalHours,
-//       "baseTime": baseTime,
-//       "message": message,
-//     };
-//   }
-// }
-// -----------------------------------------------------------------
 class ReminderModel {
   final String type;
   final String title;
@@ -98,28 +63,24 @@ class ReminderModel {
       prescriptionMedID: json['prescriptionMedID'],
       dosage: json['dosage'],
       rrule: json['rrule'],
-      simple: json['simple'] != null
-          ? SimpleModel.fromJson(json['simple'])
-          : null,
-    timeZoneId: json['timeZoneId'] ?? 'Africa/Cairo',
+      simple:
+          json['simple'] != null ? SimpleModel.fromJson(json['simple']) : null,
+      timeZoneId: json['timeZoneId'] ?? 'Africa/Cairo',
     );
   }
 }
 
 class SimpleModel {
   final int intervalHours;
-  final String firstDoseTime;     // "08:00"  (بدون ثواني)
+  final String firstDoseTime; // "08:00"  (بدون ثواني)
 
-  SimpleModel({
-    required this.intervalHours,
-    required this.firstDoseTime,
-  });
+  SimpleModel({required this.intervalHours, required this.firstDoseTime});
 
   Map<String, dynamic> toJson() {
     return {
       "frequency": "EveryXHours",
       "intervalHours": intervalHours,
-      "times": [firstDoseTime],     // السيرفيس بيتوقع array حتى لو عنصر واحد
+      "times": [firstDoseTime], // السيرفيس بيتوقع array حتى لو عنصر واحد
     };
   }
 

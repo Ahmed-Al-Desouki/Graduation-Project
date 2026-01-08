@@ -16,7 +16,6 @@ class NotificationService {
         channelShowBadge: true,
         playSound: true,
         locked: true,
-        // criticalAlerts: true, // 👈 لو لسه بتطلع Error احذف السطر ده، هي مش أساسية للرنين
         defaultRingtoneType: DefaultRingtoneType.Alarm,
         soundSource: 'resource://raw/alarm_sound',
       ),
@@ -30,7 +29,6 @@ class NotificationService {
     required DateTime scheduledDate,
     required String type,
   }) async {
-    // تأكد أن الموعد في المستقبل
     if (scheduledDate.isBefore(DateTime.now())) {
       print("⚠️ الموعد فات: $scheduledDate");
       return;
@@ -46,7 +44,6 @@ class NotificationService {
         notificationLayout: NotificationLayout.Default,
         fullScreenIntent: true,
         wakeUpScreen: true,
-        // ❌ تم حذف criticalAlerts من هنا لأنها مش Parameter مدعوم في الـ Content
         payload: {'id': id.toString(), 'type': type},
       ),
       actionButtons: [
@@ -83,20 +80,14 @@ class NotificationService {
   static Future<void> onActionReceivedMethod(
     ReceivedAction receivedAction,
   ) async {
-    // if (receivedAction.payload == null) return;
-
     final int occurrenceId = int.parse(receivedAction.payload!['id']!);
     final String actionKey = receivedAction.buttonKeyPressed;
 
-    // 1. لو المريض ضغط على الإشعار نفسه (مش الزراير) أو ضغط على زرار وعاوزين نفتح الشاشة
-    // بنستخدم الراوتر اللي أنت عملته في AppRouter
     if (actionKey.isEmpty) {
       AppRouter.router.push(AppRouter.kRinging, extra: receivedAction.payload);
     }
 
-    // 2. لو ضغط على زرار "تم أخذ الدواء"
     if (actionKey == 'TAKEN') {
-      // تحديث الحالة لـ Taken (Status 2) حسب عقد الباك-إيند [cite: 35, 140]
       await LocalOccurrenceDataSource().updateOccurrenceActionOffline(
         id: occurrenceId,
         newStatus: 2,
@@ -106,7 +97,6 @@ class NotificationService {
     }
     // 3. لو ضغط على زرار "غفوة"
     else if (actionKey == 'SNOOZE') {
-      // تحديث الحالة لـ Snoozed (Status 4) حسب عقد الباك-إيند [cite: 37, 140]
       await LocalOccurrenceDataSource().updateOccurrenceActionOffline(
         id: occurrenceId,
         newStatus: 4,

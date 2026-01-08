@@ -53,7 +53,7 @@ class _PatientRegistrationViewBodyState
           );
         } else if (state is RegisterSuccess) {
           Navigator.pop(context); // close loader
-          ShowSnackBar(context, '✅ Login successful!', Colors.green);
+          ShowSnackBar(context, '✅ Registered Successfully!', Colors.green);
           AppRouter.router.go(AppRouter.kLogin);
         } else if (state is RegisterFailure) {
           Navigator.pop(context);

@@ -21,7 +21,6 @@ class LocalDatabaseService {
   }
 
   Future _createDB(Database db, int version) async {
-    // جدول الـ Occurrences (المواعيد الفعلية)
     await db.execute('''
       CREATE TABLE occurrences (
         id INTEGER PRIMARY KEY AUTOINCREMENT,        -- هو الـ ID اللي جاي من السيرفر [cite: 32]
@@ -42,7 +41,6 @@ class LocalDatabaseService {
 
   Future<void> clearAllData() async {
     final db = await database;
-    // مسح جدول المواعيد المادية (Cache Table)
     await db.delete('occurrences');
     print("🧹 SQLite: Occurrences table cleared.");
   }

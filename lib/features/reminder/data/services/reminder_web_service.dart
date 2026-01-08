@@ -152,29 +152,27 @@ class ReminderWebService {
   // 1. تأكيد أخذ الدواء (Confirm/Taken) [cite: 72, 73]
   Future<void> confirmOccurrence({
     required int reminderId,
-    required String occurrenceDateTime, // LOCAL [cite: 74, 96]
+    required String occurrenceDateTime,
   }) async {
     await _apiService.post("v2/occurrences/confirm", {
       "reminderId": reminderId,
       "occurrenceDateTime": occurrenceDateTime,
-      "status": 2, // Taken [cite: 35, 140]
+      "status": 2,
     });
   }
 
-  // 2. طلب غفوة (Snooze) [cite: 76, 77]
   Future<void> snoozeOccurrence({
     required int reminderId,
     required String occurrenceDateTime,
-    int minutes = 15, // الافتراضي حسب التوثيق [cite: 77]
+    int minutes = 15,
   }) async {
     await _apiService.post("v2/occurrences/snooze?minutes=$minutes", {
       "reminderId": reminderId,
       "occurrenceDateTime": occurrenceDateTime,
-      "status": 4, // Snoozed [cite: 37, 140]
+      "status": 4,
     });
   }
 
-  // 3. تخطي الموعد (Skip) [cite: 80, 81]
   Future<void> skipOccurrence({
     required int reminderId,
     required String occurrenceDateTime,
@@ -182,7 +180,7 @@ class ReminderWebService {
     await _apiService.post("v2/occurrences/skip", {
       "reminderId": reminderId,
       "occurrenceDateTime": occurrenceDateTime,
-      "status": 3, // Skipped [cite: 35, 140]
+      "status": 3,
     });
   }
 }

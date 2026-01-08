@@ -129,7 +129,6 @@ abstract class AppRouter {
       GoRoute(
         path: kRinging,
         builder: (context, state) {
-          // التعديل هنا: تحويل آمن للـ Map
           final extra = state.extra as Map<dynamic, dynamic>?;
           final payload = extra?.map(
             (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
@@ -267,25 +266,19 @@ abstract class AppRouter {
       ),
 
       GoRoute(
-        path: '/share-history', // 👈 ده نفس المسار اللي حطيناه في الـ QR Code
+        path: '/share-history',
         builder: (context, state) {
-          // 1. استخراج التوكن من الرابط
-          // الرابط بيكون: /share-history?token=xyz...
           final token = state.uri.queryParameters['token'];
 
-          // 2. التحقق من وجود التوكن
           if (token == null || token.isEmpty) {
             return const Scaffold(
               body: Center(child: Text("Invalid Link: No token found")),
             );
           }
 
-          // 3. توفير الكيوبت للصفحة (لأن الصفحة دي هتحتاج تكلم الـ API)
           return BlocProvider(
-            create: (context) => getIt<MedicalqrCubit>(), // أو كيوبت جديد للعرض
-            child: SharedHistoryView(
-              token: token,
-            ), // 👈 الصفحة الجديدة اللي لسه هنعملها
+            create: (context) => getIt<MedicalqrCubit>(),
+            child: SharedHistoryView(token: token),
           );
         },
       ),

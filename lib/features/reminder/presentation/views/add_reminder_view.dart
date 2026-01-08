@@ -1,620 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
-
-// class AddReminderView extends StatefulWidget {
-//   const AddReminderView({super.key});
-
-//   @override
-//   State<AddReminderView> createState() => _AddReminderPageState();
-// }
-
-// class _AddReminderPageState extends State<AddReminderView> {
-//   final TextEditingController nameController = TextEditingController();
-//   final TextEditingController messageController = TextEditingController();
-//   DateTime startDate = DateTime.now();
-//   DateTime endDate = DateTime.now().add(const Duration(days: 7));
-//   String frequency = 'Daily';
-//   String type = 'Medication';
-//   String baseTime = "08:00:00";
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text("Add Reminder")),
-//       body: Padding(
-//         padding: const EdgeInsets.all(20),
-//         child: Column(
-//           children: [
-//             TextField(
-//               controller: nameController,
-//               decoration: const InputDecoration(labelText: 'Name'),
-//             ),
-//             TextField(
-//               controller: messageController,
-//               decoration: const InputDecoration(labelText: 'Message'),
-//             ),
-//             const SizedBox(height: 20),
-
-//             DropdownButton<String>(
-//               value: type,
-//               onChanged: (val) {
-//                 setState(() {
-//                   type = val!;
-//                 });
-//               },
-//               items: const [
-//                 DropdownMenuItem(
-//                   value: 'Medication',
-//                   child: Text('Medication'),
-//                 ),
-//                 DropdownMenuItem(
-//                   value: 'Appointment',
-//                   child: Text('Appointment'),
-//                 ),
-//                 DropdownMenuItem(value: 'Custom', child: Text('Custom')),
-//               ],
-//             ),
-
-//             ElevatedButton(
-//               onPressed: () {
-//                 final reminder = ReminderModel(
-//                   type: type,
-//                   name: nameController.text,
-//                   startDate: startDate,
-//                   endDate: endDate,
-//                   frequency: frequency,
-//                   intervalHours: frequency == 'EveryXHours' ? 6 : null,
-//                   baseTime: baseTime,
-//                   message: messageController.text,
-//                 );
-
-//                 Navigator.pop(context, reminder);
-//               },
-
-//               child: const Text("Save"),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-// -----------------------------------------------------------------------
-// import 'package:flutter/material.dart';
-// import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
-
-// class AddReminderView extends StatefulWidget {
-//   const AddReminderView({super.key});
-
-//   @override
-//   State<AddReminderView> createState() => _AddReminderViewState();
-// }
-
-// class _AddReminderViewState extends State<AddReminderView> {
-//   final TextEditingController nameController = TextEditingController();
-//   final TextEditingController messageController = TextEditingController();
-//   final TextEditingController intervalController = TextEditingController();
-
-//   DateTime startDate = DateTime.now();
-//   DateTime endDate = DateTime.now().add(const Duration(days: 7));
-//   TimeOfDay baseTime = const TimeOfDay(hour: 8, minute: 0);
-
-//   String type = 'Medication';
-//   String frequency = 'Daily';
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text("Add Reminder")),
-//       body: SingleChildScrollView(
-//         padding: const EdgeInsets.all(20),
-//         child: Column(
-//           children: [
-//             // Name
-//             TextField(
-//               controller: nameController,
-//               decoration: const InputDecoration(labelText: 'Name'),
-//             ),
-
-//             // Message
-//             TextField(
-//               controller: messageController,
-//               decoration: const InputDecoration(labelText: 'Message'),
-//             ),
-
-//             const SizedBox(height: 20),
-
-//             // Type Dropdown
-//             DropdownButton<String>(
-//               value: type,
-//               onChanged: (val) {
-//                 setState(() => type = val!);
-//               },
-//               items: const [
-//                 DropdownMenuItem(value: 'Medication', child: Text('Medication')),
-//                 DropdownMenuItem(value: 'Appointment', child: Text('Appointment')),
-//                 DropdownMenuItem(value: 'Custom', child: Text('Custom')),
-//               ],
-//             ),
-
-//             const SizedBox(height: 20),
-
-//             // Frequency Dropdown
-//             DropdownButton<String>(
-//               value: frequency,
-//               onChanged: (val) {
-//                 setState(() => frequency = val!);
-//               },
-//               items: const [
-//                 DropdownMenuItem(value: 'Daily', child: Text('Daily')),
-//                 DropdownMenuItem(value: 'Weekly', child: Text('Weekly')),
-//                 DropdownMenuItem(value: 'EveryXHours', child: Text('Every X Hours')),
-//               ],
-//             ),
-
-//             // Interval Hours field ONLY if needed
-//             if (frequency == "EveryXHours")
-//               TextField(
-//                 controller: intervalController,
-//                 keyboardType: TextInputType.number,
-//                 decoration: const InputDecoration(labelText: 'Interval Hours'),
-//               ),
-
-//             const SizedBox(height: 20),
-
-//             // Pick Start Date
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 const Text("Start Date:"),
-//                 TextButton(
-//                   child: Text(
-//                     "${startDate.year}-${startDate.month}-${startDate.day}",
-//                   ),
-//                   onPressed: () async {
-//                     final selected = await showDatePicker(
-//                       context: context,
-//                       initialDate: startDate,
-//                       firstDate: DateTime(2020),
-//                       lastDate: DateTime(2030),
-//                     );
-//                     if (selected != null) setState(() => startDate = selected);
-//                   },
-//                 ),
-//               ],
-//             ),
-
-//             // Pick End Date
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 const Text("End Date:"),
-//                 TextButton(
-//                   child: Text(
-//                     "${endDate.year}-${endDate.month}-${endDate.day}",
-//                   ),
-//                   onPressed: () async {
-//                     final selected = await showDatePicker(
-//                       context: context,
-//                       initialDate: endDate,
-//                       firstDate: DateTime(2020),
-//                       lastDate: DateTime(2030),
-//                     );
-//                     if (selected != null) setState(() => endDate = selected);
-//                   },
-//                 ),
-//               ],
-//             ),
-
-//             // Pick Time
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 const Text("Base Time:"),
-//                 TextButton(
-//                   child: Text("${baseTime.hour}:${baseTime.minute.toString().padLeft(2, '0')}"),
-//                   onPressed: () async {
-//                     final selected = await showTimePicker(
-//                       context: context,
-//                       initialTime: baseTime,
-//                     );
-//                     if (selected != null) setState(() => baseTime = selected);
-//                   },
-//                 ),
-//               ],
-//             ),
-
-//             const SizedBox(height: 30),
-
-//             ElevatedButton(
-//               onPressed: () {
-//                 final finalBaseTime =
-//                     "${baseTime.hour.toString().padLeft(2, '0')}:${baseTime.minute.toString().padLeft(2, '0')}:00";
-
-//                 final reminder = ReminderModel(
-//                   type: type,
-//                   name: nameController.text,
-//                   startDate: startDate,
-//                   endDate: endDate,
-//                   frequency: frequency,
-//                   intervalHours: frequency == 'EveryXHours'
-//                       ? int.parse(intervalController.text)
-//                       : null,
-//                   baseTime: finalBaseTime,
-//                   message: messageController.text,
-//                 );
-
-//                 Navigator.pop(context, reminder);
-//               },
-//               child: const Text("Save"),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-// ----------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
-// import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
-// import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_state.dart';
-
-// class AddReminderView extends StatefulWidget {
-//   const AddReminderView({super.key});
-
-//   @override
-//   State<AddReminderView> createState() => _AddReminderViewState();
-// }
-
-// class _AddReminderViewState extends State<AddReminderView> {
-//   final TextEditingController nameController = TextEditingController();
-//   final TextEditingController messageController = TextEditingController();
-//   final TextEditingController intervalController = TextEditingController();
-
-//   DateTime startDate = DateTime.now();
-//   DateTime endDate = DateTime.now().add(const Duration(days: 7));
-//   TimeOfDay baseTime = const TimeOfDay(hour: 8, minute: 0);
-
-//   String type = 'Medication';
-//   String frequency = 'Daily';
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text("Add Reminder")),
-//       body: BlocListener<ReminderCubit, ReminderState>(
-//         listener: (context, state) {
-//           if (state is ReminderCreateSuccess) {
-//             ScaffoldMessenger.of(context).showSnackBar(
-//               const SnackBar(content: Text("Reminder Added Successfully")),
-//             );
-//             Navigator.pop(context);
-//           } else if (state is ReminderCreateFailure) {
-//             ScaffoldMessenger.of(context).showSnackBar(
-//               SnackBar(content: Text(state.errMessage)),
-//             );
-//           }
-//         },
-//           child: SingleChildScrollView(
-//             padding: const EdgeInsets.all(20),
-//             child: Column(
-//               children: [
-//                 // Name
-//                 TextField(
-//                   controller: nameController,
-//                   decoration: const InputDecoration(labelText: 'Reminder Name'),
-//                 ),
-
-//                 const SizedBox(height: 15),
-
-//                 // Message
-//                 TextField(
-//                   controller: messageController,
-//                   decoration: const InputDecoration(labelText: 'Message'),
-//                 ),
-
-//                 const SizedBox(height: 20),
-
-//                 // Type
-//                 Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     const Text("Type:"),
-//                     DropdownButton<String>(
-//                       value: type,
-//                       onChanged: (val) => setState(() => type = val!),
-//                       items: const [
-//                         DropdownMenuItem(
-//                           value: 'Medication',
-//                           child: Text('Medication'),
-//                         ),
-//                         DropdownMenuItem(
-//                           value: 'Appointment',
-//                           child: Text('Appointment'),
-//                         ),
-//                         DropdownMenuItem(
-//                           value: 'Custom',
-//                           child: Text('Custom'),
-//                         ),
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-
-//                 const SizedBox(height: 20),
-
-//                 // Frequency
-//                 Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     const Text("Frequency:"),
-//                     DropdownButton<String>(
-//                       value: frequency,
-//                       onChanged: (val) => setState(() => frequency = val!),
-//                       items: const [
-//                         DropdownMenuItem(value: 'Daily', child: Text('Daily')),
-//                         DropdownMenuItem(
-//                           value: 'Weekly',
-//                           child: Text('Weekly'),
-//                         ),
-//                         DropdownMenuItem(
-//                           value: 'EveryXHours',
-//                           child: Text('Every X Hours'),
-//                         ),
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-
-//                 if (frequency == "EveryXHours") ...[
-//                   const SizedBox(height: 10),
-//                   TextField(
-//                     controller: intervalController,
-//                     keyboardType: TextInputType.number,
-//                     decoration: const InputDecoration(
-//                       labelText: 'Interval Hours',
-//                     ),
-//                   ),
-//                 ],
-
-//                 const SizedBox(height: 20),
-
-//                 // Start Date Picker
-//                 _buildDateRow(
-//                   title: "Start Date:",
-//                   date: startDate,
-//                   onSelect: () async {
-//                     final sel = await showDatePicker(
-//                       context: context,
-//                       initialDate: startDate,
-//                       firstDate: DateTime(2020),
-//                       lastDate: DateTime(2035),
-//                     );
-//                     if (sel != null) setState(() => startDate = sel);
-//                   },
-//                 ),
-
-//                 const SizedBox(height: 10),
-
-//                 // End Date Picker
-//                 _buildDateRow(
-//                   title: "End Date:",
-//                   date: endDate,
-//                   onSelect: () async {
-//                     final sel = await showDatePicker(
-//                       context: context,
-//                       initialDate: endDate,
-//                       firstDate: DateTime(2020),
-//                       lastDate: DateTime(2035),
-//                     );
-//                     if (sel != null) setState(() => endDate = sel);
-//                   },
-//                 ),
-
-//                 const SizedBox(height: 10),
-
-//                 // Time Picker
-//                 _buildTimeRow(
-//                   title: "Base Time:",
-//                   time: baseTime,
-//                   onSelect: () async {
-//                     final sel = await showTimePicker(
-//                       context: context,
-//                       initialTime: baseTime,
-//                     );
-//                     if (sel != null) setState(() => baseTime = sel);
-//                   },
-//                 ),
-
-//                 const SizedBox(height: 30),
-
-//                 // Button
-//                 SizedBox(
-//                 width: double.infinity,
-//                 height: 50,
-//                 child: BlocBuilder<ReminderCubit, ReminderState>(
-//                   builder: (context, state) {
-//                     return ElevatedButton(
-//                       onPressed: state is ReminderLoading
-//                           ? null
-//                           : () => _saveReminder(context),
-//                       child: state is ReminderLoading
-//                           ? const CircularProgressIndicator(color: Colors.white)
-//                           : const Text("Add Reminder"),
-//                     );
-//                   },
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   // DATE WIDGET
-//   Widget _buildDateRow({
-//     required String title,
-//     required DateTime date,
-//     required VoidCallback onSelect,
-//   }) {
-//     return Row(
-//       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//       children: [
-//         Text(title),
-//         TextButton(
-//           onPressed: onSelect,
-//           child: Text("${date.year}-${date.month}-${date.day}"),
-//         ),
-//       ],
-//     );
-//   }
-
-//   // TIME WIDGET
-//   Widget _buildTimeRow({
-//     required String title,
-//     required TimeOfDay time,
-//     required VoidCallback onSelect,
-//   }) {
-//     return Row(
-//       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//       children: [
-//         Text(title),
-//         TextButton(
-//           onPressed: onSelect,
-//           child: Text("${time.hour}:${time.minute.toString().padLeft(2, '0')}"),
-//         ),
-//       ],
-//     );
-//   }
-
-//   // SAVE METHOD
-//   // void _saveReminder(BuildContext context) async {
-//   //   if (nameController.text.isEmpty) {
-//   //     ScaffoldMessenger.of(
-//   //       context,
-//   //     ).showSnackBar(const SnackBar(content: Text("Name is required")));
-//   //     return;
-//   //   }
-
-//   //   final String? patientId = await SecureStorageHelper.getUserId();
-
-//   //   if (patientId == null) {
-//   //     // معالجة حالة عدم العثور على الـ ID (يجب تسجيل دخول المستخدم)
-//   //     ScaffoldMessenger.of(context).showSnackBar(
-//   //       const SnackBar(
-//   //         content: Text("User ID not found. Please log in again."),
-//   //       ),
-//   //     );
-//   //     return;
-//   //   }
-
-//   //   final interval = frequency == "EveryXHours" ? intervalController.text : "0";
-
-//   //   final cubit = context.read<ReminderCubit>();
-
-//   //   cubit.createReminder(
-//   //     patientId: patientId,
-//   //     type: type,
-//   //     name: nameController.text,
-//   //     message: messageController.text,
-//   //     startDate: startDate.toIso8601String(),
-//   //     endDate: endDate.toIso8601String(),
-//   //     frequency: frequency,
-//   //     intervalHours: interval,
-//   //     baseTime: "${baseTime.hour}:${baseTime.minute}",
-//   //   );
-//   // }
-//   void _saveReminder(BuildContext context) async {
-//     if (nameController.text.isEmpty) {
-//       ScaffoldMessenger.of(context)
-//           .showSnackBar(const SnackBar(content: Text("Name is required")));
-//       return;
-//     }
-
-//     final String? patientId = await SecureStorageHelper.getUserId();
-//     print("====================================");
-//     print("Attempting to create Reminder:");
-//     print("Patient ID (from storage): $patientId");
-//     print("====================================");
-
-//     if (patientId == null || patientId.isEmpty) {
-//       if (mounted) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(content: Text("User ID not found. Login again.")),
-//         );
-//       }
-//       return;
-//     }
-
-//     //final interval = frequency == "EveryXHours" ? intervalController.text : "0";
-//     final int interval = int.tryParse(intervalController.text) ?? 0;
-
-//     // // تنسيق الوقت ليكون HH:mm:ss كما يطلب الـ Backend عادةً
-//     final formattedBaseTime =
-//         "${baseTime.hour.toString().padLeft(2, '0')}:${baseTime.minute.toString().padLeft(2, '0')}:00";
-//        // 2. تجهيز التواريخ (ISO 8601)
-//     // دمج الوقت مع التاريخ للبداية
-//     final dtStart = DateTime(
-//       startDate.year, startDate.month, startDate.day,
-//       baseTime.hour, baseTime.minute,
-//     );
-//     // للنهاية (نهاية اليوم مثلاً)
-//     final dtEnd = DateTime(
-//       endDate.year, endDate.month, endDate.day, 23, 59, 59
-//     );
-
-//     if (mounted) {
-//       context.read<ReminderCubit>().createReminder(
-//             patientId: patientId,
-//             type: type,
-//             name: nameController.text,
-//             message: messageController.text,
-//             startDate: dtStart.toIso8601String(), // تاريخ ووقت البداية
-//         endDate: dtEnd.toIso8601String(), // تاريخ النهاية
-//         frequency: frequency,
-//         intervalHours: interval,
-//         baseTime: formattedBaseTime,
-//           );
-//     }
-//   }
-
-// }
-// ---------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------------------------------
-// int? intervalInt;
-//   if (frequency == "EveryXHours") {
-//     intervalInt = int.tryParse(intervalController.text);
-//     if (intervalInt == null || intervalInt <= 0) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(content: Text("Please enter a valid Interval Hours")));
-//       return;
-//     }
-//   }
-
-//     final cubit = context.read<ReminderCubit>();
-
-//     cubit.createReminder(
-//       patientId: "3", // TODO: هتبدله بـ patient الحقيقي بعدين
-//       type: type,
-//       name: nameController.text,
-//       message: messageController.text,
-//       startDate: startDate.toIso8601String(),
-//       endDate: endDate.toIso8601String(),
-//       frequency: frequency,
-//       intervalHours: intervalInt?.toString() ?? "0",
-//       baseTime: "${baseTime.hour}:${baseTime.minute}",
-//     );
-//   }
-// }
-// lib/features/reminder/presentation/views/add_reminder_view.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
@@ -844,22 +227,23 @@ class _AddReminderViewState extends State<AddReminderView> {
     return Wrap(
       spacing: 10,
       runSpacing: 10,
-      children: options.map((option) {
-        final isSelected = selectedFrequency == option;
-        return ChoiceChip(
-          label: Text(option),
-          selected: isSelected,
-          onSelected: (_) => setState(() => selectedFrequency = option),
-          selectedColor: kPrimaryColor,
-          labelStyle: TextStyle(
-            color: isSelected ? Colors.white : Colors.black,
-          ),
-          backgroundColor: kFieldBackgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        );
-      }).toList(),
+      children:
+          options.map((option) {
+            final isSelected = selectedFrequency == option;
+            return ChoiceChip(
+              label: Text(option),
+              selected: isSelected,
+              onSelected: (_) => setState(() => selectedFrequency = option),
+              selectedColor: kPrimaryColor,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.black,
+              ),
+              backgroundColor: kFieldBackgroundColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            );
+          }).toList(),
     );
   }
 
@@ -883,8 +267,11 @@ class _AddReminderViewState extends State<AddReminderView> {
   // ✅ تعديل 2: دعم Add Time في Daily, Weekly, Monthly
   Widget _buildTimeSelector() {
     // ✅ Add Time متاح في Daily, Weekly, Monthly
-    final bool canAddTime = selectedFrequency == 'Daily' || selectedFrequency == 'Weekly' || selectedFrequency == 'Monthly';
-    
+    final bool canAddTime =
+        selectedFrequency == 'Daily' ||
+        selectedFrequency == 'Weekly' ||
+        selectedFrequency == 'Monthly';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -925,13 +312,14 @@ class _AddReminderViewState extends State<AddReminderView> {
               updatedList[index] = newTime;
               onChanged(updatedList);
             },
-            onDelete: canAdd && times.length > 1
-                ? () {
-                    List<TimeOfDay> updatedList = List.from(times);
-                    updatedList.removeAt(index);
-                    onChanged(updatedList);
-                  }
-                : null,
+            onDelete:
+                canAdd && times.length > 1
+                    ? () {
+                      List<TimeOfDay> updatedList = List.from(times);
+                      updatedList.removeAt(index);
+                      onChanged(updatedList);
+                    }
+                    : null,
           );
         }),
         if (canAdd)
@@ -976,7 +364,10 @@ class _AddReminderViewState extends State<AddReminderView> {
   }) {
     return InkWell(
       onTap: () async {
-        final picked = await showTimePicker(context: context, initialTime: time);
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: time,
+        );
         if (picked != null) onSelect(picked);
       },
       child: Container(
@@ -1000,8 +391,8 @@ class _AddReminderViewState extends State<AddReminderView> {
               InkWell(
                 onTap: onDelete,
                 child: const Icon(Icons.close, size: 16, color: Colors.red),
-              )
-            ]
+              ),
+            ],
           ],
         ),
       ),
@@ -1213,17 +604,18 @@ class _AddReminderViewState extends State<AddReminderView> {
     bool isEnabled = true,
   }) {
     return InkWell(
-      onTap: isEnabled
-          ? () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: date,
-                firstDate: DateTime.now(),
-                lastDate: DateTime(2030),
-              );
-              if (picked != null) onSelect(picked);
-            }
-          : null,
+      onTap:
+          isEnabled
+              ? () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: date,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2030),
+                );
+                if (picked != null) onSelect(picked);
+              }
+              : null,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
         decoration: BoxDecoration(
@@ -1294,16 +686,17 @@ class _AddReminderViewState extends State<AddReminderView> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: state is ReminderLoading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
-                    "Save Reminder",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+            child:
+                state is ReminderLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                      "Save Reminder",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
           );
         },
       ),
@@ -1321,7 +714,10 @@ class _AddReminderViewState extends State<AddReminderView> {
   void _saveReminder() async {
     if (titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Please enter a title"),backgroundColor: Colors.red,),
+        const SnackBar(
+          content: Text("❌ Please enter a title"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -1329,7 +725,10 @@ class _AddReminderViewState extends State<AddReminderView> {
     final String? patientId = await SecureStorageHelper.getUserId();
     if (patientId == null || patientId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Error: No Patient ID"),backgroundColor: Colors.red,),
+        const SnackBar(
+          content: Text("❌ Error: No Patient ID"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -1337,7 +736,10 @@ class _AddReminderViewState extends State<AddReminderView> {
     // ✅ التحقق من Weekly: يجب اختيار يوم واحد على الأقل
     if (selectedFrequency == 'Weekly' && selectedWeekDays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Please select at least one day"),backgroundColor: Colors.red,),
+        const SnackBar(
+          content: Text("❌ Please select at least one day"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -1356,11 +758,12 @@ class _AddReminderViewState extends State<AddReminderView> {
       startDate.month,
       startDate.day,
     );
-    final DateTime endD = isLifetime
-        ? DateTime(2099, 12, 31)
-        : (selectedFrequency == 'Once Only'
-            ? startD.add(const Duration(hours: 1))
-            : endDate ?? DateTime(2099, 12, 31));
+    final DateTime endD =
+        isLifetime
+            ? DateTime(2099, 12, 31)
+            : (selectedFrequency == 'Once Only'
+                ? startD.add(const Duration(hours: 1))
+                : endDate ?? DateTime(2099, 12, 31));
 
     String? rruleString;
     SimpleModel? simple;
@@ -1393,15 +796,15 @@ class _AddReminderViewState extends State<AddReminderView> {
 
     if (mounted) {
       context.read<ReminderCubit>().createReminder(
-            patientId: patientId,
-            type: selectedType,
-            title: titleController.text.trim(),
-            message: messageController.text.trim(),
-            startDate: dtStart,
-            endDate: endD,
-            rrule: finalRRuleToSend,
-            simple: simple,
-          );
+        patientId: patientId,
+        type: selectedType,
+        title: titleController.text.trim(),
+        message: messageController.text.trim(),
+        startDate: dtStart,
+        endDate: endD,
+        rrule: finalRRuleToSend,
+        simple: simple,
+      );
     }
 
     print("✅ Sending RRule: $finalRRuleToSend");

@@ -1,273 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:graduation_project/core/utils/app_styles.dart';
-// import 'package:graduation_project/features/medical_history/presentation/manager/medical_qr/medicalqr_cubit.dart';
-
-// class SharedHistoryView extends StatefulWidget {
-//   final String token;
-
-//   const SharedHistoryView({super.key, required this.token});
-
-//   @override
-//   State<SharedHistoryView> createState() => _SharedHistoryViewState();
-// }
-
-// class _SharedHistoryViewState extends State<SharedHistoryView> {
-//   @override
-//   void initState() {
-//     super.initState();
-//     // جلب البيانات فور فتح الصفحة
-//     context.read<MedicalqrCubit>().fetchSharedHistory(widget.token);
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: const Color(0xFFF3F4F6),
-//       appBar: AppBar(
-//         title: const Text("Patient Medical Record"),
-//         centerTitle: true,
-//         backgroundColor: Colors.white,
-//         elevation: 0,
-//       ),
-//       body: BlocBuilder<MedicalqrCubit, MedicalqrState>(
-//         builder: (context, state) {
-//           if (state is SharedHistoryLoading) {
-//             return const Center(child: CircularProgressIndicator());
-//           } else if (state is SharedHistoryFailure) {
-//             return Center(
-//               child: Column(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   const Icon(Icons.broken_image, size: 60, color: Colors.grey),
-//                   const SizedBox(height: 10),
-//                   Text(
-//                     "Link Expired or Invalid",
-//                     style: AppStyles.styleBold20Dark.copyWith(
-//                       color: Colors.red,
-//                     ),
-//                   ),
-//                   const SizedBox(height: 5),
-//                   Text(
-//                     state.errMessage,
-//                     style: const TextStyle(color: Colors.grey),
-//                   ),
-//                 ],
-//               ),
-//             );
-//           } else if (state is SharedHistorySuccess) {
-//             final data = state.profile;
-//             return SingleChildScrollView(
-//               padding: const EdgeInsets.all(16),
-//               child: Column(
-//                 children: [
-//                   // 1. كارت المعلومات الأساسية
-//                   _buildInfoCard(
-//                     title: "Patient Info",
-//                     icon: Icons.person,
-//                     color: Colors.blue,
-//                     children: [
-//                       _buildRow("Name", data.patientName),
-//                       _buildRow("Age", "${data.age} Years"),
-//                       _buildRow("Blood Type", data.bloodType),
-//                     ],
-//                   ),
-//                   const SizedBox(height: 16),
-
-//                   // 2. الحساسية والأمراض
-//                   _buildInfoCard(
-//                     title: "Conditions & Allergies",
-//                     icon: Icons.warning_amber_rounded,
-//                     color: Colors.orange,
-//                     children: [
-//                       _buildChipList(
-//                         "Allergies",
-//                         data.allergies,
-//                         Colors.red.shade100,
-//                         Colors.red,
-//                       ),
-//                       const SizedBox(height: 10),
-//                       _buildChipList(
-//                         "Chronic Conditions",
-//                         data.conditions,
-//                         Colors.orange.shade100,
-//                         Colors.orange.shade800,
-//                       ),
-//                     ],
-//                   ),
-//                   const SizedBox(height: 16),
-
-//                   // 3. الأدوية النشطة
-//                   _buildInfoCard(
-//                     title: "Active Medications",
-//                     icon: Icons.medication,
-//                     color: Colors.green,
-//                     children: [
-//                       if (data.medications.isEmpty)
-//                         const Text("No active medications recorded."),
-//                       ...data.medications.map(
-//                         (med) => ListTile(
-//                           contentPadding: EdgeInsets.zero,
-//                           leading: const Icon(
-//                             Icons.circle,
-//                             size: 10,
-//                             color: Colors.green,
-//                           ),
-//                           title: Text(
-//                             med,
-//                             style: const TextStyle(fontWeight: FontWeight.w500),
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-
-//                   const SizedBox(height: 16),
-
-//                   // 4. العمليات الجراحية
-//                   _buildInfoCard(
-//                     title: "Surgeries",
-//                     icon: Icons.local_hospital,
-//                     color: Colors.purple,
-//                     children: [
-//                       if (data.surgeries.isEmpty)
-//                         const Text("No surgeries recorded."),
-//                       ...data.surgeries.map(
-//                         (surg) => ListTile(
-//                           contentPadding: EdgeInsets.zero,
-//                           leading: const Icon(
-//                             Icons.circle,
-//                             size: 10,
-//                             color: Colors.purple,
-//                           ),
-//                           title: Text(
-//                             surg,
-//                             style: const TextStyle(fontWeight: FontWeight.w500),
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ],
-//               ),
-//             );
-//           }
-//           return const SizedBox();
-//         },
-//       ),
-//     );
-//   }
-
-//   // ويدجت لبناء الكارت
-//   Widget _buildInfoCard({
-//     required String title,
-//     required IconData icon,
-//     required Color color,
-//     required List<Widget> children,
-//   }) {
-//     return Container(
-//       width: double.infinity,
-//       padding: const EdgeInsets.all(20),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(16),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.grey.withOpacity(0.1),
-//             blurRadius: 10,
-//             offset: const Offset(0, 5),
-//           ),
-//         ],
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             children: [
-//               Container(
-//                 padding: const EdgeInsets.all(8),
-//                 decoration: BoxDecoration(
-//                   color: color.withOpacity(0.1),
-//                   shape: BoxShape.circle,
-//                 ),
-//                 child: Icon(icon, color: color),
-//               ),
-//               const SizedBox(width: 10),
-//               Text(title, style: AppStyles.styleBold20Dark),
-//             ],
-//           ),
-//           const Divider(height: 30),
-//           ...children,
-//         ],
-//       ),
-//     );
-//   }
-
-//   // ويدجت لبناء سطر البيانات
-//   Widget _buildRow(String label, String value) {
-//     return Padding(
-//       padding: const EdgeInsets.only(bottom: 10),
-//       child: Row(
-//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//         children: [
-//           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-//           Text(
-//             value,
-//             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   // ويدجت لعرض القوائم كـ Chips
-//   Widget _buildChipList(
-//     String label,
-//     List<String> items,
-//     Color bgColor,
-//     Color textColor,
-//   ) {
-//     if (items.isEmpty) return const SizedBox();
-//     return Column(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Text(
-//           label,
-//           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-//         ),
-//         const SizedBox(height: 8),
-//         Wrap(
-//           spacing: 8,
-//           runSpacing: 8,
-//           children:
-//               items
-//                   .map(
-//                     (item) => Container(
-//                       padding: const EdgeInsets.symmetric(
-//                         horizontal: 12,
-//                         vertical: 6,
-//                       ),
-//                       decoration: BoxDecoration(
-//                         color: bgColor,
-//                         borderRadius: BorderRadius.circular(20),
-//                       ),
-//                       child: Text(
-//                         item,
-//                         style: TextStyle(
-//                           color: textColor,
-//                           fontWeight: FontWeight.bold,
-//                           fontSize: 12,
-//                         ),
-//                       ),
-//                     ),
-//                   )
-//                   .toList(),
-//         ),
-//       ],
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
@@ -396,8 +126,6 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
     );
   }
 
-  // --- مكونات الواجهة الصغيرة ---
-
   Widget _buildHeaderInfo(data) {
     return _buildCard(
       child: Row(
@@ -405,10 +133,17 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
           CircleAvatar(
             radius: 35,
             backgroundColor: Colors.blue.shade100,
-            child: Text(
-              data.fullName[0],
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            child:
+                NetworkImage(data.profileImageUrl) != ""
+                    ? ClipOval(
+                      child: Image.network(
+                        data.profileImageUrl,
+                        width: 65,
+                        height: 65,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                    : Icon(Icons.person, size: 40, color: Colors.blue.shade700),
           ),
           const SizedBox(width: 15),
           Expanded(
@@ -568,26 +303,13 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
             subtitle: Text(
-              "Uploaded: ${file.uploadedAt.split('T')[0]}", // عرض التاريخ فقط
+              "Uploaded: ${file.uploadedAt.split('T')[0]}",
               style: const TextStyle(fontSize: 12),
             ),
             trailing: IconButton(
               icon: const Icon(Icons.open_in_new_rounded, size: 20),
-
-              // فتح لينك الملف في المتصفح
-              // import 'package:url_launcher/url_launcher.dart';
-              // launchUrl(Uri.parse(file.fileUrl));
               onPressed: () async {
-                // final uri = Uri.parse(file.fileUrl);
-                // if (await canLaunchUrl(uri)) {
-                //   await launchUrl(uri, mode: LaunchMode.externalApplication);
-                // } else {
-                //   ScaffoldMessenger.of(context).showSnackBar(
-                //     const SnackBar(content: Text('Could not launch file URL')),
-                //   );
-                // }
                 final Uri url = Uri.parse(file.fileUrl);
-
                 try {
                   // في الويب، LaunchMode.externalApplication هي الأفضل لفتح الـ PDF في تبويب جديد
                   await launchUrl(url, mode: LaunchMode.externalApplication);

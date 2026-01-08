@@ -1,4 +1,5 @@
 class MedicationModel {
+  final int? patientId;
   final int? currentMedicationID;
   final int historyID;
   final String medicationName;
@@ -12,6 +13,7 @@ class MedicationModel {
   final bool isSelfMedication;
 
   MedicationModel({
+    this.patientId,
     this.currentMedicationID,
     required this.historyID,
     required this.medicationName,
@@ -40,6 +42,7 @@ class MedicationModel {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
+      'patientId': patientId,
       'historyID': historyID,
       'medicationName': medicationName,
       'dosage': dosage,

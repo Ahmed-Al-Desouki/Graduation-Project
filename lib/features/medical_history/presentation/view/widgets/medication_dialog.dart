@@ -212,8 +212,11 @@
 //   );
 // }
 
+// import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medication_model.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/medical_form_fields.dart';
@@ -310,6 +313,7 @@ class MedicationDialog {
                               label: "Start Date",
                               icon: Icons.calendar_today,
                               readOnly: true,
+                              isRequired: true,
                               onTap: () => pickDate(startDateController),
                             ),
                           ),
@@ -345,10 +349,14 @@ class MedicationDialog {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
+                  final String? userIdStr =
+                      await SecureStorageHelper.getUserId();
+                  final int userId = int.tryParse(userIdStr ?? '') ?? 0;
                   if (formKey.currentState!.validate()) {
                     cubit.addOrUpdateMedication(
                       MedicationModel(
+                        patientId: userId,
                         currentMedicationID: medToEdit?.currentMedicationID,
                         historyID: historyId,
                         medicationName: nameController.text,

@@ -14,7 +14,7 @@ class ReminderCubit extends Cubit<ReminderState> {
     required String patientId,
     required String type,
     required String title,
-    required DateTime startDate, // ← بقى DateTime
+    required DateTime startDate,
     required DateTime endDate,
     required String? rrule,
     required SimpleModel? simple,
@@ -50,27 +50,6 @@ class ReminderCubit extends Cubit<ReminderState> {
     );
   }
 
-  // Future<void> getTodayReminders({required String patientId}) async {
-  //   if (isClosed) return;
-  //   emit(ReminderLoading());
-
-  //   // 1. اسحب الداتا من الـ SQLite
-  //   final result = await repo.getTodayReminders(patientId: patientId);
-
-  //   if (isClosed) return;
-
-  //   result.fold(
-  //     (failure) =>
-  //         emit(UpcomingRemindersFailure(errMessage: failure.errmessage)),
-  //     (allReminders) {
-  //       // ✅ الصح: نادي _emitSuccess دايماً حتى لو القائمة فاضية []
-  //       // الـ UI هيستلم قائمة فاضية ويوقف الـ Loading ويعرض "No Reminders"
-  //       _emitSuccess(allReminders);
-  //     },
-  //   );
-  // }
-
-  // دالة جلب اليوم (قراءة + تحديث خلفي)
   Future<void> getTodayReminders({required String patientId}) async {
     if (isClosed) return;
     emit(ReminderLoading());
@@ -160,7 +139,6 @@ class ReminderCubit extends Cubit<ReminderState> {
   // داخل reminder_cubit.dart
 
   Future<void> getUpcomingReminders({required String patientId}) async {
-    // لا نحتاج لعمل emit لـ Loading هنا لأن العملية تحدث في الخلفية عند فتح الهوم
     final result = await repo.getUpcomingReminders(
       patientId: patientId,
       days: 14,
@@ -170,42 +148,24 @@ class ReminderCubit extends Cubit<ReminderState> {
       (failure) =>
           print("❌ Failed to sync upcoming reminders: ${failure.errmessage}"),
       (instances) async {
-        // print("✅ Successfully synced ${instances.length} occurrences");
-        // getTodayReminders(patientId: patientId);
         print("✅ Synced ${instances.length} reminders");
-
-        // 3. بعد ما السيرفر حدث الـ SQLite، اقرأ منها تاني وحدث الـ UI
         final updatedData = await repo.getTodayReminders(patientId: patientId);
         updatedData.fold(
-          (failure) => null, // خلاص عرضنا القديم
-          (allReminders) => _emitSuccess(allReminders), // اعرض الجديد
+          (failure) => null,
+          (allReminders) => _emitSuccess(allReminders),
         );
       },
     );
   }
 
-  // Future<void> syncOfflineActions() async {
-  //   // لا نحتاج لإصدار حالات Loading لأن المزامنة تتم في الخلفية
-  //   try {
-  //     // استدعاء دالة المزامنة من الـ Repository
-  //     await repo.syncOfflineActions();
-  //     print("✅ Offline actions synced successfully.");
-  //   } catch (e) {
-  //     print("❌ Sync error: $e");
-  //   }
-  // }
-
   Future<void> syncOfflineActions() async {
-    // بننادي الريبو ونشوف النتيجة
     final result = await repo.syncOfflineActions();
 
     result.fold(
       (failure) {
-        // هيطبع الفشل لو النت فاصل
         print("⚠️ Offline sync failed: ${failure.errmessage}");
       },
       (_) {
-        // هيطبع النجاح فقط لو الداتا اترفعت فعلاً أو القائمة كانت فاضية
         print("✅ Offline actions processed successfully.");
       },
     );

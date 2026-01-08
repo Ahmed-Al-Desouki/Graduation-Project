@@ -54,7 +54,10 @@ class PatientRepositoryImpl implements PatientRepository {
         ServerFailure(response['message'] ?? 'Failed to load profile'),
       );
     } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
+      if (e is DioException) {
+        print("❌ Server Validation Error: ${e.response?.data}");
+        return Left(ServerFailure.fromDioException(e));
+      }
       return Left(ServerFailure(e.toString()));
     }
   }
@@ -204,7 +207,10 @@ class PatientRepositoryImpl implements PatientRepository {
       print(data);
       return Right(MedicationModel.fromJson(data));
     } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
+      if (e is DioException) {
+        print("❌ Server Validation Error: ${e.response?.data}");
+        return Left(ServerFailure.fromDioException(e));
+      }
       return Left(ServerFailure(e.toString()));
     }
   }

@@ -51,32 +51,3 @@ abstract class ReminderRepository {
 
   Future<Either<Failure, void>> syncOfflineActions();
 }
-
-// import '../services/reminder_web_service.dart';
-
-// class ReminderRepository {
-//   final ReminderWebService api;
-
-//   ReminderRepository(this.api);
-
-//   Future<Either<Failure, dynamic>> createReminder(
-//     String patientId,
-//     Map<String, dynamic> data,
-//   ) async {
-//     try {
-//       final res = await api.createReminder(patientId, data);
-//       return Right(res);
-//     } catch (e) {
-//       return Left(ServerFailure(e.toString()));
-//     }
-//   }
-
-//   Future<Either<Failure, List<dynamic>>> getUpcoming(String patientId) async {
-//     try {
-//       final res = await api.getUpcomingReminders(patientId);
-//       return Right(res);
-//     } catch (e) {
-//       return Left(ServerFailure(e.toString()));
-//     }
-//   }
-// }
