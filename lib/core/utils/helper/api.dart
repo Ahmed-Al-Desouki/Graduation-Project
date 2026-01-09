@@ -49,6 +49,9 @@ class ApiService {
         // 3. لو حصل خطأ: هنا اللعب كله
         onError: (DioException e, handler) async {
           print('❌ [ERROR] ${e.response?.statusCode} | ${e.message}');
+          print('❌ [DIO ERROR TYPE]: ${e.type}');
+          print('❌ [ERROR DEBUG]: ${e.error}');
+          print('❌ [ERROR MESSAGE]: ${e.message}');
 
           // لو الخطأ 401 (Unauthorized) يعني التوكن انتهى
           if (e.response?.statusCode == 401) {

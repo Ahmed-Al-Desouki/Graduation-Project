@@ -177,7 +177,7 @@
     },
     {
       "name": "equatable",
-      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/equatable-2.0.7",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/equatable-2.0.8",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -189,7 +189,7 @@
     },
     {
       "name": "ffi",
-      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/ffi-2.1.4",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/ffi-2.1.5",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -777,13 +777,13 @@
     },
     {
       "name": "rrule",
-      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/rrule-0.2.17",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/rrule-0.2.18",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
     {
       "name": "rrule_generator",
-      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/rrule_generator-0.9.7",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/rrule_generator-0.9.8",
       "packageUri": "lib/",
       "languageVersion": "2.18"
     },

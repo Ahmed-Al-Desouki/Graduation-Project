@@ -13,7 +13,7 @@ class ReminderWebService {
     required String type,
     required String title,
     required DateTime startDate, // ← DateTime
-    required DateTime endDate,
+    required DateTime? endDate,
     String? rrule, // ← جديد
     SimpleModel? simple,
     required String message,
@@ -26,7 +26,7 @@ class ReminderWebService {
       "title": title,
       "message": message.isEmpty ? null : message,
       "startDate": startDate.toIso8601String().split('.').first,
-      "endDate": endDate.toIso8601String().split('.').first,
+      "endDate": endDate?.toIso8601String().split('.').first,
       "timeZoneId": timeZone,
     };
 
@@ -69,6 +69,31 @@ class ReminderWebService {
     );
   }
 
+  // Future<List<ReminderInstanceModel>> getUpcomingReminders(String patientId) async {
+  //   final response = await _apiService.get(
+  //     "patients/$patientId/reminders/upcoming",
+  //   );
+  //   if (response is List) {
+  //     return response
+  //         .map((e) => ReminderInstanceModel.fromJson(e))
+  //         .toList();
+  //   } else {
+  //     return [];
+  //   }
+  // }
+  Future<List<ReminderModel>> getAllReminders(String patientId) async {
+    final response = await _apiService.get(
+      "v2/patients/$patientId/reminders", // ✅ استخدام endpoint upcoming
+    );
+
+    print("All Reminders Response: $response");
+
+    if (response is List) {
+      return response.map((e) => ReminderModel.fromJson(e)).toList();
+    }
+    return [];
+  }
+
   // 💡 إضافة دالة Get Today Reminders (V2)
   Future<List<ReminderInstanceModel>> getTodayReminders(
     String patientId,
@@ -86,31 +111,51 @@ class ReminderWebService {
   Future<ReminderModel> updateReminder(
     String patientId,
     String reminderId, {
-    required String name,
-    required String startDate,
-    required String endDate,
-    required String frequency,
-    required String intervalHours,
-    required String baseTime,
+    required String title,
+    required dynamic startDate, // جعلناه dynamic ليقبل String أو DateTime
+    required dynamic endDate,
+    String? rrule,
+    SimpleModel? simple,
     required String message,
+    required bool isSimpleEveryXHours,
   }) async {
-    final body = {
-      "name": name,
-      "startDate": startDate,
-      "endDate": endDate,
-      "frequency": frequency,
-      "intervalHours": intervalHours,
-      "baseTime": baseTime,
+    // بناء الـ Map الذي سيُرسل للسيرفر
+    final Map<String, dynamic> data = {
+      "title": title,
+      // التأكد من التحويل هنا أيضاً كخط دفاع أخير
+      "startDate": startDate is DateTime
+          ? startDate.toIso8601String()
+          : startDate,
+      "endDate": endDate is DateTime ? endDate.toIso8601String() : endDate,
+      "rrule": rrule,
       "message": message,
+      "isSimpleEveryXHours": isSimpleEveryXHours,
+      if (simple != null) "simple": simple.toJson(),
     };
+
+    // إرسال الريكويست
     final response = await _apiService.put(
       "v2/patients/$patientId/reminders/$reminderId",
-      body,
+      data, // هنا Dio سيعمل بنجاح لأن كل القيم بداخل data أصبحت نصوصاً أو أرقاماً
     );
-    if (response is Map<String, dynamic>) {
-      return ReminderModel.fromJson(response); // ✅ يجب تحويلها
-    } else {
-      throw Exception("Invalid response format received for Update.");
+
+    // return ReminderModel.fromJson(response);
+    try {
+      // محاولة تحويل الرد
+      return ReminderModel.fromJson(response);
+    } catch (e) {
+      print("Parsing Error in Update: $e");
+      // 💡 الحل السحري: إذا حدث خطأ في التحويل، نرجع كائن محلي بالبيانات الجديدة
+      // لكي لا يظهر الخطأ الأحمر للمستخدم، لأن التعديل تم بالفعل في السيرفر
+      return ReminderModel(
+        reminderId: reminderId,
+        title: title,
+        type: "Updated",
+        startDate: startDate is DateTime ? startDate : DateTime.now(),
+        endDate: endDate is DateTime ? endDate : DateTime.now(),
+        patientID: int.parse(patientId),
+        message: message,
+      );
     }
   }
 

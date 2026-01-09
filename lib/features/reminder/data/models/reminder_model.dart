@@ -2,33 +2,35 @@ class ReminderModel {
   final String type;
   final String title;
   final DateTime startDate;
-  final DateTime endDate;
+  final DateTime? endDate;
   final String? message;
   final int patientID;
   final bool isActive;
   final String status;
   final int? prescriptionMedID;
   final String? dosage;
-  final String? reminderID;
+  final String? reminderId;
   final String? rrule;
   final SimpleModel? simple;
   final String timeZoneId;
+  final bool isSimpleEveryXHours;
 
   ReminderModel({
     required this.type,
     required this.title,
     required this.startDate,
-    required this.endDate,
+    this.endDate,
     this.message,
     required this.patientID,
     this.isActive = true,
     this.status = "Pending",
     this.prescriptionMedID,
     this.dosage,
-    this.reminderID,
+    this.reminderId,
     this.rrule,
     this.simple,
     this.timeZoneId = "Africa/Cairo",
+    this.isSimpleEveryXHours = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -36,7 +38,7 @@ class ReminderModel {
       "type": type,
       "title": title,
       "startDate": startDate.toIso8601String(),
-      "endDate": endDate.toIso8601String(),
+      if (endDate != null) "endDate": endDate!.toIso8601String(),
       "message": message,
       // "status": status,
       // "isActive": isActive,
@@ -48,23 +50,69 @@ class ReminderModel {
   }
 
   factory ReminderModel.fromJson(Map<String, dynamic> json) {
+    // <<<<<<< HEAD
+    //     return ReminderModel(
+    //       patientID:
+    //           json['patientID'] is String
+    //               ? int.parse(json['patientID'])
+    //               : (json['patientID'] ?? 0),
+    //       type: json['type'] ?? '',
+    //       title: json['title'] ?? '',
+    //       startDate: DateTime.tryParse(json['startDate'] ?? '') ?? DateTime.now(),
+    //       endDate: DateTime.tryParse(json['endDate'] ?? '') ?? DateTime.now(),
+    //       message: json['message'],
+    //       status: json['status'] ?? 'Pending',
+    //       isActive: json['isActive'] ?? true,
+    //       prescriptionMedID: json['prescriptionMedID'],
+    //       dosage: json['dosage'],
+    //       rrule: json['rrule'],
+    //       simple:
+    //           json['simple'] != null ? SimpleModel.fromJson(json['simple']) : null,
+    //       timeZoneId: json['timeZoneId'] ?? 'Africa/Cairo',
+    // =======
+    print("DEBUG: JSON simple = ${json['simple']}");
+    SimpleModel? parsedSimple;
+    if (json['isSimpleEveryXHours'] == true) {
+      // ✅ بناء SimpleModel يدويًا من الحقول المباشرة
+      parsedSimple = SimpleModel(
+        intervalHours: json['intervalHours'] ?? 8,
+        firstDoseTime: json['firstDoseTime'] ?? "08:00",
+        // >>>>>>> origin/stable-v2
+      );
+    } else if (json['simple'] != null) {
+      // الـ fallback لو السيرفر رجع simple كـ object (لو تغير في المستقبل)
+      parsedSimple = SimpleModel.fromJson(json['simple']);
+    }
+    // ✅ تعديل: استخدم DateTime.parse ثم toLocal() فقط لو الـ string مع Z (UTC)، غير كده خليها local
+    DateTime parseDate(String? dateStr) {
+      if (dateStr == null) return DateTime.now();
+      final parsed = DateTime.tryParse(dateStr) ?? DateTime.now();
+      if (!dateStr.endsWith('Z')) {
+        // ✅ الحل: أضف +2 ساعات يدويًا لـ EET لو بدون Z (لأن parsed بيفترض UTC)
+        return parsed.add(const Duration(hours: 2));
+      }
+      return parsed.toLocal(); // لو Z، حوّل طبيعي
+    }
+
     return ReminderModel(
-      patientID:
-          json['patientID'] is String
-              ? int.parse(json['patientID'])
-              : (json['patientID'] ?? 0),
+      reminderId:
+          json['id']?.toString() ??
+          json['reminderId']?.toString() ??
+          json['reminderID']?.toString(),
+      patientID: json['patientId'] is String
+          ? int.parse(json['patientId'])
+          : (json['patientId'] ?? 0),
       type: json['type'] ?? '',
       title: json['title'] ?? '',
-      startDate: DateTime.tryParse(json['startDate'] ?? '') ?? DateTime.now(),
-      endDate: DateTime.tryParse(json['endDate'] ?? '') ?? DateTime.now(),
+      startDate: parseDate(json['startDate']),
+      endDate: json['endDate'] != null ? parseDate(json['endDate']) : null,
       message: json['message'],
       status: json['status'] ?? 'Pending',
       isActive: json['isActive'] ?? true,
       prescriptionMedID: json['prescriptionMedID'],
       dosage: json['dosage'],
       rrule: json['rrule'],
-      simple:
-          json['simple'] != null ? SimpleModel.fromJson(json['simple']) : null,
+      simple: parsedSimple, // ✅ استخدم الـ parsedSimple اللي بنيناه
       timeZoneId: json['timeZoneId'] ?? 'Africa/Cairo',
     );
   }

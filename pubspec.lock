@@ -237,10 +237,10 @@ packages:
     dependency: transitive
     description:
       name: equatable
-      sha256: "567c64b3cb4cf82397aac55f4f0cbd3ca20d77c6c03bedbc4ceaddc08904aef7"
+      sha256: "3e0141505477fd8ad55d6eb4e7776d3fe8430be8e497ccb1521370c3f21a3e2b"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.7"
+    version: "2.0.8"
   fake_async:
     dependency: transitive
     description:
@@ -253,10 +253,10 @@ packages:
     dependency: transitive
     description:
       name: ffi
-      sha256: "289279317b4b16eb2bb7e271abccd4bf84ec9bdcbe999e278a94b804f5630418"
+      sha256: d07d37192dbf97461359c1518788f203b0c9102cfd2c35a716b823741219542c
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.4"
+    version: "2.1.5"
   file:
     dependency: transitive
     description:
@@ -1028,18 +1028,18 @@ packages:
     dependency: "direct main"
     description:
       name: rrule
-      sha256: b7425410c594d4b6717c9f17ec8ef83c9d1ff2e513c428a135b5924fc2e8e045
+      sha256: f6f6ad5bf7b19d218d4c985d6055d3c9717f1d6efd5d1c0127b1146f1eb3640c
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.17"
+    version: "0.2.18"
   rrule_generator:
     dependency: "direct main"
     description:
       name: rrule_generator
-      sha256: "3970b2bcff49e7cbce8cc864f20c10ac274db51caf96f51363d77c41b7e07cd0"
+      sha256: "77c52ea87c8d477cc9eb30e60d0694cbc4ca0231ca09e00bc7b6ebdd3a29b5f0"
       url: "https://pub.dev"
     source: hosted
-    version: "0.9.7"
+    version: "0.9.8"
   shared_preferences:
     dependency: "direct main"
     description:

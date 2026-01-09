@@ -1,10 +1,10 @@
 // ignore_for_file: prefer_single_quotes
 class Assets {
   Assets._();
+
   /// Assets for imagesAge
   /// assets/images/age.svg
   static const String imagesAge = "assets/images/age.svg";
-
 
   /// Assets for imagesApple173SvgrepoCom
   /// assets/images/apple-173-svgrepo-com.svg
@@ -53,7 +53,8 @@ class Assets {
 
   /// Assets for imagesClipartDoctorPerson1
   /// assets/images/clipart-doctor-person-1.png
-  static const String imagesClipartDoctorPerson1 = "assets/images/clipart-doctor-person-1.png";
+  static const String imagesClipartDoctorPerson1 =
+      "assets/images/clipart-doctor-person-1.png";
 
   /// Assets for imagesClock
   /// assets/images/clock.svg
@@ -71,11 +72,9 @@ class Assets {
 
   // static const String imagesEducationVerification = "assets/images/education-verification.svg";
 
-
   /// Assets for imagesEmergency
   /// assets/images/emergency.svg
   static const String imagesEmergency = "assets/images/emergency.svg";
-
 
   /// Assets for imagesFilePlusFillSvgrepoCom
   /// assets/images/file-plus-fill-svgrepo-com.svg
@@ -95,7 +94,6 @@ class Assets {
   /// Assets for imagesHIPAACompliant
   /// assets/images/HIPAA_compliant.svg
   // static const String imagesHIPAACompliant = "assets/images/HIPAA_compliant.svg";
-
 
   /// Assets for imagesHeartRate
   /// assets/images/heart_rate.svg
@@ -129,12 +127,9 @@ class Assets {
   /// assets/images/login.png
   static const String imagesLogin = "assets/images/login.png";
 
-
   /// Assets for imagesLogin
   /// assets/images/logooo.jpg
-  static const String imagesLogooo = "assets/images/logooo.jpg";
-
-
+  static const String imagesLogooo = "assets/images/logoo.jpeg";
 
   /// Assets for imagesLogout
   /// assets/images/logout.svg
@@ -142,11 +137,13 @@ class Assets {
 
   /// Assets for imagesMaleDoctorToGuideSvgrepoCom
   /// assets/images/male-doctor-to-guide-svgrepo-com.svg
-  static const String imagesMaleDoctorToGuideSvgrepoCom = "assets/images/male-doctor-to-guide-svgrepo-com.svg";
+  static const String imagesMaleDoctorToGuideSvgrepoCom =
+      "assets/images/male-doctor-to-guide-svgrepo-com.svg";
 
   /// Assets for imagesMedicalRecordsSvgrepoCom
   /// assets/images/medical-records-svgrepo-com.svg
-  static const String imagesMedicalRecordsSvgrepoCom = "assets/images/medical-records-svgrepo-com.svg";
+  static const String imagesMedicalRecordsSvgrepoCom =
+      "assets/images/medical-records-svgrepo-com.svg";
 
   /// Assets for imagesMeds
   /// assets/images/meds.svg
@@ -160,11 +157,9 @@ class Assets {
   /// assets/images/patient.png
   static const String imagesPatient = "assets/images/patient.png";
 
-
   /// Assets for imagesPatient1
   /// assets/images/patient(1).jpg
   static const String imagesPatient1 = "assets/images/patient(1).jpg";
-
 
   /// Assets for imagesPatients
   /// assets/images/patients.svg
@@ -180,7 +175,8 @@ class Assets {
 
   /// Assets for imagesPillsPillSvgrepoCom
   /// assets/images/pills-pill-svgrepo-com.svg
-  static const String imagesPillsPillSvgrepoCom = "assets/images/pills-pill-svgrepo-com.svg";
+  static const String imagesPillsPillSvgrepoCom =
+      "assets/images/pills-pill-svgrepo-com.svg";
 
   /// Assets for imagesPreferences
   /// assets/images/preferences.svg
@@ -225,17 +221,14 @@ class Assets {
   /// assets/images/schdule_booking.svg
   // static const String imagesSchduleBooking = "assets/images/schdule_booking.svg";
 
-
   /// Assets for imagesSecure
   /// assets/images/secure.svg
   static const String imagesSecure = "assets/images/secure.svg";
-
 
   /// Assets for imagesShieldHeartSolidFull
   /// assets/images/shield-heart-solid-full.svg
   static const String imagesShieldHeartSolidFull =
       "assets/images/shield-heart-solid-full.svg";
-
 
   /// Assets for imagesStethoscope
   /// assets/images/stethoscope.svg

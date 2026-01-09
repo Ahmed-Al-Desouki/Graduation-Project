@@ -3,17 +3,56 @@ import 'package:rrule/rrule.dart';
 /// ✅ Helper class للتعامل مع RRULE - متوافق 100% مع rrule ^0.2.17
 class RRuleHelper {
   // ==================== CONVERSION ====================
-  
+
   /// تحويل RRULE string لـ RecurrenceRule object
+  // static RecurrenceRule? fromString(String? rruleString) {
+  //   if (rruleString == null || rruleString.isEmpty) return null;
+  //   try {
+  //     return RecurrenceRule.fromString(rruleString);
+  //   } catch (e) {
+  //     print("❌ Invalid RRULE: $e");
+  //     return null;
+  //   }
+  // }
   static RecurrenceRule? fromString(String? rruleString) {
     if (rruleString == null || rruleString.isEmpty) return null;
     try {
-      return RecurrenceRule.fromString(rruleString);
+      String cleanRule = rruleString;
+
+      // إزالة DTSTART وأي أسطر إضافية
+      if (cleanRule.contains('RRULE:')) {
+        cleanRule = cleanRule.split('RRULE:').last.trim();
+      } else if (cleanRule.contains('\n')) {
+        cleanRule = cleanRule.split('\n').last.trim();
+      }
+
+      // تنظيف التاريخ في UNTIL (إزالة - و :)
+      if (cleanRule.contains('UNTIL=')) {
+        final untilRegex = RegExp(
+          r'UNTIL=(\d{4})-?(\d{2})-?(\d{2})T?(\d{2}):?(\d{2}):?(\d{2})Z?',
+        );
+        cleanRule = cleanRule.replaceAllMapped(untilRegex, (m) {
+          return "UNTIL=${m[1]}${m[2]}${m[3]}T${m[4]}${m[5]}${m[6]}Z";
+        });
+      }
+
+      return RecurrenceRule.fromString(cleanRule);
     } catch (e) {
-      print("❌ Invalid RRULE: $e");
+      // نرجع null بدل ما يضرب الأبلكيشن، والـ Regex اللي فوق هيقوم بالواجب في الـ Edit
+      print(
+        "⚠️ Warning: RRule parser skipped, using Regex fallback. Error: $e",
+      );
       return null;
     }
   }
+
+  // static String _fixUntilFormat(String rule) {
+  //   return rule.replaceAllMapped(RegExp(r'UNTIL=([^;]+)'), (match) {
+  //     String datePart = match.group(1)!;
+  //     String fixedDate = datePart.replaceAll('-', '').replaceAll(':', '');
+  //     return 'UNTIL=$fixedDate';
+  //   });
+  // }
 
   /// التحقق من صحة الـ RRULE
   static bool isValid(String? rruleString) {
@@ -29,12 +68,23 @@ class RRuleHelper {
     DateTime? until,
   }) {
     String rrule = "FREQ=DAILY;BYHOUR=$hour;BYMINUTE=$minute";
-    
+
+    // if (until != null) {
+    //   final untilUtc = until.toUtc();
+    //   rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+    // }
     if (until != null) {
       final untilUtc = until.toUtc();
-      rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+      // التعديل هنا: إزالة الفواصل والشرطات
+      final formattedUntil = untilUtc
+          .toIso8601String()
+          .split('.')
+          .first
+          .replaceAll('-', '')
+          .replaceAll(':', '');
+      rrule += ";UNTIL=${formattedUntil}Z";
     }
-    
+
     return rrule;
   }
 
@@ -55,19 +105,31 @@ class RRuleHelper {
       DateTime.saturday: 'SA',
       DateTime.sunday: 'SU',
     };
-    
+
     final selectedDaysStr = weekDays
         .map((day) => daysMap[day])
         .where((d) => d != null)
         .join(',');
-    
-    String rrule = "FREQ=WEEKLY;BYDAY=$selectedDaysStr;BYHOUR=$hour;BYMINUTE=$minute";
-    
+
+    String rrule =
+        "FREQ=WEEKLY;BYDAY=$selectedDaysStr;BYHOUR=$hour;BYMINUTE=$minute";
+
+    // if (until != null) {
+    //   final untilUtc = until.toUtc();
+    //   rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+    // }
     if (until != null) {
       final untilUtc = until.toUtc();
-      rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+      // التعديل هنا: إزالة الفواصل والشرطات
+      final formattedUntil = untilUtc
+          .toIso8601String()
+          .split('.')
+          .first
+          .replaceAll('-', '')
+          .replaceAll(':', '');
+      rrule += ";UNTIL=${formattedUntil}Z";
     }
-    
+
     return rrule;
   }
 
@@ -78,28 +140,48 @@ class RRuleHelper {
     required int minute,
     DateTime? until,
   }) {
-    String rrule = "FREQ=MONTHLY;BYMONTHDAY=$monthDay;BYHOUR=$hour;BYMINUTE=$minute";
-    
+    String rrule =
+        "FREQ=MONTHLY;BYMONTHDAY=$monthDay;BYHOUR=$hour;BYMINUTE=$minute";
+
+    // if (until != null) {
+    //   final untilUtc = until.toUtc();
+    //   rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+    // }
     if (until != null) {
       final untilUtc = until.toUtc();
-      rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+      // التعديل هنا: إزالة الفواصل والشرطات
+      final formattedUntil = untilUtc
+          .toIso8601String()
+          .split('.')
+          .first
+          .replaceAll('-', '')
+          .replaceAll(':', '');
+      rrule += ";UNTIL=${formattedUntil}Z";
     }
-    
+
     return rrule;
   }
 
   /// بناء RRULE ساعي (Hourly)
-  static String buildHourly({
-    required int interval,
-    DateTime? until,
-  }) {
+  static String buildHourly({required int interval, DateTime? until}) {
     String rrule = "FREQ=HOURLY;INTERVAL=$interval";
-    
+
+    // if (until != null) {
+    //   final untilUtc = until.toUtc();
+    //   rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+    // }
     if (until != null) {
       final untilUtc = until.toUtc();
-      rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+      // التعديل هنا: إزالة الفواصل والشرطات
+      final formattedUntil = untilUtc
+          .toIso8601String()
+          .split('.')
+          .first
+          .replaceAll('-', '')
+          .replaceAll(':', '');
+      rrule += ";UNTIL=${formattedUntil}Z";
     }
-    
+
     return rrule;
   }
 
@@ -111,13 +193,25 @@ class RRuleHelper {
     required int minute,
     DateTime? until,
   }) {
-    String rrule = "FREQ=YEARLY;BYMONTH=$month;BYMONTHDAY=$day;BYHOUR=$hour;BYMINUTE=$minute";
-    
+    String rrule =
+        "FREQ=YEARLY;BYMONTH=$month;BYMONTHDAY=$day;BYHOUR=$hour;BYMINUTE=$minute";
+
+    // if (until != null) {
+    //   final untilUtc = until.toUtc();
+    //   rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+    // }
     if (until != null) {
       final untilUtc = until.toUtc();
-      rrule += ";UNTIL=${untilUtc.toIso8601String().split('.').first}Z";
+      // التعديل هنا: إزالة الفواصل والشرطات
+      final formattedUntil = untilUtc
+          .toIso8601String()
+          .split('.')
+          .first
+          .replaceAll('-', '')
+          .replaceAll(':', '');
+      rrule += ";UNTIL=${formattedUntil}Z";
     }
-    
+
     return rrule;
   }
 
@@ -132,7 +226,7 @@ class RRuleHelper {
   }) {
     final rrule = fromString(rruleString);
     if (rrule == null) return [];
-    
+
     try {
       final instances = rrule.getInstances(start: start.copyWith(isUtc: true));
       return instances
@@ -154,7 +248,7 @@ class RRuleHelper {
   }) {
     final rrule = fromString(rruleString);
     if (rrule == null) return [];
-    
+
     try {
       final instances = rrule.getInstances(start: start.copyWith(isUtc: true));
       return instances
@@ -206,7 +300,8 @@ class RRuleHelper {
   static String getFrequency(String rruleString) {
     final rrule = fromString(rruleString);
     if (rrule == null) return "Unknown";
-    
+    // UNTIL=2026-01-10T21:59:59Z
+    // UNTIL=20260110T215959Z
     switch (rrule.frequency) {
       case Frequency.daily:
         return "Daily";
@@ -234,7 +329,7 @@ class RRuleHelper {
       if (bydayMatch != null) {
         final daysString = bydayMatch.group(1);
         final daysCodes = daysString?.split(',') ?? [];
-        
+
         final daysMap = {
           'MO': DateTime.monday,
           'TU': DateTime.tuesday,
@@ -244,7 +339,7 @@ class RRuleHelper {
           'SA': DateTime.saturday,
           'SU': DateTime.sunday,
         };
-        
+
         return daysCodes
             .map((code) => daysMap[code.toUpperCase()])
             .where((day) => day != null)
@@ -327,14 +422,14 @@ class RRuleHelper {
   /// إضافة BYHOUR و BYMINUTE يدويًا
   static String addTime(String rruleString, int hour, int minute) {
     String result = rruleString;
-    
+
     if (!result.contains('BYHOUR')) {
       result += ';BYHOUR=$hour';
     }
     if (!result.contains('BYMINUTE')) {
       result += ';BYMINUTE=$minute';
     }
-    
+
     return result;
   }
 
@@ -454,10 +549,7 @@ class RRuleHelper {
     print("3️⃣ Monthly RRULE: $monthlyRRule");
 
     // Every 6 hours
-    final hourlyRRule = buildHourly(
-      interval: 6,
-      until: DateTime(2025, 12, 31),
-    );
+    final hourlyRRule = buildHourly(interval: 6, until: DateTime(2025, 12, 31));
     print("4️⃣ Hourly RRULE: $hourlyRRule");
 
     // Debug

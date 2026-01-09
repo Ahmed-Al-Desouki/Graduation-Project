@@ -32,8 +32,8 @@ class ReminderRepositoryImpl implements ReminderRepository {
       if (response.isNotEmpty) {
         await _localDataSource.saveOccurrences(response, patientId);
 
-        final List<Map<String, dynamic>> savedRows =
-            await _localDataSource.getAllUpcomingFromDb();
+        final List<Map<String, dynamic>> savedRows = await _localDataSource
+            .getAllUpcomingFromDb();
 
         for (var row in savedRows) {
           final scheduledTime = DateTime.parse(row['dueDateTime']).toLocal();
@@ -68,8 +68,9 @@ class ReminderRepositoryImpl implements ReminderRepository {
     try {
       final localData = await _localDataSource.getTodayOccurrences();
 
-      final instances =
-          localData.map((e) => ReminderInstanceModel.fromJson(e)).toList();
+      final instances = localData
+          .map((e) => ReminderInstanceModel.fromJson(e))
+          .toList();
       return Right(instances);
     } catch (e) {
       print("❌ Error in getTodayReminders: $e");
@@ -128,8 +129,8 @@ class ReminderRepositoryImpl implements ReminderRepository {
     required String patientId,
     required String type,
     required String title,
-    required DateTime startDate,
-    required DateTime endDate,
+    required DateTime startDate, // ← بقى DateTime
+    required DateTime? endDate,
     String? rrule,
     SimpleModel? simple,
     required String message,
@@ -139,12 +140,13 @@ class ReminderRepositoryImpl implements ReminderRepository {
         patientId,
         type: type,
         title: title,
-        startDate: startDate,
+        startDate: startDate, // DateTime
         endDate: endDate,
         rrule: rrule,
         simple: simple,
         message: message,
       );
+
       return Right(res);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioException(e));
@@ -153,30 +155,73 @@ class ReminderRepositoryImpl implements ReminderRepository {
     }
   }
 
+  // @override
+  // Future<Either<Failure, List<ReminderInstanceModel>>> getUpcomingReminders({
+  //   required String patientId,
+  //   required int hours,
+  // }) async {
+  //   try {
+  //     final res = await _webService.getUpcomingReminders(patientId);
+  //     return Right(res);
+  //   } on DioException catch (e) {
+  //     return Left(ServerFailure.fromDioException(e));
+  //   } catch (e) {
+  //     return Left(ServerFailure(e.toString()));
+  //   }
+  // }
+  @override
+  Future<Either<Failure, List<ReminderModel>>> getAllReminders({
+    required String patientId,
+  }) async {
+    try {
+      final res = await _webService.getAllReminders(patientId);
+      return Right(res);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioException(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  // @override
+  // Future<Either<Failure, List<ReminderInstanceModel>>> getTodayReminders({
+  //   required String patientId,
+  // }) async {
+  //   try {
+  //     final res = await _webService.getTodayReminders(patientId);
+  //     return Right(res);
+  //   } on DioException catch (e) {
+  //     return Left(ServerFailure.fromDioException(e));
+  //   } catch (e) {
+  //     return Left(ServerFailure(e.toString()));
+  //   }
+  // }
+
   // --- 5. تحديث ريمندر موجود ---
   @override
   Future<Either<Failure, ReminderModel>> updateReminder({
     required String patientId,
     required String reminderId,
-    required String name,
-    required String startDate,
-    required String endDate,
-    required String frequency,
-    required String intervalHours,
-    required String baseTime,
+    required String title,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? rrule,
+    SimpleModel? simple,
     required String message,
+    required bool isSimpleEveryXHours,
   }) async {
     try {
+      // التحويل هنا يضمن أن البيانات الذاهبة للـ WebService هي نصوص
       final res = await _webService.updateReminder(
         patientId,
         reminderId,
-        name: name,
-        startDate: startDate,
-        endDate: endDate,
-        frequency: frequency,
-        intervalHours: intervalHours,
-        baseTime: baseTime,
+        title: title,
+        startDate: startDate.toIso8601String(), // 🔥 تحويل إجباري لنص
+        endDate: endDate.toIso8601String(), // 🔥 تحويل إجباري لنص
+        rrule: rrule,
+        simple: simple,
         message: message,
+        isSimpleEveryXHours: isSimpleEveryXHours,
       );
       return Right(res);
     } on DioException catch (e) {

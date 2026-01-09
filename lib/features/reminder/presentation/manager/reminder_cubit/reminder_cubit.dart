@@ -15,7 +15,7 @@ class ReminderCubit extends Cubit<ReminderState> {
     required String type,
     required String title,
     required DateTime startDate,
-    required DateTime endDate,
+    required DateTime? endDate,
     required String? rrule,
     required SimpleModel? simple,
     required String message,
@@ -66,6 +66,20 @@ class ReminderCubit extends Cubit<ReminderState> {
   }
 
   // دالة مساعدة عشان م نكررش الكود
+  // void _emitSuccess(List<ReminderInstanceModel> allReminders) {
+  //   if (isClosed) return;
+  //   final meds = allReminders.where((e) => e.type == 'Medication').toList();
+  //   final appts = allReminders.where((e) => e.type == 'Appointment').toList();
+  //   final customs =
+  //       allReminders
+  //           .where((e) => e.type != 'Medication' && e.type != 'Appointment')
+  // //       emit(UpcomingRemindersSuccess(
+  // //         medications: meds,
+  // //         appointments: appts,
+  // //       ));
+  // //     },
+  // //   );
+  // // }
   void _emitSuccess(List<ReminderInstanceModel> allReminders) {
     if (isClosed) return;
     final meds = allReminders.where((e) => e.type == 'Medication').toList();
@@ -84,29 +98,97 @@ class ReminderCubit extends Cubit<ReminderState> {
     );
   }
 
+  Future<void> getAllReminders({required String patientId}) async {
+    emit(GetAllRemindersLoading());
+
+    final result = await repo.getAllReminders(patientId: patientId);
+
+    result.fold(
+      (failure) => emit(GetAllRemindersFailure(errMessage: failure.errmessage)),
+      (reminders) => emit(GetAllRemindersSuccess(reminders: reminders)),
+    );
+  }
+
+  // Future<void> getTodayReminders({required String patientId}) async {
+  //   emit(ReminderLoading());
+
+  //   final result = await repo.getTodayReminders(patientId: patientId);
+
+  //   result.fold(
+  //     (failure) =>
+  //         emit(UpcomingRemindersFailure(errMessage: failure.errmessage)),
+  //     (allReminders) {
+  //       final meds =
+  //           allReminders
+  //               .where((element) => element.type == 'Medication')
+  //               .toList();
+
+  //       emit(
+  //         UpcomingRemindersSuccess(
+  //           medications: meds,
+  //           appointments: appts,
+  //           customs: customs,
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+  // Future<void> updateReminder({
+  //   required String patientId,
+  //   required String reminderId,
+  //   required String name,
+  //   required String startDate,
+  //   required String endDate,
+  //   required String frequency,
+  //   required String intervalHours,
+  //   required String baseTime,
+  //   required String message,
+  // }) async {
+  //   emit(ReminderLoading());
+
+  //   final result = await repo.updateReminder(
+  //     patientId: patientId,
+  //     reminderId: reminderId,
+  //     name: name,
+  //     startDate: startDate,
+  //     endDate: endDate,
+  //     frequency: frequency,
+  //     intervalHours: intervalHours,
+  //     baseTime: baseTime,
+  //     message: message,
+  //   );
+
+  //   result.fold(
+  //     (failure) => emit(ReminderUpdateFailure(errMessage: failure.errmessage)),
+  //     (reminder) => emit(ReminderUpdateSuccess(reminder: reminder)),
+  //   );
+  // }
+
+  // --- Update Reminder (المحدثة) ---
   Future<void> updateReminder({
     required String patientId,
     required String reminderId,
-    required String name,
-    required String startDate,
-    required String endDate,
-    required String frequency,
-    required String intervalHours,
-    required String baseTime,
+    required String title,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? rrule,
+    SimpleModel? simple,
     required String message,
+    required bool isEveryXHours, // للتمييز وإرسالها للريبو
   }) async {
-    emit(ReminderLoading());
+    emit(ReminderLoading()); // أو ReminderUpdateLoading لو عايز تفصلهم
 
     final result = await repo.updateReminder(
       patientId: patientId,
       reminderId: reminderId,
-      name: name,
+      title: title,
       startDate: startDate,
       endDate: endDate,
-      frequency: frequency,
-      intervalHours: intervalHours,
-      baseTime: baseTime,
+      rrule: rrule,
+      simple: simple,
       message: message,
+      isSimpleEveryXHours: isEveryXHours,
     );
 
     result.fold(
@@ -115,12 +197,15 @@ class ReminderCubit extends Cubit<ReminderState> {
     );
   }
 
-  Future<void> deleteReminder({required String reminderId}) async {
-    final patientId = await SecureStorageHelper.getUserId();
-    if (patientId == null || patientId.isEmpty) {
-      emit(ReminderDeleteFailure(errMessage: "User ID is missing or invalid."));
-      return;
-    }
+  Future<void> deleteReminder({
+    required String reminderId,
+    required String patientId,
+  }) async {
+    // final patientId = await SecureStorageHelper.getUserId();
+    // if (patientId == null || patientId.isEmpty) {
+    //   emit(ReminderDeleteFailure(errMessage: "User ID is missing or invalid."));
+    //   return;
+    // }
 
     emit(ReminderDeleteLoading());
 

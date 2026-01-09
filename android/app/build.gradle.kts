@@ -45,12 +45,7 @@ android {
 
     signingConfigs {
         // ✅ التعديل هنا: getByName بدلاً من create لأن debug موجود أصلاً
-        getByName("debug") {
-            storeFile = file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
+        
 
         // ✅ هنا create لأن release مش موجود افتراضياً
         create("release") {
