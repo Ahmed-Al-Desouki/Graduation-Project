@@ -9,8 +9,11 @@ import 'package:graduation_project/features/reminder/presentation/manager/remind
 class AddReminderView extends StatefulWidget {
   // ✅ إضافة متغير لاستقبال الريمندر في حالة التعديل
   final ReminderModel? reminderToEdit;
+  // ✅ إضافة جديدة: متغير للنوع الابتدائي (لو من زر فئة معينة)
+  final String? initialType;
 
-  const AddReminderView({super.key, this.reminderToEdit});
+  // const AddReminderView({super.key, this.reminderToEdit});
+  const AddReminderView({super.key, this.reminderToEdit, this.initialType});
 
   @override
   State<AddReminderView> createState() => _AddReminderViewState();
@@ -42,6 +45,9 @@ class _AddReminderViewState extends State<AddReminderView> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialType != null) {
+      selectedType = widget.initialType!; // ✅ حدد النوع الابتدائي لو موجود
+    }
     if (isEditing) {
       _initDataForEditing(); // 🔹 ملء البيانات في حالة التعديل
     } else {
@@ -514,18 +520,17 @@ class _AddReminderViewState extends State<AddReminderView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionTitle("What type of reminder?"),
-              const SizedBox(height: 10),
-              // ✅ منع تغيير النوع أثناء التعديل
-              IgnorePointer(
-                ignoring: isEditing,
-                child: Opacity(
-                  opacity: isEditing ? 0.4 : 1.0,
-                  child: _buildSectionCard(child: _buildTypeSelector()),
-                ),
-              ),
-
-              const SizedBox(height: 25),
+              // _buildSectionTitle("What type of reminder?"),
+              // const SizedBox(height: 10),
+              // // ✅ منع تغيير النوع أثناء التعديل
+              // IgnorePointer(
+              //   ignoring: isEditing,
+              //   child: Opacity(
+              //     opacity: isEditing ? 0.4 : 1.0,
+              //     child: _buildSectionCard(child: _buildTypeSelector()),
+              //   ),
+              // ),
+              // const SizedBox(height: 25),
               _buildSectionTitle("Reminder Title"),
               const SizedBox(height: 10),
               _buildSectionCard(child: _buildTitleField()),
@@ -583,47 +588,47 @@ class _AddReminderViewState extends State<AddReminderView> {
     );
   }
 
-  Widget _buildTypeSelector() {
-    return Column(
-      children: [
-        _buildTypeRow("Medication", Icons.medication, Colors.blue),
-        const Divider(height: 10, thickness: 0.5),
-        _buildTypeRow("Appointment", Icons.calendar_month, kPrimaryColor),
-        const Divider(height: 10, thickness: 0.5),
-        _buildTypeRow("Custom", Icons.notifications, Colors.orange),
-      ],
-    );
-  }
+  // Widget _buildTypeSelector() {
+  //   return Column(
+  //     children: [
+  //       _buildTypeRow("Medication", Icons.medication, Colors.blue),
+  //       const Divider(height: 10, thickness: 0.5),
+  //       _buildTypeRow("Appointment", Icons.calendar_month, kPrimaryColor),
+  //       const Divider(height: 10, thickness: 0.5),
+  //       _buildTypeRow("Custom", Icons.notifications, Colors.orange),
+  //     ],
+  //   );
+  // }
 
-  Widget _buildTypeRow(String type, IconData icon, Color color) {
-    final isSelected = selectedType == type;
-    return InkWell(
-      onTap: () => setState(() => selectedType = type),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.05) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(width: 15),
-            Text(
-              type,
-              style: TextStyle(
-                color: isSelected ? color : Colors.black87,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 16,
-              ),
-            ),
-            const Spacer(),
-            if (isSelected) Icon(Icons.check_circle, color: color, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildTypeRow(String type, IconData icon, Color color) {
+  //   final isSelected = selectedType == type;
+  //   return InkWell(
+  //     onTap: () => setState(() => selectedType = type),
+  //     child: Container(
+  //       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+  //       decoration: BoxDecoration(
+  //         color: isSelected ? color.withOpacity(0.05) : Colors.transparent,
+  //         borderRadius: BorderRadius.circular(8),
+  //       ),
+  //       child: Row(
+  //         children: [
+  //           Icon(icon, color: color, size: 28),
+  //           const SizedBox(width: 15),
+  //           Text(
+  //             type,
+  //             style: TextStyle(
+  //               color: isSelected ? color : Colors.black87,
+  //               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+  //               fontSize: 16,
+  //             ),
+  //           ),
+  //           const Spacer(),
+  //           if (isSelected) Icon(Icons.check_circle, color: color, size: 20),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildTitleField() {
     String hint = "Reminder Title";
@@ -1211,21 +1216,40 @@ class _AddReminderViewState extends State<AddReminderView> {
     );
 
     // تواريخ البداية والنهاية (للحقول المنفصلة)
-    final DateTime startD = DateTime(
-      startDate.year,
-      startDate.month,
-      startDate.day,
-    );
-    final DateTime? endD =
-        isLifetime
-            ? null
-            : (selectedFrequency == 'Once Only'
-                ? startD.add(const Duration(hours: 1))
-                : endDate ?? DateTime(2099, 12, 31));
+    // final DateTime startD = DateTime(
+    //   startDate.year,
+    //   startDate.month,
+    //   startDate.day,
+    // );
+    // final DateTime? endD =
+    //     isLifetime
+    //         ? null
+    //         : (selectedFrequency == 'Once Only'
+    //             ? startD.add(const Duration(hours: 1))
+    //             : endDate ?? DateTime(2099, 12, 31));
+    final DateTime? endD;
+    if (isLifetime) {
+       // 1️⃣ حالة مدى الحياة: نضع تاريخ بعيد جداً (سنة 2099)
+       // ده بيخلي الباك إند يفهم إنها مستمرة
+      endD = DateTime(2099, 12, 31, 23, 59, 59);
+    } else if (selectedFrequency == 'Once Only') {
+       // 2️⃣ حالة المرة الواحدة: ساعة بعد البداية
+      endD = dtStart.add(const Duration(hours: 1));
+    } else {
+      // في الحالات الأخرى، نستخدم تاريخ النهاية المحدد أو نفس يوم البداية لو مفيش
+      DateTime baseEndDate = endDate ?? startDate;
+      // نخليه ينتهي في آخر اليوم (الساعة 23:59) عشان يغطي اليوم كله
+      endD = DateTime(
+        baseEndDate.year,
+        baseEndDate.month,
+        baseEndDate.day,
+        23, 59, 59 
+      );
+    }
 
     String? rruleString;
     SimpleModel? simple;
-    int intervalHours = 0;
+    // int intervalHours = 0;
     String firstDoseTimeStr = "";
 
     // بناء اللوجيك (RRule vs Simple)
@@ -1240,7 +1264,7 @@ class _AddReminderViewState extends State<AddReminderView> {
         );
         return;
       }
-      intervalHours = interval;
+      // int intervalHours = interval;
       firstDoseTimeStr =
           "${selectedTimes[0].hour.toString().padLeft(2, '0')}:${selectedTimes[0].minute.toString().padLeft(2, '0')}:00";
 
@@ -1274,7 +1298,7 @@ class _AddReminderViewState extends State<AddReminderView> {
           reminderId: widget.reminderToEdit!.reminderId!, // الـ ID من الموديل
           title: titleController.text.trim(),
           startDate: dtStart, // DateTime مباشر
-          endDate: endD ?? DateTime(2099), // DateTime مباشر (للأمان لو null)
+          endDate: endD, // DateTime مباشر (للأمان لو null)
 
           rrule: finalRRuleToSend,
           simple: simple,
@@ -1289,7 +1313,7 @@ class _AddReminderViewState extends State<AddReminderView> {
           title: titleController.text.trim(),
           message: messageController.text.trim(),
           startDate: dtStart,
-          endDate: endD ?? DateTime(2099),
+          endDate: endD,
           rrule: finalRRuleToSend,
           simple: simple,
         );
@@ -1304,7 +1328,7 @@ class _AddReminderViewState extends State<AddReminderView> {
     print("  RRULE: $rruleString");
     print("  Simple: ${simple?.toJson()}");
     print("  Start: $dtStart");
-    print("  End: ${endD ?? 'null'}");
+    print("  End: $endD");
   }
 
   String _buildRRuleString() {

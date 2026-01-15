@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
-import 'package:graduation_project/core/utils/helper/service_locator.dart'; // عشان getIt
 import 'package:graduation_project/features/reminder/data/models/reminder_instance_model.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_state.dart';
 import 'package:graduation_project/features/reminder/presentation/views/add_reminder_view.dart';
-import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_dialog.dart';
+import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_appointment_card.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_custom_card.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_header.dart';
@@ -60,21 +59,26 @@ class _ReminderViewState extends State<ReminderView> {
           //   padding: EdgeInsets.only(right: 16.0),
           //   child: Icon(Icons.notifications, color: Colors.black),
           // ),
-          Padding(
+          // في الـ AppBar -> actions
+Padding(
   padding: const EdgeInsets.only(right: 10),
   child: TextButton(
-    onPressed: () async {  // ✅ أضف async هنا
-      final result = await showDialog(  // ✅ استخدم await للانتظار حتى الـ pop
-        context: context,
-        builder: (_) => BlocProvider.value(
-          value: context.read<ReminderCubit>(),
-          child: const AllRemindersDialog(),
+    onPressed: () async {
+      // ✅ التعديل هنا: الانتقال لصفحة بدلاً من فتح Dialog
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          // نمرر الـ Cubit الحالي للصفحة الجديدة عشان تقدر تستخدمه
+          builder: (_) => BlocProvider.value(
+            value: context.read<ReminderCubit>(),
+            child: const AllRemindersView(), // تأكد من استيراد الملف الجديد
+          ),
         ),
       );
-      // ✅ بعد الـ pop (إغلاق الـ Dialog)، أعد تحميل البيانات
-      if (result == null) {  // result == null لو أغلق بالإكس (بدون delete/update)
-        _fetchReminders();
-      }
+      
+      // عند العودة من صفحة العرض الكلي، نحدث الصفحة الرئيسية 
+      // تحسباً لأي تعديل أو حذف حصل هناك
+      _fetchReminders();
     },
     child: const Text(
       "View All",
@@ -128,9 +132,20 @@ class _ReminderViewState extends State<ReminderView> {
 
                 // ---------- Appointments UI ----------
                 ReminderSectionHeader(
-                  title: 'Upcoming Appointments',
+                  title: 'Appointments',
                   count: appts.length,
                   isUpcoming: true,
+                  onAddPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<ReminderCubit>(),
+                          child: const AddReminderView(initialType: 'Appointment'),  // ✅ تمرير النوع
+                        ),
+                      ),
+                    ).then((_) => _fetchReminders());  // ✅ إعادة تحميل بعد العودة
+                  },
                 ),
                 const SizedBox(height: 10),
 
@@ -155,9 +170,20 @@ class _ReminderViewState extends State<ReminderView> {
 
                 // ---------- Medications UI ----------
                 ReminderSectionHeader(
-                  title: 'Medication Reminders',
+                  title: 'Medication',
                   count: meds.length,
                   isUpcoming: false,
+                  onAddPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<ReminderCubit>(),
+                          child: const AddReminderView(initialType: 'Medication'),  // ✅ تمرير النوع
+                        ),
+                      ),
+                    ).then((_) => _fetchReminders());  // ✅ إعادة تحميل بعد العودة
+                  },
                 ),
                 const SizedBox(height: 10),
 
@@ -179,14 +205,25 @@ class _ReminderViewState extends State<ReminderView> {
                     buttonText: "Mark Taken",
                   ),
 
-                const SizedBox(height: 25),
+                  const SizedBox(height: 25),
 
                 // ---------- Custom UI ----------
                 ReminderSectionHeader(
-                  title: 'Custom Reminders',
+                  title: 'Custom',
                   count: customs.length,
                   isUpcoming: false,
                   customColor: Colors.orange.shade700,
+                  onAddPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<ReminderCubit>(),
+                          child: const AddReminderView(initialType: 'Custom'),  // ✅ تمرير النوع
+                        ),
+                      ),
+                    ).then((_) => _fetchReminders());  // ✅ إعادة تحميل بعد العودة
+                  },
                 ),
                 const SizedBox(height: 10),
 
@@ -210,37 +247,36 @@ class _ReminderViewState extends State<ReminderView> {
           );
         },
       ),
-      floatingActionButton: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          gradient: const LinearGradient(
-            colors: [Color.fromARGB(255, 4, 249, 12), Color(0xFF1B4E8C)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: FloatingActionButton(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (_) => BlocProvider.value(
-                      value: context.read<ReminderCubit>(),
-                      child: const AddReminderView(),
-                    ),
-              ),
-            );
-            // عند العودة، نعيد تحميل البيانات للتأكد من التحديث
-            _fetchReminders();
-          },
-          child: const Icon(Icons.add, color: Colors.white, size: 30),
-        ),
-      ),
+      // floatingActionButton: Container(
+      //   width: 60,
+      //   height: 60,
+      //   decoration: BoxDecoration(
+      //     borderRadius: BorderRadius.circular(10),
+      //     gradient: const LinearGradient(
+      //       colors: [Color.fromARGB(255, 4, 249, 12), Color(0xFF1B4E8C)],
+      //       begin: Alignment.topLeft,
+      //       end: Alignment.bottomRight,
+      //     ),
+      //   ),
+      //   child: FloatingActionButton(
+      //     elevation: 0,
+      //     backgroundColor: Colors.transparent,
+      //     onPressed: () async {
+      //       await Navigator.push(
+      //         context,
+      //         MaterialPageRoute(
+      //           builder:
+      //               (_) => BlocProvider.value(
+      //                 value: context.read<ReminderCubit>(),
+      //                 child: const AddReminderView(),
+      //               ),
+      //         ),
+      //       );
+      //       _fetchReminders();
+      //     },
+      //     child: const Icon(Icons.add, color: Colors.white, size: 30),
+      //   ),
+      // ),
     );
   }
 

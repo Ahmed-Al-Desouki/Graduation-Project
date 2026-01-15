@@ -5,6 +5,7 @@ class ReminderSectionHeader extends StatelessWidget {
   final int count;
   final bool isUpcoming;
   final Color? customColor;
+  final VoidCallback? onAddPressed;
 
   const ReminderSectionHeader({
     super.key,
@@ -12,6 +13,7 @@ class ReminderSectionHeader extends StatelessWidget {
     required this.count,
     required this.isUpcoming,
     this.customColor,
+    this.onAddPressed,
   });
 
   @override
@@ -28,9 +30,11 @@ class ReminderSectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
         CircleAvatar(
           radius: 13,
@@ -38,6 +42,17 @@ class ReminderSectionHeader extends StatelessWidget {
           child: Text(
             '$count',
             style: const TextStyle(fontSize: 13, color: Colors.white),
+          ),
+        ),
+        const SizedBox(width: 25),
+        Container(
+          width: 40,
+          height: 40,
+          child: FloatingActionButton(
+            heroTag: "add_${title.toLowerCase()}",
+            backgroundColor: finalColor,
+            onPressed: onAddPressed,
+            child: const Icon(Icons.add, color: Colors.white, size: 25),
           ),
         ),
       ],
