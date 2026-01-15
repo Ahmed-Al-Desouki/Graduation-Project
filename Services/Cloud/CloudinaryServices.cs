@@ -1,24 +1,12 @@
 ﻿// File: Services/SharedService/CloudinaryService.cs
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using HealthCare_.Models.DTOs.CloudinaryDTO;
 using Microsoft.Extensions.Options;
 
 namespace HealthCare_.Services.Cloud
 {
-    public class CloudinarySettings
-    {
-        public string CloudName { get; set; } = string.Empty;
-        public string ApiKey { get; set; } = string.Empty;
-        public string ApiSecret { get; set; } = string.Empty;
-    }
 
-    public class CloudinaryUploadResult
-    {
-        public string Url { get; set; } = string.Empty;
-        public string PublicId { get; set; } = string.Empty;
-        public string FileType { get; set; } = string.Empty;
-        public long FileSize { get; set; }
-    }
 
     public class CloudinaryService
     {

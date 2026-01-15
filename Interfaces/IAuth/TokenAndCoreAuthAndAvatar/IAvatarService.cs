@@ -1,4 +1,5 @@
-﻿using HealthCare_.Services.Cloud;
+﻿using HealthCare_.Models.DTOs.CloudinaryDTO;
+using HealthCare_.Services.Cloud;
 
 namespace HealthCare_.Interfaces.IAuth.TokenAndCoreAuth
 {

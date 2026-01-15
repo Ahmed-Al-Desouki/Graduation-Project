@@ -48,7 +48,6 @@ namespace HealthCare_.Services
         {
             var userTimeZone = dto.TimeZoneId ?? "Africa/Cairo";
 
-            // ✅ CRITICAL FIX: Don't strip time with .Date!
             // Store the FULL UTC datetime, not just date component
             var startDateUtc = ConvertUserTimezoneToUtc(dto.StartDate, userTimeZone);
             var endDateUtc = dto.EndDate.HasValue
@@ -77,9 +76,7 @@ namespace HealthCare_.Services
                 RRULE = null
             };
 
-            // ═══════════════════════════════════════════════════════════
             // MODE 1: SIMPLE MODE (EveryXHours)
-            // ═══════════════════════════════════════════════════════════
             if (dto.Simple?.Frequency == "EveryXHours" && dto.Simple.Times?.Any() == true)
             {
                 reminder.IsSimpleEveryXHours = true;
@@ -96,9 +93,7 @@ namespace HealthCare_.Services
                     throw new ArgumentException("IntervalHours must be between 1 and 24");
                 }
             }
-            // ═══════════════════════════════════════════════════════════
             // MODE 2: RRULE MODE (Full RFC 5545)
-            // ═══════════════════════════════════════════════════════════
             else if (!string.IsNullOrWhiteSpace(dto.RRULE))
             {
                 reminder.IsSimpleEveryXHours = false;
@@ -278,67 +273,11 @@ namespace HealthCare_.Services
             }).ToList();
         }
 
-        //private static Enums.ReminderStatus GetStatus(byte status, DateTime dueDateTimeUtc, DateTime nowUtc)
-        //{
-        //    return status switch
-        //    {
-        //        1 => Enums.ReminderStatus.Completed,
-        //        2 => Enums.ReminderStatus.Skipped,
-        //        _ => dueDateTimeUtc < nowUtc.AddMinutes(-30)
-        //            ? ReminderStatus.Dismissed
-        //            : ReminderStatus.Pending    
-        //    };
-        //}
 
         #endregion
 
         #region ==================== OCCURRENCE GENERATOR ====================
 
-        //private async Task<List<UpcomingOccurrenceDto>> GenerateUpcomingOnTheFly(
-        //    int patientId,
-        //    DateTime fromUtcInclusive,
-        //    DateTime toUtcExclusive)
-        //{
-        //    var reminders = await _context.ReminderV2s
-        //        .AsNoTracking()
-        //        .Where(r => r.PatientId == patientId && r.IsActive)
-        //        .ToListAsync();
-
-        //    var result = new List<UpcomingOccurrenceDto>();
-        //    var nowUtc = DateTime.UtcNow;
-
-        //    foreach (var reminder in reminders)
-        //    {
-        //        try
-        //        {
-        //            var occurrences = GenerateOccurrencesWithIcalNetFull(reminder, fromUtcInclusive, toUtcExclusive);
-
-        //            foreach (var dtUtc in occurrences)
-        //            {
-        //                result.Add(new UpcomingOccurrenceDto
-        //                {
-        //                    ReminderId = reminder.Id,
-        //                    Title = reminder.Title,
-        //                    Message = reminder.Message ?? string.Empty,
-        //                    DueDateTime = ConvertUtcToUserTimezone(EnsureUtc(dtUtc), reminder.TimeZoneId),
-        //                    Type = reminder.Type,
-        //                    IsMedication = reminder.Type == ReminderType.Medication,
-        //                    Dosage = reminder.PrescriptionMed != null
-        //                        ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
-        //                        : null,
-        //                    Status = dtUtc < nowUtc.AddMinutes(-30) ? ReminderStatus.Overdue : ReminderStatus.Pending,
-        //                    CanSnooze = true
-        //                });
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogError(ex, "Error generating occurrences for reminder {ReminderId}", reminder.Id);
-        //        }
-        //    }
-
-        //    return result.OrderBy(x => x.DueDateTime).ToList();
-        //}
         private async Task<List<UpcomingOccurrenceDto>> GenerateUpcomingOnTheFly(
     int patientId,
     DateTime fromUtcInclusive,
@@ -399,11 +338,6 @@ namespace HealthCare_.Services
             return result.OrderBy(x => x.DueDateTime).ToList();
         }
 
-
-        /// ✅ CORRECT IMPLEMENTATION:
-        /// - SIMPLE MODE (IsSimpleEveryXHours=true, RRULE=NULL): Use FirstDoseTime + IntervalHours directly
-        /// - RRULE MODE (IsSimpleEveryXHours=false, RRULE!=NULL): Parse RRULE string with full iCalendar power
-        /// NO CONVERSION between modes - keep them completely separate
         private IEnumerable<DateTime> GenerateOccurrencesWithIcalNetFull(
              ReminderV2 reminder,
              DateTime fromUtcInclusive,
@@ -572,7 +506,7 @@ namespace HealthCare_.Services
                 //  Get reminder to access timezone
                 var reminder = await ValidateReminderAccess(reminderId, patientId);
 
-                //  CORRECT: Convert user's local time to UTC
+                // Convert user's local time to UTC
                 var dueDateTimeUtc = ConvertUserTimezoneToUtc(dueDateTime, reminder.TimeZoneId);
                 var nowUtc = DateTime.UtcNow;
 
@@ -885,27 +819,6 @@ namespace HealthCare_.Services
         private const int WINDOW_OPENS_MINUTES = 30;
         private const int GRACE_PERIOD_HOURS = 2;
         private const int OVERDUE_THRESHOLD_MINUTES = 30;
-
-        //private void ValidateActionTiming(DateTime dueTimeUtc, string actionName)
-        //{
-        //    var nowUtc = DateTime.UtcNow;
-        //    var minutesFromDue = (nowUtc - dueTimeUtc).TotalMinutes;
-
-        //    if (minutesFromDue < -WINDOW_OPENS_MINUTES)
-        //    {
-        //        var minutesUntilAvailable = Math.Abs(minutesFromDue + WINDOW_OPENS_MINUTES);
-        //        throw new InvalidOperationException(
-        //            $"Cannot {actionName} medication {Math.Abs(minutesFromDue):F0} minutes before scheduled time. " +
-        //            $"Available in {minutesUntilAvailable:F0} minutes.");
-        //    }
-
-        //    if (actionName != "skip" && minutesFromDue > (GRACE_PERIOD_HOURS * 60))
-        //    {
-        //        throw new InvalidOperationException(
-        //            $"Action window expired {(minutesFromDue - (GRACE_PERIOD_HOURS * 60)):F0} minutes ago. " +
-        //            $"Please skip if medication was not taken.");
-        //    }
-        //}
         private void ValidateActionTiming(DateTime dueTimeUtc, string actionName)
         {
             var nowUtc = DateTime.UtcNow;

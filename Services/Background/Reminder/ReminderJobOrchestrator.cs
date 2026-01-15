@@ -18,7 +18,7 @@ namespace HealthCare_.Services.Background.Reminder
         //  يُنَفّذ يوميًا الساعة 3 فجرًا
         public async Task RunDailyGenerationAsync()
         {
-            _logger.LogInformation("⏳ Daily Reminder Orchestration started");
+            _logger.LogInformation(" Daily Reminder Orchestration started");
 
             try
             {
@@ -38,11 +38,11 @@ namespace HealthCare_.Services.Background.Reminder
                     );
                 }
 
-                _logger.LogInformation("✅ {Count} patients scheduled for cache generation", patientIds.Count);
+                _logger.LogInformation(" {Count} patients scheduled for cache generation", patientIds.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "❌ Daily Reminder Orchestration failed");
+                _logger.LogCritical(ex, " Daily Reminder Orchestration failed");
                 throw;
             }
         }

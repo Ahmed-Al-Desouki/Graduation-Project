@@ -391,14 +391,18 @@
 //    }
 //}
 using HealthCare_.Interfaces.Email;
+using HealthCare_.Interfaces.IAuth;
 using HealthCare_.Interfaces.IAuth.MFA;
 using HealthCare_.Interfaces.IAuth.PKeyAndPassowrd;
 using HealthCare_.Interfaces.IAuth.QrCodeToken;
 using HealthCare_.Interfaces.IAuth.TokenAndCoreAuth;
+using HealthCare_.Interfaces.IProfile;
 using HealthCare_.Interfaces.Patient.AppointmentAndRecords;
+using HealthCare_.Models.DTOs.CloudinaryDTO;
 using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using HealthCare_.Services.Auth.Mfa;
 using HealthCare_.Services.Auth.Tokens;
+using HealthCare_.Services.SharedService.UsersProfilesService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -552,7 +556,8 @@ builder.Services.AddScoped<ReminderJobOrchestrator>();
 builder.Services.AddHostedService<ReminderCacheHealthCheckService>();
 builder.Services.AddSingleton<HangfireAuthorizationFilter>();
 builder.Services.AddScoped<IShareTokenService, ShareTokenService>();
-
+builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+builder.Services.AddScoped<IProfilePictureService, ProfilePictureService>();
 builder.Services.AddHttpClient("fcm");
 
 // ====================== CONTROLLERS & SWAGGER ======================
