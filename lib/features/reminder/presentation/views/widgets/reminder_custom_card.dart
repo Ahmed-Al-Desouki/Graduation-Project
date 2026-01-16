@@ -30,7 +30,10 @@ class ReminderCustomCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               Text(
                 'Next: $next',
@@ -38,28 +41,28 @@ class ReminderCustomCard extends StatelessWidget {
               ),
             ],
           ),
-          Text(
-            subtitle,
-            style: TextStyle(color: Colors.black45),
-          ),
+          Text(subtitle, style: TextStyle(color: Colors.black45)),
           const SizedBox(height: 6),
           Row(
-            children: [Icon(Icons.calendar_month, size: 18, color: Colors.orange),
+            children: [
+              Icon(Icons.calendar_month, size: 18, color: Colors.orange),
               SizedBox(width: 5),
               Text(date),
               SizedBox(width: 15),
-              Icon(Icons.access_time_filled, size: 18, color: Colors.orange.shade700),
+              Icon(
+                Icons.access_time_filled,
+                size: 18,
+                color: Colors.orange.shade700,
+              ),
               const SizedBox(width: 5),
-              Text('Time: $time',),
+              Text('Time: $time'),
             ],
           ),
           const SizedBox(height: 10),
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton(
-              onPressed: () {
-                // هنا هتحط الـ Confirm أو Snooze لاحقًا
-              },
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange.shade600,
                 foregroundColor: Colors.white,

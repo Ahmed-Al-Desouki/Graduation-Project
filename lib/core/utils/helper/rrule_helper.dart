@@ -63,11 +63,13 @@ class RRuleHelper {
 
   /// بناء RRULE يومي (بدون استخدام constructor parameters الناقصة)
   static String buildDaily({
-    required int hour,
-    required int minute,
+    required List<int> hours,    // تم التغيير لـ List
+    required List<int> minutes,
     DateTime? until,
   }) {
-    String rrule = "FREQ=DAILY;BYHOUR=$hour;BYMINUTE=$minute";
+    final hoursStr = hours.join(',');
+    final minutesStr = minutes.join(',');
+    String rrule = "FREQ=DAILY;BYHOUR=$hoursStr;BYMINUTE=$minutesStr";
 
     // if (until != null) {
     //   final untilUtc = until.toUtc();
@@ -82,7 +84,7 @@ class RRuleHelper {
           .first
           .replaceAll('-', '')
           .replaceAll(':', '');
-      rrule += ";UNTIL=${formattedUntil}Z";
+      rrule += ";UNTIL=$formattedUntil";
     }
 
     return rrule;
@@ -91,8 +93,8 @@ class RRuleHelper {
   /// بناء RRULE أسبوعي
   static String buildWeekly({
     required Set<int> weekDays, // DateTime.monday, etc.
-    required int hour,
-    required int minute,
+    required List<int> hours,    // تم التغيير لـ List
+    required List<int> minutes,
     DateTime? until,
   }) {
     // تحويل أرقام الأيام إلى رموز RRULE
@@ -111,8 +113,10 @@ class RRuleHelper {
         .where((d) => d != null)
         .join(',');
 
+    final hoursStr = hours.join(',');
+    final minutesStr = minutes.join(',');
     String rrule =
-        "FREQ=WEEKLY;BYDAY=$selectedDaysStr;BYHOUR=$hour;BYMINUTE=$minute";
+        "FREQ=WEEKLY;BYDAY=$selectedDaysStr;BYHOUR=$hoursStr;BYMINUTE=$minutesStr";
 
     // if (until != null) {
     //   final untilUtc = until.toUtc();
@@ -127,7 +131,7 @@ class RRuleHelper {
           .first
           .replaceAll('-', '')
           .replaceAll(':', '');
-      rrule += ";UNTIL=${formattedUntil}Z";
+      rrule += ";UNTIL=$formattedUntil";
     }
 
     return rrule;
@@ -136,12 +140,14 @@ class RRuleHelper {
   /// بناء RRULE شهري
   static String buildMonthly({
     required int monthDay, // 1-31
-    required int hour,
-    required int minute,
+    required List<int> hours,    // تم التغيير لـ List
+    required List<int> minutes,
     DateTime? until,
   }) {
+    final hoursStr = hours.join(',');
+    final minutesStr = minutes.join(',');
     String rrule =
-        "FREQ=MONTHLY;BYMONTHDAY=$monthDay;BYHOUR=$hour;BYMINUTE=$minute";
+        "FREQ=MONTHLY;BYMONTHDAY=$monthDay;BYHOUR=$hoursStr;BYMINUTE=$minutesStr";
 
     // if (until != null) {
     //   final untilUtc = until.toUtc();
@@ -156,7 +162,7 @@ class RRuleHelper {
           .first
           .replaceAll('-', '')
           .replaceAll(':', '');
-      rrule += ";UNTIL=${formattedUntil}Z";
+      rrule += ";UNTIL=$formattedUntil";
     }
 
     return rrule;
@@ -179,7 +185,7 @@ class RRuleHelper {
           .first
           .replaceAll('-', '')
           .replaceAll(':', '');
-      rrule += ";UNTIL=${formattedUntil}Z";
+      rrule += ";UNTIL=$formattedUntil";
     }
 
     return rrule;
@@ -209,7 +215,7 @@ class RRuleHelper {
           .first
           .replaceAll('-', '')
           .replaceAll(':', '');
-      rrule += ";UNTIL=${formattedUntil}Z";
+      rrule += ";UNTIL=$formattedUntil";
     }
 
     return rrule;
@@ -372,15 +378,31 @@ class RRuleHelper {
   }
 
   /// استخراج الساعة من RRULE
-  static int? getHour(String rruleString) {
-    final match = RegExp(r'BYHOUR=(\d+)').firstMatch(rruleString);
-    return match != null ? int.tryParse(match.group(1)!) : null;
+  // static int? getHour(String rruleString) {
+  //   final match = RegExp(r'BYHOUR=(\d+)').firstMatch(rruleString);
+  //   return match != null ? int.tryParse(match.group(1)!) : null;
+  // }
+
+  // /// استخراج الدقيقة من RRULE
+  // static int? getMinute(String rruleString) {
+  //   final match = RegExp(r'BYMINUTE=(\d+)').firstMatch(rruleString);
+  //   return match != null ? int.tryParse(match.group(1)!) : null;
+  // }
+
+  static List<int> getHours(String rruleString) { // تغير الاسم لـ getHours
+    final match = RegExp(r'BYHOUR=([\d,]+)').firstMatch(rruleString);
+    if (match != null) {
+      return match.group(1)!.split(',').map(int.parse).toList();
+    }
+    return [];
   }
 
-  /// استخراج الدقيقة من RRULE
-  static int? getMinute(String rruleString) {
-    final match = RegExp(r'BYMINUTE=(\d+)').firstMatch(rruleString);
-    return match != null ? int.tryParse(match.group(1)!) : null;
+  static List<int> getMinutes(String rruleString) { // تغير الاسم لـ getMinutes
+    final match = RegExp(r'BYMINUTE=([\d,]+)').firstMatch(rruleString);
+    if (match != null) {
+      return match.group(1)!.split(',').map(int.parse).toList();
+    }
+    return [];
   }
 
   /// استخراج الـ interval
@@ -512,8 +534,8 @@ class RRuleHelper {
     print("Until: ${getUntil(rruleString)}");
     print("Week Days: ${getWeekDays(rruleString)}");
     print("Month Days: ${getMonthDays(rruleString)}");
-    print("Hour: ${getHour(rruleString)}");
-    print("Minute: ${getMinute(rruleString)}");
+    print("Hour: ${getHours(rruleString)}");
+    print("Minute: ${getMinutes(rruleString)}");
     print("Valid: ${isValid(rruleString)}");
     print("=============================");
   }
@@ -524,8 +546,8 @@ class RRuleHelper {
 
     // Daily at 9:00 AM
     final dailyRRule = buildDaily(
-      hour: 9,
-      minute: 0,
+      hours: [9],
+      minutes: [0],
       until: DateTime(2025, 12, 31),
     );
     print("1️⃣ Daily RRULE: $dailyRRule");
@@ -533,8 +555,8 @@ class RRuleHelper {
     // Weekly on Monday and Wednesday at 2:30 PM
     final weeklyRRule = buildWeekly(
       weekDays: {DateTime.monday, DateTime.wednesday},
-      hour: 14,
-      minute: 30,
+      hours: [14],
+      minutes: [30],
       until: DateTime(2025, 12, 31),
     );
     print("2️⃣ Weekly RRULE: $weeklyRRule");
@@ -542,8 +564,8 @@ class RRuleHelper {
     // Monthly on 1st at 10:00 AM
     final monthlyRRule = buildMonthly(
       monthDay: 1,
-      hour: 10,
-      minute: 0,
+      hours: [10],
+      minutes: [0],
       until: DateTime(2025, 12, 31),
     );
     print("3️⃣ Monthly RRULE: $monthlyRRule");

@@ -26,7 +26,6 @@ class _ReminderViewState extends State<ReminderView> {
   @override
   void initState() {
     super.initState();
-    // استدعاء البيانات عند فتح الصفحة
     _fetchReminders();
   }
 
@@ -37,7 +36,6 @@ class _ReminderViewState extends State<ReminderView> {
       context.read<ReminderCubit>().getTodayReminders(patientId: patientId);
     } else {
       print("DEBUG: patientId is invalid or missing, cannot fetch reminders.");
-      // يمكنك هنا عرض رسالة خطأ للمستخدم ليقوم بتسجيل الدخول
     }
   }
 
@@ -54,53 +52,40 @@ class _ReminderViewState extends State<ReminderView> {
             AppRouter.router.go(AppRouter.kHomePatient);
           },
         ),
-        actions:[
-          // Padding(
-          //   padding: EdgeInsets.only(right: 16.0),
-          //   child: Icon(Icons.notifications, color: Colors.black),
-          // ),
-          // في الـ AppBar -> actions
-Padding(
-  padding: const EdgeInsets.only(right: 10),
-  child: TextButton(
-    onPressed: () async {
-      // ✅ التعديل هنا: الانتقال لصفحة بدلاً من فتح Dialog
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          // نمرر الـ Cubit الحالي للصفحة الجديدة عشان تقدر تستخدمه
-          builder: (_) => BlocProvider.value(
-            value: context.read<ReminderCubit>(),
-            child: const AllRemindersView(), // تأكد من استيراد الملف الجديد
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: TextButton(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (_) => BlocProvider.value(
+                          value: context.read<ReminderCubit>(),
+                          child: const AllRemindersView(),
+                        ),
+                  ),
+                );
+                _fetchReminders();
+              },
+              child: const Text(
+                "View All",
+                style: TextStyle(
+                  color: Color(0xFF2563EB),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
-        ),
-      );
-      
-      // عند العودة من صفحة العرض الكلي، نحدث الصفحة الرئيسية 
-      // تحسباً لأي تعديل أو حذف حصل هناك
-      _fetchReminders();
-    },
-    child: const Text(
-      "View All",
-      style: TextStyle(
-        color: Color(0xFF2563EB),
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-),
         ],
       ),
       body: BlocConsumer<ReminderCubit, ReminderState>(
         listener: (context, state) {
-          // إذا تم إضافة تذكير بنجاح (والعودة لهذه الصفحة)، نعيد تحميل القائمة
-          // if (state is ReminderCreateSuccess) {
-          //   _fetchReminders();
-          // }
-          if (state is ReminderCreateSuccess || 
-              state is ReminderUpdateSuccess || 
+          if (state is ReminderCreateSuccess ||
+              state is ReminderUpdateSuccess ||
               state is ReminderDeleteSuccess) {
-            _fetchReminders(); // إعادة تحميل الصفحة الرئيسية
+            _fetchReminders();
           }
         },
         builder: (context, state) {
@@ -139,12 +124,15 @@ Padding(
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<ReminderCubit>(),
-                          child: const AddReminderView(initialType: 'Appointment'),  // ✅ تمرير النوع
-                        ),
+                        builder:
+                            (_) => BlocProvider.value(
+                              value: context.read<ReminderCubit>(),
+                              child: const AddReminderView(
+                                initialType: 'Appointment',
+                              ),
+                            ),
                       ),
-                    ).then((_) => _fetchReminders());  // ✅ إعادة تحميل بعد العودة
+                    ).then((_) => _fetchReminders());
                   },
                 ),
                 const SizedBox(height: 10),
@@ -159,7 +147,6 @@ Padding(
                   ReminderAppointmentCard(
                     name: appt.title,
                     specialization: "Doctor",
-                    // معالجة التاريخ والوقت من dueDateTime
                     date: appt.dueDateTime.split('T')[0],
                     time: _formatTime(appt.dueDateTime),
                     statusText: appt.status,
@@ -177,12 +164,15 @@ Padding(
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<ReminderCubit>(),
-                          child: const AddReminderView(initialType: 'Medication'),  // ✅ تمرير النوع
-                        ),
+                        builder:
+                            (_) => BlocProvider.value(
+                              value: context.read<ReminderCubit>(),
+                              child: const AddReminderView(
+                                initialType: 'Medication',
+                              ),
+                            ),
                       ),
-                    ).then((_) => _fetchReminders());  // ✅ إعادة تحميل بعد العودة
+                    ).then((_) => _fetchReminders());
                   },
                 ),
                 const SizedBox(height: 10),
@@ -205,7 +195,7 @@ Padding(
                     buttonText: "Mark Taken",
                   ),
 
-                  const SizedBox(height: 25),
+                const SizedBox(height: 25),
 
                 // ---------- Custom UI ----------
                 ReminderSectionHeader(
@@ -217,12 +207,15 @@ Padding(
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<ReminderCubit>(),
-                          child: const AddReminderView(initialType: 'Custom'),  // ✅ تمرير النوع
-                        ),
+                        builder:
+                            (_) => BlocProvider.value(
+                              value: context.read<ReminderCubit>(),
+                              child: const AddReminderView(
+                                initialType: 'Custom',
+                              ),
+                            ),
                       ),
-                    ).then((_) => _fetchReminders());  // ✅ إعادة تحميل بعد العودة
+                    ).then((_) => _fetchReminders());
                   },
                 ),
                 const SizedBox(height: 10),
@@ -280,7 +273,6 @@ Padding(
     );
   }
 
-  // دالة مساعدة لتنسيق الوقت
   String _formatTime(String isoDate) {
     try {
       final dateTime = DateTime.parse(isoDate);

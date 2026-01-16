@@ -44,7 +44,10 @@ class ReminderMedicationCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               Text(
                 'Next: $next',
@@ -60,7 +63,11 @@ class ReminderMedicationCard extends StatelessWidget {
               SizedBox(width: 5),
               Text(date),
               SizedBox(width: 15),
-              Icon(Icons.access_time_filled, size: 18, color: Colors.green.shade700),
+              Icon(
+                Icons.access_time_filled,
+                size: 18,
+                color: Colors.green.shade700,
+              ),
               SizedBox(width: 5),
               Text('Times: $time'),
             ],

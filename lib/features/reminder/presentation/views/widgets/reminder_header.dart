@@ -11,40 +11,11 @@ class ReminderHeader extends StatelessWidget {
     return Center(
       child: Column(
         children: [
-          // Row(
-          //   children: [
-          //     const Spacer(
-          //       flex: 2,
-          //     ),
-
-          //     CircleAvatar(
-          //       radius: 30,
-          //       backgroundColor: Colors.lightBlue.withOpacity(0.1),
-          //       child: _ClockCalendarIcon(size: 28),
-          //     ),
-
-          //     const Spacer(),
-
-          //     TextButton(
-          //       onPressed: () {
-          //         // Navigate to All Appointments
-          //       },
-          //       child: const Text(
-          //         "View All",
-          //         style: TextStyle(
-          //           color: Color(0xFF2563EB),
-          //           fontWeight: FontWeight.bold,
-          //         ),
-          //       ),
-          //     ),
-          //   ],
-          // ),
-
           CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.lightBlue.withOpacity(0.1),
-                child: _ClockCalendarIcon(size: 28),
-              ),
+            radius: 30,
+            backgroundColor: Colors.lightBlue.withOpacity(0.1),
+            child: _ClockCalendarIcon(size: 28),
+          ),
           const SizedBox(height: 7),
           Text(
             'My Reminders',
