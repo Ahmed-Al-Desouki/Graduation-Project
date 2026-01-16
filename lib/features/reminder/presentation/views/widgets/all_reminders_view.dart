@@ -16,7 +16,6 @@ class AllRemindersView extends StatefulWidget {
 
 class _AllRemindersViewState extends State<AllRemindersView> {
   String _formatRRuleTimes(String? rruleString, DateTime startDate) {
-    // دالة داخلية لتنسيق الوقت لشكل 12 ساعة
     String formatTime(int h, int m) {
       final String period = h >= 12 ? "PM" : "AM";
       int displayHour = h > 12 ? h - 12 : (h == 0 ? 12 : h);
@@ -24,18 +23,15 @@ class _AllRemindersViewState extends State<AllRemindersView> {
       return "$displayHour:$displayMinute $period";
     }
 
-    // 1. لو مفيش RRULE (حالة Once Only)، هنعرض وقت البداية
     if (rruleString == null || rruleString.isEmpty) {
       return formatTime(startDate.hour, startDate.minute);
     }
 
     try {
-      // 2. استخراج الساعات والدقائق باستخدام Regex (أضمن طريقة لتجنب أخطاء المكتبة)
       final hourMatch = RegExp(r'BYHOUR=([\d,]+)').firstMatch(rruleString);
       final minuteMatch = RegExp(r'BYMINUTE=([\d,]+)').firstMatch(rruleString);
 
       if (hourMatch != null) {
-        // تحويل النص "10,14" لقائمة [10, 14]
         List<int> hours =
             hourMatch.group(1)!.split(',').map(int.parse).toList();
         List<int> minutes = [];
@@ -55,7 +51,6 @@ class _AllRemindersViewState extends State<AllRemindersView> {
         return timeStrings.join("  |  ");
       }
 
-      // 3. لو الـ RRULE بسيط (يومي مثلاً) ومفيهوش BYHOUR، نرجع وقت البداية
       return formatTime(startDate.hour, startDate.minute);
     } catch (e) {
       return formatTime(startDate.hour, startDate.minute);
@@ -109,7 +104,7 @@ class _AllRemindersViewState extends State<AllRemindersView> {
                 backgroundColor: Colors.red,
               ),
             );
-            _loadData(); // إعادة تحميل بعد الحذف
+            _loadData();
           }
         },
         builder: (context, state) {
