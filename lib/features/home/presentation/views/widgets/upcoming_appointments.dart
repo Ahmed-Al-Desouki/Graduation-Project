@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:graduation_project/features/auth/presentation/views/widgets/patient_appointment_Item.dart';
+import 'package:graduation_project/features/home/presentation/views/widgets/patient_appointment_Item.dart';
 
 class UpcomingAppointments extends StatelessWidget {
   const UpcomingAppointments({super.key});

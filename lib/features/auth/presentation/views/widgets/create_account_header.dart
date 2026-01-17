@@ -47,13 +47,10 @@ class CreateAccountHeader extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () {
                     final router = GoRouter.of(context);
-                    // لو في history يرجع خطوة، لو مش موجود يعمل replace للـ login
                     if (router.canPop()) {
                       router.pop();
                     } else {
-                      router.go(
-                        AppRouter.kLogin,
-                      ); // أو router.pushReplacement(AppRouter.kLogin);
+                      router.go(AppRouter.kLogin);
                     }
                   },
                 ),

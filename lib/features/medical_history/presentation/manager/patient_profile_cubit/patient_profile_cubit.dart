@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
@@ -7,6 +8,7 @@ import 'package:graduation_project/features/medical_history/domain/models/medica
 import 'package:graduation_project/features/medical_history/domain/models/patient_profile_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/social_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/surgery_model.dart';
+import 'package:hive/hive.dart';
 import 'package:meta/meta.dart';
 
 part 'patient_profile_state.dart';
@@ -16,12 +18,23 @@ class PatientProfileCubit extends Cubit<PatientProfileState> {
   PatientProfileCubit(this._patientRepository) : super(PatientProfileInitial());
   Future<void> getProfile() async {
     emit(PatientProfileLoading());
-
+    var box = await Hive.openBox('medical_history_cache');
     final result = await _patientRepository.getPatientProfile();
 
     result.fold(
-      (failure) => emit(PatientProfileFailure(errMessage: failure.errmessage)),
-      (profile) => emit(PatientProfileSuccess(profile: profile)),
+      (failure) async {
+        final cachedData = box.get('profile_data');
+        if (cachedData != null) {
+          final profile = PatientProfileModel.fromJson(jsonDecode(cachedData));
+          emit(PatientProfileSuccess(profile: profile, isOffline: true));
+        } else {
+          emit(PatientProfileFailure(errMessage: failure.errmessage));
+        }
+      },
+      (profile) async {
+        await box.put('profile_data', jsonEncode(profile.toJson()));
+        emit(PatientProfileSuccess(profile: profile, isOffline: false));
+      },
     );
   }
 
@@ -41,7 +54,7 @@ class PatientProfileCubit extends Cubit<PatientProfileState> {
   Future<void> uploadMedicalFile({
     required File file,
     required int medicalHistoryId,
-    required String category, // "LabTest" or "Radiology"
+    required String category,
     required String description,
   }) async {
     emit(PatientUploadLoading());
@@ -82,12 +95,11 @@ class PatientProfileCubit extends Cubit<PatientProfileState> {
           emit(PatientOperationFailure(errMessage: failure.errmessage)),
       (newSurgery) {
         emit(PatientOperationSuccess(message: "Surgery saved successfully"));
-        getProfile(); // تحديث الصفحة بالكامل عشان القائمة تتحدث
+        getProfile();
       },
     );
   }
 
-  // ✅ دالة Upsert Family History
   Future<void> addOrUpdateFamilyHistory(FamilyHistoryModel history) async {
     emit(PatientOperationLoading());
     final result = await _patientRepository.upsertFamilyHistory(history);
@@ -102,7 +114,6 @@ class PatientProfileCubit extends Cubit<PatientProfileState> {
     );
   }
 
-  // ✅ دالة Upsert Social History
   Future<void> addOrUpdateSocialHistory(SocialHistoryModel history) async {
     emit(PatientOperationLoading());
     final result = await _patientRepository.upsertSocialHistory(history);
@@ -117,7 +128,6 @@ class PatientProfileCubit extends Cubit<PatientProfileState> {
     );
   }
 
-  // ✅ دالة Upsert Medication
   Future<void> addOrUpdateMedication(MedicationModel medication) async {
     emit(PatientOperationLoading());
     final result = await _patientRepository.upsertMedication(medication);
@@ -138,7 +148,7 @@ class PatientProfileCubit extends Cubit<PatientProfileState> {
       (failure) => emit(PatientDeleteFailure(errMessage: failure.errmessage)),
       (message) {
         emit(PatientDeleteSuccess(message: message));
-        getProfile(); // تحديث القائمة
+        getProfile();
       },
     );
   }

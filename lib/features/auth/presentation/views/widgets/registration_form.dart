@@ -1,15 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:graduation_project/core/utils/app_styles.dart';
-import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/custom_form_text_field.dart';
 import 'package:graduation_project/features/auth/presentation/views/widgets/headers_field_in_registration.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 
 class RegistrationForm extends StatefulWidget {
-  final Function(bool)? onFormValidChanged;
+  // final Function(bool)? onFormValidChanged;
   // final Function(String?)? onGenderChanged;
   // final TextEditingController ageController;
   // final TextEditingController birthDateController;
@@ -17,12 +14,12 @@ class RegistrationForm extends StatefulWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   // String? gender;
-  bool isDoctor;
+  // bool isDoctor;
   final Function(File?) onImagePicked;
 
-  RegistrationForm({
+  const RegistrationForm({
     super.key,
-    this.onFormValidChanged,
+    // this.onFormValidChanged,
     // this.onGenderChanged,
     // required this.ageController,
     // required this.birthDateController,
@@ -30,7 +27,7 @@ class RegistrationForm extends StatefulWidget {
     required this.emailController,
     required this.passwordController,
     // this.gender,
-    this.isDoctor = false,
+    // this.isDoctor = false,
     required this.onImagePicked,
   });
 
@@ -204,7 +201,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
           //             if (widget.ageController.text.isNotEmpty &&
           //                 int.tryParse(widget.ageController.text) != age) {
-          //               ShowSnackBar(
+          //               showSnackBar(
           //                 context,
           //                 "The entered age doesn't match the birth date",
           //                 Colors.red,

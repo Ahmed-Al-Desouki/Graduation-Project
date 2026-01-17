@@ -22,4 +22,13 @@ class MedicalFileModel {
       uploadedAt: json['uploadedAt'] ?? '',
     );
   }
+  Map<String, dynamic> toJson() {
+    return {
+      'fileID': fileID,
+      'fileUrl': fileUrl,
+      'fileType': fileType,
+      'description': description,
+      'uploadedAt': uploadedAt,
+    };
+  }
 }

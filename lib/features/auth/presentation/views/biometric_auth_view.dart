@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
-import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
+// import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
-import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
+// import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
 
 class BiometricAuthScreen extends StatefulWidget {
   const BiometricAuthScreen({super.key});
@@ -17,7 +17,7 @@ class BiometricAuthScreen extends StatefulWidget {
 
 class _BiometricScreenState extends State<BiometricAuthScreen> {
   final LocalAuthentication auth = LocalAuthentication();
-  late final AuthRepository _authRepository;
+  // late final AuthRepository _authRepository;
 
   bool _isAuthenticating = false;
   String _errorMessage = '';
@@ -25,7 +25,7 @@ class _BiometricScreenState extends State<BiometricAuthScreen> {
   @override
   void initState() {
     super.initState();
-    _authRepository = getIt<AuthRepositoryimpl>();
+    // _authRepository = getIt<AuthRepositoryimpl>();
     _authenticateUser();
   }
 

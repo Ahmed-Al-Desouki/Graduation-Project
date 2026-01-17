@@ -1,8 +1,5 @@
-// features/medical_history/presentation/view/widgets/appointment_card.dart
-
 import 'package:flutter/material.dart';
 import 'package:graduation_project/features/medical_history/domain/models/appointment_model.dart';
-// استدعي الـ AppStyles والـ Assets لو عندك
 
 class AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
@@ -27,40 +24,32 @@ class AppointmentCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: IntrinsicHeight(
-          // مهم عشان الشريط الجانبي ياخد الطول كله
           child: Row(
             children: [
-              // 1. Colored Side Strip
               Container(width: 6, color: appointment.cardColor),
 
-              // 2. Main Content
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // --- Header: Avatar + Name + Date ---
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Avatar
                           Container(
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               image: DecorationImage(
-                                image: NetworkImage(
-                                  appointment.imagePath,
-                                ), // لو عندك Assets استخدم AssetImage
+                                image: NetworkImage(appointment.imagePath),
                                 fit: BoxFit.cover,
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
 
-                          // Doctor Name & Specialty
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,16 +68,13 @@ class AppointmentCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
-                                    color:
-                                        appointment
-                                            .cardColor, // لون التخصص نفس لون الشريط
+                                    color: appointment.cardColor,
                                   ),
                                 ),
                               ],
                             ),
                           ),
 
-                          // Date
                           Text(
                             appointment.date,
                             style: const TextStyle(
@@ -101,7 +87,6 @@ class AppointmentCard extends StatelessWidget {
 
                       const SizedBox(height: 12),
 
-                      // --- Title ---
                       Text(
                         appointment.title,
                         style: const TextStyle(
@@ -113,7 +98,6 @@ class AppointmentCard extends StatelessWidget {
 
                       const SizedBox(height: 4),
 
-                      // --- Description ---
                       Text(
                         appointment.description,
                         style: const TextStyle(
@@ -125,7 +109,6 @@ class AppointmentCard extends StatelessWidget {
 
                       const SizedBox(height: 12),
 
-                      // --- Footer: Time & Location ---
                       Row(
                         children: [
                           _buildFooterItem(

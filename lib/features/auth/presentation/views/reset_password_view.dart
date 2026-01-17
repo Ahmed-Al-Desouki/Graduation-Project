@@ -30,7 +30,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
     if (_formKey.currentState!.validate()) {
       if (_passwordController.text.trim() !=
           _confirmPasswordController.text.trim()) {
-        ShowSnackBar(context, "Passwords don't match", Colors.red);
+        showSnackBar(context, "Passwords don't match", Colors.red);
         return;
       }
 
@@ -58,7 +58,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
           AppRouter.router.go(AppRouter.kResetSuccess);
         } else if (state is ResetPasswordFailure) {
           Navigator.pop(context);
-          ShowSnackBar(context, "❌ ${state.errMessage}", Colors.red);
+          showSnackBar(context, "❌ ${state.errMessage}", Colors.red);
         }
       },
       builder: (context, state) {

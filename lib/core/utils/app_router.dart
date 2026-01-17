@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medical_file_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medication_model.dart';
@@ -31,10 +31,12 @@ import 'package:graduation_project/features/auth/presentation/views/test_setting
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/medical_history_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/ringing_view.dart';
+import 'package:graduation_project/features/splash/presentation/views/widgets/onboarding_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
 
 abstract class AppRouter {
   static const kSplash = '/';
+  static const kOnboarding = '/onboarding';
   static const kLogin = '/loginView';
   static const kRegisterAsPatient = '/registerAsPatient';
   static const kRegisterAsDoctor = '/registerAsDoctor';
@@ -60,6 +62,11 @@ abstract class AppRouter {
   static final router = GoRouter(
     routes: [
       GoRoute(path: kSplash, builder: (context, state) => const SplashBody()),
+
+      GoRoute(
+        path: kOnboarding,
+        builder: (context, state) => const OnboardingView(),
+      ),
 
       GoRoute(
         path: kCreatAcount,
@@ -105,9 +112,11 @@ abstract class AppRouter {
       GoRoute(
         path: kHomePatient,
         builder:
-            (context, state) => BlocProvider(
-              create:
-                  (context) => getIt<ReminderCubit>(), // توفير الكيوبت للهوم
+            (context, state) => MultiBlocProvider(
+              providers: [
+                BlocProvider(create: (context) => getIt<ReminderCubit>()),
+                BlocProvider(create: (context) => getIt<HomeCubit>()),
+              ],
               child: const PatientHomeLayout(),
             ),
       ),
@@ -191,7 +200,6 @@ abstract class AppRouter {
       GoRoute(
         path: kAllSurgeries,
         builder: (context, state) {
-          // استقبال البيانات الممررة
           final extras = state.extra as Map<String, dynamic>;
           return AllSurgeriesView(
             allSurgeries: extras['surgeries'] as List<SurgeryModel>,
@@ -204,11 +212,9 @@ abstract class AppRouter {
       GoRoute(
         path: kAllMedications,
         builder: (context, state) {
-          // ✅ تأمين صفحة الأدوية
           final extras = state.extra as Map<String, dynamic>?;
 
           if (extras == null) {
-            // لو حصل ريستارت والداتا طارت، ارجع لصفحة الميدكال هيستوري الرئيسية
             return const MedicalHistoryView();
           }
 
@@ -243,9 +249,6 @@ abstract class AppRouter {
           final extras = state.extra as Map<String, dynamic>?;
 
           if (extras == null) return const MedicalHistoryView();
-
-          // ✅ تحويل آمن للبيانات (Safe Casting)
-          // لأن GoRouter أحياناً بيعتبر الليست List<dynamic> ومبينفعش تتحول مباشرة لـ List<Model>
           final labTests =
               (extras['labTests'] as List)
                   .map((e) => e as MedicalFileModel)

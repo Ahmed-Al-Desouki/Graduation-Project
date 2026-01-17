@@ -52,12 +52,12 @@ class _PatientRegistrationViewBodyState
             builder: (_) => const Center(child: CircularProgressIndicator()),
           );
         } else if (state is RegisterSuccess) {
-          Navigator.pop(context); // close loader
-          ShowSnackBar(context, '✅ Registered Successfully!', Colors.green);
+          Navigator.pop(context);
+          showSnackBar(context, '✅ Registered Successfully!', Colors.green);
           AppRouter.router.go(AppRouter.kLogin);
         } else if (state is RegisterFailure) {
           Navigator.pop(context);
-          ShowSnackBar(context, '❌ ${state.errMessage}', Colors.red);
+          showSnackBar(context, '❌ ${state.errMessage}', Colors.red);
         }
       },
       builder: (context, state) {

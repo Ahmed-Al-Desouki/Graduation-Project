@@ -21,40 +21,33 @@ class LoginHeader extends StatelessWidget {
     return Column(
       children: [
         CircleAvatar(
-          radius: 50.r, // responsive radius
+          radius: 50.r,
           backgroundColor: Colors.white,
           child: SvgPicture.asset(
             iconPath,
-            height: 50.h, // responsive height
-            width: 50.w, // responsive width
+            height: 50.h,
+            width: 50.w,
             colorFilter: const ColorFilter.mode(
               Color(0xff26A69A),
               BlendMode.srcIn,
             ),
           ),
         ),
-        SizedBox(height: 20.h), // responsive spacing
-        Text(
-          title,
-          style: AppStyles.styleBold30.copyWith(
-            fontSize: 40.sp, // responsive font
-          ),
-        ),
+        SizedBox(height: 20.h),
+        Text(title, style: AppStyles.styleBold30.copyWith(fontSize: 40.sp)),
         SizedBox(height: 8.h),
         Text(
           subtitle,
-          style: AppStyles.styleRegular16GrayDark.copyWith(
-            fontSize: 18.sp, // responsive font
-          ),
+          style: AppStyles.styleRegular16GrayDark.copyWith(fontSize: 18.sp),
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 30.h),
         ClipRRect(
-          borderRadius: BorderRadius.circular(15.r), // responsive border radius
+          borderRadius: BorderRadius.circular(15.r),
           child: Image.asset(
             imagePath,
-            height: 200.h, // responsive height
-            width: 200.w, // responsive width
+            height: 200.h,
+            width: 200.w,
             fit: BoxFit.cover,
           ),
         ),

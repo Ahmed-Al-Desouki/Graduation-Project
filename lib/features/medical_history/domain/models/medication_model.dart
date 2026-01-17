@@ -8,8 +8,6 @@ class MedicationModel {
   final String? startDate;
   final String? endDate;
   final String? notes;
-
-  // ✅ 1. خاصية جديدة لتحديد المصدر
   final bool isSelfMedication;
 
   MedicationModel({
@@ -22,7 +20,7 @@ class MedicationModel {
     this.startDate,
     this.endDate,
     this.notes,
-    this.isSelfMedication = false, // الافتراضي false (يعني دكتور)
+    this.isSelfMedication = false,
   });
 
   factory MedicationModel.fromJson(Map<String, dynamic> json) {
@@ -35,8 +33,6 @@ class MedicationModel {
       startDate: json['startDate'],
       endDate: json['endDate'],
       notes: json['notes'],
-      // هنا مش بنقرأ isSelfMedication من الـ JSON لأنها مش جاية من الباك
-      // هنظبطها في الموديل الكبير
     );
   }
 
@@ -46,16 +42,12 @@ class MedicationModel {
       'historyID': historyID,
       'medicationName': medicationName,
       'dosage': dosage,
-      // لاحظ: الباك إيند بيسميها instructions في الـ Self Med
-      // و doseinstruction في الـ Prescription (بس الـ Prescription read-only غالباً)
-      // لتوحيد الإرسال، هنبعت الاتنين أو نعتمد على اللي الباك إيند عايزه في الـ Upsert
       'instructions': doseInstruction,
       'startDate': startDate,
       'endDate': endDate,
       'notes': notes,
     };
 
-    // ✅ التعديل الجوهري هنا:
     if (currentMedicationID != null) {
       data['selfMedicationID'] = currentMedicationID;
     }
@@ -63,7 +55,6 @@ class MedicationModel {
     return data;
   }
 
-  // ✅ 2. دالة copyWith عشان نغير قيمة isSelfMedication بسهولة
   MedicationModel copyWith({bool? isSelfMedication}) {
     return MedicationModel(
       currentMedicationID: currentMedicationID,

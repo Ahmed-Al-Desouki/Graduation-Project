@@ -20,15 +20,12 @@ class ApiService {
   void _setupInterceptors() {
     _dio.interceptors.add(
       QueuedInterceptorsWrapper(
-        // 1. وانت باعت الريكويست: ضيف التوكن أوتوماتيك
         onRequest: (options, handler) async {
           if (options.path.contains(
             'ShareMediHistoryQrCode/share-medical-history',
           )) {
             print('ℹ️ Skipping Auth Token for Shared Profile request');
-            return handler.next(
-              options,
-            ); // انتقل للخطوة التالية بدون إضافة التوكن
+            return handler.next(options);
           }
           final token = await SecureStorageHelper.getAccessToken();
           if (token != null) {
@@ -40,25 +37,21 @@ class ApiService {
           return handler.next(options);
         },
 
-        // 2. والرد راجع: مفيش مشاكل
         onResponse: (response, handler) {
           print('✅ [RESPONSE] ${response.statusCode}');
           return handler.next(response);
         },
 
-        // 3. لو حصل خطأ: هنا اللعب كله
         onError: (DioException e, handler) async {
           print('❌ [ERROR] ${e.response?.statusCode} | ${e.message}');
           print('❌ [DIO ERROR TYPE]: ${e.type}');
           print('❌ [ERROR DEBUG]: ${e.error}');
           print('❌ [ERROR MESSAGE]: ${e.message}');
 
-          // لو الخطأ 401 (Unauthorized) يعني التوكن انتهى
           if (e.response?.statusCode == 401) {
             print("⚠️ Token Expired! Attempting to refresh...");
 
             try {
-              // أ. هات الريفريش توكن
               final refreshToken = await SecureStorageHelper.getRefreshToken();
               final accessToken = await SecureStorageHelper.getAccessToken();
 
@@ -67,8 +60,6 @@ class ApiService {
                 return _handleSessionExpired(handler, e);
               }
 
-              // ب. اطلب تجديد التوكن
-              // ملحوظة: بنعمل انستانس Dio جديد عشان ميدخلش في Loop مع الانترسبتور الحالي
               final refreshDio = Dio(
                 BaseOptions(baseUrl: _dio.options.baseUrl),
               );
@@ -83,7 +74,6 @@ class ApiService {
 
               if (response.statusCode == 200 &&
                   response.data['success'] == true) {
-                // ج. نجح التجديد! احفظ الجديد
                 final newAccess = response.data['data']['accessToken'];
                 final newRefresh = response.data['data']['refreshToken'];
 
@@ -94,21 +84,15 @@ class ApiService {
 
                 print("✅ Token Refreshed Successfully!");
 
-                // د. عيد الريكويست الأصلي اللي فشل بس بالتوكن الجديد
-                // بنعدل الهيدر في الريكويست القديم
                 e.requestOptions.headers['Authorization'] = 'Bearer $newAccess';
 
-                // بنبعت الريكويست تاني
                 final cloneReq = await _dio.fetch(e.requestOptions);
 
-                // رجع النتيجة السليمة وكأن شيئاً لم يكن
                 return handler.resolve(cloneReq);
               } else {
-                // فشل التجديد (حتى الريفريش منتهي)
                 return _handleSessionExpired(handler, e);
               }
             } catch (refreshError) {
-              // حصل خطأ أثناء التجديد
               return _handleSessionExpired(handler, e);
             }
           }
@@ -120,7 +104,6 @@ class ApiService {
     );
   }
 
-  // دالة الخروج لو الجلسة انتهت تماماً
   Future<dynamic> _handleSessionExpired(
     ErrorInterceptorHandler handler,
     DioException e,
@@ -128,15 +111,11 @@ class ApiService {
     print("⛔ Session Expired. Logging out...");
     await SecureStorageHelper.clearAll();
 
-    // توجيه المستخدم لصفحة الدخول
     AppRouter.router.go(AppRouter.kLogin);
 
     return handler.next(e);
   }
 
-  // --- دوال الـ GET, POST, PUT (بقت أبسط بكتير) ---
-
-  // لاحظ: شيلنا باراميتر token لأن الانترسبتور بيحطه لوحده
   Future<dynamic> get(
     String endpoint, {
     Map<String, dynamic>? queryParameters,
@@ -154,11 +133,7 @@ class ApiService {
 
   Future<dynamic> post(String endpoint, dynamic body) async {
     try {
-      final response = await _dio.post(
-        endpoint,
-        data: body,
-        // لو محتاج Content-Type مختلف للصور، الديـو بيعرفه لوحده لو Body FormData
-      );
+      final response = await _dio.post(endpoint, data: body);
       return response.data;
     } catch (e) {
       rethrow;

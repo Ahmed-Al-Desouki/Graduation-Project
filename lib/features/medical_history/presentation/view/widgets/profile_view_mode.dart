@@ -14,7 +14,7 @@ class ProfileViewMode extends StatelessWidget {
             ? profile.dateOfBirth!.split('T')[0]
             : "N/A";
 
-    IconData genderIcon = Icons.person; // Default
+    IconData genderIcon = Icons.person;
     if (profile.gender.toLowerCase() == 'male') {
       genderIcon = Icons.male;
     } else if (profile.gender.toLowerCase() == 'female') {
@@ -23,7 +23,7 @@ class ProfileViewMode extends StatelessWidget {
 
     String displayAge;
     if (profile.age == 0) {
-      displayAge = "Infant"; // أو "< 1 Yr"
+      displayAge = "Infant";
     } else {
       displayAge = "${profile.age} Yrs";
     }

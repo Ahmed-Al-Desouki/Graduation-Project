@@ -139,39 +139,39 @@ class _AllRemindersDialogState extends State<AllRemindersDialog> {
   //   );
   // }
   Widget _buildSection(String title, List<ReminderModel> items) {
-  Color titleColor;
-  switch (title) {
-    case "Appointments:":
-      titleColor = Colors.blue.shade700;
-      break;
-    case "Medications:":
-      titleColor = Colors.green;
-      break;
-    case "Customs:":
-      titleColor = Colors.orange;
-      break;
-    default:
-      titleColor = Colors.green;
-  }
+    Color titleColor;
+    switch (title) {
+      case "Appointments:":
+        titleColor = Colors.blue.shade700;
+        break;
+      case "Medications:":
+        titleColor = Colors.green;
+        break;
+      case "Customs:":
+        titleColor = Colors.orange;
+        break;
+      default:
+        titleColor = Colors.green;
+    }
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: titleColor,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: titleColor,
+            ),
           ),
         ),
-      ),
-      ...items.map((reminder) => _buildReminderItem(reminder)),
-    ],
-  );
-}
+        ...items.map((reminder) => _buildReminderItem(reminder)),
+      ],
+    );
+  }
 
   // عنصر القائمة الواحد
   Widget _buildReminderItem(ReminderModel reminder) {

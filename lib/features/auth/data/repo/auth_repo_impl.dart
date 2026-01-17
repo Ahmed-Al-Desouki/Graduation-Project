@@ -80,7 +80,7 @@ class AuthRepositoryimpl implements AuthRepository {
         password: password,
         otpCode: otpCode ?? "",
       );
-      print("🧩 LOGIN RESPONSE => $res");
+      print("LOGIN RESPONSE => $res");
 
       if (res['success'] == true) {
         if (otpCode == null || otpCode.isEmpty) {
@@ -216,40 +216,14 @@ class AuthRepositoryimpl implements AuthRepository {
     }
   }
 
-  // Future<Either<Failure, void>> logout() async {
-  //   try {
-  //     // ✅ جلب البيانات المخزنة مباشرة (بدون فك تشفير)
-  //     final userIdString = await SecureStorageHelper.getUserId();
-  //     final jti = await SecureStorageHelper.getJti();
-
-  //     final userId = int.tryParse(userIdString ?? "0") ?? 0;
-
-  //     if (jti != null && userId != 0) {
-  //       // مناداة السيرفيس
-  //       await _authService.logout(userId: userId, jti: jti);
-  //     }
-
-  //     return const Right(null);
-  //   } catch (e) {
-  //     return const Right(null);
-  //   }
-  // }
-
   @override
   Future<Either<Failure, void>> logout() async {
     try {
-      // 1. مسح التوكنات وبيانات المستخدم من الـ Secure Storage
       await SecureStorageHelper.clearAll();
-      // await SecureStorageHelper.clearUserData(); // مسح الـ Role والـ UserId
-
-      // 2. مسح قاعدة البيانات المحلية (الريمندرات المخزنة لـ 60 يوم)
       await LocalDatabaseService.instance.clearAllData();
 
-      // 3. مسح إعدادات المستخدم من Hive (مثل تفعيل البصمة)
       var settingsBox = Hive.box('settings');
       await settingsBox.clear();
-
-      // 4. إلغاء كل الإشعارات المجدولة في نظام التشغيل
       await AwesomeNotifications().cancelAll();
 
       return const Right(null);

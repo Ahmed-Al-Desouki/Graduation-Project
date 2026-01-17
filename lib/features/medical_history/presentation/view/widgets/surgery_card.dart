@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 
 class SurgeryCard extends StatelessWidget {
   final SurgeryModel surgery;
-  final VoidCallback? onEdit; // لو null مش هيظهر الزرار
-  final VoidCallback? onDelete; // لو null مش هيظهر الزرار
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const SurgeryCard({
     super.key,
@@ -31,7 +31,7 @@ class SurgeryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50, // أو White حسب المكان
+        color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
@@ -78,7 +78,6 @@ class SurgeryCard extends StatelessWidget {
                 ),
               ),
 
-              // أزرار التحكم (Edit / Delete)
               if (onEdit != null)
                 InkWell(
                   onTap: onEdit,
@@ -104,7 +103,6 @@ class SurgeryCard extends StatelessWidget {
             ],
           ),
 
-          // التفاصيل الإضافية
           if ((surgery.notes != null && surgery.notes!.isNotEmpty) ||
               (surgery.complications != null &&
                   surgery.complications!.isNotEmpty)) ...[

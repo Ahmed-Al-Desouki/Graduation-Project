@@ -19,7 +19,7 @@ class FamilyHistoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50, // أو White حسب التصميم المفضل
+        color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -29,7 +29,6 @@ class FamilyHistoryCard extends StatelessWidget {
           const Icon(Icons.diversity_1, color: Colors.grey, size: 24),
           const SizedBox(width: 12),
 
-          // Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,7 +68,6 @@ class FamilyHistoryCard extends StatelessWidget {
             ),
           ),
 
-          // Actions
           if (onEdit != null)
             InkWell(
               onTap: onEdit,

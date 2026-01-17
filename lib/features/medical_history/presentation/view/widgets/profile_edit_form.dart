@@ -294,8 +294,7 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
   void _saveChanges() {
     if (_formKey.currentState?.validate() ?? true) {
       final Map<String, dynamic> updateBody = {
-        "dateOfBirth":
-            "${birthDateController.text}T00:00:00Z", // Format compatible with backend
+        "dateOfBirth": "${birthDateController.text}T00:00:00Z",
         "gender": genderController.text,
         "bloodType": selectedBloodType ?? "string",
         "height": double.tryParse(heightController.text) ?? 0,

@@ -15,94 +15,51 @@ class PatientRepositoryImpl implements PatientRepository {
 
   PatientRepositoryImpl(this._patientWebServices);
 
-  // @override
-  // Future<Either<Failure, PatientProfileModel>> getPatientProfile() async {
-  //   try {
-  //     final response = await _patientWebServices.getPatientProfile();
-  //     print("🔍 Raw Profile Data: ${response['data']}");
-  //     if (response['success'] == true && response['data'] != null) {
-  //       return Right(PatientProfileModel.fromJson(response['data']));
-  //     }
-  //     return Left(
-  //       ServerFailure(response['message'] ?? 'Failed to load profile'),
-  //     );
-  //   } catch (e) {
-  //     if (e is DioException) return Left(ServerFailure.fromDioException(e));
-  //     return Left(ServerFailure(e.toString()));
-  //   }
-  // }
-  @override
-  Future<Either<Failure, PatientProfileModel>> getPatientProfile() async {
+  Future<Either<Failure, T>> _taskWrapper<T>(
+    Future<T> Function() action,
+  ) async {
     try {
-      // 1. هات الرد
-      final response = await _patientWebServices.getPatientProfile();
-
-      // 2. اطبع الرد عشان نتأكد
-      print("🔍 API Response: $response");
-
-      // 3. تأكد من الهيكلة (ممكن الباك إيند شال كلمة success ورجع الداتا علطول)
-      // السيناريو أ: الرد فيه { success: true, data: { ... } }
-      if (response['success'] == true && response['data'] != null) {
-        return Right(PatientProfileModel.fromJson(response['data']));
-      }
-      // السيناريو ب: الرد هو الداتا علطول { patientID: 4, ... }
-      else if (response['patientID'] != null) {
-        return Right(PatientProfileModel.fromJson(response));
-      }
-
-      return Left(
-        ServerFailure(response['message'] ?? 'Failed to load profile'),
-      );
+      return Right(await action());
     } catch (e) {
       if (e is DioException) {
-        print("❌ Server Validation Error: ${e.response?.data}");
         return Left(ServerFailure.fromDioException(e));
       }
       return Left(ServerFailure(e.toString()));
     }
   }
 
-  // @override
-  // Future<Either<Failure, PatientProfileModel>> updateProfile(
-  //   Map<String, dynamic> data,
-  // ) async {
-  //   try {
-  //     final response = await _patientWebServices.updatePatientProfile(data);
-  //     if (response['success'] == true && response['data'] != null) {
-  //       return Right(PatientProfileModel.fromJson(response['data']));
-  //     }
-  //     return Left(ServerFailure(response['message'] ?? 'Update failed'));
-  //   } catch (e) {
-  //     if (e is DioException) return Left(ServerFailure.fromDioException(e));
-  //     return Left(ServerFailure(e.toString()));
-  //   }
-  // }
+  @override
+  Future<Either<Failure, PatientProfileModel>> getPatientProfile() async {
+    return _taskWrapper(() async {
+      final response = await _patientWebServices.getPatientProfile();
+      final data =
+          (response['success'] == true && response['data'] != null)
+              ? response['data']
+              : response;
+
+      if (data['patientID'] != null) {
+        return PatientProfileModel.fromJson(data);
+      }
+      throw Exception(response['message'] ?? 'Failed to load profile');
+    });
+  }
 
   @override
   Future<Either<Failure, PatientProfileModel>> updateProfile(
     Map<String, dynamic> data,
   ) async {
-    try {
+    return _taskWrapper(() async {
       final response = await _patientWebServices.updatePatientProfile(data);
+      final responseData =
+          (response['success'] == true && response['data'] != null)
+              ? response['data']
+              : response;
 
-      // طباعة للدييباج عشان نتأكد
-      print("🔍 Update Response: $response");
-
-      // 1. الحالة الأولى: الرد مغلف بـ success و data
-      if (response['success'] == true && response['data'] != null) {
-        return Right(PatientProfileModel.fromJson(response['data']));
+      if (responseData['patientID'] != null) {
+        return PatientProfileModel.fromJson(responseData);
       }
-      // 2. الحالة الثانية (الحالية): الرد هو الداتا مباشرة
-      // بنتأكد بوجود حقل مميز زي patientID
-      else if (response['patientID'] != null) {
-        return Right(PatientProfileModel.fromJson(response));
-      }
-
-      return Left(ServerFailure(response['message'] ?? 'Update failed'));
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+      throw Exception(response['message'] ?? 'Update failed');
+    });
   }
 
   @override
@@ -112,107 +69,75 @@ class PatientRepositoryImpl implements PatientRepository {
     required String category,
     required String description,
   }) async {
-    try {
+    return _taskWrapper(() async {
       final response = await _patientWebServices.uploadFile(
         file: file,
         medicalHistoryId: medicalHistoryId,
         category: category,
         description: description,
       );
-      // الـ Response فيه message و file object، احنا يهمنا الـ success message حالياً
-      // ممكن ترجع File Model لو حابب، بس الـ String كفاية عشان نعيد تحميل البروفايل
-      return Right(response['message'] ?? 'Uploaded successfully');
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+      return response['message'] ?? 'Uploaded successfully';
+    });
   }
 
   @override
   Future<Either<Failure, String>> deleteFile(int fileId) async {
-    try {
+    return _taskWrapper(() async {
       final response = await _patientWebServices.deleteFile(fileId);
-      return Right(response['message'] ?? 'Deleted successfully');
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+      return response['message'] ?? 'Deleted successfully';
+    });
   }
 
   @override
   Future<Either<Failure, SurgeryModel>> upsertSurgery(
     SurgeryModel surgery,
   ) async {
-    try {
+    return _taskWrapper(() async {
       final response = await _patientWebServices.upsertSurgery(
         surgery.toJson(),
       );
-      // نتأكد هل الداتا راجعة مباشرة ولا جوه 'data'
       final data = response['data'] ?? response;
-      return Right(SurgeryModel.fromJson(data));
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+      return SurgeryModel.fromJson(data);
+    });
   }
 
-  // ✅ تنفيذ Upsert Family History
   @override
   Future<Either<Failure, FamilyHistoryModel>> upsertFamilyHistory(
     FamilyHistoryModel history,
   ) async {
-    try {
+    return _taskWrapper(() async {
       final response = await _patientWebServices.upsertFamilyHistory(
         history.toJson(),
       );
       final data = response['data'] ?? response;
-      return Right(FamilyHistoryModel.fromJson(data));
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+      return FamilyHistoryModel.fromJson(data);
+    });
   }
 
-  // ✅ تنفيذ Upsert Social History
   @override
   Future<Either<Failure, SocialHistoryModel>> upsertSocialHistory(
     SocialHistoryModel history,
   ) async {
-    try {
+    return _taskWrapper(() async {
       final response = await _patientWebServices.upsertSocialHistory(
         history.toJson(),
       );
       final data = response['data'] ?? response;
-      return Right(SocialHistoryModel.fromJson(data));
-    } on DioException catch (e) {
-      // هذه الأسطر ستخبرك بالضبط ما هو الحقل المرفوض ولماذا
-      print("❌ Server Validation Error: ${e.response?.data}");
-      return Left(ServerFailure.fromDioException(e));
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+      return SocialHistoryModel.fromJson(data);
+    });
   }
 
-  // ✅ تنفيذ Upsert Medication
   @override
   Future<Either<Failure, MedicationModel>> upsertMedication(
     MedicationModel medication,
   ) async {
-    try {
+    return _taskWrapper(() async {
       final response = await _patientWebServices.upsertSelfMedication(
         medication.toJson(),
       );
       final data = response['data'] ?? response;
-      print(data);
-      return Right(MedicationModel.fromJson(data));
-    } catch (e) {
-      if (e is DioException) {
-        print("❌ Server Validation Error: ${e.response?.data}");
-        return Left(ServerFailure.fromDioException(e));
-      }
-      return Left(ServerFailure(e.toString()));
-    }
+      return MedicationModel.fromJson(data);
+    });
   }
 
   @override
@@ -220,13 +145,13 @@ class PatientRepositoryImpl implements PatientRepository {
     int surgeryId,
     int historyId,
   ) async {
-    try {
-      await _patientWebServices.deleteSurgery(surgeryId, historyId);
-      return const Right("Surgery deleted successfully");
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+    return _taskWrapper(() async {
+      final response = await _patientWebServices.deleteSurgery(
+        surgeryId,
+        historyId,
+      );
+      return response['message'] ?? "Surgery deleted successfully";
+    });
   }
 
   @override
@@ -234,34 +159,30 @@ class PatientRepositoryImpl implements PatientRepository {
     int familyId,
     int historyId,
   ) async {
-    try {
-      await _patientWebServices.deleteFamilyHistory(familyId, historyId);
-      return const Right("Record deleted successfully");
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+    return _taskWrapper(() async {
+      final response = await _patientWebServices.deleteFamilyHistory(
+        familyId,
+        historyId,
+      );
+      return response['message'] ?? "Record deleted successfully";
+    });
   }
 
   @override
   Future<Either<Failure, String>> deleteSocialHistory(int historyId) async {
-    try {
-      await _patientWebServices.deleteSocialHistory(historyId);
-      return const Right("Social history deleted");
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+    return _taskWrapper(() async {
+      final response = await _patientWebServices.deleteSocialHistory(historyId);
+      return response['message'] ?? "Social history deleted";
+    });
   }
 
   @override
   Future<Either<Failure, String>> deleteSelfMedication(int selfMedId) async {
-    try {
-      await _patientWebServices.deleteSelfMedication(selfMedId);
-      return const Right("Medication deleted");
-    } catch (e) {
-      if (e is DioException) return Left(ServerFailure.fromDioException(e));
-      return Left(ServerFailure(e.toString()));
-    }
+    return _taskWrapper(() async {
+      final response = await _patientWebServices.deleteSelfMedication(
+        selfMedId,
+      );
+      return response['message'] ?? "Medication deleted";
+    });
   }
 }

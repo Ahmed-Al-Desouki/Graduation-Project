@@ -19,7 +19,7 @@ class SecurityItem extends StatelessWidget {
       children: [
         SvgPicture.asset(
           icon,
-          height: 20.h, // responsive height
+          height: 20.h,
           width: 20.w,
           colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
         ),

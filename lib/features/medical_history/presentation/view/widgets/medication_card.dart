@@ -33,7 +33,6 @@ class MedicationCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon
             Stack(
               children: [
                 Container(
@@ -66,7 +65,6 @@ class MedicationCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
 
-            // Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +128,6 @@ class MedicationCard extends StatelessWidget {
               ),
             ),
 
-            // Actions (Edit & Delete) - Only for Self Medication
             if (item.isSelfMedication) ...[
               if (onEdit != null)
                 IconButton(

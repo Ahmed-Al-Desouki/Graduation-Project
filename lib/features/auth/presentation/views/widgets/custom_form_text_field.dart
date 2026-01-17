@@ -81,7 +81,7 @@ class _CustomFormTextFieldState extends State<CustomFormTextField> {
         if (!emailRegex.hasMatch(text)) {
           return 'Enter a valid email format';
         }
-        if (!text.endsWith('@gmail.com')) {
+        if (!text.contains('@')) {
           return 'Email must be a @gmail.com address';
         }
         break;

@@ -6,58 +6,21 @@ import 'package:graduation_project/features/medical_history/domain/models/lab_re
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/medical_form_fields.dart';
 
-// class MedicalFileUploadDialog {
-//   // static void show(BuildContext context, int historyId) {
-//   //   BlocProvider.value(
-//   //     create: (context) => SubjectBloc(),
-//   //     child: showModalBottomSheet(
-//   //       context: context,
-//   //       isScrollControlled: true,
-//   //       shape: const RoundedRectangleBorder(
-//   //         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-//   //       ),
-//   //       builder: (ctx) => _UploadSheet(historyId: historyId),
-//   //     ),
-//   //   );
-//   // }
-//   static void show(BuildContext context, int historyId) {
-//     // 1. هنا بنمسك الـ Cubit اللي موجود في الصفحة الحالية قبل ما نفتح الشيت
-//     final cubit = context.read<PatientProfileCubit>();
-
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       shape: const RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-//       ),
-//       // 2. هنا بنمرر الـ Cubit للشاشة الجديدة (الشيت) باستخدام BlocProvider.value
-//       builder:
-//           (ctx) => BlocProvider.value(
-//             value: cubit, // بنستخدم نفس النسخة اللي مسكناها فوق
-//             child: _UploadSheet(historyId: historyId),
-//           ),
-//     );
-//   }
-// }
-
 class MedicalFileUploadDialog {
   static void show(
     BuildContext context,
     int historyId,
     PatientProfileCubit cubit,
   ) {
-    // 1. هنا بنمسك الـ Cubit اللي موجود في الصفحة الحالية قبل ما نفتح الشيت
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      // 2. هنا بنمرر الـ Cubit للشاشة الجديدة (الشيت) باستخدام BlocProvider.value
       builder:
           (ctx) => BlocProvider.value(
-            value: cubit, // بنستخدم نفس النسخة اللي مسكناها فوق
+            value: cubit,
             child: _UploadSheet(historyId: historyId),
           ),
     );
@@ -79,7 +42,6 @@ class _UploadSheetState extends State<_UploadSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // التعامل مع الكيبورد عشان ميعملش overflow
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Padding(
@@ -94,7 +56,6 @@ class _UploadSheetState extends State<_UploadSheet> {
           ),
           const SizedBox(height: 20),
 
-          // 1. Description
           MedicalTextField(
             controller: _descController,
             label: "Description",
@@ -103,7 +64,6 @@ class _UploadSheetState extends State<_UploadSheet> {
             isRequired: true,
           ),
 
-          // 2. Type Selector (Custom UI)
           const Text(
             "Category",
             style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey),
@@ -130,7 +90,6 @@ class _UploadSheetState extends State<_UploadSheet> {
           ),
           const SizedBox(height: 20),
 
-          // 3. File Picker
           InkWell(
             onTap: _pickFile,
             borderRadius: BorderRadius.circular(12),
@@ -177,7 +136,6 @@ class _UploadSheetState extends State<_UploadSheet> {
 
           const SizedBox(height: 24),
 
-          // 4. Submit Button
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -185,7 +143,7 @@ class _UploadSheetState extends State<_UploadSheet> {
               listener: (context, state) {
                 // TODO: implement listener
                 if (state is PatientUploadSuccess) {
-                  Navigator.pop(context); // قفل الشيت بعد النجاح
+                  Navigator.pop(context);
                 } else if (state is PatientUploadFailure) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

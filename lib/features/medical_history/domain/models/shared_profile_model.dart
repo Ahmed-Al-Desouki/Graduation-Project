@@ -20,18 +20,12 @@ class SharedProfileModel {
   });
 
   factory SharedProfileModel.fromJson(Map<String, dynamic> json) {
-    // نلاحظ أن السيرفر يبعت البيانات داخل كائن اسمه profile
-    // لذا الـ Repository سيمرر لنا الجزء الخاص بالـ profile مباشرة
-
     return SharedProfileModel(
-      patientName: json['fullName'] ?? 'Unknown', // السيرفر يرسل fullName
+      patientName: json['fullName'] ?? 'Unknown',
       age: json['age'] ?? 0,
       bloodType: json['bloodType'] ?? 'N/A',
       allergies: List<String>.from(json['allergies'] ?? []),
-      conditions: List<String>.from(
-        json['chronicConditions'] ?? [],
-      ), // السيرفر يرسل chronicConditions
-      // دمج الأدوية من المصدرين المتاحين في الرد
+      conditions: List<String>.from(json['chronicConditions'] ?? []),
       medications: [
         ...List<String>.from(json['currentMedications'] ?? []),
         ...List<String>.from(json['patientSelfMedications'] ?? []),

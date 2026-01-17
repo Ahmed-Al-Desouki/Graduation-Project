@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
@@ -43,11 +44,16 @@ class FileViewerHelper {
 
       if (result.type != ResultType.done) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Could not open file: ${result.message}"),
-              backgroundColor: Colors.red,
-            ),
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(
+          //     content: Text("Could not open file: ${result.message}"),
+          //     backgroundColor: Colors.red,
+          //   ),
+          // );
+          showSnackBar(
+            context,
+            "Could not open file: ${result.message}",
+            Colors.red,
           );
         }
       }
@@ -55,12 +61,13 @@ class FileViewerHelper {
       if (context.mounted) {
         Navigator.pop(context);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Error opening file: $e"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text("Error opening file: $e"),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        showSnackBar(context, "Error opening file: $e", Colors.red);
         print("❌ Error downloading: $e");
       }
     }

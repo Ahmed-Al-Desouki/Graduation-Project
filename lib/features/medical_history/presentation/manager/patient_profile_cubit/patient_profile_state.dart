@@ -9,7 +9,8 @@ final class PatientProfileLoading extends PatientProfileState {}
 
 final class PatientProfileSuccess extends PatientProfileState {
   final PatientProfileModel profile;
-  PatientProfileSuccess({required this.profile});
+  final bool isOffline;
+  PatientProfileSuccess({required this.profile, this.isOffline = false});
 }
 
 final class PatientProfileFailure extends PatientProfileState {

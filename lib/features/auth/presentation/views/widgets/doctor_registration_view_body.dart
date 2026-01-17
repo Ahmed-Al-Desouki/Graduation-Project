@@ -54,14 +54,13 @@ class _DoctorRegistrationViewBodyState
             builder: (_) => const Center(child: CircularProgressIndicator()),
           );
         } else if (state is RegisterSuccess) {
-          Navigator.pop(context); // close loader
-          ShowSnackBar(context, '✅ Login successful!', Colors.green);
+          Navigator.pop(context);
+          showSnackBar(context, '✅ Login successful!', Colors.green);
           AppRouter.router.go(AppRouter.kLogin);
         } else if (state is RegisterFailure) {
-          Navigator.pop(context); // close loader
-          ShowSnackBar(context, '❌ ${state.errMessage}', Colors.red);
+          Navigator.pop(context);
+          showSnackBar(context, '❌ ${state.errMessage}', Colors.red);
         }
-        // TODO: implement listener
       },
       builder: (context, state) {
         return Scaffold(
@@ -101,7 +100,7 @@ class _DoctorRegistrationViewBodyState
                         nameController: nameController,
                         emailController: emailController,
                         passwordController: passwordController,
-                        isDoctor: true,
+                        // isDoctor: true,
                         // gender: gender,
                         // onGenderChanged: (val) => setState(() => gender = val),
                         onImagePicked: (file) {

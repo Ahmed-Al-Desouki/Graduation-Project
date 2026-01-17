@@ -32,8 +32,8 @@ class ReminderRepositoryImpl implements ReminderRepository {
       if (response.isNotEmpty) {
         await _localDataSource.saveOccurrences(response, patientId);
 
-        final List<Map<String, dynamic>> savedRows = await _localDataSource
-            .getAllUpcomingFromDb();
+        final List<Map<String, dynamic>> savedRows =
+            await _localDataSource.getAllUpcomingFromDb();
 
         for (var row in savedRows) {
           final scheduledTime = DateTime.parse(row['dueDateTime']).toLocal();
@@ -68,9 +68,8 @@ class ReminderRepositoryImpl implements ReminderRepository {
     try {
       final localData = await _localDataSource.getTodayOccurrences();
 
-      final instances = localData
-          .map((e) => ReminderInstanceModel.fromJson(e))
-          .toList();
+      final instances =
+          localData.map((e) => ReminderInstanceModel.fromJson(e)).toList();
       return Right(instances);
     } catch (e) {
       print("❌ Error in getTodayReminders: $e");
@@ -155,20 +154,6 @@ class ReminderRepositoryImpl implements ReminderRepository {
     }
   }
 
-  // @override
-  // Future<Either<Failure, List<ReminderInstanceModel>>> getUpcomingReminders({
-  //   required String patientId,
-  //   required int hours,
-  // }) async {
-  //   try {
-  //     final res = await _webService.getUpcomingReminders(patientId);
-  //     return Right(res);
-  //   } on DioException catch (e) {
-  //     return Left(ServerFailure.fromDioException(e));
-  //   } catch (e) {
-  //     return Left(ServerFailure(e.toString()));
-  //   }
-  // }
   @override
   Future<Either<Failure, List<ReminderModel>>> getAllReminders({
     required String patientId,
@@ -182,20 +167,6 @@ class ReminderRepositoryImpl implements ReminderRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
-
-  // @override
-  // Future<Either<Failure, List<ReminderInstanceModel>>> getTodayReminders({
-  //   required String patientId,
-  // }) async {
-  //   try {
-  //     final res = await _webService.getTodayReminders(patientId);
-  //     return Right(res);
-  //   } on DioException catch (e) {
-  //     return Left(ServerFailure.fromDioException(e));
-  //   } catch (e) {
-  //     return Left(ServerFailure(e.toString()));
-  //   }
-  // }
 
   // --- 5. تحديث ريمندر موجود ---
   @override

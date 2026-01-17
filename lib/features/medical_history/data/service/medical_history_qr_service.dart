@@ -9,13 +9,11 @@ class MedicalHistoryQrService {
     required int patientId,
     required int medicalHistoryId,
   }) async {
-    // حسب ملف الـ PDF اللي بعته، الـ EndPoint هي:
     final response = await _apiService.post(
       "ShareMediHistoryQrCode/generate-qr",
       {"PatientId": patientId, "MedicalHistoryId": medicalHistoryId},
     );
 
-    // الـ API بيرجع { "token": "...", "qrCodeBase64": "..." }
     if (response != null &&
         response['qrCodeBase64'] != null &&
         response['token'] != null) {
@@ -27,14 +25,12 @@ class MedicalHistoryQrService {
     }
   }
 
-  // داخل MedicalHistoryQrService
   Future<Map<String, dynamic>> getSharedHistory(String token) async {
-    // نبعت التوكن كـ Query Parameter
     final response = await _apiService.get(
       "ShareMediHistoryQrCode/share-medical-history",
       queryParameters: {'token': token},
     );
-    print("🔍 Raw Data from Server: $response"); // 👈 أضف هذا السطر
+    print(" Raw Data from Server: $response");
     return response;
   }
 }

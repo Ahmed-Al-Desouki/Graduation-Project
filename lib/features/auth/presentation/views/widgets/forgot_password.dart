@@ -44,10 +44,10 @@ class _ForgotPasswordState extends State<ForgotPassword> {
           );
         } else if (state is ForgotPasswordSuccess) {
           Navigator.pop(context);
-          ShowSnackBar(context, 'Password reset code sent', Color(0xFF16A34A));
+          showSnackBar(context, 'Password reset code sent', Color(0xFF16A34A));
         } else if (state is ForgotPasswordFailure) {
           Navigator.pop(context);
-          ShowSnackBar(context, '❌ ${state.errMessage}', Colors.red);
+          showSnackBar(context, '❌ ${state.errMessage}', Colors.red);
         }
       },
       builder: (context, state) {
@@ -102,7 +102,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     padding: EdgeInsets.all(24.r),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         SizedBox(height: 30.h),
                         InputField(

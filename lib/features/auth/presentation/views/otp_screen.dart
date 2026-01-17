@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
+import 'package:graduation_project/core/widgets/show_snack_bar.dart';
 import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -38,7 +38,6 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Future<void> _showBiometricDialog() async {
-    // لازم نستخدم context.mounted عشان نتأكد إن الـ widget لسه في الشجرة
     if (!context.mounted) return;
 
     final bool? enableBiometrics = await showDialog<bool>(
@@ -65,10 +64,6 @@ class _OtpScreenState extends State<OtpScreen> {
 
     final settingsBox = await Hive.openBox('settings');
     await settingsBox.put('biometric_enabled', enableBiometrics ?? false);
-
-    // if (context.mounted) {
-    //   context.go(AppRouter.kSettings);
-    // }
   }
 
   @override
@@ -93,17 +88,10 @@ class _OtpScreenState extends State<OtpScreen> {
             print("MFA TOKEN IN OTP SCREEN: ${widget.mfaToken}");
           }
           if (state is ResendOtpSuccess) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
+            showSnackBar(context, state.message, Colors.green);
           }
           if (state is LoginFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errMessage),
-                backgroundColor: Colors.red,
-              ),
-            );
+            showSnackBar(context, state.errMessage, Colors.red);
           }
         },
         builder: (context, state) {
@@ -156,14 +144,12 @@ class _OtpScreenState extends State<OtpScreen> {
                       const SizedBox(height: 20),
                       TextButton(
                         onPressed: () {
-                          print("mfaToken : {$widget.mfaToken}");
+                          // print("mfaToken : {$widget.mfaToken}");
 
-                          if (widget.mfaToken != null) {
-                            print("mfaToken : {$widget.mfaToken}");
-                            context.read<AuthCubit>().resendOtp(
-                              widget.mfaToken!,
-                            );
-                          }
+                          // if (widget.mfaToken != null) {
+                          // print("mfaToken : {$widget.mfaToken}");
+                          context.read<AuthCubit>().resendOtp(widget.mfaToken);
+                          // }
                         },
                         child: Text(
                           "Resend OTP",

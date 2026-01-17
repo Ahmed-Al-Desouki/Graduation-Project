@@ -30,7 +30,6 @@ class NotificationService {
     required String type,
   }) async {
     if (scheduledDate.isBefore(DateTime.now())) {
-      print("⚠️ الموعد فات: $scheduledDate");
       return;
     }
 
@@ -94,9 +93,7 @@ class NotificationService {
       );
       await AwesomeNotifications().dismiss(receivedAction.id!);
       print("Action Recorded: TAKEN for ID: $occurrenceId");
-    }
-    // 3. لو ضغط على زرار "غفوة"
-    else if (actionKey == 'SNOOZE') {
+    } else if (actionKey == 'SNOOZE') {
       await LocalOccurrenceDataSource().updateOccurrenceActionOffline(
         id: occurrenceId,
         newStatus: 4,

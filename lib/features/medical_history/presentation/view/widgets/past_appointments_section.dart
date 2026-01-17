@@ -7,7 +7,6 @@ class PastAppointmentsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mock Data (بيانات وهمية للتجربة)
     final List<AppointmentModel> appointments = [
       AppointmentModel(
         doctorName: "Dr. Michael Chen",
@@ -54,7 +53,6 @@ class PastAppointmentsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Header ---
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -63,7 +61,7 @@ class PastAppointmentsSection extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3E8FF), // Light Purple bg
+                      color: const Color(0xFFF3E8FF),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
@@ -80,9 +78,7 @@ class PastAppointmentsSection extends StatelessWidget {
                 ],
               ),
               TextButton(
-                onPressed: () {
-                  // Navigate to All Appointments
-                },
+                onPressed: () {},
                 child: const Text(
                   "View All",
                   style: TextStyle(
@@ -95,9 +91,6 @@ class PastAppointmentsSection extends StatelessWidget {
           ),
 
           const SizedBox(height: 20),
-
-          // --- Appointments List ---
-          // استخدمنا Column بدل ListView عشان إحنا جوه SingleChildScrollView أصلاً في الصفحة الرئيسية
           ...appointments.map(
             (appointment) => AppointmentCard(appointment: appointment),
           ),

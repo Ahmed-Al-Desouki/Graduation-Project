@@ -24,7 +24,6 @@ class LabResultsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // دمج القائمتين وتحويلهم لـ Model موحد للعرض
     final List<LabResultModel> combinedList = [
       ...labTests.map(
         (e) => LabResultModel(
@@ -46,7 +45,6 @@ class LabResultsSection extends StatelessWidget {
       ),
     ];
 
-    // ترتيب حسب التاريخ الأحدث
     combinedList.sort((a, b) => b.date.compareTo(a.date));
 
     return MedicalSectionCard(
@@ -56,7 +54,6 @@ class LabResultsSection extends StatelessWidget {
       iconBgColor: const Color(0xFFECFEFF),
       emptyMessage: "No records uploaded yet.",
 
-      // زرار الرفع
       onAddTap:
           () => MedicalFileUploadDialog.show(
             context,
@@ -64,10 +61,9 @@ class LabResultsSection extends StatelessWidget {
             context.read<PatientProfileCubit>(),
           ),
 
-      // زرار عرض الكل
       onViewAllTap: () {
         context.push(
-          AppRouter.kLabResults, // تأكد إنك ضفت الراوت ده
+          AppRouter.kLabResults,
           extra: {
             'labTests': labTests,
             'radiologyFiles': radiologyFiles,
