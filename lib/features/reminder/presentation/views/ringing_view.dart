@@ -22,7 +22,7 @@ class _RingingViewState extends State<RingingView> {
     _startAlarm();
 
     _autoDismissTimer = Timer(const Duration(minutes: 2), () {
-      _handleAction(5); // Missed
+      _handleAction(5);
     });
   }
 
@@ -81,7 +81,6 @@ class _RingingViewState extends State<RingingView> {
             ),
             const SizedBox(height: 60),
 
-            // أزرار كبيرة وسهلة الضغط
             _buildBigActionButton(
               label: "تم أخذ الدواء",
               icon: Icons.check_circle,

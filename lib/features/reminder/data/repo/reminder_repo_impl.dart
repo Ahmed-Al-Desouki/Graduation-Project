@@ -122,13 +122,12 @@ class ReminderRepositoryImpl implements ReminderRepository {
     return const Right(null);
   }
 
-  // --- 4. إنشاء ريمندر جديد ---
   @override
   Future<Either<Failure, ReminderModel>> createReminder({
     required String patientId,
     required String type,
     required String title,
-    required DateTime startDate, // ← بقى DateTime
+    required DateTime startDate,
     required DateTime? endDate,
     String? rrule,
     SimpleModel? simple,
@@ -139,7 +138,7 @@ class ReminderRepositoryImpl implements ReminderRepository {
         patientId,
         type: type,
         title: title,
-        startDate: startDate, // DateTime
+        startDate: startDate,
         endDate: endDate,
         rrule: rrule,
         simple: simple,
@@ -168,7 +167,6 @@ class ReminderRepositoryImpl implements ReminderRepository {
     }
   }
 
-  // --- 5. تحديث ريمندر موجود ---
   @override
   Future<Either<Failure, ReminderModel>> updateReminder({
     required String patientId,
@@ -182,13 +180,12 @@ class ReminderRepositoryImpl implements ReminderRepository {
     required bool isSimpleEveryXHours,
   }) async {
     try {
-      // التحويل هنا يضمن أن البيانات الذاهبة للـ WebService هي نصوص
       final res = await _webService.updateReminder(
         patientId,
         reminderId,
         title: title,
-        startDate: startDate.toIso8601String(), // 🔥 تحويل إجباري لنص
-        endDate: endDate.toIso8601String(), // 🔥 تحويل إجباري لنص
+        startDate: startDate.toIso8601String(),
+        endDate: endDate.toIso8601String(),
         rrule: rrule,
         simple: simple,
         message: message,
@@ -202,7 +199,6 @@ class ReminderRepositoryImpl implements ReminderRepository {
     }
   }
 
-  // --- 6. حذف ريمندر ---
   @override
   Future<Either<Failure, void>> deleteReminder({
     required String patientId,

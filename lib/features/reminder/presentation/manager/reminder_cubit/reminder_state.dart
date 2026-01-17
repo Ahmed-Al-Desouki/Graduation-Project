@@ -9,12 +9,9 @@ final class ReminderInitial extends ReminderState {}
 
 final class ReminderLoading extends ReminderState {}
 
-// --- حالات إنشاء وتحديث ---
 final class ReminderCreateSuccess extends ReminderState {
   final ReminderModel reminder;
-  ReminderCreateSuccess({
-    required this.reminder,
-  }); // 💡 استخدمنا Named Parameter
+  ReminderCreateSuccess({required this.reminder});
 }
 
 final class ReminderCreateFailure extends ReminderState {
@@ -32,7 +29,6 @@ final class ReminderUpdateFailure extends ReminderState {
   ReminderUpdateFailure({required this.errMessage});
 }
 
-// --- حالات جلب التذكيرات (Upcoming) ---
 final class UpcomingRemindersSuccess extends ReminderState {
   final List<ReminderInstanceModel> medications;
   final List<ReminderInstanceModel> appointments;
@@ -49,16 +45,6 @@ final class UpcomingRemindersFailure extends ReminderState {
   final String errMessage;
   UpcomingRemindersFailure({required this.errMessage});
 }
-
-// final class AllRemindersSuccess extends ReminderState {
-//   final List<ReminderModel> reminders;
-//   AllRemindersSuccess({required this.reminders});
-// }
-
-// final class AllRemindersFailure extends ReminderState {
-//   final String errMessage;
-//   AllRemindersFailure({required this.errMessage});
-// }
 
 final class GetAllRemindersLoading extends ReminderState {}
 

@@ -40,8 +40,6 @@ class ReminderModel {
       "startDate": startDate.toIso8601String(),
       if (endDate != null) "endDate": endDate!.toIso8601String(),
       "message": message,
-      // "status": status,
-      // "isActive": isActive,
       if (rrule != null) "rrule": rrule,
       if (simple != null) "simple": simple!.toJson(),
       "prescriptionMedID": prescriptionMedID,
@@ -50,48 +48,22 @@ class ReminderModel {
   }
 
   factory ReminderModel.fromJson(Map<String, dynamic> json) {
-    // <<<<<<< HEAD
-    //     return ReminderModel(
-    //       patientID:
-    //           json['patientID'] is String
-    //               ? int.parse(json['patientID'])
-    //               : (json['patientID'] ?? 0),
-    //       type: json['type'] ?? '',
-    //       title: json['title'] ?? '',
-    //       startDate: DateTime.tryParse(json['startDate'] ?? '') ?? DateTime.now(),
-    //       endDate: DateTime.tryParse(json['endDate'] ?? '') ?? DateTime.now(),
-    //       message: json['message'],
-    //       status: json['status'] ?? 'Pending',
-    //       isActive: json['isActive'] ?? true,
-    //       prescriptionMedID: json['prescriptionMedID'],
-    //       dosage: json['dosage'],
-    //       rrule: json['rrule'],
-    //       simple:
-    //           json['simple'] != null ? SimpleModel.fromJson(json['simple']) : null,
-    //       timeZoneId: json['timeZoneId'] ?? 'Africa/Cairo',
-    // =======
-    print("DEBUG: JSON simple = ${json['simple']}");
     SimpleModel? parsedSimple;
     if (json['isSimpleEveryXHours'] == true) {
-      // ✅ بناء SimpleModel يدويًا من الحقول المباشرة
       parsedSimple = SimpleModel(
         intervalHours: json['intervalHours'] ?? 8,
         firstDoseTime: json['firstDoseTime'] ?? "08:00",
-        // >>>>>>> origin/stable-v2
       );
     } else if (json['simple'] != null) {
-      // الـ fallback لو السيرفر رجع simple كـ object (لو تغير في المستقبل)
       parsedSimple = SimpleModel.fromJson(json['simple']);
     }
-    // ✅ تعديل: استخدم DateTime.parse ثم toLocal() فقط لو الـ string مع Z (UTC)، غير كده خليها local
     DateTime parseDate(String? dateStr) {
       if (dateStr == null) return DateTime.now();
       final parsed = DateTime.tryParse(dateStr) ?? DateTime.now();
       if (!dateStr.endsWith('Z')) {
-        // ✅ الحل: أضف +2 ساعات يدويًا لـ EET لو بدون Z (لأن parsed بيفترض UTC)
         return parsed.add(const Duration(hours: 2));
       }
-      return parsed.toLocal(); // لو Z، حوّل طبيعي
+      return parsed.toLocal();
     }
 
     return ReminderModel(
@@ -99,9 +71,10 @@ class ReminderModel {
           json['id']?.toString() ??
           json['reminderId']?.toString() ??
           json['reminderID']?.toString(),
-      patientID: json['patientId'] is String
-          ? int.parse(json['patientId'])
-          : (json['patientId'] ?? 0),
+      patientID:
+          json['patientId'] is String
+              ? int.parse(json['patientId'])
+              : (json['patientId'] ?? 0),
       type: json['type'] ?? '',
       title: json['title'] ?? '',
       startDate: parseDate(json['startDate']),
@@ -112,7 +85,7 @@ class ReminderModel {
       prescriptionMedID: json['prescriptionMedID'],
       dosage: json['dosage'],
       rrule: json['rrule'],
-      simple: parsedSimple, // ✅ استخدم الـ parsedSimple اللي بنيناه
+      simple: parsedSimple,
       timeZoneId: json['timeZoneId'] ?? 'Africa/Cairo',
     );
   }
@@ -120,7 +93,7 @@ class ReminderModel {
 
 class SimpleModel {
   final int intervalHours;
-  final String firstDoseTime; // "08:00"  (بدون ثواني)
+  final String firstDoseTime;
 
   SimpleModel({required this.intervalHours, required this.firstDoseTime});
 
@@ -128,7 +101,7 @@ class SimpleModel {
     return {
       "frequency": "EveryXHours",
       "intervalHours": intervalHours,
-      "times": [firstDoseTime], // السيرفيس بيتوقع array حتى لو عنصر واحد
+      "times": [firstDoseTime],
     };
   }
 

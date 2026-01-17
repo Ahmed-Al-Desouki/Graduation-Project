@@ -65,19 +65,9 @@ class _MyAppState extends State<MyApp> {
         );
       }
     }
-    // 2. 🔥 حالة مشاركة التاريخ الطبي (جديدة)
-    // else if (uri.path.contains('share-history')) {
-    //   final token = uri.queryParameters['token'];
-    //   if (token != null) {
-    //     // وديه لصفحة الشير فوراً
-    //     AppRouter.router.push('/share-history?token=$token');
-    //   }
-    // }
     if (fullPath.contains('share-history')) {
-      // استخراج التوكن سواء كان في queryParameters أو محتاجين نجيبه يدوي
       String? token = uri.queryParameters['token'];
 
-      // لو التوكن مجاش (بسبب علامة #)، بنجيبه من الـ fragment
       if (token == null && uri.fragment.contains('token=')) {
         token = uri.fragment.split('token=').last;
       }

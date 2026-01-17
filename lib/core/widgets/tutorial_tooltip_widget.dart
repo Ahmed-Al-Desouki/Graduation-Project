@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:showcaseview/showcaseview.dart';
 
 class TutorialTooltipWidget extends StatelessWidget {
   final String title;
@@ -23,7 +22,7 @@ class TutorialTooltipWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 280.w, // عرض ثابت للفقاعة
+      width: 280.w,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -40,12 +39,11 @@ class TutorialTooltipWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 1. زرار التخطي (Skip) فوق على اليمين
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '$currentStep/$totalSteps', // عداد الخطوات
+                '$currentStep/$totalSteps',
                 style: TextStyle(color: Colors.grey, fontSize: 12.sp),
               ),
               GestureDetector(
@@ -63,7 +61,6 @@ class TutorialTooltipWidget extends StatelessWidget {
           ),
           SizedBox(height: 10.h),
 
-          // 2. العنوان
           Text(
             title,
             style: TextStyle(
@@ -74,7 +71,6 @@ class TutorialTooltipWidget extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
 
-          // 3. الوصف
           Text(
             description,
             style: TextStyle(
@@ -85,13 +81,12 @@ class TutorialTooltipWidget extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
 
-          // 4. زرار التالي (Next Button)
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: onNext,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E3192), // لون البراند بتاعك
+                backgroundColor: const Color(0xFF2E3192),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.r),
                 ),

@@ -12,9 +12,9 @@ class ReminderWebService {
     String patientId, {
     required String type,
     required String title,
-    required DateTime startDate, // ← DateTime
+    required DateTime startDate,
     required DateTime? endDate,
-    String? rrule, // ← جديد
+    String? rrule,
     SimpleModel? simple,
     required String message,
   }) async {
@@ -41,23 +41,17 @@ class ReminderWebService {
       body,
     );
 
-    print("Raw response from server: $response"); // مهم جدًا نشوف إيه اللي راجع
-
-    // الـ Backend بتاعك بيرجع الـ Reminder كامل في الـ response مباشرة
-    // أو بيرجع { "data": { ... } } أو حتى بيرجع null
+    print("Raw response from server: $response");
     dynamic data = response;
 
-    // لو رجع { "data": { ... } }
     if (response is Map<String, dynamic> && response.containsKey('data')) {
       data = response['data'];
     }
 
-    // لو رجع الـ Reminder مباشرة (مش داخل data)
     if (data is Map<String, dynamic>) {
       return ReminderModel.fromJson(data);
     }
 
-    // لو مفيش data خالص (بس الـ status 201) → نرجع Reminder فارغ بس ناجح
     return ReminderModel(
       type: type,
       title: title,
@@ -69,22 +63,8 @@ class ReminderWebService {
     );
   }
 
-  // Future<List<ReminderInstanceModel>> getUpcomingReminders(String patientId) async {
-  //   final response = await _apiService.get(
-  //     "patients/$patientId/reminders/upcoming",
-  //   );
-  //   if (response is List) {
-  //     return response
-  //         .map((e) => ReminderInstanceModel.fromJson(e))
-  //         .toList();
-  //   } else {
-  //     return [];
-  //   }
-  // }
   Future<List<ReminderModel>> getAllReminders(String patientId) async {
-    final response = await _apiService.get(
-      "v2/patients/$patientId/reminders", // ✅ استخدام endpoint upcoming
-    );
+    final response = await _apiService.get("v2/patients/$patientId/reminders");
 
     print("All Reminders Response: $response");
 
@@ -94,12 +74,11 @@ class ReminderWebService {
     return [];
   }
 
-  // 💡 إضافة دالة Get Today Reminders (V2)
   Future<List<ReminderInstanceModel>> getTodayReminders(
     String patientId,
   ) async {
     final response = await _apiService.get(
-      "v2/patients/$patientId/reminders/today", // ✅ V2 Endpoint
+      "v2/patients/$patientId/reminders/today",
     );
     print("Response received: $response");
     if (response is List) {
@@ -112,20 +91,17 @@ class ReminderWebService {
     String patientId,
     String reminderId, {
     required String title,
-    required dynamic startDate, // جعلناه dynamic ليقبل String أو DateTime
+    required dynamic startDate,
     required dynamic endDate,
     String? rrule,
     SimpleModel? simple,
     required String message,
     required bool isSimpleEveryXHours,
   }) async {
-    // بناء الـ Map الذي سيُرسل للسيرفر
     final Map<String, dynamic> data = {
       "title": title,
-      // التأكد من التحويل هنا أيضاً كخط دفاع أخير
-      "startDate": startDate is DateTime
-          ? startDate.toIso8601String()
-          : startDate,
+      "startDate":
+          startDate is DateTime ? startDate.toIso8601String() : startDate,
       "endDate": endDate is DateTime ? endDate.toIso8601String() : endDate,
       "rrule": rrule,
       "message": message,
@@ -133,20 +109,15 @@ class ReminderWebService {
       if (simple != null) "simple": simple.toJson(),
     };
 
-    // إرسال الريكويست
     final response = await _apiService.put(
       "v2/patients/$patientId/reminders/$reminderId",
-      data, // هنا Dio سيعمل بنجاح لأن كل القيم بداخل data أصبحت نصوصاً أو أرقاماً
+      data,
     );
 
-    // return ReminderModel.fromJson(response);
     try {
-      // محاولة تحويل الرد
       return ReminderModel.fromJson(response);
     } catch (e) {
       print("Parsing Error in Update: $e");
-      // 💡 الحل السحري: إذا حدث خطأ في التحويل، نرجع كائن محلي بالبيانات الجديدة
-      // لكي لا يظهر الخطأ الأحمر للمستخدم، لأن التعديل تم بالفعل في السيرفر
       return ReminderModel(
         reminderId: reminderId,
         title: title,
@@ -159,26 +130,13 @@ class ReminderWebService {
     }
   }
 
-  // Future<void> deleteReminder({
-  //   required String patientId,
-  //   required String reminderId,
-  // }) async {
-  //   await _apiService.delete(
-  //     "patients/$patientId/reminders/$reminderId",
-  //   );
-  // }
-
-  // 💡 تعديل Delete Reminder (V2)
   Future<void> deleteReminder({
     required String patientId,
     required String reminderId,
   }) async {
-    await _apiService.delete(
-      "v2/patients/$patientId/reminders/$reminderId", // ✅ V2 Endpoint
-    );
+    await _apiService.delete("v2/patients/$patientId/reminders/$reminderId");
   }
 
-  // داخل ملف reminder_web_service.dart
   Future<List<ReminderInstanceModel>> getUpcomingReminders(
     String patientId, {
     int days = 14,
@@ -192,9 +150,6 @@ class ReminderWebService {
     return [];
   }
 
-  // داخل ملف reminder_web_service.dart
-
-  // 1. تأكيد أخذ الدواء (Confirm/Taken) [cite: 72, 73]
   Future<void> confirmOccurrence({
     required int reminderId,
     required String occurrenceDateTime,

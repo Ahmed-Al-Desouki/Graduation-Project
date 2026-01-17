@@ -34,16 +34,11 @@ class ReminderCubit extends Cubit<ReminderState> {
 
     result.fold(
       (failure) {
-        // طبّع الإيرور في الكونسول عشان نشوف إيه اللي بيحصل بالظبط
         print("CREATE REMINDER FAILED: ${failure.errmessage}");
         emit(ReminderCreateFailure(errMessage: failure.errmessage));
       },
       (reminder) async {
-        // حتى لو الـ reminder ناقص بيانات، خلينا نعتبره ناجح
         emit(ReminderCreateSuccess(reminder: reminder));
-        // نعيد تحميل التذكيرات اليومية عشان تظهر فورًا
-        // getTodayReminders(patientId: patientId);
-        // نطلب المزامنة فوراً (ده هيجيب الداتا ويجدول المنبه ويعرضه)
         await getUpcomingReminders(patientId: patientId);
       },
     );
@@ -55,7 +50,6 @@ class ReminderCubit extends Cubit<ReminderState> {
 
     final localData = await repo.getTodayReminders(patientId: patientId);
     localData.fold((failure) {}, (allReminders) => _emitSuccess(allReminders));
-
     await getUpcomingReminders(patientId: patientId);
   }
 
@@ -97,9 +91,9 @@ class ReminderCubit extends Cubit<ReminderState> {
     String? rrule,
     SimpleModel? simple,
     required String message,
-    required bool isEveryXHours, // للتمييز وإرسالها للريبو
+    required bool isEveryXHours,
   }) async {
-    emit(ReminderLoading()); // أو ReminderUpdateLoading لو عايز تفصلهم
+    emit(ReminderLoading());
 
     final result = await repo.updateReminder(
       patientId: patientId,
@@ -123,12 +117,6 @@ class ReminderCubit extends Cubit<ReminderState> {
     required String reminderId,
     required String patientId,
   }) async {
-    // final patientId = await SecureStorageHelper.getUserId();
-    // if (patientId == null || patientId.isEmpty) {
-    //   emit(ReminderDeleteFailure(errMessage: "User ID is missing or invalid."));
-    //   return;
-    // }
-
     emit(ReminderDeleteLoading());
 
     final result = await repo.deleteReminder(

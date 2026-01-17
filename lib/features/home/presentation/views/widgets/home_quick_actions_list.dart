@@ -48,6 +48,7 @@ class HomeQuickActionsList extends StatelessWidget {
           title: 'Medicine Reminders',
           desc: 'Track your medications.',
           child: PatientQuickActionCard(
+            iconColor: const Color(0xFF0852F3),
             onTap: () => context.go(AppRouter.kReminder),
             title: 'Reminders',
             subtitle: 'Update your Reminders',

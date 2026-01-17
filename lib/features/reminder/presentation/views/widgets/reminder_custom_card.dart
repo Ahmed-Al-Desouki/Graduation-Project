@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ReminderCustomCard extends StatelessWidget {
-  final String title, subtitle, time, next, date;
+  final String title, subtitle, time, date;
 
   const ReminderCustomCard({
     super.key,
@@ -9,7 +9,6 @@ class ReminderCustomCard extends StatelessWidget {
     required this.date,
     required this.subtitle,
     required this.time,
-    required this.next,
   });
 
   @override
@@ -25,48 +24,28 @@ class ReminderCustomCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              Text(
-                'Next: $next',
-                style: TextStyle(color: Colors.orange.shade700, fontSize: 12),
-              ),
-            ],
-          ),
           Text(
-            subtitle,
-            style: TextStyle(color: Colors.black45),
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
-          const SizedBox(height: 6),
+          Text(subtitle, style: TextStyle(color: Colors.black45)),
+          SizedBox(height: 6),
           Row(
-            children: [Icon(Icons.calendar_month, size: 18, color: Colors.orange),
+            children: [
+              Icon(Icons.calendar_month, size: 18, color: Colors.orange),
               SizedBox(width: 5),
               Text(date),
               SizedBox(width: 15),
-              Icon(Icons.access_time_filled, size: 18, color: Colors.orange.shade700),
+              Icon(
+                Icons.access_time_filled,
+                size: 18,
+                color: Colors.orange.shade700,
+              ),
               const SizedBox(width: 5),
-              Text('Time: $time',),
+              Text('Time: $time'),
             ],
           ),
           const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton(
-              onPressed: () {
-                // هنا هتحط الـ Confirm أو Snooze لاحقًا
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.shade600,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text("Done"),
-            ),
-          ),
         ],
       ),
     );

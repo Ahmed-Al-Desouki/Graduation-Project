@@ -1,7 +1,7 @@
 // import 'package:awesome_notifications/awesome_notifications.dart';
 // import 'package:flutter/material.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart'; // ✅ تأكد من وجوده
+// import 'package:flutter_screenutil/flutter_screenutil.dart'; 
 // import 'package:graduation_project/core/utils/app_images.dart';
 // import 'package:graduation_project/core/utils/app_router.dart';
 // import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
@@ -33,7 +33,6 @@
 //     super.initState();
 //     AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
 //       if (!isAllowed) {
-//         // يظهر رسالة للمريض يطلب منه تفعيل الإشعارات
 //         AwesomeNotifications().requestPermissionToSendNotifications();
 //       }
 //     });
@@ -44,7 +43,6 @@
 //         context.read<ReminderCubit>().getUpcomingReminders(
 //           patientId: patientId,
 //         );
-//         // ولا تنسى تشغيل الـ Sync للأكشنز القديمة أيضاً
 //         context.read<ReminderCubit>().syncOfflineActions();
 //       }
 //     });
@@ -88,7 +86,6 @@
 //         return Scaffold(
 //           backgroundColor: const Color(0xffE8F7F2),
 //           body: SingleChildScrollView(
-//             // ✅ إضافة Padding بالأسفل عشان آخر عنصر ميتأكلش
 //             padding: EdgeInsets.only(bottom: 20.h),
 //             child: Column(
 //               crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,11 +94,8 @@
 //                 PatientHomeHeader(
 //                   notificationWidget: Showcase.withWidget(
 //                     key: _notificationKey,
-//                     // ❌ ألغينا الـ height الثابت
 //                     height: null,
-//                     // ✅ خلينا العرض responsive
 //                     width: 270.w,
-//                     // ✅ إجبار الفقاعة تظهر "تحت" الجرس عشان متخرجش من فوق الشاشة
 //                     tooltipPosition: TooltipPosition.bottom,
 //                     targetPadding: EdgeInsets.all(5.r),
 //                     container: TutorialTooltipWidget(
@@ -130,13 +124,13 @@
 //                 // --- 2. Search Doctor ---
 //                 Showcase.withWidget(
 //                   key: _searchDoctorKey,
-//                   height: null, // ✅ Dynamic Height
-//                   width: 270.w, // ✅ Responsive Width
+//                   height: null, 
+//                   width: 270.w, 
 //                   targetPadding: EdgeInsets.symmetric(
 //                     vertical: 5.h,
 //                     horizontal: 5.w,
 //                   ),
-//                   tooltipPosition: TooltipPosition.top, // تظهر فوق الكارد
+//                   tooltipPosition: TooltipPosition.top, 
 //                   container: TutorialTooltipWidget(
 //                     currentStep: 2,
 //                     totalSteps: totalSteps,
@@ -158,11 +152,10 @@
 
 //                 SizedBox(height: 20.h),
 
-//                 // --- 3. Reminders ---
 //                 Showcase.withWidget(
 //                   key: _remindersKey,
-//                   height: null, // ✅ Dynamic Height
-//                   width: 270.w, // ✅ Responsive Width
+//                   height: null,
+//                   width: 270.w, 
 //                   targetPadding: EdgeInsets.symmetric(
 //                     vertical: 5.h,
 //                     horizontal: 5.w,
@@ -191,16 +184,14 @@
 
 //                 SizedBox(height: 20.h),
 
-//                 // --- 4. Medical History ---
 //                 Showcase.withWidget(
 //                   key: _historyKey,
-//                   height: null, // ✅ Dynamic Height
-//                   width: 270.w, // ✅ Responsive Width
+//                   height: null, 
+//                   width: 270.w, 
 //                   targetPadding: EdgeInsets.symmetric(
 //                     vertical: 5.h,
 //                     horizontal: 5.w,
 //                   ),
-//                   // ✅ تظهر فوق الكارد لأن ده آخر عنصر تحت
 //                   tooltipPosition: TooltipPosition.top,
 //                   container: TutorialTooltipWidget(
 //                     currentStep: 4,
