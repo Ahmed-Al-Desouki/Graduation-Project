@@ -5,8 +5,6 @@ import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart'
 import 'package:graduation_project/features/reminder/data/models/reminder_instance_model.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_state.dart';
-import 'package:graduation_project/features/reminder/presentation/views/add_reminder_view.dart';
-import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_appointment_card.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_custom_card.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/reminder_header.dart';
@@ -56,18 +54,13 @@ class _ReminderViewState extends State<ReminderView> {
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: TextButton(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (_) => BlocProvider.value(
-                          value: context.read<ReminderCubit>(),
-                          child: const AllRemindersView(),
-                        ),
-                  ),
-                );
-                _fetchReminders();
+              onPressed: () {
+                AppRouter.router
+                    .push(
+                      AppRouter.kAllReminders,
+                      extra: context.read<ReminderCubit>(),
+                    )
+                    .then((_) => _fetchReminders());
               },
               child: const Text(
                 "View All",
@@ -115,25 +108,11 @@ class _ReminderViewState extends State<ReminderView> {
                 const SizedBox(height: 8),
                 const ReminderHeader(),
 
-                // ---------- Appointments UI ----------
                 ReminderSectionHeader(
                   title: 'Appointments',
                   count: appts.length,
                   isUpcoming: true,
-                  onAddPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => BlocProvider.value(
-                              value: context.read<ReminderCubit>(),
-                              child: const AddReminderView(
-                                initialType: 'Appointment',
-                              ),
-                            ),
-                      ),
-                    ).then((_) => _fetchReminders());
-                  },
+                  onAddPressed: () => navigateToAddReminder('Appointment'),
                 ),
                 const SizedBox(height: 10),
 
@@ -146,34 +125,18 @@ class _ReminderViewState extends State<ReminderView> {
                 for (var appt in appts)
                   ReminderAppointmentCard(
                     name: appt.title,
-                    specialization: "Doctor",
+                    subtitle: appt.message ?? '',
                     date: appt.dueDateTime.split('T')[0],
-                    time: _formatTime(appt.dueDateTime),
-                    statusText: appt.status,
-                    statusColor: Colors.blue,
+                    time: formatTime(appt.dueDateTime),
                   ),
 
                 const SizedBox(height: 25),
 
-                // ---------- Medications UI ----------
                 ReminderSectionHeader(
                   title: 'Medication',
                   count: meds.length,
                   isUpcoming: false,
-                  onAddPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => BlocProvider.value(
-                              value: context.read<ReminderCubit>(),
-                              child: const AddReminderView(
-                                initialType: 'Medication',
-                              ),
-                            ),
-                      ),
-                    ).then((_) => _fetchReminders());
-                  },
+                  onAddPressed: () => navigateToAddReminder('Medication'),
                 ),
                 const SizedBox(height: 10),
 
@@ -187,36 +150,19 @@ class _ReminderViewState extends State<ReminderView> {
                   ReminderMedicationCard(
                     title: reminder.title,
                     date: reminder.dueDateTime.split('T')[0],
-                    subtitle: reminder.message ?? "Take as prescribed",
-                    time: _formatTime(reminder.dueDateTime),
-                    next: _formatTime(reminder.dueDateTime),
+                    subtitle: reminder.message ?? '',
+                    time: formatTime(reminder.dueDateTime),
                     frequency: reminder.type,
-                    buttonColor: Colors.green,
-                    buttonText: "Mark Taken",
                   ),
 
                 const SizedBox(height: 25),
 
-                // ---------- Custom UI ----------
                 ReminderSectionHeader(
                   title: 'Custom',
                   count: customs.length,
                   isUpcoming: false,
                   customColor: Colors.orange.shade700,
-                  onAddPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => BlocProvider.value(
-                              value: context.read<ReminderCubit>(),
-                              child: const AddReminderView(
-                                initialType: 'Custom',
-                              ),
-                            ),
-                      ),
-                    ).then((_) => _fetchReminders());
-                  },
+                  onAddPressed: () => navigateToAddReminder('Custom'),
                 ),
                 const SizedBox(height: 10),
 
@@ -230,9 +176,8 @@ class _ReminderViewState extends State<ReminderView> {
                   ReminderCustomCard(
                     title: custom.title,
                     date: custom.dueDateTime.split('T')[0],
-                    subtitle: custom.message ?? "Don't forget!",
-                    time: _formatTime(custom.dueDateTime),
-                    next: _formatTime(custom.dueDateTime),
+                    subtitle: custom.message ?? '',
+                    time: formatTime(custom.dueDateTime),
                   ),
                 const SizedBox(height: 80),
               ],
@@ -273,7 +218,16 @@ class _ReminderViewState extends State<ReminderView> {
     );
   }
 
-  String _formatTime(String isoDate) {
+  void navigateToAddReminder(String type) {
+    AppRouter.router
+        .push(
+          AppRouter.kAddReminder,
+          extra: {'cubit': context.read<ReminderCubit>(), 'initialType': type},
+        )
+        .then((_) => _fetchReminders());
+  }
+
+  String formatTime(String isoDate) {
     try {
       final dateTime = DateTime.parse(isoDate);
       return "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";

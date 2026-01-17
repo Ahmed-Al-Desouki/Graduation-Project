@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 
 class ReminderAppointmentCard extends StatelessWidget {
-  final String name, specialization, date, time, statusText;
-  final Color statusColor;
-  final bool showCancel;
+  final String name, subtitle, date, time;
 
   const ReminderAppointmentCard({
     super.key,
     required this.name,
-    required this.specialization,
+    required this.subtitle,
     required this.date,
     required this.time,
-    required this.statusText,
-    required this.statusColor,
-    this.showCancel = false,
   });
 
   @override
@@ -30,7 +25,7 @@ class ReminderAppointmentCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(specialization, style: const TextStyle(color: Colors.grey)),
+          Text(subtitle, style: const TextStyle(color: Colors.grey)),
           SizedBox(height: 8),
           Row(
             children: [
@@ -44,17 +39,6 @@ class ReminderAppointmentCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 10),
-
-          Align(
-            alignment: Alignment.centerRight,
-            child: OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.blue.shade200),
-              ),
-              child: Text('View Details'),
-            ),
-          ),
         ],
       ),
     );

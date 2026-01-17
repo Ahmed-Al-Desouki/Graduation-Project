@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:graduation_project/core/utils/helper/rrule_helper.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
@@ -359,65 +360,33 @@ class _AddReminderViewState extends State<AddReminderView> {
 
   void _saveReminder() async {
     if (titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❌ Please enter a title"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ShowSnackBar(context, "❌ Please enter a title", Colors.red);
       return;
     }
 
     if (selectedFrequency == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❌ Please select a frequency"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ShowSnackBar(context, "❌ Please select a frequency", Colors.red);
       return;
     }
 
     if (selectedFrequency == 'Monthly' && selectedMonthDay == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❌ Please select a day of the month"),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      ShowSnackBar(context, "❌ Please select a day of the month", Colors.red);
       return;
     }
 
-    if (selectedFrequency == 'Every X Hours' &&
-        intervalController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❌ Please enter an interval"),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (selectedFrequency == 'Every X Hours' && intervalController.text.trim().isEmpty) {
+      ShowSnackBar(context, "❌ Please enter an interval", Colors.red);
       return;
     }
 
     final String? patientId = await SecureStorageHelper.getUserId();
     if (patientId == null || patientId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❌ Error: No Patient ID"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ShowSnackBar(context, "❌ Error: No Patient ID", Colors.red);
       return;
     }
 
     if (selectedFrequency == 'Weekly' && selectedWeekDays.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❌ Please select at least one day"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ShowSnackBar(context, "❌ Please select at least one day", Colors.red);
       return;
     }
 
@@ -454,12 +423,7 @@ class _AddReminderViewState extends State<AddReminderView> {
     if (selectedFrequency! == 'Every X Hours') {
       final int interval = int.tryParse(intervalController.text) ?? 8;
       if (interval < 1 || interval > 23) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("❌ The interval must be between 1 and 23 hours"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ShowSnackBar(context, "❌ The interval must be between 1 and 23 hours", Colors.red);
         return;
       }
       firstDoseTimeStr =

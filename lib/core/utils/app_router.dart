@@ -24,6 +24,7 @@ import 'package:graduation_project/features/auth/presentation/views/doctor_regis
 import 'package:graduation_project/features/auth/presentation/views/login_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/otp_screen.dart';
 import 'package:graduation_project/features/auth/presentation/views/patient_registration_view.dart';
+import 'package:graduation_project/features/reminder/presentation/views/add_reminder_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/reminder_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_password_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/reset_success_view.dart';
@@ -31,6 +32,7 @@ import 'package:graduation_project/features/auth/presentation/views/test_setting
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/medical_history_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/ringing_view.dart';
+import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
 
 abstract class AppRouter {
@@ -55,6 +57,8 @@ abstract class AppRouter {
   static const kAllFamilyHistory = '/medicalHistory/allFamilyHistory';
   static const kLabResults = '/medicalHistory/labResults';
   static const kRinging = '/ringing';
+  static const kAllReminders = '/allReminders';
+  static const kAddReminder = '/addReminder';
   // static const kMedicalHistory = '/';
   // https://medicare-plus.runasp.net/api/
   static final router = GoRouter(
@@ -279,6 +283,27 @@ abstract class AppRouter {
           return BlocProvider(
             create: (context) => getIt<MedicalqrCubit>(),
             child: SharedHistoryView(token: token),
+          );
+        },
+      ),
+
+      GoRoute(
+        path: kAllReminders,
+        builder: (context, state) {
+          final cubit = state.extra as ReminderCubit;
+          return BlocProvider.value(value: cubit, child: AllRemindersView());
+        },
+      ),
+
+      GoRoute(
+        path: kAddReminder,
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>;
+          return BlocProvider.value(
+            value: extras['cubit'] as ReminderCubit,
+            child: AddReminderView(
+              initialType: extras['initialType'] as String?,
+            ),
           );
         },
       ),

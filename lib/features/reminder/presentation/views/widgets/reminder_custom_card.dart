@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ReminderCustomCard extends StatelessWidget {
-  final String title, subtitle, time, next, date;
+  final String title, subtitle, time, date;
 
   const ReminderCustomCard({
     super.key,
@@ -9,7 +9,6 @@ class ReminderCustomCard extends StatelessWidget {
     required this.date,
     required this.subtitle,
     required this.time,
-    required this.next,
   });
 
   @override
@@ -25,24 +24,12 @@ class ReminderCustomCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              Text(
-                'Next: $next',
-                style: TextStyle(color: Colors.orange.shade700, fontSize: 12),
-              ),
-            ],
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           Text(subtitle, style: TextStyle(color: Colors.black45)),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Row(
             children: [
               Icon(Icons.calendar_month, size: 18, color: Colors.orange),
@@ -59,17 +46,6 @@ class ReminderCustomCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.shade600,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text("Done"),
-            ),
-          ),
         ],
       ),
     );
