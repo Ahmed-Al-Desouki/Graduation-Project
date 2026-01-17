@@ -199,6 +199,8 @@ class _AddReminderViewState extends State<AddReminderView> {
   @override
   Widget build(BuildContext context) {
     return ShowCaseWidget(
+      enableAutoScroll: true,
+      scrollDuration: const Duration(milliseconds: 800),
       builder: (context) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _checkAndStartShowcase(context);

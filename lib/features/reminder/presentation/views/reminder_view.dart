@@ -72,6 +72,8 @@ class _ReminderViewState extends State<ReminderView> {
   @override
   Widget build(BuildContext context) {
     return ShowCaseWidget(
+      enableAutoScroll: true,
+      scrollDuration: const Duration(milliseconds: 800),
       builder: (context) {
         _checkAndStartShowcase(context);
         return Scaffold(
