@@ -626,27 +626,28 @@ class _AddReminderViewState extends State<AddReminderView> {
   }
 
   void _checkAndStartShowcase(BuildContext localContext) async {
-    String? userId = await SecureStorageHelper.getUserId();
-    if (userId != null) {
-      var box =
-          Hive.isBoxOpen('settings')
-              ? Hive.box('settings')
-              : await Hive.openBox('settings');
-      String key = 'reminder_tutorial_shown_$userId';
-      bool isShown = box.get(key, defaultValue: false);
+    // String? userId = await SecureStorageHelper.getUserId();
+    // if (userId != null) {
+    var box =
+        Hive.isBoxOpen('settings')
+            ? Hive.box('settings')
+            : await Hive.openBox('settings');
+    // String key = 'reminder_tutorial_shown_$userId';
+    String key = 'add_reminder_global_feature_tutorial_done';
+    bool isShown = box.get(key, defaultValue: false);
 
-      if (!isShown) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ShowCaseWidget.of(localContext).startShowCase([
-            _titleKey,
-            _frequencyKey,
-            _durationKey,
-            _messageKey,
-            _saveKey,
-          ]);
-        });
-        await box.put(key, true);
-      }
+    if (!isShown) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ShowCaseWidget.of(localContext).startShowCase([
+          _titleKey,
+          _frequencyKey,
+          _durationKey,
+          _messageKey,
+          _saveKey,
+        ]);
+      });
+      await box.put(key, true);
     }
+    // }
   }
 }

@@ -44,27 +44,29 @@ class _PatientHomeViewState extends State<PatientHomeView> {
   }
 
   void _checkAndStartShowcase(BuildContext localContext) async {
-    String? userId = await SecureStorageHelper.getUserId();
-    if (userId != null) {
-      var box =
-          Hive.isBoxOpen('settings')
-              ? Hive.box('settings')
-              : await Hive.openBox('settings');
-      String key = 'home_tutorial_shown_$userId';
-      bool isShown = box.get(key, defaultValue: false);
+    // String? userId = await SecureStorageHelper.getUserId();
+    // if (userId != null) {
+    var box =
+        Hive.isBoxOpen('settings')
+            ? Hive.box('settings')
+            : await Hive.openBox('settings');
+    // String key = 'home_tutorial_shown_$userId';
+    String key = 'Home_global_feature_tutorial_done';
 
-      if (!isShown) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ShowCaseWidget.of(localContext).startShowCase([
-            _notificationKey,
-            _searchDoctorKey,
-            _remindersKey,
-            _historyKey,
-          ]);
-        });
-        await box.put(key, true);
-      }
+    bool isShown = box.get(key, defaultValue: false);
+
+    if (!isShown) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ShowCaseWidget.of(localContext).startShowCase([
+          _notificationKey,
+          _searchDoctorKey,
+          _remindersKey,
+          _historyKey,
+        ]);
+      });
+      await box.put(key, true);
     }
+    // }
   }
 
   void _loadData() async {

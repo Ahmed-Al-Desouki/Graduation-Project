@@ -47,26 +47,27 @@ class _ReminderViewState extends State<ReminderView> {
   }
 
   void _checkAndStartShowcase(BuildContext localContext) async {
-    String? userId = await SecureStorageHelper.getUserId();
-    if (userId != null) {
-      var box =
-          Hive.isBoxOpen('settings')
-              ? Hive.box('settings')
-              : await Hive.openBox('settings');
-      String key = 'reminder_today_tutorial_shown_$userId';
-      if (!box.get(key, defaultValue: false)) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ShowCaseWidget.of(localContext).startShowCase([
-            _viewAllKey,
-            _headerKey,
-            _appointmentsKey,
-            _medicationsKey,
-            _customsKey,
-          ]);
-        });
-        await box.put(key, true);
-      }
+    // String? userId = await SecureStorageHelper.getUserId();
+    // if (userId != null) {
+    var box =
+        Hive.isBoxOpen('settings')
+            ? Hive.box('settings')
+            : await Hive.openBox('settings');
+    // String key = 'reminder_today_tutorial_shown_$userId';
+    String key = 'reminder_global_feature_tutorial_done';
+    if (!box.get(key, defaultValue: false)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ShowCaseWidget.of(localContext).startShowCase([
+          _viewAllKey,
+          _headerKey,
+          _appointmentsKey,
+          _medicationsKey,
+          _customsKey,
+        ]);
+      });
+      await box.put(key, true);
     }
+    // }
   }
 
   @override

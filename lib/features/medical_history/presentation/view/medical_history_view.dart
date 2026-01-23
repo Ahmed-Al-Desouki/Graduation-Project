@@ -44,6 +44,8 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
         BlocProvider(create: (context) => getIt<MedicalqrCubit>()),
       ],
       child: ShowCaseWidget(
+        enableAutoScroll: true,
+        blurValue: 1,
         builder:
             (context) => BlocListener<PatientProfileCubit, PatientProfileState>(
               listener: (context, state) {
@@ -126,33 +128,34 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
   }
 
   void _checkAndStartShowcase(BuildContext localContext) async {
-    String? userId = await SecureStorageHelper.getUserId();
-    if (userId != null) {
-      var box =
-          Hive.isBoxOpen('settings')
-              ? Hive.box('settings')
-              : await Hive.openBox('settings');
-      String key = 'history_tutorial_shown_$userId';
+    // String? userId = await SecureStorageHelper.getUserId();
+    // if (userId != null) {
+    var box =
+        Hive.isBoxOpen('settings')
+            ? Hive.box('settings')
+            : await Hive.openBox('settings');
+    // String key = 'history_tutorial_shown_$userId';
+    String key = 'mediacal_history_global_feature_tutorial_done';
 
-      if (!box.get(key, defaultValue: false)) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (localContext.mounted) {
-            ShowCaseWidget.of(localContext).startShowCase([
-              _drawerBtnKey,
-              _profileKey,
-              _familyKey,
-              _socialKey,
-              _conditionsKey,
-              _appointmentsKey,
-              _surgeriesKey,
-              _medicationsKey,
-              _labsKey,
-            ]);
-          }
-        });
-        await box.put(key, true);
-      }
+    if (!box.get(key, defaultValue: false)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (localContext.mounted) {
+          ShowCaseWidget.of(localContext).startShowCase([
+            _drawerBtnKey,
+            _profileKey,
+            _familyKey,
+            _socialKey,
+            _conditionsKey,
+            _appointmentsKey,
+            _surgeriesKey,
+            _medicationsKey,
+            _labsKey,
+          ]);
+        }
+      });
+      await box.put(key, true);
     }
+    // }
   }
 
   void _showQrDialog(BuildContext context) {

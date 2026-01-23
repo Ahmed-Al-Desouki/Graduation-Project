@@ -133,7 +133,7 @@ class AuthCubit extends Cubit<AuthState> {
     } finally {
       await SecureStorageHelper.clearAll();
 
-      await Hive.box('settings').clear();
+      // await Hive.box('settings').clear();
       if (Hive.isBoxOpen('medical_history_cache')) {
         await Hive.box('medical_history_cache').clear();
       }

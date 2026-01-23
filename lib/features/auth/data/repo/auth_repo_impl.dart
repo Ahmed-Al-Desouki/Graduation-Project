@@ -223,7 +223,8 @@ class AuthRepositoryimpl implements AuthRepository {
       await LocalDatabaseService.instance.clearAllData();
 
       var settingsBox = Hive.box('settings');
-      await settingsBox.clear();
+      // await settingsBox.clear();
+      await settingsBox.delete('biometric_enabled');
       await AwesomeNotifications().cancelAll();
 
       return const Right(null);
