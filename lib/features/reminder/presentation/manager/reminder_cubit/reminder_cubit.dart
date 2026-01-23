@@ -109,7 +109,10 @@ class ReminderCubit extends Cubit<ReminderState> {
 
     result.fold(
       (failure) => emit(ReminderUpdateFailure(errMessage: failure.errmessage)),
-      (reminder) => emit(ReminderUpdateSuccess(reminder: reminder)),
+      (reminder) async {
+        emit(ReminderUpdateSuccess(reminder: reminder));
+        await getAllReminders(patientId: patientId);
+      },
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:intl/intl.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
@@ -96,17 +97,23 @@ class _AllRemindersViewState extends State<AllRemindersView> {
         centerTitle: true,
       ),
       body: BlocConsumer<ReminderCubit, ReminderState>(
+        listenWhen:
+            (previous, current) =>
+                current is ReminderUpdateSuccess ||
+                current is ReminderDeleteSuccess ||
+                current is ReminderUpdateFailure,
         listener: (context, state) {
           if (state is ReminderDeleteSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Reminder Deleted Successfully"),
-                backgroundColor: Colors.red,
-              ),
-            );
-            _loadData();
+            showSnackBar(context, "Reminder Deleted Successfully", Colors.red);
+            Navigator.pop(context);
+            return;
           }
         },
+        buildWhen:
+            (previous, current) =>
+                current is GetAllRemindersLoading ||
+                current is GetAllRemindersSuccess ||
+                current is GetAllRemindersFailure,
         builder: (context, state) {
           if (state is GetAllRemindersLoading ||
               state is ReminderDeleteLoading) {
