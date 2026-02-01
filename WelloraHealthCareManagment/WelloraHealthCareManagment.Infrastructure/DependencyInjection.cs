@@ -9,14 +9,18 @@ using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.Interfaces.Email;
+using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.Repositories;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
+using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
+using WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs;
 using WelloraHealthCareManagment.Infrastructure.Repositories;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.UserSessions;
 using WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.MeicalHistoryRepo;
+using WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo;
 using WelloraHealthCareManagment.Infrastructure.Services;
 
 
@@ -56,7 +60,9 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<ISurgeryRepository, SurgeryRepository>();
             services.AddScoped<IOtpRepository, OtpRepository>();
             services.AddScoped<IMedicalFileRepository, MedicalFileRepository>();
-
+            services.AddScoped<IReminderRepository, ReminderRepository>();
+            services.AddScoped<IReminderOccurrencesCacheRepository, ReminderOccurrencesCacheRepository>();
+            services.AddScoped<IReminderOccurrenceLogRepository, ReminderOccurrenceLogRepository>();
 
             // Services
             services.AddScoped<ITokenService, TokenService>();
@@ -71,7 +77,13 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IShareTokenService, ShareTokenService>();
             services.AddHttpContextAccessor(); // ضروري للـ CurrentUserService
+            services.AddScoped<IReminderV2Service, ReminderV2Service>();
+            services.AddScoped<IReminderOccurrenceGenerator, ReminderOccurrenceGenerator>();
+            services.AddScoped<ITimezoneHelper, TimezoneHelper>();
 
+            // Background Jobs 
+            services.AddScoped<ReminderJobOrchestrator>();
+            services.AddHostedService<ReminderCacheHealthCheckService>();
 
 
             return services;
