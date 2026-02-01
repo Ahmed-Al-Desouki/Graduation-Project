@@ -1,0 +1,27 @@
+﻿Domain
+├── Entities
+├── Interfaces
+│   └── Repositories
+├── ValueObjects
+└── Common
+***************************
+قواعد Domain:
+❌ EF Core
+❌ DTOs
+❌ AutoMapper
+❌ ASP.NET
+*****************************
+🟡 Domain (القلب)
+❌ مفيش Packages تقيلة
+Entities (Models)
+Enums
+Domain Interfaces (بس Interfaces، مفيش EF)
+Business Rules
+🚫 لا EF
+🚫 لا Identity
+🚫 لا Firebase
+****************************
+4️. Domain Project (WelloraHealthCareManagment.Domain)
+يحتوي على: Entities, Value Objects, Enums, Aggregates, Domain events
+عادةً لا يحتاج أي NuGet packages خارجية إلا لو عندك Value Objects 
+أو helpers زي Newtonsoft.Json أو System.Text.Json، لكن غالباً تسيبها نقية قدر الإمكان.

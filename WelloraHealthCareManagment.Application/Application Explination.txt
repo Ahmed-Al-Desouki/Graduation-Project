@@ -1,0 +1,98 @@
+﻿Application
+├── Features
+├── Interfaces
+│   └── Services
+├── DTOs
+├── Mapping
+└── Common
+*********************************
+ هنا:
+Business Logic
+Use Cases
+AutoMapper Profiles
+No Controllers
+No EF
+had a refrence with domain project.
+********************************
+🔵 Application (العقل)
+Interfaces بتاعت Services
+DTOs
+Use Cases / Services Logic
+FluentValidation
+AutoMapper Profiles
+❌ لا EF
+❌ لا DbContext
+❌ لا ASP.NET
+*********************************
+3️. Application Project (WelloraHealthCareManagment.Application)
+يحتوي على: Business logic, Services interfaces, DTOs, Command/Query handlers (CQRS)
+
+| Package                                 | Version | ملاحظات / سبب وضعه هنا                      | NuGet Command                                                                |
+| --------------------------------------- | ------- | ------------------------------------------- | ---------------------------------------------------------------------------- |
+| Microsoft.EntityFrameworkCore           | 9.0.9   | For repository queries (via Infrastructure) | `dotnet add package Microsoft.EntityFrameworkCore --version 9.0.9`           |
+| Microsoft.EntityFrameworkCore.SqlServer | 9.0.9   | DB provider                                 | `dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version 9.0.9` |
+| Microsoft.EntityFrameworkCore.Tools     | 9.0.9   | Migrations                                  | `dotnet add package Microsoft.EntityFrameworkCore.Tools --version 9.0.9`     |
+| System.IdentityModel.Tokens.Jwt         | 8.14.0  | JWT validation logic if needed              | `dotnet add package System.IdentityModel.Tokens.Jwt --version 8.14.0`        |
+
+✅ ملاحظات: 
+Application غالباً ما يحتاجش الـ API-specific packages زي Swagger أو FIDO2،
+ولا الـ infrastructure-specific packages زي Firebase أو Cloudinary.
+
+
+*********************************************
+WelloraHealthCareManagment
+│
+├── Domain
+│   ├── Entities
+│   ├── ValueObjects
+│   └── Enums
+│
+├── Application
+│   ├── Interfaces
+│   │   └── Auth
+│   │       ├── IAuthCoreService.cs
+│   │       ├── IGoogleAuthService.cs
+│   │       ├── IAvatarService.cs
+│   │       ├── IMfaService.cs
+│   │       ├── ITokenService.cs
+│   │       └── Repositories
+│   │           ├── IUserSessionRepository.cs
+│   │           ├── IRefreshTokenRepository.cs
+│   │           ├── IUserProfileRepository.cs
+│   │           └── IExternalFileRepository.cs
+│   │
+│   ├── Services
+│   │   └── Auth
+│   │       ├── AuthCoreService.cs          ✅ (Business Orchestrator)
+│   │       ├── GoogleAuthService.cs        ✅
+│   │       ├── AvatarService.cs            ✅
+│   │
+│   ├── Validators
+│   │   └── Auth
+│   │       ├── RegisterRequestValidator.cs
+│   │       ├── LoginRequestValidator.cs
+│   │       └── LogoutRequestValidator.cs
+│   │
+│   └── DTOs
+│
+├── Infrastructure
+│   ├── Persistence
+│   │   ├── Context
+│   │   │   └── HealthCarePlusContext.cs
+│   │   └── Repositories
+│   │       ├── UserSessionRepository.cs
+│   │       ├── RefreshTokenRepository.cs
+│   │       ├── UserProfileRepository.cs
+│   │       └── ExternalFileRepository.cs
+│   │
+│   ├── Identity
+│   │   └── (UserManager / SignInManager setup)
+│   │
+│   └── Services
+│       └── CloudinaryService.cs
+│
+└── API
+    ├── Controllers
+    │   └── AuthController.cs
+    ├── Program.cs
+    └── appsettings.json

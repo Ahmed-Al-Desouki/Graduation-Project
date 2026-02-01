@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36717.8 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WelloraHealthCareManagment.API", "WelloraHealthCareManagment.API.csproj", "{1D5A00D0-D3DD-42B2-A2C9-0C017D6DC203}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WelloraHealthCareManagment.Domain", "..\WelloraHealthCareManagment.Domain\WelloraHealthCareManagment.Domain.csproj", "{299B1EE3-70D9-4094-8BC2-9269014C11C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WelloraHealthCareManagment.Application", "..\WelloraHealthCareManagment.Application\WelloraHealthCareManagment.Application.csproj", "{B57092C6-3C77-42C7-815D-7E0FB784DF9B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WelloraHealthCareManagment.Infrastructure", "..\WelloraHealthCareManagment.Infrastructure\WelloraHealthCareManagment.Infrastructure.csproj", "{76AF2EE5-32AD-41D3-A23C-2190655E1433}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D5A00D0-D3DD-42B2-A2C9-0C017D6DC203}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D5A00D0-D3DD-42B2-A2C9-0C017D6DC203}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D5A00D0-D3DD-42B2-A2C9-0C017D6DC203}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D5A00D0-D3DD-42B2-A2C9-0C017D6DC203}.Release|Any CPU.Build.0 = Release|Any CPU
+		{299B1EE3-70D9-4094-8BC2-9269014C11C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{299B1EE3-70D9-4094-8BC2-9269014C11C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{299B1EE3-70D9-4094-8BC2-9269014C11C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{299B1EE3-70D9-4094-8BC2-9269014C11C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B57092C6-3C77-42C7-815D-7E0FB784DF9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B57092C6-3C77-42C7-815D-7E0FB784DF9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B57092C6-3C77-42C7-815D-7E0FB784DF9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B57092C6-3C77-42C7-815D-7E0FB784DF9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76AF2EE5-32AD-41D3-A23C-2190655E1433}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76AF2EE5-32AD-41D3-A23C-2190655E1433}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76AF2EE5-32AD-41D3-A23C-2190655E1433}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76AF2EE5-32AD-41D3-A23C-2190655E1433}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7BBC93F1-D700-4778-9510-2CD46DB9C76A}
+	EndGlobalSection
+EndGlobal

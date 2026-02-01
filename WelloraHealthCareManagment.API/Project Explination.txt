@@ -1,0 +1,51 @@
+﻿API
+├── Controllers
+├── Middleware
+├── Filters
+└── Extensions
+
+had refrence with application and Infrastructure.
+***************************************
+🔴 API (الواجهة)
+Controllers
+Program.cs
+Auth / JWT
+Swagger
+RateLimit
+Middleware
+***********
+API
+ ├─ references → Application
+ └─ references → Infrastructure
+
+Infrastructure
+ ├─ references → Application
+ └─ references → Domain
+
+Application
+ └─ references → Domain
+
+Domain
+ └─ (ولا حاجة)
+ *************************************
+ 1️. API Project (WelloraHealthCareManagment.API)
+	يحتوي على: Controllers، Program.cs، appsettings،
+	Swagger، Middleware، Authentication/Authorization setup،
+	Web-specific dependencies.
+
+| Package                                       | Version | ملاحظات / سبب وضعه هنا       | NuGet Command                                                                      |
+| --------------------------------------------- | ------- | ---------------------------- | ---------------------------------------------------------------------------------- |
+| Microsoft.AspNetCore.Authentication.Google    | 9.0.10  | Authentication via Google    | `dotnet add package Microsoft.AspNetCore.Authentication.Google --version 9.0.10`   |
+| Microsoft.AspNetCore.Authentication.JwtBearer | 9.0.9   | JWT Auth                     | `dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer --version 9.0.9` |
+| Microsoft.AspNetCore.OpenApi                  | 9.0.9   | Swagger/OpenAPI              | `dotnet add package Microsoft.AspNetCore.OpenApi --version 9.0.9`                  |
+| Swashbuckle.AspNetCore                        | 6.5.0   | Swagger UI                   | `dotnet add package Swashbuckle.AspNetCore --version 6.5.0`                        |
+| AspNetCoreRateLimit                           | 5.0.0   | Rate limiting Middleware     | `dotnet add package AspNetCoreRateLimit --version 5.0.0`                           |
+| Microsoft.Extensions.Caching.Memory           | 9.0.9   | In-memory caching            | `dotnet add package Microsoft.Extensions.Caching.Memory --version 9.0.9`           |
+| FluentValidation.AspNetCore                   | 11.3.1  | Model validation in API      | `dotnet add package FluentValidation.AspNetCore --version 11.3.1`                  |
+| WebAuthn.Net                                  | 1.3.4   | WebAuthn / FIDO2 integration | `dotnet add package WebAuthn.Net --version 1.3.4`                                  |
+| Fido2                                         | 4.0.0   | FIDO2 core library           | `dotnet add package Fido2 --version 4.0.0`                                         |
+| Fido2.AspNet                                  | 4.0.0   | FIDO2 ASP.NET integration    | `dotnet add package Fido2.AspNet --version 4.0.0`                                  |
+| Hangfire.AspNetCore                           | 1.8.21  | Background jobs middleware   | `dotnet add package Hangfire.AspNetCore --version 1.8.21`                          |
+
+✅ ملاحظات: كل الـ web/HTTP middleware والـ authentication stuff
+لازم يكون هنا فقط، عشان يكون الـ API هو الـ entry point.

@@ -1,0 +1,39 @@
+﻿// File: Models/DTOs/Cloudinary/ExternalFile.cs
+using HealthCare_.Models.DoctorModels;
+using HealthCare_.Models.PatientModels;
+using HealthCare_.Models.PatientModels.MedicalHistoryModels;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+using WelloraHealthCareManagment.Domain.Entities.PatientModels;
+
+public class ExternalFile
+{
+    [Key] public int FileID { get; set; }
+    [Required, MaxLength(500)] public string FileUrl { get; set; } = string.Empty;
+    [MaxLength(200)] public string? PublicId { get; set; }
+    [MaxLength(100)] public string FileType { get; set; } = string.Empty;
+    public long FileSize { get; set; }
+    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+    public string? Description { get; set; }
+    public int? DoctorID { get; set; }
+    public int? PatientID { get; set; }
+    public int? MedicalHistoryID { get; set; }
+
+    public int? UploadedById { get; set; }
+    public string? UploadedByRole { get; set; }
+
+    // بدل Category
+    public string? CategoryType { get; set; }   // "Patient" or "Doctor"
+    public string? CategoryValue { get; set; }  // "LabTest", "License", ...
+
+    [ForeignKey(nameof(DoctorID))] public Doctor? Doctor { get; set; }
+    [ForeignKey(nameof(PatientID))] public Patient? Patient { get; set; }
+    [JsonIgnore]
+    [ForeignKey(nameof(MedicalHistoryID))]
+    public MedicalHistory? MedicalHistory { get; set; }
+    [ForeignKey(nameof(UploadedById))]
+    public ApplicationUser? UploadedBy { get; set; }
+}
+

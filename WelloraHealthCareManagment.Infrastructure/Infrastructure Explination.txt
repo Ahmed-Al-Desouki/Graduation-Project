@@ -1,0 +1,50 @@
+﻿Infrastructure
+├── Persistence
+│   ├── Context
+│   ├── Configurations
+│   └── Migrations
+├── Repositories
+├── Identity
+└── ExternalServices
+********************************************
+ هنا:
+DbContext
+EF Core
+Firebase
+File Storage
+Repositories Implementation
+had refrence with domain.
+*********************************************
+🟣 Infrastructure (العضلات)
+EF Core
+DbContext
+Repositories
+Identity Implementation
+Firebase
+Mail
+Cloudinary
+Hangfire Storage
+*********************************************
+2. Infrastructure Project (WelloraHealthCareManagment.Infrastructure)
+
+يحتوي على: External services, 3rd-party integrations, DB contexts, Email,
+			Cloudinary, Firebase, Hangfire jobs, FileStorage.
+
+| Package                      | Version  | ملاحظات / سبب وضعه هنا          | NuGet Command                                                     |
+| ---------------------------- | -------- | ------------------------------- | ----------------------------------------------------------------- |
+| FirebaseAdmin                | 3.4.0    | Firebase notifications          | `dotnet add package FirebaseAdmin --version 3.4.0`                |
+| Google.Apis.Auth             | 1.72.0   | Auth helper for Firebase        | `dotnet add package Google.Apis.Auth --version 1.72.0`            |
+| CloudinaryDotNet             | 1.27.8   | Cloud file storage              | `dotnet add package CloudinaryDotNet --version 1.27.8`            |
+| MailKit                      | 4.14.1   | Email sending                   | `dotnet add package MailKit --version 4.14.1`                     |
+| Hangfire.SqlServer           | 1.8.21   | Hangfire storage                | `dotnet add package Hangfire.SqlServer --version 1.8.21`          |
+| Azure.Messaging.ServiceBus   | 7.20.1   | Azure Service Bus integration   | `dotnet add package Azure.Messaging.ServiceBus --version 7.20.1`  |
+| Ical.Net                     | 4.2.0    | Calendar / scheduling utilities | `dotnet add package Ical.Net --version 4.2.0`                     |
+| QRCoder                      | 1.7.0    | QR generation                   | `dotnet add package QRCoder --version 1.7.0`                      |
+| SixLabors.ImageSharp         | 3.1.11   | Image processing                | `dotnet add package SixLabors.ImageSharp --version 3.1.11`        |
+| SixLabors.ImageSharp.Drawing | 2.1.7    | Drawing on images               | `dotnet add package SixLabors.ImageSharp.Drawing --version 2.1.7` |
+| SixLabors.Fonts              | 2.1.3    | Fonts for ImageSharp            | `dotnet add package SixLabors.Fonts --version 2.1.3`              |
+| Docker.DotNet                | 3.125.15 | Docker API integration          | `dotnet add package Docker.DotNet --version 3.125.15`             |
+
+
+✅ ملاحظات: كل الـ services اللي بتتعامل مع external APIs
+أو ملفات أو background jobs أو storage لازم تكون هنا، عشان تبقى منفصلة عن الـ API و clean architecture.

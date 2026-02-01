@@ -1,0 +1,6 @@
+@WelloraHealthCareManagment.API_HostAddress = http://localhost:5291
+
+GET {{WelloraHealthCareManagment.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
