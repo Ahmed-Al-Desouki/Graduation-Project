@@ -6,14 +6,14 @@ namespace WelloraHealthCareManagement.API.Controllers.Authintecation
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ExternalAuthController : ControllerBase
+    public class GoogleSginInAuthController : ControllerBase
     {
         private readonly IGoogleAuthService _googleAuthService;
-        private readonly ILogger<ExternalAuthController> _logger;
+        private readonly ILogger<GoogleSginInAuthController> _logger;
 
-        public ExternalAuthController(
+        public GoogleSginInAuthController(
             IGoogleAuthService googleAuthService,
-            ILogger<ExternalAuthController> logger)
+            ILogger<GoogleSginInAuthController> logger)
         {
             _googleAuthService = googleAuthService;
             _logger = logger;
