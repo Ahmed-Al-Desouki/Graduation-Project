@@ -9,16 +9,16 @@ class MedicalHistoryQrService {
     required int patientId,
     required int medicalHistoryId,
   }) async {
-    final response = await _apiService.post(
-      "ShareMediHistoryQrCode/generate-qr",
-      {"PatientId": patientId, "MedicalHistoryId": medicalHistoryId},
-    );
+    final response = await _apiService.post("share/generate", {
+      "PatientId": patientId,
+      "MedicalHistoryId": medicalHistoryId,
+    });
 
     if (response != null &&
-        response['qrCodeBase64'] != null &&
-        response['token'] != null) {
-      final token = response['token'];
-      final qrCodeBase64 = response['qrCodeBase64'];
+        response['shareToken'] != null &&
+        response['message'] != null) {
+      final token = response['shareToken'];
+      final qrCodeBase64 = response['message'];
       return {'token': token, 'qrCodeBase64': qrCodeBase64};
     } else {
       throw Exception("Invalid response: QR Code not found");
@@ -27,7 +27,7 @@ class MedicalHistoryQrService {
 
   Future<Map<String, dynamic>> getSharedHistory(String token) async {
     final response = await _apiService.get(
-      "ShareMediHistoryQrCode/share-medical-history",
+      "share/medical-profile",
       queryParameters: {'token': token},
     );
     print(" Raw Data from Server: $response");

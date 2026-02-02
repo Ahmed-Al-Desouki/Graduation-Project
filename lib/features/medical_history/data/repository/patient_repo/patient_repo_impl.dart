@@ -76,7 +76,12 @@ class PatientRepositoryImpl implements PatientRepository {
         category: category,
         description: description,
       );
-      return response['message'] ?? 'Uploaded successfully';
+      // return response['message'] ?? 'Uploaded successfully';
+      if (response['success'] == true) {
+        return response['message'] ?? 'Uploaded successfully';
+      } else {
+        throw Exception(response['message'] ?? 'Failed to upload');
+      }
     });
   }
 
@@ -150,6 +155,9 @@ class PatientRepositoryImpl implements PatientRepository {
         surgeryId,
         historyId,
       );
+      if (response == null || response is String || response.isEmpty) {
+        return "Record deleted successfully";
+      }
       return response['message'] ?? "Surgery deleted successfully";
     });
   }
@@ -164,6 +172,10 @@ class PatientRepositoryImpl implements PatientRepository {
         familyId,
         historyId,
       );
+
+      if (response == null || response is String || response.isEmpty) {
+        return "Record deleted successfully";
+      }
       return response['message'] ?? "Record deleted successfully";
     });
   }
@@ -172,6 +184,9 @@ class PatientRepositoryImpl implements PatientRepository {
   Future<Either<Failure, String>> deleteSocialHistory(int historyId) async {
     return _taskWrapper(() async {
       final response = await _patientWebServices.deleteSocialHistory(historyId);
+      if (response == null || response is String || response.isEmpty) {
+        return "Record deleted successfully";
+      }
       return response['message'] ?? "Social history deleted";
     });
   }
@@ -182,6 +197,9 @@ class PatientRepositoryImpl implements PatientRepository {
       final response = await _patientWebServices.deleteSelfMedication(
         selfMedId,
       );
+      if (response == null || response is String || response.isEmpty) {
+        return "Record deleted successfully";
+      }
       return response['message'] ?? "Medication deleted";
     });
   }

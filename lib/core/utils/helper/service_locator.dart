@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:graduation_project/core/constant.dart';
 import 'package:graduation_project/core/utils/helper/api.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
@@ -27,7 +28,7 @@ void setupServiceLocator() {
   getIt.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn());
 
   getIt.registerLazySingleton<ApiService>(
-    () => ApiService(baseUrl: 'https://medicare-plus.runasp.net/api/'),
+    () => ApiService(baseUrl: '$apiBaseUrl/api/'),
   );
 
   getIt.registerLazySingleton<LocalOccurrenceDataSource>(
