@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:graduation_project/core/constant.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 
@@ -8,9 +9,9 @@ class ApiService {
   ApiService({String? baseUrl})
     : _dio = Dio(
         BaseOptions(
-          baseUrl: baseUrl ?? 'https://medicare-plus.runasp.net/api/',
-          connectTimeout: const Duration(seconds: 15),
-          receiveTimeout: const Duration(seconds: 15),
+          baseUrl: baseUrl ?? '$apiBaseUrl/api/',
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 30),
           headers: {'Content-Type': 'application/json'},
         ),
       ) {
@@ -21,9 +22,7 @@ class ApiService {
     _dio.interceptors.add(
       QueuedInterceptorsWrapper(
         onRequest: (options, handler) async {
-          if (options.path.contains(
-            'ShareMediHistoryQrCode/share-medical-history',
-          )) {
+          if (options.path.contains('share/medical-profile')) {
             print('ℹ️ Skipping Auth Token for Shared Profile request');
             return handler.next(options);
           }
@@ -47,6 +46,7 @@ class ApiService {
           print('❌ [DIO ERROR TYPE]: ${e.type}');
           print('❌ [ERROR DEBUG]: ${e.error}');
           print('❌ [ERROR MESSAGE]: ${e.message}');
+          print('❌ [SERVER ERROR DATA]: ${e.response?.data}');
 
           if (e.response?.statusCode == 401) {
             print("⚠️ Token Expired! Attempting to refresh...");

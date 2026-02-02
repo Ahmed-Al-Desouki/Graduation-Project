@@ -38,7 +38,10 @@ class AuthWebServices {
     required String role,
   }) async {
     final body = {"idToken": idToken, "role": role};
-    final response = await _apiService.post('ExternalAuth/google-login', body);
+    final response = await _apiService.post(
+      'GoogleSginInAuth/google-login',
+      body,
+    );
     return response;
   }
 

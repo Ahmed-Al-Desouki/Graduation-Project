@@ -62,7 +62,6 @@ abstract class AppRouter {
   static const kAllReminders = '/allReminders';
   static const kAddReminder = '/addReminder';
   // static const kMedicalHistory = '/';
-  // https://medicare-plus.runasp.net/api/
   static final router = GoRouter(
     routes: [
       GoRoute(path: kSplash, builder: (context, state) => const SplashBody()),

@@ -181,7 +181,7 @@ class _UploadSheetState extends State<_UploadSheet> {
                         medicalHistoryId: widget.historyId,
                         category:
                             _selectedType == RecordType.lab
-                                ? "LabTest"
+                                ? "Lab Test"
                                 : "Radiology",
                         description: _descController.text,
                       );
