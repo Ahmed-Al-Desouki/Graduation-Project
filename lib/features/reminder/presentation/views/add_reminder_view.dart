@@ -77,9 +77,7 @@ class _AddReminderViewState extends State<AddReminderView> {
         startDate = r.startDate;
         endDate = r.endDate;
 
-        if (endDate == null ||
-            endDate!.year >= 2099 ||
-            (r.rrule != null && r.rrule!.contains('COUNT=1'))) {
+        if (endDate == null || endDate!.year >= 2099) {
           isLifetime = true;
           endDate = null;
         } else {
