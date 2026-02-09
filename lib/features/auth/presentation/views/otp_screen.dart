@@ -71,15 +71,15 @@ class _OtpScreenState extends State<OtpScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Verify Your Email')),
       body: BlocConsumer<AuthCubit, AuthState>(
-        listener: (context, state) {
+        listener: (context, state) async {
           if (state is LoginSuccess) {
             final role = state.role;
             if (role == 'doctor') {
-              _showBiometricDialog();
+              await _showBiometricDialog();
 
               AppRouter.router.go(AppRouter.kHomeDoctor);
             } else {
-              _showBiometricDialog();
+              await _showBiometricDialog();
 
               AppRouter.router.go(AppRouter.kHomePatient);
             }
