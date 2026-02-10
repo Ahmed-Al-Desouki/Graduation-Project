@@ -1,16 +1,14 @@
-﻿
-using HealthCare_.Models.PatientModels.Appointments;
-using HealthCare_.Models.PatientModels.MedIntakeAndRecords;
-using HealthCare_.Models.PatientModels.Prescriptions;
+﻿using HealthCare_.Models.PatientModels.MedIntakeAndRecords;
 using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using System.ComponentModel.DataAnnotations;
+using WelloraHealthCareManagement.Domain.Entities;
 
 namespace HealthCare_.Models.DoctorModels
 {
     public class Doctor
     {
         [Key]
-        public int DoctorID { get; set; }
+        public int DoctorId { get; set; }
 
         [Required, StringLength(100)]
         public string Specialization { get; set; }
@@ -20,6 +18,7 @@ namespace HealthCare_.Models.DoctorModels
 
         [Range(0, 10000)]
         public decimal ConsultationFee { get; set; }
+
         public bool IsActive { get; set; }
 
         [Range(0, 5)]
@@ -31,13 +30,26 @@ namespace HealthCare_.Models.DoctorModels
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
+        //Existing Navigation Properties 
         public ApplicationUser User { get; set; } = null!;
+
         public ICollection<ExternalFile> Files { get; set; } = new List<ExternalFile>();
-        public ICollection<DoctorWeeklySchedule> WeeklySchedules { get; set; } = new List<DoctorWeeklySchedule>();
-        public ICollection<DoctorSlot> Slots { get; set; } = new List<DoctorSlot>();
-        public ICollection<SessionType> SessionTypes { get; set; } = new List<SessionType>();
+
+        // === OLD SYSTEM (Commented) ===
+        //public ICollection<DoctorWeeklySchedule> WeeklySchedules { get; set; } = new List<DoctorWeeklySchedule>();
+        //public ICollection<DoctorSlot> Slots { get; set; } = new List<DoctorSlot>();
+        //public ICollection<SessionType> SessionTypes { get; set; } = new List<SessionType>();
+        //public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+        //public ICollection<Prescriptions> Prescriptions { get; set; } = new List<Prescription>();
+        //public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
+
+        // NEW BOOKING SYSTEM (Added) 
+        public ICollection<DoctorScheduleTemplate> ScheduleTemplates { get; set; } = new List<DoctorScheduleTemplate>();
+        public ICollection<ScheduleException> ScheduleExceptions { get; set; } = new List<ScheduleException>();
+        public ICollection<TimeSlot> TimeSlots { get; set; } = new List<TimeSlot>();
         public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
         public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
-        public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
+        public ICollection<MedicalHistoryAccessGrant> MedicalHistoryAccessGrants { get; set; } = new List<MedicalHistoryAccessGrant>();
+        public ICollection<MedicalHistoryAccessLog> MedicalHistoryAccessLogs { get; set; } = new List<MedicalHistoryAccessLog>();
     }
 }

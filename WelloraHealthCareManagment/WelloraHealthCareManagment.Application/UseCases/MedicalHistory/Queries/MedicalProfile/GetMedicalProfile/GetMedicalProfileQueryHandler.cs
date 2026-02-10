@@ -25,7 +25,7 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
         private readonly GetFamilyHistoryQueryHandler _getFamilyHistoryHandler;
         private readonly GetSocialHistoryQueryHandler _getSocialHistoryHandler;
         private readonly GetSelfMedicationsQueryHandler _getSelfMedicationsHandler;
-        private readonly GetCurrentMedicationsQueryHandler _getCurrentMedicationsHandler;
+        //private readonly GetCurrentMedicationsQueryHandler _getCurrentMedicationsHandler;
 
         public GetMedicalProfileQueryHandler(
             IMedicalHistoryRepository patientRepository,
@@ -35,8 +35,8 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
             GetSurgeriesQueryHandler getSurgeriesHandler,
             GetFamilyHistoryQueryHandler getFamilyHistoryHandler,
             GetSocialHistoryQueryHandler getSocialHistoryHandler,
-            GetSelfMedicationsQueryHandler getSelfMedicationsHandler,
-            GetCurrentMedicationsQueryHandler getCurrentMedicationsHandler)
+            GetSelfMedicationsQueryHandler getSelfMedicationsHandler)
+            //GetCurrentMedicationsQueryHandler getCurrentMedicationsHandler)
         {
             _patientRepository = patientRepository;
             _medicalFileRepository = medicalFileRepository;
@@ -46,7 +46,7 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
             _getFamilyHistoryHandler = getFamilyHistoryHandler;
             _getSocialHistoryHandler = getSocialHistoryHandler;
             _getSelfMedicationsHandler = getSelfMedicationsHandler;
-            _getCurrentMedicationsHandler = getCurrentMedicationsHandler;
+            //_getCurrentMedicationsHandler = getCurrentMedicationsHandler;
         }
 
         public async Task<MedicalProfileResponse> HandleAsync(GetMedicalProfileQuery query)
@@ -69,39 +69,39 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
             var radiologyFiles = await _medicalFileRepository.GetRadiologyFilesByHistoryIdAsync(history.HistoryID);
 
             // 3. Map appointments
-            var pastAppointments = patient.Appointments
-                .Where(a => a.AppointmentDate < DateTime.UtcNow && a.Status == "Completed")
-                .Select(a => new PastAppointmentDto
-                {
-                    AppointmentID = a.AppointmentID,
-                    AppointmentDate = a.AppointmentDate,
-                    DoctorName = a.Doctor?.User?.FullName ?? "Unknown",
-                    Specialty = a.Doctor?.Specialization ?? "N/A",
-                    Symptoms = a.Symptoms ?? "",
-                    Status = a.Status,
-                    Prescription = a.Prescription != null ? new PrescriptionSummaryDto
-                    {
-                        PrescriptionID = a.Prescription.PrescriptionID,
-                        PrescriptionDate = a.Prescription.PrescriptionDate,
-                        GeneralInstructions = a.Prescription.GeneralInstructions ?? "",
-                        Medications = a.Prescription.Medications.Select(m => new CurrentMedicationDto
-                        {
-                            MedicationName = m.MedicationName
-                        }).ToList()
-                    } : null
-                }).OrderByDescending(a => a.AppointmentDate).ToList();
+            //var pastAppointments = patient.Appointments
+            //    .Where(a => a.AppointmentDate < DateTime.UtcNow && a.Status == "Completed")
+            //    .Select(a => new PastAppointmentDto
+            //    {
+            //        AppointmentID = a.AppointmentID,
+            //        AppointmentDate = a.AppointmentDate,
+            //        DoctorName = a.Doctor?.User?.FullName ?? "Unknown",
+            //        Specialty = a.Doctor?.Specialization ?? "N/A",
+            //        Symptoms = a.Symptoms ?? "",
+            //        Status = a.Status,
+            //        Prescription = a.Prescription != null ? new PrescriptionSummaryDto
+            //        {
+            //            PrescriptionID = a.Prescription.PrescriptionID,
+            //            PrescriptionDate = a.Prescription.PrescriptionDate,
+            //            GeneralInstructions = a.Prescription.GeneralInstructions ?? "",
+            //            Medications = a.Prescription.Medications.Select(m => new CurrentMedicationDto
+            //            {
+            //                MedicationName = m.MedicationName
+            //            }).ToList()
+            //        } : null
+            //    }).OrderByDescending(a => a.AppointmentDate).ToList();
 
             // 4. Map medical records
-            var medicalRecords = history.MedicalRecords
-                .Select(mr => new MedicalRecordDto
-                {
-                    RecordID = mr.RecordID,
-                    VisitDate = mr.VisitDate,
-                    DoctorName = mr.Doctor?.User?.FullName ?? "Unknown",
-                    Diagnosis = mr.Diagnosis ?? "",
-                    Symptoms = mr.Symptoms ?? "",
-                    Notes = mr.Notes ?? ""
-                }).OrderByDescending(r => r.VisitDate).ToList();
+            //var medicalRecords = history.MedicalRecords
+            //    .Select(mr => new MedicalRecordDto
+            //    {
+            //        RecordID = mr.RecordID,
+            //        VisitDate = mr.VisitDate,
+            //        DoctorName = mr.Doctor?.User?.FullName ?? "Unknown",
+            //        Diagnosis = mr.Diagnosis ?? "",
+            //        Symptoms = mr.Symptoms ?? "",
+            //        Notes = mr.Notes ?? ""
+            //    }).OrderByDescending(r => r.VisitDate).ToList();
 
             // 5. استخدام الـ Handlers بدل الـ Services
             var surgeries = await _getSurgeriesHandler.HandleAsync(
@@ -116,8 +116,8 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
             var selfMedications = await _getSelfMedicationsHandler.HandleAsync(
                 new GetSelfMedicationsQuery(history.HistoryID));
 
-            var currentMedications = await _getCurrentMedicationsHandler.HandleAsync(
-                new GetCurrentMedicationsQuery(history.HistoryID));
+            //var currentMedications = await _getCurrentMedicationsHandler.HandleAsync(
+            //    new GetCurrentMedicationsQuery(history.HistoryID));
 
             _logger.LogInformation(
                 "Fetched complete medical profile for PatientID: {PatientID}",
@@ -161,13 +161,13 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
                     Description = f.Description,
                     UploadedAt = f.UploadedAt
                 }).ToList(),
-                PastAppointments = pastAppointments,
-                MedicalRecords = medicalRecords,
+                //PastAppointments = pastAppointments,
+                //MedicalRecords = medicalRecords,
                 Surgeries = surgeries,
                 FamilyHistory = familyHistory,
                 SocialHistory = socialHistory,
                 PatientSelfMedications = selfMedications,
-                CurrentMedications = currentMedications
+                //CurrentMedications = currentMedications
             };
         }
     }

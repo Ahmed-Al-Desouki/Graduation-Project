@@ -1,8 +1,7 @@
 ﻿// File: Models/V2/ReminderV2.cs
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using HealthCare_.Models.PatientModels.Appointments;
-using HealthCare_.Models.PatientModels.Prescriptions;
+using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 
 namespace HealthCare_.Models.V2
@@ -35,10 +34,10 @@ namespace HealthCare_.Models.V2
 
         // روابط
         public int? PrescriptionMedId { get; set; }
-        public PrescriptionMed? PrescriptionMed { get; set; }
+        //public PrescriptionMed? PrescriptionMed { get; set; }
 
-        public int? AppointmentId { get; set; }
-        public Appointment? Appointment { get; set; }
+        public Guid? AppointmentId { get; set; }
+        //public Appointment? Appointment { get; set; }
 
         // حالة عامة
         public bool IsActive { get; set; } = true;
@@ -47,7 +46,8 @@ namespace HealthCare_.Models.V2
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation
+        // Navigation Property
+        public Appointment? Appointment { get; set; } // ✅ New
         public ICollection<ReminderOccurrenceLog> Logs { get; set; } = new List<ReminderOccurrenceLog>();
         public bool IsSimpleEveryXHours { get; set; } = false;
         public TimeSpan? FirstDoseTime { get; set; }   // Local time للعرض

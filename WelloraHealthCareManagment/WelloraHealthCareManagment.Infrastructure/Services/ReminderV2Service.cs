@@ -304,9 +304,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                             TimeZoneId = reminder.TimeZoneId,
                             Type = reminder.Type,
                             IsMedication = reminder.Type == Enums.ReminderType.Medication,
-                            Dosage = reminder.PrescriptionMed != null
-                                ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
-                                : null,
+                            //Dosage = reminder.PrescriptionMed != null
+                            //    ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
+                            //    : null,
                             Status = displayStatus,
                             CanConfirm = canConfirm,
                             CanSnooze = canSnooze,

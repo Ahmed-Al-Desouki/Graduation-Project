@@ -8,6 +8,7 @@ using System.Security.Claims;
 using WelloraHealthCareManagement.Infrastructure.Services;
 using WelloraHealthCareManagment.Application.DTOs.AuthModels.Login_register.Tokens;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
+using WelloraHealthCareManagment.Domain.Repositories;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 
 namespace WelloraHealthCareManagement.API.Controllers.Authintecation

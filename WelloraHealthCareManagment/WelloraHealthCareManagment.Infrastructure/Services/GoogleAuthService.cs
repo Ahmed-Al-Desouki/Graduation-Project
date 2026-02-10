@@ -277,7 +277,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                         var doctor = new Doctor
                         {
-                            DoctorID = user.Id,
+                            DoctorId = user.Id,
                             Specialization = "General",
                             YearsOfExperience = 0,
                             ConsultationFee = 0,

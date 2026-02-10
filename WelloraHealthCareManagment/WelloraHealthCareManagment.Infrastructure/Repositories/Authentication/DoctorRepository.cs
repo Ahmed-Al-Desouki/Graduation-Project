@@ -23,7 +23,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication
         {
             //  DoctorID = UserId
             return await _context.Doctors
-                .FirstOrDefaultAsync(d => d.DoctorID == userId);
+                .FirstOrDefaultAsync(d => d.DoctorId == userId);
         }
 
         public async Task<Doctor> CreateAsync(Doctor doctor)
@@ -41,7 +41,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication
 
         public async Task<bool> DoctorExistsByUserIdAsync(int userId)
         {
-            return await _context.Doctors.AnyAsync(d => d.DoctorID == userId);
+            return await _context.Doctors.AnyAsync(d => d.DoctorId == userId);
         }
     }
 }

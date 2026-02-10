@@ -287,126 +287,138 @@
 //    }
 //}
 
+using Hangfire;
 using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WelloraHealthCareManagement.Application;
 using WelloraHealthCareManagement.Infrastructure;
+using WelloraHealthCareManagement.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagment.API.Context;
-using WelloraHealthCareManagment.Domain.Repositories;
+using WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs;
 
 
-var builder = WebApplication.CreateBuilder(args);
-
-// ====================== CONFIGURATION ======================
-builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
-                     .AddEnvironmentVariables();
-
-// ====================== LOGGING ======================
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.SetMinimumLevel(LogLevel.Information);
-
-// ====================== DATABASE ======================
-builder.Services.AddDbContext<HealthCarePlusContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
-
-// ====================== APPLICATION & INFRASTRUCTURE ======================
-builder.Services.AddInfrastructure(builder.Configuration); // DI من Infrastructure.cs
-builder.Services.AddApplication();
-
-
-// ====================== IDENTITY ======================
-builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+internal class Program
 {
-    options.Password.RequiredLength = 6;
-    options.Password.RequireDigit = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.User.RequireUniqueEmail = true;
-})
-.AddEntityFrameworkStores<HealthCarePlusContext>()
-.AddDefaultTokenProviders();
-
-// ====================== AUTHENTICATION (JWT + Cookies) ======================
-var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("Jwt:Key is missing");
-var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
+    private static void Main(string[] args)
     {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        ClockSkew = TimeSpan.Zero,
-        NameClaimType = "UserID",
-        RoleClaimType = "Role"
-    };
-})
-.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-{
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.None;
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-    options.SlidingExpiration = true;
-});
+        var builder = WebApplication.CreateBuilder(args);
 
-// ====================== AUTHORIZATION ======================
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
-});
+        // ====================== CONFIGURATION ======================
+        builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                             .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+                             .AddEnvironmentVariables();
 
-// ====================== CONTROLLERS & SWAGGER ======================
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-    });
+        // ====================== LOGGING ======================
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole();
+        builder.Logging.AddDebug();
+        builder.Logging.SetMinimumLevel(LogLevel.Information);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-    {
-        Title = "Wellora HealthCare API",
-        Version = "v1"
-    });
+        // ====================== DATABASE ======================
+        builder.Services.AddDbContext<HealthCarePlusContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
 
-    // تعريف الـ Bearer token
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Enter 'Bearer {your JWT token}'"
-    });
+        // ====================== HANGFIRE ======================
+        builder.Services.AddHangfire(config =>
+            config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Services.AddHangfireServer();
 
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
+        // ====================== APPLICATION & INFRASTRUCTURE ======================
+        builder.Services.AddInfrastructure(builder.Configuration); // DI من Infrastructure.cs
+        builder.Services.AddApplication();
+
+
+        // ====================== IDENTITY ======================
+        builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+        {
+            options.Password.RequiredLength = 6;
+            options.Password.RequireDigit = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireNonAlphanumeric = false;
+            options.User.RequireUniqueEmail = true;
+        })
+        .AddEntityFrameworkStores<HealthCarePlusContext>()
+        .AddDefaultTokenProviders();
+
+        // ====================== AUTHENTICATION (JWT + Cookies) ======================
+        var jwtKey = builder.Configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException("Jwt:Key is missing");
+        var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
+
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.RequireHttpsMetadata = false;
+            options.SaveToken = true;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                ClockSkew = TimeSpan.Zero,
+                NameClaimType = "UserID",
+                RoleClaimType = "Role"
+            };
+        })
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+        {
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+            options.SlidingExpiration = true;
+        });
+
+        // ====================== AUTHORIZATION ======================
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+        });
+
+        // ====================== CONTROLLERS & SWAGGER ======================
+        builder.Services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+            });
+
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+            {
+                Title = "Wellora HealthCare API",
+                Version = "v1"
+            });
+
+            // تعريف الـ Bearer token
+            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                Description = "Enter 'Bearer {your JWT token}'"
+            });
+
+            c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            {
         {
             new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
@@ -418,42 +430,72 @@ builder.Services.AddSwaggerGen(c =>
             },
             new string[] {}
         }
-    });
-});
+            });
+        });
 
 
-// ====================== CORS ======================
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins("https://healthcare-9dd79.web.app")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
-});
+        // ====================== CORS ======================
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontend", policy =>
+            {
+                policy.WithOrigins("https://healthcare-9dd79.web.app")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+            });
+        });
 
-var app = builder.Build();
 
-// ====================== MIDDLEWARE ======================
-app.UseSwagger();
-app.UseSwaggerUI();
+        var app = builder.Build();
 
-app.UseHttpsRedirection();
+        // ====================== MIDDLEWARE ======================
+        app.UseSwagger();
+        app.UseSwaggerUI();
 
-app.UseRouting();
+        app.UseHttpsRedirection();
 
-app.UseCors("AllowFrontend");
+        app.UseRouting();
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+        app.UseCors("AllowFrontend");
 
-app.UseAuthentication();
-app.UseAuthorization();
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
 
-app.MapControllers();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        // ====================== HANGFIRE CONFIG ======================
+        app.UseHangfireDashboard("/hangfire");
+        var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
 
-app.Run();
+        recurringJobManager.AddOrUpdate<ReminderOccurrenceGenerator>(
+         "generate-reminder-occurrences",
+         job => job.GenerateForAllPatientsAsync(),
+         Cron.Daily(2));
+
+        recurringJobManager.AddOrUpdate<ReminderJobOrchestrator>(
+         "ReminderJobOrchestrator-RunDailyGenerationAsync",
+         job => job.RunDailyGenerationAsync(),
+         Cron.Daily(3));
+
+        recurringJobManager.AddOrUpdate<ReminderJobOrchestrator>(
+         "ReminderJobOrchestrator-CacheHealthCheckAsync",
+         job => job.CacheHealthCheckAsync(),
+         Cron.Daily(3));
+
+        app.UseExceptionHandler(errorApp =>
+        {
+            errorApp.Run(async context =>
+            {
+                var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+                await context.Response.WriteAsync(exception?.ToString() ?? "Unknown error");
+            });
+        });
+
+        app.MapControllers();
+
+        app.Run();
+    }
+}

@@ -19,7 +19,7 @@ namespace HealthCare_.Models.DTOs.V2
 
         public string TimeZoneId { get; set; } = "Africa/Cairo";
         public int? PrescriptionMedId { get; set; }
-        public int? AppointmentId { get; internal set; }
+        public Guid AppointmentId { get; internal set; }
     }
 
     public class SimpleFrequency

@@ -17,19 +17,19 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
         private readonly GetMedicalProfileQueryHandler _getMedicalProfileHandler;
         private readonly GetCompleteMedicalProfileQueryHandler _getCompleteMedicalProfileHandler;
         private readonly UpdateMedicalProfileCommandHandler _updateMedicalProfileHandler;
-        private readonly GetCurrentMedicationsQueryHandler _getCurrentMedicationsHandler;
+        //private readonly GetCurrentMedicationsQueryHandler _getCurrentMedicationsHandler;
 
 
         public PatientMedicalProfileController(
             GetMedicalProfileQueryHandler getMedicalProfileHandler,
             GetCompleteMedicalProfileQueryHandler getCompleteMedicalProfileHandler,
-            UpdateMedicalProfileCommandHandler updateMedicalProfileHandler,
-            GetCurrentMedicationsQueryHandler getCurrentMedicationsHandler)
+            UpdateMedicalProfileCommandHandler updateMedicalProfileHandler)
+            //GetCurrentMedicationsQueryHandler getCurrentMedicationsHandler)
         {
             _getMedicalProfileHandler = getMedicalProfileHandler;
             _getCompleteMedicalProfileHandler = getCompleteMedicalProfileHandler;
             _updateMedicalProfileHandler = updateMedicalProfileHandler;
-            _getCurrentMedicationsHandler = getCurrentMedicationsHandler;
+            //_getCurrentMedicationsHandler = getCurrentMedicationsHandler;
         }
 
         /// Get medical profile for current authenticated user

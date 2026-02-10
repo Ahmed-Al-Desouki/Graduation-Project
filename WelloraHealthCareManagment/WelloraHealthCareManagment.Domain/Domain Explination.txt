@@ -25,3 +25,87 @@ Business Rules
 يحتوي على: Entities, Value Objects, Enums, Aggregates, Domain events
 عادةً لا يحتاج أي NuGet packages خارجية إلا لو عندك Value Objects 
 أو helpers زي Newtonsoft.Json أو System.Text.Json، لكن غالباً تسيبها نقية قدر الإمكان.
+
+==============================================
+WelloraHealthCareManagement.sln   شكل نظام الحجوزات 
+│
+├── WelloraHealthCareManagement.Domain/
+│   ├── Entities/
+│   │   ├── BaseEntity.cs
+│   │   ├── DoctorScheduleTemplate.cs
+│   │   ├── ScheduleTimeRange.cs
+│   │   ├── ScheduleException.cs
+│   │   ├── TimeSlot.cs
+│   │   ├── Appointment.cs
+│   │   ├── AppointmentMedicalRecord.cs
+│   │   ├── Prescription.cs
+│   │   ├── PrescriptionItem.cs
+│   │   ├── MedicalHistoryAccessGrant.cs
+│   │   ├── MedicalHistoryAccessLog.cs
+│   │   └── AppointmentNotification.cs
+│   │
+│   ├── Factories/
+│   │   ├── IAppointmentFactory.cs
+│   │   ├── AppointmentFactory.cs
+│   │   ├── ITimeSlotGeneratorFactory.cs
+│   │   └── TimeSlotGeneratorFactory.cs
+│   │
+│   ├── Enums/
+│   │   ├── SlotStatus.cs
+│   │   ├── AppointmentStatus.cs
+│   │   ├── ExceptionType.cs
+│   │   ├── GrantType.cs
+│   │   ├── CancelledBy.cs
+│   │   └── NotificationStatus.cs
+│   │
+│   └── Exceptions/
+│       ├── DomainException.cs
+│       └── NotFoundException.cs
+│
+├── WelloraHealthCareManagement.Application/
+│   ├── Interfaces/
+│   │   ├── IAppointmentService.cs
+│   │   ├── IDoctorScheduleService.cs
+│   │   ├── ITimeSlotService.cs
+│   │   ├── IMedicalRecordService.cs
+│   │   └── INotificationService.cs
+│   │
+│   └── DTOs/
+│       ├── Appointments/
+│       ├── Schedules/
+│       └── TimeSlots/
+│
+├── WelloraHealthCareManagement.Infrastructure/
+│   ├── Data/
+│   │   ├── HealthCarePlusContext.cs
+│   │   ├── Configurations/
+│   │   └── Migrations/
+│   │
+│   ├── Repositories/
+│   │   ├── IDoctorScheduleRepository.cs
+│   │   ├── DoctorScheduleRepository.cs
+│   │   ├── ITimeSlotRepository.cs
+│   │   ├── TimeSlotRepository.cs
+│   │   ├── IAppointmentRepository.cs
+│   │   ├── AppointmentRepository.cs
+│   │   └── ... (باقي Repositories)
+│   │
+│   ├── Services/
+│   │   ├── AppointmentService.cs
+│   │   ├── DoctorScheduleService.cs
+│   │   ├── TimeSlotService.cs
+│   │   └── NotificationService.cs
+│   │
+│   ├── BackgroundJobs/
+│   │   └── SlotGenerationJob.cs
+│   │
+│   └── DependencyInjection.cs
+│
+└── WelloraHealthCareManagement.API/
+    ├── Controllers/
+    │   ├── DoctorScheduleController.cs
+    │   ├── AppointmentsController.cs
+    │   └── TimeSlotsController.cs
+    │
+    ├── appsettings.json
+    └── Program.cs

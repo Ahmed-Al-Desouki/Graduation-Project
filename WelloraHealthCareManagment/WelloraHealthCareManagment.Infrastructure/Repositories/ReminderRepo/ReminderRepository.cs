@@ -18,7 +18,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         {
             return await _context.ReminderV2s
                 .AsNoTracking()
-                .Include(r => r.PrescriptionMed)
+                //.Include(r => r.PrescriptionMed)
                 .FirstOrDefaultAsync(r => r.Id == reminderId && r.PatientId == patientId);
         }
 
@@ -34,7 +34,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         {
             return await _context.ReminderV2s
                 .AsNoTracking()
-                .Include(r => r.PrescriptionMed)
+                //.Include(r => r.PrescriptionMed)
                 .Where(r => r.PatientId == patientId && r.IsActive)
                 .ToListAsync();
         }

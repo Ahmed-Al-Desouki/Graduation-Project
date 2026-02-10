@@ -1,5 +1,4 @@
 ﻿
-using HealthCare_.Models.PatientModels.Appointments;
 using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -26,9 +25,9 @@ namespace HealthCare_.Models.sharedModels.Reviews
         [Required]
         public DateTime ReviewDate { get; set; }
         public bool IsVerified { get; set; }
-        public int? AppointmentID { get; set; }
-        [ForeignKey("AppointmentID")]
-        public Appointment Appointment { get; set; }
+        //public int? AppointmentID { get; set; }
+        //[ForeignKey("AppointmentID")]
+        //public Appointment Appointment { get; set; }
         [StringLength(500)]
         public string FilePath { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;

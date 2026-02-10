@@ -11,6 +11,7 @@ using System.Text;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication.Tokens;
+using WelloraHealthCareManagment.Domain.Repositories;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.UserSessions;
 
@@ -59,7 +60,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 ?? throw new InvalidOperationException("Missing Jwt:Audience");
 
             if (!int.TryParse(configuration["Jwt:ExpireMinutes"], out _accessTokenExpireMinutes))
-                _accessTokenExpireMinutes = 15; // Default 15 minutes
+                _accessTokenExpireMinutes = 1440; // Default 15 minutes
 
             // Validate key lengths (must be 44 chars = 32 bytes Base64)
             if (_jwtKey.Length != 44 || _refreshHmacKey.Length != 44 || _refreshAesKey.Length != 44)

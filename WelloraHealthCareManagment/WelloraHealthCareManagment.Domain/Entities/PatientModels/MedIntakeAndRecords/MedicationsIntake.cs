@@ -1,5 +1,4 @@
 ﻿// File: Models/PatientModels/MedicationsIntake.cs
-using HealthCare_.Models.PatientModels.Prescriptions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using WelloraHealthCareManagment.Domain.EnumForModels;
@@ -15,7 +14,7 @@ namespace HealthCare_.Models.PatientModels.MedIntakeAndRecords
         [Required]
         public int PrescriptionMedID { get; set; }
         [ForeignKey("PrescriptionMedID")]
-        public PrescriptionMed PrescriptionMed { get; set; } = null!;
+        //public PrescriptionMed PrescriptionMed { get; set; } = null!;
 
         [Required]
         public DateTime DateTaken { get; set; }

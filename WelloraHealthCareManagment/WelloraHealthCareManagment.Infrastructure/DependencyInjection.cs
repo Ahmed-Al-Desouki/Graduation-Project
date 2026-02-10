@@ -3,7 +3,10 @@ using HealthCare.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WelloraHealthCareManagement.Application.Interfaces;
+using WelloraHealthCareManagement.Domain.Factories;
+using WelloraHealthCareManagement.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagement.Infrastructure.Configuration;
+using WelloraHealthCareManagement.Infrastructure.Repositories;
 using WelloraHealthCareManagement.Infrastructure.Services;
 using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
@@ -13,11 +16,13 @@ using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.Repositories;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
+using WelloraHealthCareManagment.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs;
 using WelloraHealthCareManagment.Infrastructure.Repositories;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.UserSessions;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.MeicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo;
@@ -52,7 +57,7 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IRevokedTokenRepository, RevokedTokenRepository>();
             services.AddScoped<IUserSessionRepository, UserSessionRepository>();
             services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
-            services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+            //services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
             services.AddScoped<ICurrentMedicationRepository, CurrentMedicationRepository>();
             services.AddScoped<IFamilyHistoryRepository, FamilyHistoryRepository>();
             services.AddScoped<ISelfMedicationRepository, SelfMedicationRepository>();
@@ -63,6 +68,12 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IReminderRepository, ReminderRepository>();
             services.AddScoped<IReminderOccurrencesCacheRepository, ReminderOccurrencesCacheRepository>();
             services.AddScoped<IReminderOccurrenceLogRepository, ReminderOccurrenceLogRepository>();
+            services.AddScoped<IDoctorScheduleRepository, DoctorScheduleRepository>();
+            services.AddScoped<IScheduleExceptionRepository, ScheduleExceptionRepository>();
+            services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
+            services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            services.AddScoped<IMedicalHistoryAccessRepository, MedicalHistoryAccessRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Services
             services.AddScoped<ITokenService, TokenService>();
@@ -80,10 +91,22 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IReminderV2Service, ReminderV2Service>();
             services.AddScoped<IReminderOccurrenceGenerator, ReminderOccurrenceGenerator>();
             services.AddScoped<ITimezoneHelper, TimezoneHelper>();
+            services.AddScoped<IRevokedTokenCleanupService, RevokedTokenCleanupService>();
+            services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
+            services.AddScoped<ITimeSlotService, TimeSlotService>();
+            services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddScoped<IAppointmentReminderService, AppointmentReminderService>();
 
             // Background Jobs 
             services.AddScoped<ReminderJobOrchestrator>();
             services.AddHostedService<ReminderCacheHealthCheckService>();
+            services.AddHostedService<RevokedTokensCleanupBackgroundService>();
+            services.AddHostedService<SlotGenerationJob>();
+
+            //Domain Factories
+            services.AddScoped<IAppointmentFactory, AppointmentFactory>();
+            services.AddScoped<ITimeSlotGeneratorFactory, TimeSlotGeneratorFactory>();
+
 
 
             return services;

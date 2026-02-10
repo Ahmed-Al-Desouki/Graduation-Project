@@ -49,7 +49,7 @@ namespace HealthCare_.Models.PatientModels.MedicalHistoryModels
 
         // Navigation Properties
         public ICollection<ExternalFile> Files { get; set; } = new List<ExternalFile>();
-        public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
+        //public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
         public ICollection<Surgery> Surgeries { get; set; } = new List<Surgery>();
         public ICollection<FamilyHistoryEntry> FamilyHistories { get; set; } = new List<FamilyHistoryEntry>();
         public ICollection<SocialHistory> SocialHistories { get; set; } = new List<SocialHistory>();

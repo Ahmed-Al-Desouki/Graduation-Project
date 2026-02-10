@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Domain.Repositories;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens
 {
@@ -45,5 +46,22 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.
             _context.RevokedTokens.RemoveRange(expired);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<RevokedToken>> GetExpiredTokensAsync(
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.RevokedTokens
+                .Where(t => t.Expires <= DateTime.UtcNow)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task DeleteRangeAsync(
+            List<RevokedToken> tokens,
+            CancellationToken cancellationToken = default)
+        {
+            _context.RevokedTokens.RemoveRange(tokens);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
     }
 }

@@ -12,5 +12,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.
         Task<bool> IsTokenRevokedAsync(string jti);
         Task AddAsync(RevokedToken revokedToken);
         Task CleanupExpiredTokensAsync();
+        /// Get all expired tokens
+        Task<List<RevokedToken>> GetExpiredTokensAsync(CancellationToken cancellationToken = default);
+
+        /// Delete multiple tokens
+        Task DeleteRangeAsync(List<RevokedToken> tokens, CancellationToken cancellationToken = default);
+
+
     }
 }

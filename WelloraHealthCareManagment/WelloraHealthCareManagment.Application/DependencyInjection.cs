@@ -43,8 +43,8 @@ namespace WelloraHealthCareManagement.Application
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
             // Current Medications Handlers
-            services.AddScoped<GetCurrentMedicationsQueryHandler>();
-            services.AddScoped<GetCurrentMedicationsForShareQueryHandler>();
+            //services.AddScoped<GetCurrentMedicationsQueryHandler>();
+            //services.AddScoped<GetCurrentMedicationsForShareQueryHandler>();
 
             // Family History Handlers
             services.AddScoped<GetFamilyHistoryQueryHandler>();

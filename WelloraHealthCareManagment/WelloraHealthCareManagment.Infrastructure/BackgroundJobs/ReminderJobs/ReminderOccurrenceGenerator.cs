@@ -137,9 +137,9 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
                             Title = reminder.Title,
                             Message = reminder.Message ?? "",
                             Type = reminder.Type,
-                            Dosage = reminder.PrescriptionMed != null
-                                ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
-                                : null,
+                            //Dosage = reminder.PrescriptionMed != null
+                            //    ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
+                            //    : null,
                             Status = Enums.OccurrenceStatus.Scheduled
                         });
                     }
