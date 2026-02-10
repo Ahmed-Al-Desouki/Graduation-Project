@@ -211,6 +211,10 @@ class Assets {
   static const String imagesSchduleBooking =
       "assets/images/schdule_booking.svg";
 
+  /// Assets for imagesSchedule
+  /// assets/images/schedule.png
+  static const String imagesSchedule = "assets/images/schedule.png";
+
   // static const String imagesRegisterDoctor = "assets/images/register_doctor.png";
 
   /// Assets for imagesRegisterPatient

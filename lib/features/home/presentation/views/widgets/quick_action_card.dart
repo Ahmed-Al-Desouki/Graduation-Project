@@ -3,7 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 
-class PatientQuickActionCard extends StatelessWidget {
+class QuickActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color gradientColor;
@@ -12,7 +12,7 @@ class PatientQuickActionCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isSvg;
 
-  const PatientQuickActionCard({
+  const QuickActionCard({
     super.key,
     required this.title,
     required this.subtitle,

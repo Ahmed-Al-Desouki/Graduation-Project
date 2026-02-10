@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/features/auth/presentation/layout/doctor_home_layout.dart';
 import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medical_file_model.dart';
@@ -19,7 +20,6 @@ import 'package:graduation_project/features/medical_history/presentation/view/sh
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/auth/presentation/views/biometric_auth_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/create_account_view.dart';
-import 'package:graduation_project/features/auth/presentation/views/doctor_home_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/doctor_registration_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/login_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/otp_screen.dart';
@@ -126,7 +126,7 @@ abstract class AppRouter {
 
       GoRoute(
         path: kHomeDoctor,
-        builder: (context, state) => const DoctorHomeView(),
+        builder: (context, state) => const DoctorHomeLayout(),
       ),
 
       GoRoute(
