@@ -4,6 +4,13 @@ import 'package:graduation_project/core/constant.dart';
 import 'package:graduation_project/core/utils/helper/api.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
+import 'package:graduation_project/features/chat/data/repositories/mock_chat_repository.dart';
+import 'package:graduation_project/features/chat/domain/repositories/i_chat_repository.dart';
+import 'package:graduation_project/features/chat/domain/use_cases/get_chat_previews_use_case.dart';
+import 'package:graduation_project/features/chat/domain/use_cases/get_messages_use_case.dart';
+import 'package:graduation_project/features/chat/domain/use_cases/send_messages_use_case.dart';
+import 'package:graduation_project/features/chat/presentation/manager/chat_cubit/chat_cubit.dart';
+import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/home/data/repos/home_repo_impl.dart';
 import 'package:graduation_project/features/home/data/service/home_web_service.dart';
 import 'package:graduation_project/features/home/domain/repos/home_repo.dart';
@@ -76,6 +83,20 @@ void setupServiceLocator() {
   getIt.registerLazySingleton<HomeRepository>(
     () => HomeRepositoryImpl(getIt<HomeWebService>()),
   );
+
+  getIt.registerLazySingleton<IChatRepository>(() => MockChatRepository());
+
+  getIt.registerLazySingleton(
+    () => GetChatPreviewsUseCase(getIt<IChatRepository>()),
+  );
+
+  getIt.registerLazySingleton(
+    () => GetMessagesUseCase(getIt<IChatRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => SendMessageUseCase(getIt<IChatRepository>()),
+  );
+
   getIt.registerFactory<AuthCubit>(
     () => AuthCubit(getIt<AuthRepositoryimpl>()),
   );
@@ -92,8 +113,19 @@ void setupServiceLocator() {
     () => MedicalqrCubit(getIt<MedicalHistoryQrRepository>()),
   );
 
+  getIt.registerFactory<ChatCubit>(
+    () => ChatCubit(getIt<GetChatPreviewsUseCase>()),
+  );
+
   getIt.registerLazySingleton<SessionManager>(
     () => SessionManager(getIt<AuthRepositoryimpl>()),
+  );
+
+  getIt.registerFactory(
+    () => ChatDetailsCubit(
+      getIt<GetMessagesUseCase>(),
+      getIt<SendMessageUseCase>(),
+    ),
   );
 
   getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<HomeRepository>()));

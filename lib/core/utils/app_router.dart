@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
-import 'package:graduation_project/features/auth/presentation/layout/doctor_home_layout.dart';
+import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
+import 'package:graduation_project/features/chat/presentation/views/chat_details_view.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_layout.dart';
 import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medical_file_model.dart';
@@ -61,6 +63,7 @@ abstract class AppRouter {
   static const kRinging = '/ringing';
   static const kAllReminders = '/allReminders';
   static const kAddReminder = '/addReminder';
+  static const kChatDetails = '/chatDetails'; // ✅ أضف هذا الثابت
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -305,6 +308,20 @@ abstract class AppRouter {
             value: extras['cubit'] as ReminderCubit,
             child: AddReminderView(
               initialType: extras['initialType'] as String?,
+            ),
+          );
+        },
+      ),
+
+      GoRoute(
+        path: kChatDetails,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>;
+          return BlocProvider(
+            create: (context) => getIt<ChatDetailsCubit>(),
+            child: ChatDetailsView(
+              chatId: data['chatId'] as String,
+              receiverName: data['receiverName'] as String,
             ),
           );
         },

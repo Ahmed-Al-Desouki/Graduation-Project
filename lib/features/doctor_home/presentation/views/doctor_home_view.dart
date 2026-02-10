@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
-import 'package:graduation_project/features/home/presentation/views/widgets/doctor_appointments_card.dart';
-import 'package:graduation_project/features/home/presentation/views/widgets/doctor_home_header.dart';
-import 'package:graduation_project/features/home/presentation/views/widgets/doctor_revenue_card.dart';
-import 'package:graduation_project/features/home/presentation/views/widgets/doctor_stat_card.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/widgets/doctor_appointments_card.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/widgets/doctor_home_header.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/widgets/doctor_revenue_card.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/widgets/doctor_stat_card.dart';
 import 'package:graduation_project/features/home/presentation/views/widgets/quick_action_card.dart';
 
 class DoctorHomeView extends StatefulWidget {
