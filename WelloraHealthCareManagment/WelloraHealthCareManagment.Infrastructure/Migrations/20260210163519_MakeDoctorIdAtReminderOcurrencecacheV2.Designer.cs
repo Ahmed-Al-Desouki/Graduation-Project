@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WelloraHealthCareManagment.API.Context;
 
@@ -11,9 +12,11 @@ using WelloraHealthCareManagment.API.Context;
 namespace WelloraHealthCareManagment.Infrastructure.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    partial class HealthCarePlusContextModelSnapshot : ModelSnapshot
+    [Migration("20260210163519_MakeDoctorIdAtReminderOcurrencecacheV2")]
+    partial class MakeDoctorIdAtReminderOcurrencecacheV2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -799,10 +802,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DoctorId");
-
-                    b.HasIndex("PatientId");
 
                     b.HasIndex("ReminderId");
 
@@ -2023,23 +2022,11 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
             modelBuilder.Entity("HealthCare_.Models.V2.ReminderOccurrencesCache", b =>
                 {
-                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
-                        .WithMany()
-                        .HasForeignKey("DoctorId");
-
-                    b.HasOne("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientId");
-
                     b.HasOne("HealthCare_.Models.V2.ReminderV2", "Reminder")
                         .WithMany()
                         .HasForeignKey("ReminderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Doctor");
-
-                    b.Navigation("Patient");
 
                     b.Navigation("Reminder");
                 });

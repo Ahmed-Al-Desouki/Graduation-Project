@@ -61,8 +61,23 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         public async Task<List<int>> GetAllActivePatientIdsAsync()
         {
             return await _context.ReminderV2s
-                .Where(r => r.IsActive)
-                .Select(r => r.PatientId)
+                .Where(r => r.IsActive && r.PatientId.HasValue)
+                .Select(r => r.PatientId.Value)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<List<ReminderV2>> GetActiveByDoctorIdAsync(int doctorId)
+        {
+            return await _context.ReminderV2s
+                .Where(r => r.DoctorId == doctorId && r.IsActive)
+                .ToListAsync();
+        }
+        public async Task<List<int>> GetAllActiveDoctorIdsAsync()
+        {
+            return await _context.ReminderV2s
+                .Where(r => r.IsActive && r.DoctorId.HasValue)
+                .Select(r => r.DoctorId.Value)
                 .Distinct()
                 .ToListAsync();
         }

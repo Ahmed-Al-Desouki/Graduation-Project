@@ -1,6 +1,8 @@
 ﻿// File: Models/V2/ReminderOccurrencesCache.cs
+using HealthCare_.Models.DoctorModels;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 
 namespace HealthCare_.Models.V2
@@ -11,7 +13,8 @@ namespace HealthCare_.Models.V2
         [Key]
         public long Id { get; set; }
 
-        public int PatientId { get; set; }
+        public int? PatientId { get; set; }
+        public int? DoctorId { get; set; }
         public int ReminderId { get; set; }
 
         // Local time for display
@@ -40,5 +43,7 @@ namespace HealthCare_.Models.V2
 
         // Navigation (optional)
         public ReminderV2? Reminder { get; set; }
+        public Doctor? Doctor { get; set; }
+        public Patient? Patient { get; set; }
     }
 }

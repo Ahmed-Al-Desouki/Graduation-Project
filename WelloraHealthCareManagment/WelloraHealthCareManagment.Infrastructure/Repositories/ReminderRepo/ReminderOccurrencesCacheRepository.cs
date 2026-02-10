@@ -46,6 +46,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
             await _context.SaveChangesAsync();
         }
 
+        public async Task DeleteByDoctorAndDateRangeAsync(int doctorId, DateTime fromUtc, DateTime toUtc)
+        {
+            await _context.Database.ExecuteSqlRawAsync(
+                @"DELETE FROM ReminderOccurrencesCache
+          WHERE DoctorId = {0}
+            AND DueDateTimeUtc >= {1}
+            AND DueDateTimeUtc < {2}",
+                doctorId, fromUtc, toUtc);
+        }
+
         public async Task DeleteByPatientAndDateRangeAsync(
             int patientId,
             DateTime fromUtc,
@@ -86,6 +96,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
             var dataTable = new DataTable();
             dataTable.Columns.Add("CreatedAt", typeof(DateTime));
             dataTable.Columns.Add("PatientId", typeof(int));
+            dataTable.Columns.Add("DoctorId", typeof(int));
             dataTable.Columns.Add("ReminderId", typeof(int));
             dataTable.Columns.Add("DueDateTimeUtc", typeof(DateTime));
             dataTable.Columns.Add("DueDateTime", typeof(DateTime));
@@ -101,6 +112,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
                 dataTable.Rows.Add(
                     e.CreatedAt,
                     e.PatientId,
+                    e.DoctorId,
                     e.ReminderId,
                     e.DueDateTimeUtc,
                     e.DueDateTime,
@@ -126,6 +138,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
 
             bulkCopy.ColumnMappings.Add("CreatedAt", "CreatedAt");
             bulkCopy.ColumnMappings.Add("PatientId", "PatientId");
+            bulkCopy.ColumnMappings.Add("DoctorId", "DoctorId");
             bulkCopy.ColumnMappings.Add("ReminderId", "ReminderId");
             bulkCopy.ColumnMappings.Add("DueDateTimeUtc", "DueDateTimeUtc");
             bulkCopy.ColumnMappings.Add("DueDateTime", "DueDateTime");

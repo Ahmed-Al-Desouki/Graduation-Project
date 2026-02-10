@@ -632,15 +632,67 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             return reminder ?? throw new UnauthorizedAccessException("Access denied or reminder not found");
         }
 
+        //private async Task<ReminderV2Dto> MapToDtoAsync(ReminderV2 r)
+        //{
+        //    var todayUtc = DateTime.UtcNow.Date;
+        //    var tomorrowUtc = todayUtc.AddDays(1);
+
+        //    var nextCache = await _cacheRepository.GetByPatientAndDateRangeAsync(
+        //        r.PatientId, todayUtc, tomorrowUtc.AddDays(30));
+
+
+        //    var next = nextCache.Where(c => c.ReminderId == r.Id)
+        //        .OrderBy(c => c.DueDateTimeUtc)
+        //        .Select(c => (DateTime?)c.DueDateTimeUtc)
+        //        .FirstOrDefault();
+
+        //    var taken = await _logRepository.CountTakenByReminderIdAsync(r.Id);
+        //    var total = await _logRepository.CountTotalByReminderIdAsync(r.Id);
+
+        //    var nextOccurrence = next.HasValue
+        //        ? _timezoneHelper.ConvertUtcToUserTimezone(_timezoneHelper.EnsureUtc(next.Value), r.TimeZoneId)
+        //        : (DateTime?)null;
+
+        //    return new ReminderV2Dto
+        //    {
+        //        Id = r.Id,
+        //        Title = r.Title,
+        //        Type = r.Type,
+        //        Message = r.Message,
+        //        StartDate = r.StartDateUtc,
+        //        EndDate = r.EndDateUtc,
+        //        TimeZoneId = r.TimeZoneId,
+        //        RRULE = r.RRULE ?? "",
+        //        EXDATE = r.EXDATE,
+        //        IsSimpleEveryXHours = r.IsSimpleEveryXHours,
+        //        FirstDoseTime = r.FirstDoseTime,
+        //        IntervalHours = r.IntervalHours,
+        //        NextOccurrence = nextOccurrence,
+        //        TakenCount = taken,
+        //        TotalLogged = total,
+        //        IsActive = r.IsActive
+        //    };
+        //}
+
         private async Task<ReminderV2Dto> MapToDtoAsync(ReminderV2 r)
         {
             var todayUtc = DateTime.UtcNow.Date;
             var tomorrowUtc = todayUtc.AddDays(1);
 
-            var nextCache = await _cacheRepository.GetByPatientAndDateRangeAsync(
-                r.PatientId, todayUtc, tomorrowUtc.AddDays(30));
+            // 1. نعرّف المتغير من غير قيمة أولية
+            IEnumerable<ReminderOccurrencesCache> nextCache = Enumerable.Empty<ReminderOccurrencesCache>();
 
-            var next = nextCache.Where(c => c.ReminderId == r.Id)
+            // 2. لو فيه PatientId → نجيب الكاش
+            if (r.PatientId.HasValue)
+            {
+                nextCache = await _cacheRepository.GetByPatientAndDateRangeAsync(
+                    r.PatientId.Value,
+                    todayUtc,
+                    tomorrowUtc.AddDays(30));
+            }
+
+            var next = nextCache
+                .Where(c => c.ReminderId == r.Id)
                 .OrderBy(c => c.DueDateTimeUtc)
                 .Select(c => (DateTime?)c.DueDateTimeUtc)
                 .FirstOrDefault();
@@ -649,7 +701,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             var total = await _logRepository.CountTotalByReminderIdAsync(r.Id);
 
             var nextOccurrence = next.HasValue
-                ? _timezoneHelper.ConvertUtcToUserTimezone(_timezoneHelper.EnsureUtc(next.Value), r.TimeZoneId)
+                ? _timezoneHelper.ConvertUtcToUserTimezone(
+                    _timezoneHelper.EnsureUtc(next.Value),
+                    r.TimeZoneId)
                 : (DateTime?)null;
 
             return new ReminderV2Dto
@@ -672,6 +726,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 IsActive = r.IsActive
             };
         }
+
 
         #endregion
 

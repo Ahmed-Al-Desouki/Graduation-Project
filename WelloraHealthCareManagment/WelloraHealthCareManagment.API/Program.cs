@@ -301,6 +301,7 @@ using WelloraHealthCareManagement.Application;
 using WelloraHealthCareManagement.Infrastructure;
 using WelloraHealthCareManagement.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs;
 
 
@@ -484,6 +485,11 @@ internal class Program
          "ReminderJobOrchestrator-CacheHealthCheckAsync",
          job => job.CacheHealthCheckAsync(),
          Cron.Daily(3));
+
+        RecurringJob.AddOrUpdate<IReminderOccurrenceGenerator>(
+            "generate-doctor-cache",
+            j => j.GenerateForAllDoctortsAsync(),
+            "0 2 * * *");  // كل يوم الساعة 2 صباحًا
 
         app.UseExceptionHandler(errorApp =>
         {

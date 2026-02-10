@@ -1,7 +1,9 @@
 ﻿// File: Models/V2/ReminderV2.cs
+using HealthCare_.Models.DoctorModels;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using WelloraHealthCareManagement.Domain.Entities;
+using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 
 namespace HealthCare_.Models.V2
@@ -11,7 +13,8 @@ namespace HealthCare_.Models.V2
         [Key]
         public int Id { get; set; }
 
-        public int PatientId { get; set; }
+        public int? PatientId { get; set; }
+        public int? DoctorId { get; set; }
 
         public Enums.ReminderType Type { get; set; } = Enums.ReminderType.Medication;
 
@@ -46,7 +49,10 @@ namespace HealthCare_.Models.V2
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 
+
         // Navigation Property
+        public Patient? Patient { get; set; }
+        public Doctor? Doctor { get; set; }
         public Appointment? Appointment { get; set; } // ✅ New
         public ICollection<ReminderOccurrenceLog> Logs { get; set; } = new List<ReminderOccurrenceLog>();
         public bool IsSimpleEveryXHours { get; set; } = false;

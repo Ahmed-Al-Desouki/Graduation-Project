@@ -16,5 +16,7 @@ namespace WelloraHealthCareManagment.Domain.Repositories.ReminderRepo
         Task UpdateAsync(ReminderV2 reminder);
         Task DeleteAsync(ReminderV2 reminder);
         Task<List<int>> GetAllActivePatientIdsAsync();
+        Task<List<ReminderV2>> GetActiveByDoctorIdAsync(int doctorId);
+        Task<List<int>> GetAllActiveDoctorIdsAsync();
     }
 }

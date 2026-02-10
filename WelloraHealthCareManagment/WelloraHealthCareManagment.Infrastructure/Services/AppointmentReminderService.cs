@@ -1,4 +1,5 @@
-﻿using HealthCare_.Models.V2;
+﻿using Hangfire;
+using HealthCare_.Models.V2;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
@@ -38,77 +39,91 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             try
             {
                 var appointmentDateTime = timeSlot.SlotDate.Add(timeSlot.StartTime);
-                var timeZoneId = "Africa/Cairo"; // أو من Patient/Doctor settings
+                var timeZoneId = "Africa/Cairo";
 
                 _logger.LogInformation(
                     "Creating appointment reminders: AppointmentId={AppointmentId}, DateTime={DateTime}, Patient={PatientId}, Doctor={DoctorId}",
                     appointment.Id, appointmentDateTime, patientId, doctorId);
 
+                // Format TimeSpan correctly
+                string formattedTime = FormatTimeSpan(timeSlot.StartTime);
+
                 // ===== PATIENT REMINDERS =====
 
-                // 1️⃣ Patient: 24 hours before
+                // 1️. Patient: 24 hours before
                 if (appointmentDateTime > DateTime.UtcNow.AddDays(1))
                 {
                     await CreateReminderAsync(
                         patientId,
+                        isDoctor: false,
                         appointment.Id,
                         "Appointment Tomorrow",
-                        $"Reminder: Your appointment is tomorrow at {timeSlot.StartTime:hh\\:mm tt}",
+                        $"Reminder: Your appointment is tomorrow at {formattedTime}",
                         appointmentDateTime.AddDays(-1),
                         timeZoneId,
                         cancellationToken);
                 }
 
-                // 2️⃣ Patient: 1 hour before
+                // 2️. Patient: 1 hour before
                 if (appointmentDateTime > DateTime.UtcNow.AddHours(1))
                 {
                     await CreateReminderAsync(
                         patientId,
+                        isDoctor: false,
                         appointment.Id,
                         "Appointment in 1 Hour",
-                        $"Your appointment starts in 1 hour at {timeSlot.StartTime:hh\\:mm tt}",
+                        $"Your appointment starts in 1 hour at {formattedTime}",
                         appointmentDateTime.AddHours(-1),
                         timeZoneId,
                         cancellationToken);
                 }
 
-                // 3️⃣ Patient: At appointment time
+                // 3️. Patient: At appointment time
                 await CreateReminderAsync(
                     patientId,
+                    isDoctor: false,
                     appointment.Id,
                     "Appointment Now",
-                    $"Your appointment is starting now",
+                    "Your appointment is starting now",
                     appointmentDateTime,
                     timeZoneId,
                     cancellationToken);
 
                 // ===== DOCTOR REMINDERS =====
 
-                // 4️⃣ Doctor: 30 minutes before
+                // 4️. Doctor: 30 minutes before
                 if (appointmentDateTime > DateTime.UtcNow.AddMinutes(30))
                 {
                     await CreateReminderAsync(
                         doctorId,
+                        isDoctor: true,
                         appointment.Id,
                         "Upcoming Appointment",
-                        $"You have an appointment in 30 minutes",
+                        "You have an appointment in 30 minutes",
                         appointmentDateTime.AddMinutes(-30),
                         timeZoneId,
                         cancellationToken);
                 }
 
-                // 5️⃣ Doctor: 5 minutes before
+                // 5️. Doctor: 5 minutes before
                 if (appointmentDateTime > DateTime.UtcNow.AddMinutes(5))
                 {
                     await CreateReminderAsync(
                         doctorId,
+                        isDoctor: true,
                         appointment.Id,
                         "Appointment Starting Soon",
-                        $"Appointment starting in 5 minutes",
+                        "Appointment starting in 5 minutes",
                         appointmentDateTime.AddMinutes(-5),
                         timeZoneId,
                         cancellationToken);
                 }
+
+                BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                    j => j.GenerateForPatientAsync(patientId));
+
+                BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                    j => j.GenerateForDoctorAsync(doctorId));
 
                 _logger.LogInformation(
                     "Successfully created appointment reminders for AppointmentId={AppointmentId}",
@@ -119,7 +134,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 _logger.LogError(ex,
                     "Error creating appointment reminders for AppointmentId={AppointmentId}",
                     appointment.Id);
-                // Don't throw - appointment should still be created even if reminders fail
             }
         }
 
@@ -163,6 +177,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         private async Task CreateReminderAsync(
             int userId,
+            bool isDoctor, 
             Guid appointmentId,
             string title,
             string message,
@@ -170,7 +185,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             string timeZoneId,
             CancellationToken cancellationToken)
         {
-            // Skip if the reminder time has already passed
             if (scheduledDateTime <= DateTime.UtcNow)
             {
                 _logger.LogWarning(
@@ -179,27 +193,22 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 return;
             }
 
-            // ✅ Use ReminderV2 directly (not through service to avoid validation)
             var reminder = new ReminderV2
             {
-                PatientId = userId, // Works for both patient and doctor
+                PatientId = (isDoctor ? null : (int?)userId),  
+                DoctorId = isDoctor ? (int?)userId : null,
                 Type = Enums.ReminderType.Appointment,
                 Title = title,
                 Message = message,
                 StartDateUtc = scheduledDateTime,
-                EndDateUtc = scheduledDateTime, // One-time reminder
+                EndDateUtc = scheduledDateTime,
                 TimeZoneId = timeZoneId,
                 AppointmentId = appointmentId,
                 IsActive = true,
-
-                // ✅ Use SIMPLE MODE for one-time appointment reminders
                 IsSimpleEveryXHours = false,
                 FirstDoseTime = null,
                 IntervalHours = null,
-
-                // ✅ Use RRULE for one-time occurrence
-                RRULE = "FREQ=DAILY;COUNT=1", // Only once
-
+                RRULE = "FREQ=DAILY;COUNT=1",
                 Status = Enums.ReminderStatus.Active,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -208,8 +217,32 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             await _reminderRepository.AddAsync(reminder);
 
             _logger.LogInformation(
-                "Created appointment reminder: UserId={UserId}, AppointmentId={AppointmentId}, Title={Title}, ScheduledFor={ScheduledFor}",
-                userId, appointmentId, title, scheduledDateTime);
+                "Created appointment reminder: {UserType}Id={UserId}, AppointmentId={AppointmentId}, Title={Title}",
+                isDoctor ? "Doctor" : "Patient", userId, appointmentId, title);
+        }
+
+        // Helper
+        private string FormatTimeSpan(TimeSpan time)
+        {
+            var totalHours = (int)time.TotalHours;
+            var minutes = time.Minutes;
+
+            if (totalHours == 0)
+            {
+                return $"12:{minutes:00} AM";
+            }
+            else if (totalHours < 12)
+            {
+                return $"{totalHours}:{minutes:00} AM";
+            }
+            else if (totalHours == 12)
+            {
+                return $"12:{minutes:00} PM";
+            }
+            else
+            {
+                return $"{totalHours - 12}:{minutes:00} PM";
+            }
         }
     }
 }

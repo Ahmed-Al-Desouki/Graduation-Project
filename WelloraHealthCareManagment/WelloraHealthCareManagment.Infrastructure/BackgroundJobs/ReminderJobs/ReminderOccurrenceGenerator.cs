@@ -47,6 +47,77 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
             }
         }
 
+        public async Task GenerateForAllDoctortsAsync()
+        {
+            await using var scope = _serviceProvider.CreateAsyncScope();
+            var reminderRepo = scope.ServiceProvider.GetRequiredService<IReminderRepository>();
+
+            var DoctorIds = await reminderRepo.GetAllActiveDoctorIdsAsync();
+
+            _logger.LogInformation("Starting cache generation for {Count} Doctor", DoctorIds.Count);
+
+            foreach (var DoctorID in DoctorIds)
+            {
+                try
+                {
+                    await GenerateForPatientAsync(DoctorID);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to generate cache for Patient {PatientId}", DoctorID);
+                }
+            }
+        }
+        public async Task GenerateForDoctorAsync(int doctorId)
+        {
+            await using var scope = _serviceProvider.CreateAsyncScope();
+            var reminderRepo = scope.ServiceProvider.GetRequiredService<IReminderRepository>();
+            var cacheRepo = scope.ServiceProvider.GetRequiredService<IReminderOccurrencesCacheRepository>();
+
+            var nowUtc = DateTime.UtcNow;
+            var todayUtc = nowUtc.Date;
+            var fromUtc = todayUtc;
+            var toUtc = todayUtc.AddDays(60);
+
+            // جيب التذكيرات اللي DoctorId بتاعها هو الدكتور ده
+            var reminders = await reminderRepo.GetActiveByDoctorIdAsync(doctorId);
+
+            var newEntries = new List<ReminderOccurrencesCache>();
+
+            foreach (var reminder in reminders)
+            {
+                var occurrences = GenerateOccurrencesWithIcalNetFull(reminder, fromUtc, toUtc);
+                foreach (var dtUtc in occurrences)
+                {
+                    var timeZoneId = reminder.TimeZoneId ?? "Africa/Cairo";
+                    var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+                    var localTime = TimeZoneInfo.ConvertTimeFromUtc(dtUtc, tz);
+
+                    newEntries.Add(new ReminderOccurrencesCache
+                    {
+                        CreatedAt = DateTime.UtcNow,
+                        PatientId = null,  
+                        DoctorId = doctorId,  
+                        ReminderId = reminder.Id,
+                        DueDateTimeUtc = dtUtc,
+                        DueDateTime = localTime,
+                        TimeZoneId = timeZoneId,
+                        Title = reminder.Title,
+                        Message = reminder.Message ?? "",
+                        Type = reminder.Type,
+                        Status = Enums.OccurrenceStatus.Scheduled
+                    });
+                }
+            }
+
+            if (newEntries.Any())
+            {
+                await cacheRepo.DeleteByDoctorAndDateRangeAsync(doctorId, fromUtc, toUtc);
+                await cacheRepo.BulkInsertAsync(newEntries);
+            }
+        }
+
+
         public async Task GenerateForPatientAsync(int patientId)
         {
             await using var scope = _serviceProvider.CreateAsyncScope();
@@ -62,7 +133,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
                 "Generating cache for Patient {PatientId}: From {From} to {To} UTC",
                 patientId, fromUtc, toUtc);
 
-            // ✅ SOFT DELETE: Mark expired reminders as inactive instead of deleting
+            //  SOFT DELETE: Mark expired reminders as inactive instead of deleting
             var reminders = await reminderRepo.GetActiveByPatientIdAsync(patientId);
 
             var expiredReminders = reminders
@@ -85,7 +156,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
                 }
 
                 _logger.LogInformation(
-                    "✅ Soft deleted expired reminders for Patient {PatientId}",
+                    " Soft deleted expired reminders for Patient {PatientId}",
                     patientId);
             }
 
@@ -130,6 +201,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
                         {
                             CreatedAt = DateTime.UtcNow,
                             PatientId = patientId,
+                            DoctorId = null,
                             ReminderId = reminder.Id,
                             DueDateTimeUtc = DateTime.SpecifyKind(dtUtc, DateTimeKind.Utc),
                             DueDateTime = localTime,
