@@ -77,9 +77,7 @@ class _AddReminderViewState extends State<AddReminderView> {
         startDate = r.startDate;
         endDate = r.endDate;
 
-        if (endDate == null ||
-            endDate!.year >= 2099 ||
-            (r.rrule != null && r.rrule!.contains('COUNT=1'))) {
+        if (endDate == null || endDate!.year >= 2099) {
           isLifetime = true;
           endDate = null;
         } else {
@@ -223,35 +221,27 @@ class _AddReminderViewState extends State<AddReminderView> {
           body: BlocListener<ReminderCubit, ReminderState>(
             listener: (context, state) {
               if (state is ReminderCreateSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("✅ Reminder Added Successfully"),
-                    backgroundColor: kPrimaryColor,
-                  ),
+                showSnackBar(
+                  context,
+                  "✅ Reminder Added Successfully",
+                  kPrimaryColor,
                 );
                 Navigator.pop(context);
+                return;
               } else if (state is ReminderUpdateSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("✅ Reminder Updated Successfully"),
-                    backgroundColor: kPrimaryColor,
-                  ),
+                showSnackBar(
+                  context,
+                  "✅ Reminder Updated Successfully",
+                  kPrimaryColor,
                 );
-                Navigator.pop(context, true);
+                Navigator.pop(context);
+                return;
               } else if (state is ReminderCreateFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("❌ ${state.errMessage}"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                showSnackBar(context, "❌ ${state.errMessage}", Colors.red);
+                return;
               } else if (state is ReminderUpdateFailure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("❌ ${state.errMessage}"),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                showSnackBar(context, "❌ ${state.errMessage}", Colors.red);
+                return;
               }
             },
             child: SingleChildScrollView(

@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/widgets/tutorial_tooltip_widget.dart';
-import 'package:graduation_project/features/home/presentation/views/widgets/patient_quick_action_card.dart';
+import 'package:graduation_project/features/home/presentation/views/widgets/quick_action_card.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:go_router/go_router.dart';
 
@@ -29,7 +29,7 @@ class HomeQuickActionsList extends StatelessWidget {
           step: 2,
           title: 'Find a Doctor',
           desc: 'Book appointments with specialists.',
-          child: PatientQuickActionCard(
+          child: QuickActionCard(
             onTap: () {},
             title: 'Search for Doctors',
             subtitle: 'Schedule with your doctor',
@@ -47,7 +47,7 @@ class HomeQuickActionsList extends StatelessWidget {
           step: 3,
           title: 'Medicine Reminders',
           desc: 'Track your medications.',
-          child: PatientQuickActionCard(
+          child: QuickActionCard(
             iconColor: const Color(0xFF0852F3),
             onTap: () => context.go(AppRouter.kReminder),
             title: 'Reminders',
@@ -65,7 +65,7 @@ class HomeQuickActionsList extends StatelessWidget {
           step: 4,
           title: 'Medical History',
           desc: 'Access your past reports.',
-          child: PatientQuickActionCard(
+          child: QuickActionCard(
             onTap: () => context.go(AppRouter.kMedicalHistory),
             title: 'Medical History',
             subtitle: 'View your health history',

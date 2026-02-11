@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:graduation_project/features/auth/presentation/views/chat_view.dart';
+import 'package:graduation_project/features/auth/presentation/views/profile_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/schedule_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_view.dart';
-// استورد صفحة بروفايل الدكتور هنا
 
 class DoctorHomeLayout extends StatefulWidget {
   const DoctorHomeLayout({super.key});
@@ -16,13 +17,11 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
-    DoctorHomeView(), // شاشة هوم الدكتور اللي هتبدأ ترسمها
+    DoctorHomeView(),
     ScheduleView(),
-    ChatView(), // مشتركة (الباك بيفرق بالتوكن)
-    Center(
-      child: Text("Doctor Profile"),
-    ), // استبدلها بـ ProfileView الخاص بالدكتور
-    SettingsScreen(), // مشتركة
+    ChatView(),
+    ProfileView(),
+    SettingsScreen(),
   ];
 
   static const Color activeBlue = Color(0xFF1B4E8C);
@@ -46,15 +45,22 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
         ),
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          elevation: 0,
           currentIndex: _currentIndex,
           selectedItemColor: activeBlue,
           unselectedItemColor: inactiveGray,
-          onTap: (index) => setState(() => _currentIndex = index),
+          showUnselectedLabels: true,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
           items: [
-            _buildNavItem(Icons.home_filled, 'Home', 0),
+            _buildNavItem(Icons.home, 'Home', 0),
             _buildNavItem(Icons.schedule, 'Schedule', 1),
-            _buildNavItem(Icons.chat, 'Chats', 2),
-            _buildNavItem(Icons.account_circle_outlined, 'Profile', 3),
+            _buildNavItem(Icons.chat_bubble, 'Chat', 2),
+            _buildNavItem(Icons.person, 'Profile', 3),
             _buildNavItem(Icons.settings, 'Settings', 4),
           ],
         ),
@@ -68,6 +74,7 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
     int index,
   ) {
     final bool isActive = _currentIndex == index;
+
     return BottomNavigationBarItem(
       icon: Column(
         children: [
