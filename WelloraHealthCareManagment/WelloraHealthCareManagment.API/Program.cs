@@ -488,7 +488,7 @@ internal class Program
 
         RecurringJob.AddOrUpdate<IReminderOccurrenceGenerator>(
             "generate-doctor-cache",
-            j => j.GenerateForAllDoctortsAsync(),
+            j => j.GenerateForAllDoctorsAsync(),
             "0 2 * * *");  // كل يوم الساعة 2 صباحًا
 
         app.UseExceptionHandler(errorApp =>

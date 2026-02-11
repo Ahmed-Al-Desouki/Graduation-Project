@@ -10,7 +10,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.RemindersInterface
     {
         Task GenerateForAllPatientsAsync();
 
-        Task GenerateForAllDoctortsAsync();
+        Task GenerateForAllDoctorsAsync();
 
         /// Generate occurrences for a specific patient
         Task GenerateForPatientAsync(int patientId);

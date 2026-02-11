@@ -81,5 +81,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
                 .Distinct()
                 .ToListAsync();
         }
+
+        public async Task<List<ReminderV2>> GetByAppointmentIdAsync(Guid appointmentId)
+        {
+            return await _context.ReminderV2s
+                .Where(r => r.AppointmentId == appointmentId)
+                .ToListAsync();
+        }
     }
 }

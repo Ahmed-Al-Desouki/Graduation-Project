@@ -47,24 +47,21 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
             }
         }
 
-        public async Task GenerateForAllDoctortsAsync()
+        public async Task GenerateForAllDoctorsAsync()  
         {
             await using var scope = _serviceProvider.CreateAsyncScope();
             var reminderRepo = scope.ServiceProvider.GetRequiredService<IReminderRepository>();
-
             var DoctorIds = await reminderRepo.GetAllActiveDoctorIdsAsync();
-
-            _logger.LogInformation("Starting cache generation for {Count} Doctor", DoctorIds.Count);
-
+            _logger.LogInformation("Starting cache generation for {Count} Doctors", DoctorIds.Count);
             foreach (var DoctorID in DoctorIds)
             {
                 try
                 {
-                    await GenerateForPatientAsync(DoctorID);
+                    await GenerateForDoctorAsync(DoctorID); 
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to generate cache for Patient {PatientId}", DoctorID);
+                    _logger.LogError(ex, "Failed to generate cache for Doctor {DoctorId}", DoctorID); 
                 }
             }
         }

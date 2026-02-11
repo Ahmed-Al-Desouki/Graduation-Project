@@ -237,8 +237,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     AverageRating = table.Column<double>(type: "float", nullable: false, defaultValue: 0.0),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -674,7 +673,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    PatientId = table.Column<int>(type: "int", nullable: true),
+                    DoctorId = table.Column<int>(type: "int", nullable: true),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Message = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
@@ -684,7 +684,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     EXDATE = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TimeZoneId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PrescriptionMedId = table.Column<int>(type: "int", nullable: true),
-                    AppointmentId = table.Column<int>(type: "int", nullable: true),
+                    AppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -697,11 +697,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_ReminderV2s", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_ReminderV2s_Appointments_AppointmentId",
+                        column: x => x.AppointmentId,
+                        principalTable: "Appointments",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ReminderV2s_Doctors_DoctorId",
+                        column: x => x.DoctorId,
+                        principalTable: "Doctors",
+                        principalColumn: "DoctorId");
+                    table.ForeignKey(
                         name: "FK_ReminderV2s_Patients_PatientId",
                         column: x => x.PatientId,
                         principalTable: "Patients",
-                        principalColumn: "PatientID",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "PatientID");
                 });
 
             migrationBuilder.CreateTable(
@@ -970,7 +979,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    PatientId = table.Column<int>(type: "int", nullable: true),
+                    DoctorId = table.Column<int>(type: "int", nullable: true),
                     ReminderId = table.Column<int>(type: "int", nullable: false),
                     DueDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DueDateTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -986,6 +996,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ReminderOccurrencesCache", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReminderOccurrencesCache_Doctors_DoctorId",
+                        column: x => x.DoctorId,
+                        principalTable: "Doctors",
+                        principalColumn: "DoctorId");
+                    table.ForeignKey(
+                        name: "FK_ReminderOccurrencesCache_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "PatientID");
                     table.ForeignKey(
                         name: "FK_ReminderOccurrencesCache_ReminderV2s_ReminderId",
                         column: x => x.ReminderId,
@@ -1233,9 +1253,29 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 column: "ReminderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ReminderOccurrencesCache_DoctorId",
+                table: "ReminderOccurrencesCache",
+                column: "DoctorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReminderOccurrencesCache_PatientId",
+                table: "ReminderOccurrencesCache",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ReminderOccurrencesCache_ReminderId",
                 table: "ReminderOccurrencesCache",
                 column: "ReminderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReminderV2s_AppointmentId",
+                table: "ReminderV2s",
+                column: "AppointmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ReminderV2s_DoctorId",
+                table: "ReminderV2s",
+                column: "DoctorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ReminderV2s_PatientId",

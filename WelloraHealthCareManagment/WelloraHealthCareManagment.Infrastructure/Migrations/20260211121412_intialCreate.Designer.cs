@@ -12,7 +12,7 @@ using WelloraHealthCareManagment.API.Context;
 namespace WelloraHealthCareManagment.Infrastructure.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    [Migration("20260209163908_intialCreate")]
+    [Migration("20260211121412_intialCreate")]
     partial class intialCreate
     {
         /// <inheritdoc />
@@ -273,10 +273,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("YearsOfExperience")
                         .ValueGeneratedOnAdd()
@@ -764,6 +760,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("DoctorId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Dosage")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -778,7 +777,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int>("PatientId")
+                    b.Property<int?>("PatientId")
                         .HasColumnType("int");
 
                     b.Property<int>("ReminderId")
@@ -804,6 +803,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId");
+
                     b.HasIndex("ReminderId");
 
                     b.ToTable("ReminderOccurrencesCache");
@@ -817,11 +820,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AppointmentId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("DoctorId")
+                        .HasColumnType("int");
 
                     b.Property<string>("EXDATE")
                         .HasColumnType("nvarchar(max)");
@@ -845,7 +851,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int>("PatientId")
+                    b.Property<int?>("PatientId")
                         .HasColumnType("int");
 
                     b.Property<int?>("PrescriptionMedId")
@@ -876,6 +882,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("DoctorId");
 
                     b.HasIndex("PatientId");
 
@@ -2016,22 +2026,46 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
             modelBuilder.Entity("HealthCare_.Models.V2.ReminderOccurrencesCache", b =>
                 {
+                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId");
+
+                    b.HasOne("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId");
+
                     b.HasOne("HealthCare_.Models.V2.ReminderV2", "Reminder")
                         .WithMany()
                         .HasForeignKey("ReminderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+
                     b.Navigation("Reminder");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.V2.ReminderV2", b =>
                 {
-                    b.HasOne("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", null)
+                    b.HasOne("WelloraHealthCareManagement.Domain.Entities.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId");
+
+                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId");
+
+                    b.HasOne("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", "Patient")
                         .WithMany("Reminders")
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("PatientId");
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", b =>
