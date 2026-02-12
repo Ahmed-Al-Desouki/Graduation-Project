@@ -107,6 +107,10 @@ class Assets {
   /// assets/images/help.svg
   static const String imagesHelp = "assets/images/help.svg";
 
+  /// Assets for imagesHospital
+  /// assets/images/hospital.svg
+  static const String imagesHospital = "assets/images/hospital.svg";
+
   /// Assets for imagesId
   /// assets/images/id.svg
   static const String imagesId = "assets/images/id.svg";
@@ -228,6 +232,10 @@ class Assets {
   /// Assets for imagesSecure
   /// assets/images/secure.svg
   static const String imagesSecure = "assets/images/secure.svg";
+
+  /// Assets for imagesServices
+  /// assets/images/services.svg
+  static const String imagesServices = "assets/images/services.svg";
 
   /// Assets for imagesShieldHeartSolidFull
   /// assets/images/shield-heart-solid-full.svg
