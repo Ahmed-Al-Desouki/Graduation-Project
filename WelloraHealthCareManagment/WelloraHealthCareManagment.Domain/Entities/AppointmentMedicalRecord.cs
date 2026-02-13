@@ -2,8 +2,6 @@
 
 namespace WelloraHealthCareManagement.Domain.Entities
 {
- 
-    /// السجل الطبي للموعد
     public class AppointmentMedicalRecord : BaseEntity
     {
         public Guid AppointmentId { get; private set; }
@@ -60,7 +58,7 @@ namespace WelloraHealthCareManagement.Domain.Entities
             DiagnosisCode = diagnosisCode;
             TreatmentPlan = treatmentPlan;
             DoctorNotes = doctorNotes;
-            UpdatedAt = DateTime.UtcNow;
+            //UpdatedAt = DateTime.UtcNow;
         }
 
         public void SetFollowUp(DateTime followUpDate, string? instructions)
@@ -68,7 +66,15 @@ namespace WelloraHealthCareManagement.Domain.Entities
             FollowUpRequired = true;
             FollowUpDate = followUpDate;
             FollowUpInstructions = instructions;
-            UpdatedAt = DateTime.UtcNow;
+            //UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void ClearFollowUp()
+        {
+            FollowUpRequired = false;
+            FollowUpDate = null;
+            FollowUpInstructions = null;
+            //UpdatedAt = DateTime.UtcNow;
         }
     }
 }

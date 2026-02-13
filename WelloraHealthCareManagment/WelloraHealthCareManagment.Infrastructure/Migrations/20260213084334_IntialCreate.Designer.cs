@@ -12,8 +12,8 @@ using WelloraHealthCareManagment.API.Context;
 namespace WelloraHealthCareManagment.Infrastructure.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    [Migration("20260211121412_intialCreate")]
-    partial class intialCreate
+    [Migration("20260213084334_IntialCreate")]
+    partial class IntialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1365,19 +1365,22 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Diagnosis")
                         .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("DiagnosisCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("DoctorNotes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime?>("FollowUpDate")
                         .HasColumnType("datetime2");
@@ -1390,13 +1393,17 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("PhysicalExamination")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<string>("TreatmentPlan")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("VitalSigns")
                         .HasColumnType("nvarchar(max)");
@@ -1406,6 +1413,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.HasIndex("AppointmentId")
                         .IsUnique()
                         .HasDatabaseName("UQ_AppointmentMedicalRecord");
+
+                    b.HasIndex("DiagnosisCode")
+                        .HasDatabaseName("IX_MedicalRecords_DiagnosisCode");
 
                     b.ToTable("AppointmentMedicalRecords", (string)null);
                 });
@@ -1594,19 +1604,21 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<int>("DoctorId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("DoctorId1")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("DoctorId");
 
                     b.Property<string>("DoctorSignature")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("IssuedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
@@ -1621,23 +1633,26 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<DateTime?>("ValidUntil")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppointmentId");
+                    b.HasIndex("AppointmentId")
+                        .HasDatabaseName("IX_Prescriptions_AppointmentId");
 
                     b.HasIndex("DoctorId");
 
-                    b.HasIndex("DoctorId1");
-
-                    b.HasIndex("PatientId");
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("IX_Prescriptions_PatientId");
 
                     b.HasIndex("PrescriptionNumber")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_PrescriptionNumber");
 
                     b.ToTable("Prescriptions", (string)null);
                 });
@@ -1649,7 +1664,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Dosage")
                         .IsRequired()
@@ -1682,15 +1699,26 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<Guid>("PrescriptionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("PrescriptionId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PrescriptionId");
+                    b.HasIndex("MedicationName")
+                        .HasDatabaseName("IX_PrescriptionItems_MedicationName");
+
+                    b.HasIndex("PrescriptionId")
+                        .HasDatabaseName("IX_PrescriptionItems_PrescriptionId");
+
+                    b.HasIndex("PrescriptionId1");
 
                     b.ToTable("PrescriptionItems", (string)null);
                 });
@@ -2266,14 +2294,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
-                        .WithMany()
+                        .WithMany("Prescriptions")
                         .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", null)
-                        .WithMany("Prescriptions")
-                        .HasForeignKey("DoctorId1");
 
                     b.HasOne("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", "Patient")
                         .WithMany()
@@ -2295,6 +2319,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasForeignKey("PrescriptionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("WelloraHealthCareManagement.Domain.Entities.Prescription", null)
+                        .WithMany("ItemsList")
+                        .HasForeignKey("PrescriptionId1");
 
                     b.Navigation("Prescription");
                 });
@@ -2424,6 +2452,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
             modelBuilder.Entity("WelloraHealthCareManagement.Domain.Entities.Prescription", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("ItemsList");
                 });
 
             modelBuilder.Entity("WelloraHealthCareManagement.Domain.Entities.TimeSlot", b =>

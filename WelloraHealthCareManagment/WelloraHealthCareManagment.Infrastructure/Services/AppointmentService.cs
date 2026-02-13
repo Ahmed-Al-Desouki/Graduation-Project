@@ -291,12 +291,17 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 PatientName = $"{appointment.Patient?.User?.FullName ?? "Patient (Unknown)"}",
                 MedicalRecord = appointment.MedicalRecord != null ? new AppointmentMedicalRecordDto
                 {
+                    Id = appointment.MedicalRecord.Id, 
                     ChiefComplaint = appointment.MedicalRecord.ChiefComplaint,
+                    VitalSigns = appointment.MedicalRecord.VitalSigns,
+                    PhysicalExamination = appointment.MedicalRecord.PhysicalExamination,
                     Diagnosis = appointment.MedicalRecord.Diagnosis,
+                    DiagnosisCode = appointment.MedicalRecord.DiagnosisCode,
                     TreatmentPlan = appointment.MedicalRecord.TreatmentPlan,
                     DoctorNotes = appointment.MedicalRecord.DoctorNotes,
                     FollowUpRequired = appointment.MedicalRecord.FollowUpRequired,
-                    FollowUpDate = appointment.MedicalRecord.FollowUpDate
+                    FollowUpDate = appointment.MedicalRecord.FollowUpDate,
+                    FollowUpInstructions = appointment.MedicalRecord.FollowUpInstructions
                 } : null,
                 Prescriptions = appointment.Prescriptions.Select(p => new PrescriptionDto
                 {
@@ -305,6 +310,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     IssuedAt = p.IssuedAt,
                     Items = p.Items.Select(i => new PrescriptionItemDto
                     {
+                        ItemId = i.Id, 
                         MedicationName = i.MedicationName,
                         Dosage = i.Dosage,
                         Frequency = i.Frequency,

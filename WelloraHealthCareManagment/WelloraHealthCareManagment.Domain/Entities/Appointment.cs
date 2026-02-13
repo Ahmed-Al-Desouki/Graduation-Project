@@ -10,7 +10,7 @@ namespace WelloraHealthCareManagement.Domain.Entities
     public class Appointment : BaseEntity
     {
         public Guid TimeSlotId { get; private set; }
-        public int DoctorId { get; private set; } // ✅ int
+        public int DoctorId { get; private set; }
         public int PatientId { get; private set; }
         public AppointmentStatus Status { get; private set; }
         public string? PatientNotes { get; private set; }

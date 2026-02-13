@@ -74,6 +74,8 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IMedicalHistoryAccessRepository, MedicalHistoryAccessRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
+            services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
             // Services
             services.AddScoped<ITokenService, TokenService>();
@@ -96,6 +98,9 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IAppointmentService, AppointmentService>();
             services.AddScoped<IAppointmentReminderService, AppointmentReminderService>();
+            services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+            services.AddScoped<IPrescriptionService, PrescriptionService>();
+
 
             // Background Jobs 
             services.AddScoped<ReminderJobOrchestrator>();

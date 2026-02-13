@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Infrastructure.Data.Configurations;
+using WelloraHealthCareManagement.Infrastructure.Data.Interceptors;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Entities.sharedModels;
 using WelloraHealthCareManagment.Infrastructure.Data.Configurations;
@@ -66,6 +67,12 @@ namespace WelloraHealthCareManagment.API.Context
         //public DbSet<AppointmentNotification> AppointmentNotifications => Set<AppointmentNotification>();
 
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.AddInterceptors(new UpdateTimestampsInterceptor());
+        }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -81,7 +88,6 @@ namespace WelloraHealthCareManagment.API.Context
             modelBuilder.ApplyConfiguration(new PrescriptionItemConfiguration());
             modelBuilder.ApplyConfiguration(new MedicalHistoryAccessGrantConfiguration());
             modelBuilder.ApplyConfiguration(new MedicalHistoryAccessLogConfiguration());
-            //modelBuilder.ApplyConfiguration(new AppointmentNotificationConfiguration());
 
             // ─────────────────────── ApplicationUser ───────────────────────
             modelBuilder.Entity<ApplicationUser>(entity =>

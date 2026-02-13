@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace WelloraHealthCareManagment.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class intialCreate : Migration
+    public partial class IntialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -123,16 +123,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     AppointmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ChiefComplaint = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     VitalSigns = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhysicalExamination = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Diagnosis = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                    DiagnosisCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    TreatmentPlan = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DoctorNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhysicalExamination = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    Diagnosis = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    DiagnosisCode = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    TreatmentPlan = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    DoctorNotes = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     FollowUpRequired = table.Column<bool>(type: "bit", nullable: false),
                     FollowUpDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     FollowUpInstructions = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
                 },
                 constraints: table =>
                 {
@@ -634,13 +634,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     DoctorId = table.Column<int>(type: "int", nullable: false),
                     PatientId = table.Column<int>(type: "int", nullable: false),
                     PrescriptionNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    IssuedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IssuedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     ValidUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
                     SpecialInstructions = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     DoctorSignature = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DoctorId1 = table.Column<int>(type: "int", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
                 },
                 constraints: table =>
                 {
@@ -653,11 +652,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     table.ForeignKey(
                         name: "FK_Prescriptions_Doctors_DoctorId",
                         column: x => x.DoctorId,
-                        principalTable: "Doctors",
-                        principalColumn: "DoctorId");
-                    table.ForeignKey(
-                        name: "FK_Prescriptions_Doctors_DoctorId1",
-                        column: x => x.DoctorId1,
                         principalTable: "Doctors",
                         principalColumn: "DoctorId");
                     table.ForeignKey(
@@ -929,8 +923,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     Duration = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     Instructions = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    PrescriptionId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
                 },
                 constraints: table =>
                 {
@@ -941,6 +936,11 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         principalTable: "Prescriptions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PrescriptionItems_Prescriptions_PrescriptionId1",
+                        column: x => x.PrescriptionId1,
+                        principalTable: "Prescriptions",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -1013,6 +1013,11 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MedicalRecords_DiagnosisCode",
+                table: "AppointmentMedicalRecords",
+                column: "DiagnosisCode");
 
             migrationBuilder.CreateIndex(
                 name: "UQ_AppointmentMedicalRecord",
@@ -1191,9 +1196,19 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 column: "PatientID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PrescriptionItems_MedicationName",
+                table: "PrescriptionItems",
+                column: "MedicationName");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PrescriptionItems_PrescriptionId",
                 table: "PrescriptionItems",
                 column: "PrescriptionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PrescriptionItems_PrescriptionId1",
+                table: "PrescriptionItems",
+                column: "PrescriptionId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Prescriptions_AppointmentId",
@@ -1206,17 +1221,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Prescriptions_DoctorId1",
-                table: "Prescriptions",
-                column: "DoctorId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Prescriptions_PatientId",
                 table: "Prescriptions",
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Prescriptions_PrescriptionNumber",
+                name: "UQ_PrescriptionNumber",
                 table: "Prescriptions",
                 column: "PrescriptionNumber",
                 unique: true);

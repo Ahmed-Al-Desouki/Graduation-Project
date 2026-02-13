@@ -50,7 +50,7 @@ namespace WelloraHealthCareManagement.Domain.Entities
                 Quantity = quantity,
                 Instructions = instructions,
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                //UpdatedAt = DateTime.UtcNow
             };
         }
     }

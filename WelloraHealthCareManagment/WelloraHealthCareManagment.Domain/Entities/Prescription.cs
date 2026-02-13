@@ -8,7 +8,7 @@ namespace WelloraHealthCareManagement.Domain.Entities
     public class Prescription : BaseEntity
     {
         public Guid AppointmentId { get; private set; }
-        public int DoctorId { get; private set; } // ✅ int
+        public int DoctorId { get; private set; }
         public int PatientId { get; private set; }
         public string PrescriptionNumber { get; private set; } = string.Empty;
         public DateTime IssuedAt { get; private set; }
@@ -20,8 +20,9 @@ namespace WelloraHealthCareManagement.Domain.Entities
         public Doctor Doctor { get; private set; } = null!;
         public Patient Patient { get; private set; } = null!;
 
-        private readonly List<PrescriptionItem> _items = new();
+        public List<PrescriptionItem> _items = new();
         public IReadOnlyCollection<PrescriptionItem> Items => _items.AsReadOnly();
+        public List<PrescriptionItem> ItemsList => _items;
 
         private Prescription() { }
 
@@ -54,18 +55,18 @@ namespace WelloraHealthCareManagement.Domain.Entities
         }
 
         public void AddItem(
-            string medicationName,
-            string dosage,
-            string frequency,
-            string duration,
-            int quantity,
-            string? instructions = null)
+          string medicationName,
+          string dosage,
+          string frequency,
+          string duration,
+          int quantity,
+          string? instructions = null)
         {
             var item = PrescriptionItem.Create(
                 Id, medicationName, dosage, frequency, duration, quantity, instructions);
 
             _items.Add(item);
-            UpdatedAt = DateTime.UtcNow;
+            // No UpdatedAt - handled by Interceptor
         }
 
         public void SetValidity(DateTime validUntil)
@@ -74,13 +75,13 @@ namespace WelloraHealthCareManagement.Domain.Entities
                 throw new DomainException("Valid until must be after issued date");
 
             ValidUntil = validUntil;
-            UpdatedAt = DateTime.UtcNow;
+            // UpdatedAt = DateTime.UtcNow;
         }
 
         public void SetSpecialInstructions(string? instructions)
         {
             SpecialInstructions = instructions?.Trim();
-            UpdatedAt = DateTime.UtcNow;
+            // UpdatedAt = DateTime.UtcNow;
         }
 
         public void Sign(string signature)
@@ -89,7 +90,7 @@ namespace WelloraHealthCareManagement.Domain.Entities
                 throw new DomainException("Signature cannot be empty");
 
             DoctorSignature = signature.Trim();
-            UpdatedAt = DateTime.UtcNow;
+            // UpdatedAt = DateTime.UtcNow;
         }
     }
 }
