@@ -135,6 +135,49 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             return prescriptions.Select(MapToResponse).ToList();
         }
 
+        //public async Task AddPrescriptionItemAsync(
+        //    Guid prescriptionId,
+        //    int doctorId,
+        //    PrescriptionItemRequest request,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        //    // جيب الـ Prescription بدون Include (كويس عشان نقلل الـ tracking overhead)
+        //    var prescription = await _prescriptionRepository.GetByIdAsync(prescriptionId, cancellationToken);
+
+        //    if (prescription == null)
+        //        throw new NotFoundException("Prescription", prescriptionId);
+
+        //    if (prescription.DoctorId != doctorId)
+        //        throw new UnauthorizedAccessException("غير مصرح لك بتعديل هذه الوصفة");
+
+        //    // أضف العنصر عبر Domain method (يحافظ على Domain purity)
+        //    prescription.AddItem(
+        //        request.MedicationName,
+        //        request.Dosage,
+        //        request.Frequency,
+        //        request.Duration,
+        //        request.Quantity,
+        //        request.Instructions);
+
+        //    // ← الحل المهم: استخرج الـ item الجديد من الـ collection وعدل stateها لـ Added
+        //    // (ده بيضمن INSERT بدون ما يأثر على الـ parent)
+        //    var newItem = prescription.Items.Last();  // أو ItemsList.Last() إن كنت مستخدمها
+        //    _context.Entry(newItem).State = EntityState.Added;
+
+        //    // منع الـ parent من update وهمي (كما قبل)
+        //    _context.Entry(prescription).State = EntityState.Unchanged;
+
+        //    // اختياري: لو عايز تحدث UpdatedAt للـ Prescription
+        //    // prescription.UpdatedAt = DateTime.UtcNow;
+        //    // _context.Entry(prescription).Property(p => p.UpdatedAt).IsModified = true;
+
+        //    await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+        //    _logger.LogInformation("Item added successfully {PrescriptionId}", prescriptionId);
+        //}
+
         public async Task AddPrescriptionItemAsync(
             Guid prescriptionId,
             int doctorId,
@@ -143,16 +186,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         {
             await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
-            // جيب الـ Prescription بدون Include (كويس عشان نقلل الـ tracking overhead)
             var prescription = await _prescriptionRepository.GetByIdAsync(prescriptionId, cancellationToken);
 
             if (prescription == null)
                 throw new NotFoundException("Prescription", prescriptionId);
 
             if (prescription.DoctorId != doctorId)
-                throw new UnauthorizedAccessException("غير مصرح لك بتعديل هذه الوصفة");
+                throw new UnauthorizedAccessException("You are not authorized to modify this recipe.");
 
-            // أضف العنصر عبر Domain method (يحافظ على Domain purity)
             prescription.AddItem(
                 request.MedicationName,
                 request.Dosage,
@@ -161,22 +202,18 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 request.Quantity,
                 request.Instructions);
 
-            // ← الحل المهم: استخرج الـ item الجديد من الـ collection وعدل stateها لـ Added
-            // (ده بيضمن INSERT بدون ما يأثر على الـ parent)
-            var newItem = prescription.Items.Last();  // أو ItemsList.Last() إن كنت مستخدمها
-            _context.Entry(newItem).State = EntityState.Added;
+            var newItem = prescription.Items.Last();
 
-            // منع الـ parent من update وهمي (كما قبل)
-            _context.Entry(prescription).State = EntityState.Unchanged;
-
-            // اختياري: لو عايز تحدث UpdatedAt للـ Prescription
-            // prescription.UpdatedAt = DateTime.UtcNow;
-            // _context.Entry(prescription).Property(p => p.UpdatedAt).IsModified = true;
+            await _prescriptionRepository.AddPrescriptionItemAsync(
+                prescriptionId,
+                newItem,
+                cancellationToken);
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            _logger.LogInformation("Item added successfully {PrescriptionId}", prescriptionId);
+            _logger.LogInformation("An item has been added successfully. {PrescriptionId}", prescriptionId);
         }
+
         private async Task<string> GeneratePrescriptionNumber(int doctorId)
         {
             // Format: RX-YYYYMMDD-DOCID-RANDOM

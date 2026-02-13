@@ -74,5 +74,21 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
             // No SaveChanges here - handled by UnitOfWork
             await Task.CompletedTask;
         }
+
+        public async Task AddPrescriptionItemAsync(
+            Guid prescriptionId,
+            PrescriptionItem item,
+            CancellationToken cancellationToken = default)
+        {
+            var prescriptionExists = await _context.Prescriptions
+                .AnyAsync(p => p.Id == prescriptionId, cancellationToken);
+
+            if (!prescriptionExists)
+            {
+                throw new KeyNotFoundException($"Prescription with ID {prescriptionId} not found.");
+            }
+
+            await _context.PrescriptionItems.AddAsync(item, cancellationToken);
+        }
     }
 }

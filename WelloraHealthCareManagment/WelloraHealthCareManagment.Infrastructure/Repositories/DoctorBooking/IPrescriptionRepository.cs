@@ -27,5 +27,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
         Task UpdateAsync(
             Prescription prescription,
             CancellationToken cancellationToken = default);
+
+        Task AddPrescriptionItemAsync(Guid prescriptionId, PrescriptionItem item, CancellationToken cancellationToken = default);
     }
 }

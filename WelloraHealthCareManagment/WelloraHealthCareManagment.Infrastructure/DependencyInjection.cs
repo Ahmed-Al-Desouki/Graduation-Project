@@ -47,6 +47,8 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.Configure<CloudinarySettings>(
                 configuration.GetSection("Cloudinary"));
 
+            services.AddHttpContextAccessor();  
+
             // Repositories
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPatientRepository, PatientRepository>(); 

@@ -51,5 +51,18 @@ namespace WelloraHealthCareManagement.Application.Interfaces
         Task CompleteAppointmentAsync(
             Guid appointmentId,
             CancellationToken cancellationToken = default);
+
+        //دي لاختيار حجز للمريض للمتابعه فيه:حجز موجود فعليا
+       Task<FollowUpResponse> BookFollowUpOnExistingSlotAsync(
+           Guid originalAppointmentId,
+           BookFollowUpExistingRequest request,
+           int doctorId,
+           CancellationToken ct = default);
+        // دي لاختيار حجز للمريض للمتابعه فيه:حجز جديد انا هعمله للمريض
+        Task<FollowUpResponse> CreateAndBookFollowUpSlotAsync(
+            Guid originalAppointmentId,
+            BookFollowUpNewRequest request,
+            int doctorId,
+            CancellationToken ct = default);
     }
 }

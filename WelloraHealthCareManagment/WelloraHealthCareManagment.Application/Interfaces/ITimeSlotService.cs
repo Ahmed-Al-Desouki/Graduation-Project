@@ -34,5 +34,12 @@ namespace WelloraHealthCareManagement.Application.Interfaces
         Task BlockSlotAsync(
             Guid slotId,
             CancellationToken cancellationToken = default);
+        // بترجع ال slots كلها ولاكن مجتمعه تحت اليوم الخاصه بيها 
+        Task<GetDoctorTimeSlotsResponse> GetDoctorTimeSlotsInRangeAsync(
+            int doctorId,
+            DateTime startDate,
+            DateTime endDate,
+            string? statusFilter = null,
+            CancellationToken cancellationToken = default);
     }
 }

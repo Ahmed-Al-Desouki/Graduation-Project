@@ -14,7 +14,7 @@ namespace WelloraHealthCareManagement.Domain.Entities
         public int PatientId { get; private set; }
         public AppointmentStatus Status { get; private set; }
         public string? PatientNotes { get; private set; }
-
+        public Guid? FollowUpFromAppointmentId { get; private set; }
         public string? CancellationReason { get; private set; }
         public CancelledBy? CancelledBy { get; private set; }
         public DateTime? CancelledAt { get; private set; }
@@ -34,9 +34,8 @@ namespace WelloraHealthCareManagement.Domain.Entities
 
         private readonly List<MedicalHistoryAccessGrant> _accessGrants = new();
         public IReadOnlyCollection<MedicalHistoryAccessGrant> AccessGrants => _accessGrants.AsReadOnly();
+        public Appointment? FollowUpFrom { get; private set; }
 
-        //private readonly List<Reminder> _reminders = new();
-        //public IReadOnlyCollection<Reminder> Reminders => _reminders.AsReadOnly();
 
         private Appointment() { }
 
@@ -121,6 +120,15 @@ namespace WelloraHealthCareManagement.Domain.Entities
         public void UpdatePatientNotes(string notes)
         {
             PatientNotes = notes?.Trim();
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SetFollowUpFrom(Guid? originalAppointmentId)
+        {
+            if (originalAppointmentId.HasValue && originalAppointmentId.Value == Guid.Empty)
+                throw new DomainException("Follow-up source appointment ID cannot be empty");
+
+            FollowUpFromAppointmentId = originalAppointmentId;
             UpdatedAt = DateTime.UtcNow;
         }
     }

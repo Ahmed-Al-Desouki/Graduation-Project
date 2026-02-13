@@ -112,5 +112,23 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
             _context.TimeSlots.RemoveRange(slots);
             await Task.CompletedTask;
         }
+
+        public async Task<List<TimeSlot>> GetSlotsInDateRangeAsync(
+            int doctorId,
+            DateTime fromDate,
+            DateTime toDate,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.TimeSlots
+                .Where(s => s.DoctorId == doctorId
+                         && s.SlotDate >= fromDate
+                         && s.SlotDate <= toDate)
+                .Include(s => s.Appointment)              
+                    .ThenInclude(a => a.Patient)
+                        .ThenInclude(p => p.User)      
+                .OrderBy(s => s.SlotDate)
+                .ThenBy(s => s.StartTime)
+                .ToListAsync(cancellationToken);
+        }
     }
 }

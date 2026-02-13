@@ -496,5 +496,106 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 throw;
             }
         }
+
+        public async Task<FollowUpResponse> BookFollowUpOnExistingSlotAsync(
+            Guid originalAppointmentId,
+            BookFollowUpExistingRequest request,
+            int doctorId,
+            CancellationToken ct = default)
+        {
+            await _unitOfWork.BeginTransactionAsync(ct);
+
+            var original = await _appointmentRepository.GetByIdAsync(originalAppointmentId, ct);
+            if (original == null || original.DoctorId != doctorId || original.Status != AppointmentStatus.Completed)
+                throw new DomainException("Invalid follow-up operation");
+
+            var slot = await _timeSlotRepository.GetByIdAsync(request.SlotId, ct);
+            if (slot == null || slot.DoctorId != doctorId || slot.Status != SlotStatus.Available)
+                throw new DomainException("Slot not available or not owned by this doctor");
+
+            slot.Book();
+
+            var newAppt = Appointment.Create(
+                slot.Id,
+                doctorId,
+                original.PatientId,
+                request.PatientNotes ?? $"Follow-up from appointment {originalAppointmentId}");
+
+            newAppt.SetFollowUpFrom(originalAppointmentId);
+
+            if (!string.IsNullOrWhiteSpace(request.FollowUpInstructions))
+                newAppt.UpdatePatientNotes($"Follow-up Instructions: {request.FollowUpInstructions}");
+
+            await _appointmentRepository.AddAsync(newAppt, ct);
+            await _timeSlotRepository.UpdateAsync(slot, ct);
+
+            await _unitOfWork.CommitTransactionAsync(ct);
+
+            return new FollowUpResponse
+            {
+                NewAppointmentId = newAppt.Id,
+                NewTimeSlotId = slot.Id,
+                AppointmentDate = slot.SlotDate,
+                StartTime = slot.StartTime,
+                Message = "Follow-up booked on existing slot"
+            };
+        }
+
+        public async Task<FollowUpResponse> CreateAndBookFollowUpSlotAsync(
+             Guid originalAppointmentId,
+             BookFollowUpNewRequest request,
+             int doctorId,
+             CancellationToken ct = default)
+        {
+            await _unitOfWork.BeginTransactionAsync(ct);
+
+            var original = await _appointmentRepository.GetByIdAsync(originalAppointmentId, ct);
+            if (original == null || original.DoctorId != doctorId || original.Status != AppointmentStatus.Completed)
+                throw new DomainException("Invalid follow-up operation");
+
+            if (!request.FollowUpDate.HasValue || !request.StartTime.HasValue)
+                throw new DomainException("FollowUpDate and StartTime are required when creating new slot");
+
+            var date = request.FollowUpDate.Value.Date;
+            var start = request.StartTime.Value;
+            var end = start.Add(TimeSpan.FromMinutes(request.DurationMinutes));
+
+            // Validation: check overlap
+            var existingSlots = await _timeSlotRepository.GetSlotsInDateRangeAsync(
+                doctorId, date, date, ct);
+
+            if (existingSlots.Any(s => s.StartTime < end && s.EndTime > start))
+                throw new DomainException("Time overlaps with existing slot");
+
+            // إنشاء slot جديد
+            var newSlot = TimeSlot.CreateManual(doctorId, date, start, end);
+            newSlot.Book();
+
+            await _timeSlotRepository.AddAsync(newSlot, ct);
+
+            var newAppt = Appointment.Create(
+                newSlot.Id,
+                doctorId,
+                original.PatientId,
+                request.PatientNotes ?? $"Follow-up from appointment {originalAppointmentId}");
+
+            newAppt.SetFollowUpFrom(originalAppointmentId);
+
+            if (!string.IsNullOrWhiteSpace(request.FollowUpInstructions))
+                newAppt.UpdatePatientNotes($"Follow-up Instructions: {request.FollowUpInstructions}");
+
+            await _appointmentRepository.AddAsync(newAppt, ct);
+
+            await _unitOfWork.CommitTransactionAsync(ct);
+
+            return new FollowUpResponse
+            {
+                NewAppointmentId = newAppt.Id,
+                NewTimeSlotId = newSlot.Id,
+                AppointmentDate = newSlot.SlotDate,
+                StartTime = newSlot.StartTime,
+                Message = "New follow-up slot created and booked"
+            };
+        }
     }
 }

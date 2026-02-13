@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Enums;
+using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Appointments;
 
 namespace WelloraHealthCareManagement.API.Controllers
@@ -84,6 +85,62 @@ namespace WelloraHealthCareManagement.API.Controllers
                 doctorId, date, status);
 
             return Ok(appointments);
+        }
+
+        [HttpPost("{originalAppointmentId}/follow-up/existing")]
+        [Authorize(Roles = "Doctor")]
+        public async Task<IActionResult> BookFollowUpExisting(
+            Guid originalAppointmentId,
+            [FromBody] BookFollowUpExistingRequest request)
+        {
+            try
+            {
+                var doctorId = GetUserId();
+                var response = await _appointmentService.BookFollowUpOnExistingSlotAsync(
+                    originalAppointmentId, request, doctorId);
+                return Ok(response);
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in follow-up");
+                return StatusCode(500, new { error = "An unexpected error occurred" });
+            }
+        }
+
+        [HttpPost("{originalAppointmentId}/follow-up/new")]
+        [Authorize(Roles = "Doctor")]
+        public async Task<IActionResult> CreateAndBookFollowUp(
+            Guid originalAppointmentId,
+            [FromBody] BookFollowUpNewRequest request)
+        {
+            try
+            {
+                var doctorId = GetUserId();
+                var response = await _appointmentService.CreateAndBookFollowUpSlotAsync(
+                    originalAppointmentId, request, doctorId);
+                return Ok(response);
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in follow-up");
+                return StatusCode(500, new { error = "An unexpected error occurred" });
+            }
         }
 
         /// إلغاء موعد

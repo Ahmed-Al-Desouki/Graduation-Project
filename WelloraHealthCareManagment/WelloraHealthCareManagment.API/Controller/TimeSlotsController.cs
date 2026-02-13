@@ -94,6 +94,33 @@ namespace WelloraHealthCareManagement.API.Controllers
             }
         }
 
+        [HttpGet("range")]
+        [Authorize] // أو [AllowAnonymous] لو عايز المرضى يشوفوا بدون login
+        public async Task<IActionResult> GetTimeSlotsInRange(
+            int doctorId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate,
+            [FromQuery] string? status = null)
+        {
+            try
+            {
+                var result = await _timeSlotService.GetDoctorTimeSlotsInRangeAsync(
+                    doctorId,
+                    startDate,
+                    endDate,
+                    status,
+                    HttpContext.RequestAborted);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching time slots for doctor {DoctorId} from {Start} to {End}",
+                    doctorId, startDate, endDate);
+                return StatusCode(500, new { error = "An error occurred while fetching time slots" });
+            }
+        }
+
         /// حظر خانة
         [HttpPatch("{slotId}/block")]
         [Authorize(Roles = "Doctor")]
