@@ -18,8 +18,8 @@ void main() async {
     onActionReceivedMethod: NotificationService.onActionReceivedMethod,
   );
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  setupServiceLocator();
   await Hive.initFlutter();
+  await setupServiceLocator();
   runApp(MyApp());
 }
 

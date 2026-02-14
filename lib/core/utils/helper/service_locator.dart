@@ -2,8 +2,10 @@ import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:graduation_project/core/constant.dart';
 import 'package:graduation_project/core/utils/helper/api.dart';
+import 'package:graduation_project/core/utils/helper/network_info.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
+import 'package:graduation_project/features/booking/booking_injection.dart';
 import 'package:graduation_project/features/chat/data/repositories/mock_chat_repository.dart';
 import 'package:graduation_project/features/chat/domain/repositories/i_chat_repository.dart';
 import 'package:graduation_project/features/chat/domain/use_cases/get_chat_previews_use_case.dart';
@@ -28,14 +30,22 @@ import 'package:graduation_project/features/reminder/presentation/manager/remind
 import 'package:graduation_project/features/medical_history/data/repository/patient_repo/patient_repo_impl.dart';
 import 'package:graduation_project/features/medical_history/data/service/patient_web_service.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 final getIt = GetIt.instance;
 
-void setupServiceLocator() {
+Future<void> setupServiceLocator() async {
   getIt.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn());
 
   getIt.registerLazySingleton<ApiService>(
     () => ApiService(baseUrl: '$apiBaseUrl/api/'),
+  );
+
+  getIt.registerLazySingleton<SessionManager>(
+    () => SessionManager(getIt<AuthRepositoryimpl>()),
+  );
+  getIt.registerLazySingleton<NetworkInfo>(
+    () => NetworkInfoImpl(InternetConnectionChecker.createInstance()),
   );
 
   getIt.registerLazySingleton<LocalOccurrenceDataSource>(
@@ -61,6 +71,9 @@ void setupServiceLocator() {
   getIt.registerLazySingleton<HomeWebService>(
     () => HomeWebService(getIt<ApiService>()),
   );
+
+  await initBookingInjection();
+
   getIt.registerLazySingleton<AuthRepositoryimpl>(
     () => AuthRepositoryimpl(getIt<AuthWebServices>()),
   );
@@ -115,10 +128,6 @@ void setupServiceLocator() {
 
   getIt.registerFactory<ChatCubit>(
     () => ChatCubit(getIt<GetChatPreviewsUseCase>()),
-  );
-
-  getIt.registerLazySingleton<SessionManager>(
-    () => SessionManager(getIt<AuthRepositoryimpl>()),
   );
 
   getIt.registerFactory(

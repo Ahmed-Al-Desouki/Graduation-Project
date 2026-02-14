@@ -61,3 +61,11 @@ class ServerFailure extends Failure {
     }
   }
 }
+
+class CacheFailure extends Failure {
+  CacheFailure(super.errmessage);
+}
+
+class OfflineFailure extends Failure {
+  OfflineFailure(super.errmessage);
+}
