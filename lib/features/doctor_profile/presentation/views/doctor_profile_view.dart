@@ -4,6 +4,7 @@ import 'package:graduation_project/features/doctor_profile/presentation/views/wi
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/doctor_profile_drawer.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/info_section.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/doctor_profile_header.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/reviews_section.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/services_pricing_section.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/working_hours_section.dart';
 
@@ -21,6 +22,7 @@ class _DoctorProfileViewState extends State<DoctorProfileView> {
   final GlobalKey aboutKey = GlobalKey();
   final GlobalKey achievementsKey = GlobalKey();
   final GlobalKey hoursKey = GlobalKey();
+  final GlobalKey reviewsKey = GlobalKey();
   final GlobalKey servicesKey = GlobalKey();
 
   @override
@@ -42,6 +44,7 @@ class _DoctorProfileViewState extends State<DoctorProfileView> {
         aboutKey: aboutKey,
         achievementsKey: achievementsKey,
         hoursKey: hoursKey,
+        reviewsKey: reviewsKey,
         servicesKey: servicesKey,
       ),
 
@@ -85,6 +88,9 @@ class _DoctorProfileViewState extends State<DoctorProfileView> {
             const SizedBox(height: 15),
 
             Container(key: hoursKey, child: WorkingHoursSection()),
+            const SizedBox(height: 15),
+
+            Container(key: reviewsKey, child: ReviewsSection()),
             const SizedBox(height: 15),
 
             Container(key: servicesKey, child: ServicesPricingSection()),

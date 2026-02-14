@@ -9,6 +9,7 @@ class DoctorProfileDrawer extends StatelessWidget {
   final GlobalKey aboutKey;
   final GlobalKey achievementsKey;
   final GlobalKey hoursKey;
+  final GlobalKey reviewsKey;
   final GlobalKey servicesKey;
   const DoctorProfileDrawer({
     super.key,
@@ -17,6 +18,7 @@ class DoctorProfileDrawer extends StatelessWidget {
     required this.aboutKey,
     required this.achievementsKey,
     required this.hoursKey,
+    required this.reviewsKey,
     required this.servicesKey,
   });
 
@@ -44,6 +46,11 @@ class DoctorProfileDrawer extends StatelessWidget {
                   icon: Icons.emoji_events,
                 ),
                 _item("Working Hours", hoursKey, icon: Icons.schedule),
+                _item(
+                  "Patient's Reviews",
+                  reviewsKey,
+                  icon: Icons.reviews_outlined,
+                ),
                 _item(
                   "Services & Pricing",
                   servicesKey,
