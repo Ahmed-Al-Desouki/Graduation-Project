@@ -1,7 +1,8 @@
 ﻿using HealthCare_.Models.DoctorModels;
-using HealthCare_.Models.PatientModels;
+using System.Collections.ObjectModel;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
+using WelloraHealthCareManagment.Domain.EnumForModels;
 
 namespace WelloraHealthCareManagement.Domain.Entities
 {
@@ -20,11 +21,13 @@ namespace WelloraHealthCareManagement.Domain.Entities
         public Doctor Doctor { get; private set; } = null!;
         public Patient Patient { get; private set; } = null!;
 
-        public List<PrescriptionItem> _items = new();
+        private readonly List<PrescriptionItem> _items = new();
         public IReadOnlyCollection<PrescriptionItem> Items => _items.AsReadOnly();
-        public List<PrescriptionItem> ItemsList => _items;
 
-        private Prescription() { }
+        // للوصول الداخلي فقط (مثل في AddItem أو Domain Services)
+        protected ICollection<PrescriptionItem> ItemsInternal => _items;
+
+        private Prescription() { } // لـ EF Core
 
         public static Prescription Create(
             Guid appointmentId,
@@ -55,42 +58,66 @@ namespace WelloraHealthCareManagement.Domain.Entities
         }
 
         public void AddItem(
-          string medicationName,
-          string dosage,
-          string frequency,
-          string duration,
-          int quantity,
-          string? instructions = null)
+            string medicationName,
+            string dosage,
+            string frequency,
+            string duration,
+            int quantity,
+            string? instructions = null,
+            RepeatFrequency? reminderFrequencyType = null,
+            List<DayOfWeek>? weeklyDays = null,
+            List<TimeSpan>? dailyDoseTimes = null,
+            int? intervalHours = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            TimeSpan? firstDoseTime = null)
         {
             var item = PrescriptionItem.Create(
-                Id, medicationName, dosage, frequency, duration, quantity, instructions);
+                Id,
+                medicationName,
+                dosage,
+                frequency,
+                duration,
+                quantity,
+                instructions,
+                reminderFrequencyType,
+                weeklyDays,
+                dailyDoseTimes,
+                intervalHours,
+                startDate,
+                endDate,
+                firstDoseTime);
 
             _items.Add(item);
-            // No UpdatedAt - handled by Interceptor
+            UpdatedAt = DateTime.UtcNow; // لو عايز تحديث يدوي
+        }
+
+        // لو عايز تضيف overload بدون reminder
+        public void AddItem(string medicationName, string dosage, string frequency, string duration, int quantity, string? instructions)
+        {
+            AddItem(medicationName, dosage, frequency, duration, quantity, instructions);
         }
 
         public void SetValidity(DateTime validUntil)
         {
             if (validUntil <= IssuedAt)
                 throw new DomainException("Valid until must be after issued date");
-
             ValidUntil = validUntil;
-            // UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void SetSpecialInstructions(string? instructions)
         {
             SpecialInstructions = instructions?.Trim();
-            // UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Sign(string signature)
         {
             if (string.IsNullOrWhiteSpace(signature))
                 throw new DomainException("Signature cannot be empty");
-
             DoctorSignature = signature.Trim();
-            // UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

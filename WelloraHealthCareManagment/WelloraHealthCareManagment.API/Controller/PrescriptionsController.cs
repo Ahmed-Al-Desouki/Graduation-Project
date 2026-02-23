@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
-using WelloraHealthCareManagment.Application.DTOs.Prescriptions;
+using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Prescriptions;
 
 namespace WelloraHealthCareManagement.API.Controllers
 {
@@ -117,20 +117,20 @@ namespace WelloraHealthCareManagement.API.Controllers
 
 
         /// Add item to prescription (Doctor only)
-        [HttpPost("{prescriptionId}/items")]
-        [Authorize(Roles = "Doctor")]
-        public async Task<IActionResult> AddPrescriptionItem(
+        [HttpPost("{prescriptionId}/items/bulk")]
+        public async Task<IActionResult> AddPrescriptionItems(
             Guid prescriptionId,
-            [FromBody] PrescriptionItemRequest request)
+            [FromBody] AddPrescriptionItemsRequest request)
         {
             try
             {
                 var doctorId = GetCurrentDoctorId();
 
-                await _prescriptionService.AddPrescriptionItemAsync(
-                    prescriptionId,
-                    doctorId,
-                    request);
+                await _prescriptionService.AddPrescriptionItemsAsync(
+                      prescriptionId,
+                      doctorId,
+                      request,
+                      CancellationToken.None);
 
                 return Ok(new { message = "Item added successfully" });
             }

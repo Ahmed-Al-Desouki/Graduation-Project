@@ -25,5 +25,9 @@ namespace WelloraHealthCareManagment.Domain.Repositories.ReminderRepo
         Task UpdateStatusAsync(int reminderId, DateTime dueDateTimeUtc, Enums.OccurrenceStatus status);
         Task BulkInsertAsync(List<ReminderOccurrencesCache> entries);
         Task DeleteByDoctorAndDateRangeAsync(int doctorId, DateTime fromUtc, DateTime toUtc);
+        Task DeleteByReminderIdAsync(int reminderId);
+        Task DeleteByReminderAndDateRangeAsync(int reminderId, DateTime fromUtc, DateTime toUtc);
+        Task DeletePastOccurrencesExcludingPrescriptionsAsync(int patientId, DateTime beforeUtc);
+    
     }
 }

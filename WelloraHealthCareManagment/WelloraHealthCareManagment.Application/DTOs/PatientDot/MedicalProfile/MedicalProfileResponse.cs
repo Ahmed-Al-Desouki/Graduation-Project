@@ -3,6 +3,8 @@
 
 // Models/DTOs/PatientDTO/MedicalProfileDtos.cs
 
+using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Appointments;
+
 namespace HealthCare_.Models.DTOs.PatientDot.MedicalProfile
 {
     public class MedicalProfileResponse
@@ -65,35 +67,36 @@ namespace HealthCare_.Models.DTOs.PatientDot.MedicalProfile
 
     public class PastAppointmentDto
     {
-        public int AppointmentID { get; set; }
+        public Guid AppointmentId { get; set; }
         public DateTime AppointmentDate { get; set; }
+        public TimeSpan AppointmentTime { get; set; }
         public string DoctorName { get; set; } = string.Empty;
-        public string Specialty { get; set; } = string.Empty;
-        public string Symptoms { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public PrescriptionSummaryDto? Prescription { get; set; }
+        public string Specialization { get; set; } = string.Empty;
+        public string? PatientNotes { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public AppointmentMedicalRecordDto? MedicalRecord { get; set; }
+        public List<PrescriptionSummaryDto> Prescriptions { get; set; } = new();
     }
 
     public class PrescriptionSummaryDto
     {
-        public int PrescriptionID { get; set; }
-        public DateTime PrescriptionDate { get; set; }
-        public string GeneralInstructions { get; set; } = string.Empty;
+        public Guid PrescriptionId { get; set; }
+        public string PrescriptionNumber { get; set; } = string.Empty;
+        public DateTime IssuedAt { get; set; }
+        public string? GeneralInstructions { get; set; }
         public List<CurrentMedicationDto> Medications { get; set; } = new();
     }
 
     public class CurrentMedicationDto
     {
-        public int CurrentMedicationID { get; set; } // PrescriptionMed.ID
-        public int HistoryID { get; set; }
+        public Guid ItemId { get; set; }
         public string MedicationName { get; set; } = string.Empty;
-        public string? Dosage { get; set; } // dosage field
-        public string? Doseinstruction { get; set; } // specific dose instruction
-        public string? Frequency { get; set; } // readable frequency / schedule summary
-        public DateTime? StartDate { get; set; }
+        public string Dosage { get; set; } = string.Empty;
+        public string Frequency { get; set; } = string.Empty;
+        public string? Instructions { get; set; }
         public DateTime? EndDate { get; set; }
-        public string? Notes { get; set; }
-        public bool IsOverTheCounter { get; set; } = false; // optional
+        public string PrescriptionNumber { get; set; } = string.Empty;
+        public DateTime IssuedAt { get; set; }
     }
 
     public class SelfMedicationDto

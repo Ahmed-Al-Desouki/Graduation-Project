@@ -322,6 +322,7 @@ internal class Program
         builder.Logging.AddDebug();
         builder.Logging.SetMinimumLevel(LogLevel.Information);
 
+
         // ====================== DATABASE ======================
         builder.Services.AddDbContext<HealthCarePlusContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")
@@ -489,7 +490,12 @@ internal class Program
         RecurringJob.AddOrUpdate<IReminderOccurrenceGenerator>(
             "generate-doctor-cache",
             j => j.GenerateForAllDoctorsAsync(),
-            "0 2 * * *");  // كل يوم الساعة 2 صباحًا
+            "0 2 * * *");
+
+        RecurringJob.AddOrUpdate<ReminderCleanupJob>(
+            "cleanup-all-expired-reminders-daily",
+            job => job.CleanupAllExpiredRemindersAsync(),
+            Cron.Hourly(12)); 
 
         app.UseExceptionHandler(errorApp =>
         {

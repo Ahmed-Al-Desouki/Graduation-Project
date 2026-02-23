@@ -4,7 +4,7 @@ using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.API.Context;
-using WelloraHealthCareManagment.Application.DTOs.Prescriptions;
+using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Prescriptions;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
@@ -15,6 +15,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly HealthCarePlusContext _context;
+        private readonly IPrescriptionReminderService _prescriptionReminderService;
         private readonly ILogger<PrescriptionService> _logger;
 
         public PrescriptionService(
@@ -22,24 +23,105 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IAppointmentRepository appointmentRepository,
             IUnitOfWork unitOfWork,
             HealthCarePlusContext context,
+            IPrescriptionReminderService prescriptionReminderService,
             ILogger<PrescriptionService> logger)
         {
             _prescriptionRepository = prescriptionRepository;
             _appointmentRepository = appointmentRepository;
             _unitOfWork = unitOfWork;
             _context = context;
+            _prescriptionReminderService = prescriptionReminderService;
             _logger = logger;
         }
 
+        //public async Task<PrescriptionResponse> CreatePrescriptionAsync(
+        //    int doctorId,
+        //    CreatePrescriptionRequest request,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        //        _logger.LogInformation(
+        //            "Creating prescription for appointment {AppointmentId} by doctor {DoctorId}",
+        //            request.AppointmentId, doctorId);
+
+        //        // 1. Verify appointment
+        //        var appointment = await _appointmentRepository.GetByIdAsync(
+        //            request.AppointmentId, cancellationToken);
+
+        //        if (appointment == null)
+        //            throw new NotFoundException("Appointment", request.AppointmentId);
+
+        //        if (appointment.DoctorId != doctorId)
+        //            throw new UnauthorizedAccessException(
+        //                "Not authorized to create prescription for this appointment");
+
+        //        // 2. Generate prescription number
+        //        var prescriptionNumber = await GeneratePrescriptionNumber(doctorId);
+
+        //        // 3. Create prescription
+        //        var prescription = Prescription.Create(
+        //            request.AppointmentId,
+        //            doctorId,
+        //            appointment.PatientId,
+        //            prescriptionNumber);
+
+        //        if (request.ValidUntil.HasValue)
+        //            prescription.SetValidity(request.ValidUntil.Value);
+
+        //        if (!string.IsNullOrWhiteSpace(request.SpecialInstructions))
+        //            prescription.SetSpecialInstructions(request.SpecialInstructions);
+
+        //        // 4. Add prescription items
+        //        foreach (var item in request.Items)
+        //        {
+        //            prescription.AddItem(
+        //                item.MedicationName,
+        //                item.Dosage,
+        //                item.Frequency,
+        //                item.Duration,
+        //                item.Quantity,
+        //                item.Instructions,
+        //                item.ReminderFrequencyType,
+        //                item.ReminderWeeklyDays,
+        //                item.ReminderDailyDoseTimes?.Select(t => TimeSpan.Parse(t)).ToList(), // convert string to TimeSpan
+        //                item.ReminderIntervalHours,
+        //                item.ReminderStartDate,
+        //                item.ReminderEndDate,
+        //                !string.IsNullOrWhiteSpace(item.ReminderFirstDoseTime) ? TimeSpan.Parse(item.ReminderFirstDoseTime) : (TimeSpan?)null
+        //            );
+
+        //        }
+
+        //        await _prescriptionRepository.AddAsync(prescription, cancellationToken);
+        //        await _unitOfWork.CommitTransactionAsync(cancellationToken);
+        //        await _prescriptionReminderService.CreatePrescriptionRemindersAsync(prescription, cancellationToken);
+
+        //        _logger.LogInformation(
+        //            "Prescription {PrescriptionId} created with {ItemCount} items",
+        //            prescription.Id, request.Items.Count);
+
+        //        return MapToResponse(prescription);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+        //        _logger.LogError(ex,
+        //            "Error creating prescription for appointment {AppointmentId}",
+        //            request.AppointmentId);
+        //        throw;
+        //    }
+        //}
+
         public async Task<PrescriptionResponse> CreatePrescriptionAsync(
-            int doctorId,
-            CreatePrescriptionRequest request,
-            CancellationToken cancellationToken = default)
+             int doctorId,
+             CreatePrescriptionRequest request,
+             CancellationToken cancellationToken = default)
         {
             try
             {
-                await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
                 _logger.LogInformation(
                     "Creating prescription for appointment {AppointmentId} by doctor {DoctorId}",
                     request.AppointmentId, doctorId);
@@ -47,13 +129,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 // 1. Verify appointment
                 var appointment = await _appointmentRepository.GetByIdAsync(
                     request.AppointmentId, cancellationToken);
-
                 if (appointment == null)
                     throw new NotFoundException("Appointment", request.AppointmentId);
-
                 if (appointment.DoctorId != doctorId)
-                    throw new UnauthorizedAccessException(
-                        "Not authorized to create prescription for this appointment");
+                    throw new UnauthorizedAccessException("Not authorized");
 
                 // 2. Generate prescription number
                 var prescriptionNumber = await GeneratePrescriptionNumber(doctorId);
@@ -80,14 +159,29 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         item.Frequency,
                         item.Duration,
                         item.Quantity,
-                        item.Instructions);
+                        item.Instructions,
+                        item.ReminderFrequencyType,
+                        item.ReminderWeeklyDays,
+                        item.ReminderDailyDoseTimes?.Select(t => TimeSpan.Parse(t)).ToList(),
+                        item.ReminderIntervalHours,
+                        item.ReminderStartDate,
+                        item.ReminderEndDate,
+                        !string.IsNullOrWhiteSpace(item.ReminderFirstDoseTime)
+                            ? TimeSpan.Parse(item.ReminderFirstDoseTime)
+                            : null
+                    );
                 }
 
+                // ─── Save the prescription FIRST (داخل transaction) ───
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
                 await _prescriptionRepository.AddAsync(prescription, cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
+                // ─── NOW create reminders and cache (خارج transaction) ───
+                await _prescriptionReminderService.CreatePrescriptionRemindersAsync(prescription, cancellationToken);
+
                 _logger.LogInformation(
-                    "Prescription {PrescriptionId} created with {ItemCount} items",
+                    "✅ Prescription {PrescriptionId} created successfully with {ItemCount} items and reminders",
                     prescription.Id, request.Items.Count);
 
                 return MapToResponse(prescription);
@@ -96,7 +190,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                 _logger.LogError(ex,
-                    "Error creating prescription for appointment {AppointmentId}",
+                    "❌ Error creating prescription for appointment {AppointmentId}",
                     request.AppointmentId);
                 throw;
             }
@@ -134,84 +228,178 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             return prescriptions.Select(MapToResponse).ToList();
         }
-
-        //public async Task AddPrescriptionItemAsync(
-        //    Guid prescriptionId,
-        //    int doctorId,
-        //    PrescriptionItemRequest request,
-        //    CancellationToken cancellationToken = default)
-        //{
-        //    await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        //    // جيب الـ Prescription بدون Include (كويس عشان نقلل الـ tracking overhead)
-        //    var prescription = await _prescriptionRepository.GetByIdAsync(prescriptionId, cancellationToken);
-
-        //    if (prescription == null)
-        //        throw new NotFoundException("Prescription", prescriptionId);
-
-        //    if (prescription.DoctorId != doctorId)
-        //        throw new UnauthorizedAccessException("غير مصرح لك بتعديل هذه الوصفة");
-
-        //    // أضف العنصر عبر Domain method (يحافظ على Domain purity)
-        //    prescription.AddItem(
-        //        request.MedicationName,
-        //        request.Dosage,
-        //        request.Frequency,
-        //        request.Duration,
-        //        request.Quantity,
-        //        request.Instructions);
-
-        //    // ← الحل المهم: استخرج الـ item الجديد من الـ collection وعدل stateها لـ Added
-        //    // (ده بيضمن INSERT بدون ما يأثر على الـ parent)
-        //    var newItem = prescription.Items.Last();  // أو ItemsList.Last() إن كنت مستخدمها
-        //    _context.Entry(newItem).State = EntityState.Added;
-
-        //    // منع الـ parent من update وهمي (كما قبل)
-        //    _context.Entry(prescription).State = EntityState.Unchanged;
-
-        //    // اختياري: لو عايز تحدث UpdatedAt للـ Prescription
-        //    // prescription.UpdatedAt = DateTime.UtcNow;
-        //    // _context.Entry(prescription).Property(p => p.UpdatedAt).IsModified = true;
-
-        //    await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-        //    _logger.LogInformation("Item added successfully {PrescriptionId}", prescriptionId);
-        //}
-
         public async Task AddPrescriptionItemAsync(
             Guid prescriptionId,
             int doctorId,
             PrescriptionItemRequest request,
             CancellationToken cancellationToken = default)
         {
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                _logger.LogInformation("➕ Adding item to Prescription {PrescriptionId}", prescriptionId);
 
-            var prescription = await _prescriptionRepository.GetByIdAsync(prescriptionId, cancellationToken);
+                var prescription = await _prescriptionRepository.GetByIdWithItemsAsync(prescriptionId, cancellationToken);
+                if (prescription == null)
+                    throw new NotFoundException("Prescription", prescriptionId);
 
-            if (prescription == null)
-                throw new NotFoundException("Prescription", prescriptionId);
+                if (prescription.DoctorId != doctorId)
+                    throw new UnauthorizedAccessException("Not authorized");
 
-            if (prescription.DoctorId != doctorId)
-                throw new UnauthorizedAccessException("You are not authorized to modify this recipe.");
+                // Parse reminder times
+                List<TimeSpan>? dailyDoseTimes = null;
+                if (request.ReminderDailyDoseTimes?.Any() == true)
+                {
+                    dailyDoseTimes = request.ReminderDailyDoseTimes
+                        .Select(t => TimeSpan.Parse(t))
+                        .ToList();
+                }
 
-            prescription.AddItem(
-                request.MedicationName,
-                request.Dosage,
-                request.Frequency,
-                request.Duration,
-                request.Quantity,
-                request.Instructions);
+                TimeSpan? firstDoseTime = null;
+                if (!string.IsNullOrWhiteSpace(request.ReminderFirstDoseTime))
+                {
+                    firstDoseTime = TimeSpan.Parse(request.ReminderFirstDoseTime);
+                }
 
-            var newItem = prescription.Items.Last();
+                // Add the item in memory
+                prescription.AddItem(
+                    request.MedicationName,
+                    request.Dosage,
+                    request.Frequency,
+                    request.Duration,
+                    request.Quantity,
+                    request.Instructions,
+                    request.ReminderFrequencyType,
+                    request.ReminderWeeklyDays,
+                    dailyDoseTimes,
+                    request.ReminderIntervalHours,
+                    request.ReminderStartDate,
+                    request.ReminderEndDate,
+                    firstDoseTime);
 
-            await _prescriptionRepository.AddPrescriptionItemAsync(
-                prescriptionId,
-                newItem,
-                cancellationToken);
+                var newItem = prescription.Items.Last();
 
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+                // ─── Save the NEW ITEM explicitly (ده اللي كان ناقص) ───
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
-            _logger.LogInformation("An item has been added successfully. {PrescriptionId}", prescriptionId);
+                // أهم سطر: نضيف الـ Item الجديد للـ Context عشان يتعمل INSERT
+                _context.PrescriptionItems.Add(newItem);
+
+                // أو لو عندك method في الـ Repository:
+                // await _prescriptionRepository.AddItemAsync(newItem, cancellationToken);
+
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                // ─── NOW create reminders (خارج transaction) ───
+                if (newItem.ReminderFrequencyType.HasValue)
+                {
+                    _logger.LogInformation("Creating reminder for new item {ItemId}", newItem.Id);
+                    await _prescriptionReminderService.CreatePrescriptionRemindersAsync(prescription, cancellationToken);
+                }
+
+                _logger.LogInformation("✅ Item {ItemId} added successfully with reminders", newItem.Id);
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                _logger.LogError(ex, "❌ Error adding item to Prescription {PrescriptionId}", prescriptionId);
+                throw;
+            }
+        }
+
+        public async Task AddPrescriptionItemsAsync(
+            Guid prescriptionId,
+            int doctorId,
+            AddPrescriptionItemsRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("➕ Adding {Count} items to Prescription {PrescriptionId}",
+                    request.Items.Count, prescriptionId);
+
+                var prescription = await _prescriptionRepository.GetByIdWithItemsAsync(prescriptionId, cancellationToken);
+                if (prescription == null)
+                    throw new NotFoundException("Prescription", prescriptionId);
+
+                if (prescription.DoctorId != doctorId)
+                    throw new UnauthorizedAccessException("Not authorized");
+
+                var newItems = new List<PrescriptionItem>();
+
+                foreach (var reqItem in request.Items)
+                {
+                    List<TimeSpan>? dailyDoseTimes = null;
+                    if (reqItem.ReminderDailyDoseTimes?.Any() == true)
+                    {
+                        _logger.LogInformation("🔍 Raw times from request: {Times}",
+                            string.Join(", ", reqItem.ReminderDailyDoseTimes));
+
+                        dailyDoseTimes = reqItem.ReminderDailyDoseTimes
+                            .Select(t => TimeSpan.Parse(t))
+                            .ToList();
+
+                        _logger.LogInformation("✅ Parsed TimeSpans: {Times}",
+                            string.Join(", ", dailyDoseTimes.Select(ts => ts.ToString(@"hh\:mm"))));
+                    }
+
+                    TimeSpan? firstDoseTime = null;
+                    if (!string.IsNullOrWhiteSpace(reqItem.ReminderFirstDoseTime))
+                    {
+                        firstDoseTime = TimeSpan.Parse(reqItem.ReminderFirstDoseTime);
+                    }
+
+                    prescription.AddItem(
+                        reqItem.MedicationName,
+                        reqItem.Dosage,
+                        reqItem.Frequency,
+                        reqItem.Duration,
+                        reqItem.Quantity,
+                        reqItem.Instructions,
+                        reqItem.ReminderFrequencyType,
+                        reqItem.ReminderWeeklyDays,
+                        dailyDoseTimes,
+                        reqItem.ReminderIntervalHours,
+                        reqItem.ReminderStartDate,
+                        reqItem.ReminderEndDate,
+                        firstDoseTime);
+
+                    var newItem = prescription.Items.Last();
+                    newItems.Add(newItem);
+                }
+
+                // ─── Save all new items (داخل transaction) ───
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+                // نضيف كل الـ items الجديدة للـ Context
+                foreach (var item in newItems)
+                {
+                    _context.PrescriptionItems.Add(item);
+                }
+
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                // ─── Create reminders for NEW items only (خارج transaction) ───
+                foreach (var newItem in newItems)
+                {
+                    if (newItem.ReminderFrequencyType.HasValue)
+                    {
+                        _logger.LogInformation("Creating reminder for new item {ItemId}", newItem.Id);
+                        await _prescriptionReminderService.CreateReminderForItemAsync(
+                            newItem,
+                            prescriptionId,
+                            prescription.PatientId,
+                            cancellationToken);
+                    }
+                }
+
+                _logger.LogInformation("✅ Added {Count} items successfully with reminders", newItems.Count);
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                _logger.LogError(ex, "❌ Error adding items to Prescription {PrescriptionId}", prescriptionId);
+                throw;
+            }
         }
 
         private async Task<string> GeneratePrescriptionNumber(int doctorId)

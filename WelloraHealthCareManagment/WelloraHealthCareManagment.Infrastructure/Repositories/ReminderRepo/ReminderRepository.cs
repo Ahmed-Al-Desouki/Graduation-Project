@@ -88,5 +88,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
                 .Where(r => r.AppointmentId == appointmentId)
                 .ToListAsync();
         }
+
+        public async Task<List<ReminderV2>> GetAllExpiredActiveRemindersAsync(DateTime now)
+        {
+            return await _context.ReminderV2s
+                .Where(r =>
+                    r.IsActive &&                    
+                    r.EndDateUtc.HasValue &&          
+                    r.EndDateUtc < now)           
+                .ToListAsync();
+        }
     }
 }

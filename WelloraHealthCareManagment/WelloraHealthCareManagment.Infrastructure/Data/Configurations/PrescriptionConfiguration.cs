@@ -59,9 +59,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.HasMany(x => x.Items)
-                .WithOne(x => x.Prescription)
-                .HasForeignKey(x => x.PrescriptionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                   .WithOne(x => x.Prescription)
+                   .HasForeignKey(x => x.PrescriptionId)
+                   .OnDelete(DeleteBehavior.Cascade);
 
             // Indexes
             builder.HasIndex(x => x.PrescriptionNumber)

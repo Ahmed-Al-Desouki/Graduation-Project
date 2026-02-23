@@ -132,5 +132,21 @@ namespace WelloraHealthCareManagement.Domain.Entities
             if ((endTime - startTime).TotalMinutes < 5)
                 throw new DomainException("Slot duration must be at least 5 minutes");
         }
+
+        public void Expire()
+        {
+            if (Status == SlotStatus.Available)
+            {
+                Status = SlotStatus.Cancelled;
+                UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        public bool IsExpired()
+        {
+            var now = DateTime.UtcNow;
+            return SlotDate.Date < now.Date ||
+                   (SlotDate.Date == now.Date && EndTime <= now.TimeOfDay);
+        }
     }
 }

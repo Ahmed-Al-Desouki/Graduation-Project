@@ -30,12 +30,23 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             CancellationToken cancellationToken = default);
 
         /// إلغاء موعد
-        Task CancelAppointmentAsync(
+        //Task CancelAppointmentAsync(
+        //    Guid appointmentId,
+        //    int userId,
+        //    string userRole,
+        //    CancelAppointmentRequest request,
+        //    CancellationToken cancellationToken = default);
+
+        Task CancelByPatientAsync(
             Guid appointmentId,
-            int userId,
-            string userRole,
+            int patientId,
             CancelAppointmentRequest request,
-            CancellationToken cancellationToken = default);
+            CancellationToken ct = default);
+        Task CancelAndBlockByDoctorAsync(
+            Guid appointmentId,
+            int doctorId,
+            CancelAppointmentRequest request,
+            CancellationToken ct = default);
 
         /// تأكيد موعد
         Task ConfirmAppointmentAsync(
@@ -63,6 +74,11 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             Guid originalAppointmentId,
             BookFollowUpNewRequest request,
             int doctorId,
+            CancellationToken ct = default);
+        // اعاده تشغيل access for medical history
+        Task GrantMedicalHistoryAccessAsync(
+            int patientId,
+            Guid appointmentId,
             CancellationToken ct = default);
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace WelloraHealthCareManagment.Application.DTOs.Prescriptions
+﻿using WelloraHealthCareManagment.Domain.EnumForModels;
+
+namespace WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Prescriptions
 {
     public class CreatePrescriptionRequest
     {
@@ -17,6 +19,14 @@
         public string Duration { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public string? Instructions { get; set; }
+
+        public RepeatFrequency? ReminderFrequencyType { get; set; }  // Enum (OnceOnly, Daily, Weekly, Monthly, EveryXHours)
+        public List<DayOfWeek>? ReminderWeeklyDays { get; set; }     // e.g., [Sunday, Wednesday]
+        public List<string>? ReminderDailyDoseTimes { get; set; }    // e.g., ["10:00", "17:00"] – strings من time picker
+        public int? ReminderIntervalHours { get; set; }              // لـ EveryXHours
+        public DateTime? ReminderStartDate { get; set; }
+        public DateTime? ReminderEndDate { get; set; }
+        public string? ReminderFirstDoseTime { get; set; }
     }
 
     public class PrescriptionResponse
@@ -37,5 +47,9 @@
         public string Duration { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public string? Instructions { get; set; }
+    }
+    public class AddPrescriptionItemsRequest
+    {
+        public List<PrescriptionItemRequest> Items { get; set; } = new();
     }
 }

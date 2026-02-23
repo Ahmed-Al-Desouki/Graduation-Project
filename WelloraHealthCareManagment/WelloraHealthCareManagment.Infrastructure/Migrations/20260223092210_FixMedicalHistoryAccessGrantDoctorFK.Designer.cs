@@ -12,8 +12,8 @@ using WelloraHealthCareManagment.API.Context;
 namespace WelloraHealthCareManagment.Infrastructure.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    [Migration("20260213131047_addFollowUpIdToAppointmentEntity")]
-    partial class addFollowUpIdToAppointmentEntity
+    [Migration("20260223092210_FixMedicalHistoryAccessGrantDoctorFK")]
+    partial class FixMedicalHistoryAccessGrantDoctorFK
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -854,8 +854,11 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<int?>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PrescriptionMedId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("PrescriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PrescriptionItemId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("RRULE")
                         .HasColumnType("nvarchar(max)");
@@ -888,6 +891,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.HasIndex("DoctorId");
 
                     b.HasIndex("PatientId");
+
+                    b.HasIndex("PrescriptionId");
+
+                    b.HasIndex("PrescriptionItemId");
 
                     b.ToTable("ReminderV2s");
                 });
@@ -1507,9 +1514,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<int>("DoctorId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("DoctorId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("datetime2");
 
@@ -1539,8 +1543,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.HasIndex("AppointmentId");
 
                     b.HasIndex("DoctorId");
-
-                    b.HasIndex("DoctorId1");
 
                     b.HasIndex("PatientId", "DoctorId");
 
@@ -1706,11 +1708,29 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<Guid>("PrescriptionId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("PrescriptionId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
+
+                    b.PrimitiveCollection<string>("ReminderDailyDoseTimes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReminderEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<TimeSpan?>("ReminderFirstDoseTime")
+                        .HasColumnType("time");
+
+                    b.Property<int?>("ReminderFrequencyType")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ReminderIntervalHours")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReminderStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.PrimitiveCollection<string>("ReminderWeeklyDays")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -1724,8 +1744,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.HasIndex("PrescriptionId")
                         .HasDatabaseName("IX_PrescriptionItems_PrescriptionId");
-
-                    b.HasIndex("PrescriptionId1");
 
                     b.ToTable("PrescriptionItems", (string)null);
                 });
@@ -2096,11 +2114,23 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .WithMany("Reminders")
                         .HasForeignKey("PatientId");
 
+                    b.HasOne("WelloraHealthCareManagement.Domain.Entities.Prescription", "Prescription")
+                        .WithMany()
+                        .HasForeignKey("PrescriptionId");
+
+                    b.HasOne("WelloraHealthCareManagement.Domain.Entities.PrescriptionItem", "PrescriptionItem")
+                        .WithMany()
+                        .HasForeignKey("PrescriptionItemId");
+
                     b.Navigation("Appointment");
 
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
+
+                    b.Navigation("Prescription");
+
+                    b.Navigation("PrescriptionItem");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", b =>
@@ -2249,14 +2279,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
-                        .WithMany()
-                        .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", null)
                         .WithMany("MedicalHistoryAccessGrants")
-                        .HasForeignKey("DoctorId1");
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", "Patient")
                         .WithMany()
@@ -2332,10 +2358,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasForeignKey("PrescriptionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("WelloraHealthCareManagement.Domain.Entities.Prescription", null)
-                        .WithMany("ItemsList")
-                        .HasForeignKey("PrescriptionId1");
 
                     b.Navigation("Prescription");
                 });
@@ -2465,8 +2487,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
             modelBuilder.Entity("WelloraHealthCareManagement.Domain.Entities.Prescription", b =>
                 {
                     b.Navigation("Items");
-
-                    b.Navigation("ItemsList");
                 });
 
             modelBuilder.Entity("WelloraHealthCareManagement.Domain.Entities.TimeSlot", b =>

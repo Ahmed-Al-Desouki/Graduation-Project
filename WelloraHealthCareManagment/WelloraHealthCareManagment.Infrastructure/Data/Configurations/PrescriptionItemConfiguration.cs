@@ -52,9 +52,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
                 .HasDefaultValueSql("GETUTCDATE()");
 
             builder.HasOne(x => x.Prescription)
-                .WithMany(p => p.Items) 
-                .HasForeignKey(x => x.PrescriptionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                   .WithMany(x => x.Items)
+                   .HasForeignKey(x => x.PrescriptionId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
 
             // Indexes
             builder.HasIndex(x => x.PrescriptionId)

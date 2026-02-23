@@ -2,6 +2,8 @@
 using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.CurrentMedication.GetCurrentMedications;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.CurrentMedication.GetCurrentMedicationsForShare;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.FamilyHistory.GetFamilyHistoryForShare;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.MedicalProfile.GetCompleteMedicalProfileForShare;
@@ -9,6 +11,7 @@ using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.Sel
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.SocialHistories.GetSocialHistoryForShare;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.Surgery.GetSurgeriesForShare;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 
 namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.MedicalProfile.GetCompleteMedicalProfileQueryForShare
 {
@@ -23,6 +26,9 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
         private readonly GetFamilyHistoryForShareQueryHandler _getFamilyHistoryForShareHandler;
         private readonly GetSocialHistoryForShareQueryHandler _getSocialHistoryForShareHandler;
         private readonly GetSelfMedicationsForShareQueryHandler _getSelfMedicationsForShareHandler;
+        private readonly IAppointmentRepository _appointmentRepository;
+        private readonly GetCurrentMedicationsQueryHandler _getCurrentMedicationsHandler;
+
         //private readonly GetCurrentMedicationsForShareQueryHandler _getCurrentMedicationsForShareHandler;
 
         public GetCompleteMedicalProfileQueryHandler(
@@ -32,7 +38,9 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
             GetSurgeriesForShareQueryHandler getSurgeriesForShareHandler,
             GetFamilyHistoryForShareQueryHandler getFamilyHistoryForShareHandler,
             GetSocialHistoryForShareQueryHandler getSocialHistoryForShareHandler,
-            GetSelfMedicationsForShareQueryHandler getSelfMedicationsForShareHandler)
+            GetSelfMedicationsForShareQueryHandler getSelfMedicationsForShareHandler,
+            IAppointmentRepository appointmentRepository,
+            GetCurrentMedicationsQueryHandler getCurrentMedicationsHandler)
             //GetCurrentMedicationsForShareQueryHandler getCurrentMedicationsForShareHandler)
         {
             _patientRepository = patientRepository;
@@ -42,10 +50,14 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
             _getFamilyHistoryForShareHandler = getFamilyHistoryForShareHandler;
             _getSocialHistoryForShareHandler = getSocialHistoryForShareHandler;
             _getSelfMedicationsForShareHandler = getSelfMedicationsForShareHandler;
+            _appointmentRepository = appointmentRepository;
+            _getCurrentMedicationsHandler = getCurrentMedicationsHandler;
             //_getCurrentMedicationsForShareHandler = getCurrentMedicationsForShareHandler;
         }
 
-        public async Task<MedicalProfileResponse> HandleAsync(GetCompleteMedicalProfileQuery query)
+        public async Task<MedicalProfileResponse> HandleAsync(
+            GetCompleteMedicalProfileQuery query,
+            CancellationToken ct = default)
         {
             _logger.LogInformation(
                 "Fetching complete medical profile for PatientID: {PatientID}",
@@ -62,47 +74,15 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
             var labTests = await _medicalFileRepository.GetLabTestsByHistoryIdAsync(history.HistoryID);
             var radiologyFiles = await _medicalFileRepository.GetRadiologyFilesByHistoryIdAsync(history.HistoryID);
 
-            // 3. Map appointments
-            //var pastAppointments = patient.Appointments
-            //    .Where(a => a.AppointmentDate < DateTime.UtcNow && a.Status == "Completed")
-            //    .Select(a => new PastAppointmentDto
-            //    {
-            //        AppointmentID = a.AppointmentID,
-            //        AppointmentDate = a.AppointmentDate,
-            //        DoctorName = a.Doctor?.User?.FullName ?? "Unknown",
-            //        Specialty = a.Doctor?.Specialization ?? "N/A",
-            //        Symptoms = a.Symptoms ?? "",
-            //        Status = a.Status,
-            //        Prescription = a.Prescription != null ? new PrescriptionSummaryDto
-            //        {
-            //            PrescriptionID = a.Prescription.PrescriptionID,
-            //            PrescriptionDate = a.Prescription.PrescriptionDate,
-            //            GeneralInstructions = a.Prescription.GeneralInstructions ?? "",
-            //            Medications = a.Prescription.Medications.Select(m => new CurrentMedicationDto
-            //            {
-            //                MedicationName = m.MedicationName
-            //            }).ToList()
-            //        } : null
-            //    }).OrderByDescending(a => a.AppointmentDate).ToList();
-
-            // 4. Map medical records
-            //var medicalRecords = history.MedicalRecords
-            //    .Select(mr => new MedicalRecordDto
-            //    {
-            //        RecordID = mr.RecordID,
-            //        VisitDate = mr.VisitDate,
-            //        DoctorName = mr.Doctor?.User?.FullName ?? "Unknown",
-            //        Diagnosis = mr.Diagnosis ?? "",
-            //        Symptoms = mr.Symptoms ?? "",
-            //        Notes = mr.Notes ?? ""
-            //    }).OrderByDescending(r => r.VisitDate).ToList();
+            var currentMedications = await _getCurrentMedicationsHandler.HandleAsync(
+                new GetCurrentMedicationsQuery(query.PatientId), ct);
 
             // 5. استخدام الـ "ForShare" Handlers
             var surgeries = await _getSurgeriesForShareHandler.HandleAsync(
                 new GetSurgeriesForShareQuery(query.PatientId));
 
             var familyHistory = await _getFamilyHistoryForShareHandler.HandleAsync(
-                new GetFamilyHistoryForShareQuery(query.PatientId));
+                new GetFamilyHistoryForShareQuery(history.HistoryID));
 
             var socialHistory = await _getSocialHistoryForShareHandler.HandleAsync(
                 new GetSocialHistoryForShareQuery(query.PatientId));
@@ -110,8 +90,48 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
             var selfMedications = await _getSelfMedicationsForShareHandler.HandleAsync(
                 new GetSelfMedicationsForShareQuery(query.PatientId));
 
-            //var currentMedications = await _getCurrentMedicationsForShareHandler.HandleAsync(
-            //    new GetCurrentMedicationsForShareQuery(history.HistoryID));
+            var completedAppointments = await _appointmentRepository
+                .GetCompletedByPatientIdAsync(query.PatientId, ct);
+
+            var pastAppointments = completedAppointments.Select(a => new PastAppointmentDto
+            {
+                AppointmentId = a.Id,
+                AppointmentDate = a.TimeSlot.SlotDate,
+                AppointmentTime = a.TimeSlot.StartTime,
+                DoctorName = a.Doctor?.User?.FullName ?? "Unknown",
+                Specialization = a.Doctor?.Specialization ?? "N/A",
+                PatientNotes = a.PatientNotes,
+                CompletedAt = a.CompletedAt,
+                MedicalRecord = a.MedicalRecord == null ? null : new AppointmentMedicalRecordDto
+                {
+                    Id = a.MedicalRecord.Id,
+                    ChiefComplaint = a.MedicalRecord.ChiefComplaint,
+                    VitalSigns = a.MedicalRecord.VitalSigns,
+                    PhysicalExamination = a.MedicalRecord.PhysicalExamination,
+                    Diagnosis = a.MedicalRecord.Diagnosis,
+                    DiagnosisCode = a.MedicalRecord.DiagnosisCode,
+                    TreatmentPlan = a.MedicalRecord.TreatmentPlan,
+                    DoctorNotes = a.MedicalRecord.DoctorNotes,
+                    FollowUpRequired = a.MedicalRecord.FollowUpRequired,
+                    FollowUpDate = a.MedicalRecord.FollowUpDate,
+                    FollowUpInstructions = a.MedicalRecord.FollowUpInstructions
+                },
+                Prescriptions = a.Prescriptions.Select(p => new PrescriptionSummaryDto
+                {
+                    Medications = p.Items
+                    .GroupBy(i => new { i.MedicationName, i.Dosage })
+                    .Select(g => g.First())
+                    .Select(i => new CurrentMedicationDto
+                    {
+                        ItemId = i.Id,
+                        MedicationName = i.MedicationName,
+                        Dosage = i.Dosage,
+                        Frequency = i.Frequency,
+                        Instructions = i.Instructions,
+                        EndDate = i.ReminderEndDate
+                    }).ToList()
+                }).ToList()
+            }).ToList();
 
             // 6. Build response
             return new MedicalProfileResponse
@@ -151,13 +171,12 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
                     Description = f.Description,
                     UploadedAt = f.UploadedAt
                 }).ToList(),
-                //PastAppointments = pastAppointments,
-                //MedicalRecords = medicalRecords,
+                PastAppointments = pastAppointments,
                 Surgeries = surgeries,
                 FamilyHistory = familyHistory,
                 SocialHistory = socialHistory,
                 PatientSelfMedications = selfMedications,
-                //CurrentMedications = currentMedications
+                CurrentMedications = currentMedications
             };
         }
     }

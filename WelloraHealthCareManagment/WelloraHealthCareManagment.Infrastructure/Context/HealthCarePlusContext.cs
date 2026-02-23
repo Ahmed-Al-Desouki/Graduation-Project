@@ -147,6 +147,7 @@ namespace WelloraHealthCareManagment.API.Context
                 entity.HasIndex(us => us.UserId);
             });
 
+
             // ─────────────────────── RefreshToken ───────────────────────
             modelBuilder.Entity<RefreshToken>(entity =>
             {
@@ -204,6 +205,13 @@ namespace WelloraHealthCareManagment.API.Context
 
                 entity.HasIndex(p => p.PatientID).IsUnique();
             });
+
+            modelBuilder.Entity<PrescriptionItem>()
+            .HasOne(pi => pi.Prescription)
+            .WithMany(p => p.Items)
+            .HasForeignKey(pi => pi.PrescriptionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
             // ─────────────────────── Doctor (1:1 with User) ───────────────────────
             modelBuilder.Entity<Doctor>(entity =>
             {

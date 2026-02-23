@@ -64,13 +64,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 StartDateUtc = startDateUtc,
                 EndDateUtc = endDateUtc,
                 TimeZoneId = userTimeZone,
-                PrescriptionMedId = dto.PrescriptionMedId,
-                AppointmentId = dto.AppointmentId,
                 IsActive = true,
                 IsSimpleEveryXHours = false,
                 FirstDoseTime = null,
                 IntervalHours = null,
-                RRULE = null
+                RRULE = null,
+                PrescriptionId = dto.PrescriptionId,      
+                PrescriptionItemId = dto.PrescriptionItemId,
+                AppointmentId = dto.AppointmentId
             };
 
             // MODE 1: SIMPLE MODE
@@ -111,6 +112,18 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     throw new ArgumentException($"Invalid RRULE: {ex.Message}", nameof(dto.RRULE));
                 }
             }
+            else if (dto.PrescriptionItemId.HasValue && string.IsNullOrWhiteSpace(dto.RRULE))
+            {
+                // الـ حالة الجديدة: Prescription مع mixed minutes → RRULE = null مسموح
+                // هنعتمد على التوليد المنفصل في OccurrenceGenerator
+                reminder.IsSimpleEveryXHours = false;
+                reminder.RRULE = null;
+                reminder.FirstDoseTime = null;
+                reminder.IntervalHours = null;
+                _logger.LogInformation(
+                    "Reminder {Id} created for PrescriptionItem {ItemId} with NO RRULE (mixed times mode)",
+                    reminder.Id, dto.PrescriptionItemId);
+            }
             else
             {
                 throw new ArgumentException(
@@ -119,8 +132,19 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
             await _reminderRepository.AddAsync(reminder);
 
-            BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
-                j => j.GenerateForPatientAsync(patientId));
+            //BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+            //    j => j.GenerateForPatientAsync(patientId));
+
+            if (reminder.PatientId.HasValue && !reminder.PrescriptionItemId.HasValue)
+            {
+                    BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                        j => j.GenerateForPatientAsync(reminder.PatientId.Value));
+            }
+            if (reminder.DoctorId.HasValue)
+            {
+                BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                    j => j.GenerateForDoctorAsync(reminder.DoctorId.Value));
+            }
 
             return reminder;
         }
@@ -184,8 +208,19 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             reminder.UpdatedAt = DateTime.UtcNow;
             await _reminderRepository.UpdateAsync(reminder);
 
-            BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
-                j => j.GenerateForPatientAsync(patientId));
+            //BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+            //    j => j.GenerateForPatientAsync(patientId));
+
+            if (reminder.PatientId.HasValue && !reminder.PrescriptionItemId.HasValue)
+            {
+                BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                    j => j.GenerateForPatientAsync(reminder.PatientId.Value));
+            }
+            if (reminder.DoctorId.HasValue)
+            {
+                BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                    j => j.GenerateForDoctorAsync(reminder.DoctorId.Value));
+            }
         }
 
         #endregion
@@ -304,9 +339,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                             TimeZoneId = reminder.TimeZoneId,
                             Type = reminder.Type,
                             IsMedication = reminder.Type == Enums.ReminderType.Medication,
-                            //Dosage = reminder.PrescriptionMed != null
-                            //    ? $"{reminder.PrescriptionMed.Dosage} {reminder.PrescriptionMed.MedicationName}"
-                            //    : null,
+                            Dosage = reminder.PrescriptionItem != null
+                                ? $"{reminder.PrescriptionItem.Dosage} {reminder.PrescriptionItem.MedicationName}"
+                                : null,
                             Status = displayStatus,
                             CanConfirm = canConfirm,
                             CanSnooze = canSnooze,
@@ -623,7 +658,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             reminder.UpdatedAt = DateTime.UtcNow;
             await _reminderRepository.UpdateAsync(reminder);
 
-            BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(j => j.GenerateForPatientAsync(patientId));
+            if (!reminder.PrescriptionItemId.HasValue)
+            {
+                BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                    j => j.GenerateForPatientAsync(patientId));
+            }
+            else
+            {
+                // لو prescription reminder اتحذف، امسح كاشه مباشرةً
+                await _cacheRepository.DeleteByReminderIdAsync(reminderId);
+            }
         }
 
         private async Task<ReminderV2> ValidateReminderAccess(int reminderId, int patientId)
@@ -631,48 +675,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             var reminder = await _reminderRepository.GetByIdAsync(reminderId, patientId);
             return reminder ?? throw new UnauthorizedAccessException("Access denied or reminder not found");
         }
-
-        //private async Task<ReminderV2Dto> MapToDtoAsync(ReminderV2 r)
-        //{
-        //    var todayUtc = DateTime.UtcNow.Date;
-        //    var tomorrowUtc = todayUtc.AddDays(1);
-
-        //    var nextCache = await _cacheRepository.GetByPatientAndDateRangeAsync(
-        //        r.PatientId, todayUtc, tomorrowUtc.AddDays(30));
-
-
-        //    var next = nextCache.Where(c => c.ReminderId == r.Id)
-        //        .OrderBy(c => c.DueDateTimeUtc)
-        //        .Select(c => (DateTime?)c.DueDateTimeUtc)
-        //        .FirstOrDefault();
-
-        //    var taken = await _logRepository.CountTakenByReminderIdAsync(r.Id);
-        //    var total = await _logRepository.CountTotalByReminderIdAsync(r.Id);
-
-        //    var nextOccurrence = next.HasValue
-        //        ? _timezoneHelper.ConvertUtcToUserTimezone(_timezoneHelper.EnsureUtc(next.Value), r.TimeZoneId)
-        //        : (DateTime?)null;
-
-        //    return new ReminderV2Dto
-        //    {
-        //        Id = r.Id,
-        //        Title = r.Title,
-        //        Type = r.Type,
-        //        Message = r.Message,
-        //        StartDate = r.StartDateUtc,
-        //        EndDate = r.EndDateUtc,
-        //        TimeZoneId = r.TimeZoneId,
-        //        RRULE = r.RRULE ?? "",
-        //        EXDATE = r.EXDATE,
-        //        IsSimpleEveryXHours = r.IsSimpleEveryXHours,
-        //        FirstDoseTime = r.FirstDoseTime,
-        //        IntervalHours = r.IntervalHours,
-        //        NextOccurrence = nextOccurrence,
-        //        TakenCount = taken,
-        //        TotalLogged = total,
-        //        IsActive = r.IsActive
-        //    };
-        //}
 
         private async Task<ReminderV2Dto> MapToDtoAsync(ReminderV2 r)
         {

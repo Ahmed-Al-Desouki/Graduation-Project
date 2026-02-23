@@ -1,4 +1,4 @@
-﻿using WelloraHealthCareManagment.Application.DTOs.Prescriptions;
+﻿using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Prescriptions;
 
 namespace WelloraHealthCareManagement.Application.Interfaces
 {
@@ -36,5 +36,13 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             int doctorId,
             PrescriptionItemRequest request,
             CancellationToken cancellationToken = default);
+
+        Task AddPrescriptionItemsAsync(
+            Guid prescriptionId,
+            int doctorId,
+            AddPrescriptionItemsRequest request,
+            CancellationToken cancellationToken = default);
+
+
     }
 }

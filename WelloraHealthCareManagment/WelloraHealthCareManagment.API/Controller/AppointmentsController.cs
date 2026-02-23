@@ -143,27 +143,53 @@ namespace WelloraHealthCareManagement.API.Controllers
             }
         }
 
-        /// إلغاء موعد
-        [HttpPatch("{appointmentId}/cancel")]
-        public async Task<IActionResult> CancelAppointment(
+        // Cancel by patient - restores slot availability
+        [HttpPatch("{appointmentId}/patient-cancel")]
+        [Authorize(Roles = "Patient")]
+        public async Task<IActionResult> CancelByPatient(
             Guid appointmentId,
             [FromBody] CancelAppointmentRequest request)
         {
             try
             {
-                var userId = GetUserId();
-                var userRole = GetUserRole();
-
-                await _appointmentService.CancelAppointmentAsync(
-                    appointmentId, userId, userRole, request);
-
-                return Ok(new { message = "Appointment cancelled successfully" });
+                var patientId = GetUserId();
+                await _appointmentService.CancelByPatientAsync(appointmentId, patientId, request);
+                return Ok(new { message = "Appointment cancelled successfully by patient" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error cancelling appointment {AppointmentId}", appointmentId);
+                _logger.LogError(ex, "Error in patient cancel for appointment {AppointmentId}", appointmentId);
                 return BadRequest(new { error = ex.Message });
             }
+        }
+
+        // Cancel and block by doctor - prevents re-booking of the slot
+        [HttpPatch("{appointmentId}/doctor-cancel-block")]
+        [Authorize(Roles = "Doctor")]
+        public async Task<IActionResult> CancelAndBlockByDoctor(
+            Guid appointmentId,
+            [FromBody] CancelAppointmentRequest request)
+        {
+            try
+            {
+                var doctorId = GetUserId();
+                await _appointmentService.CancelAndBlockByDoctorAsync(appointmentId, doctorId, request);
+                return Ok(new { message = "Appointment cancelled and slot blocked successfully by doctor" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in doctor cancel-block for appointment {AppointmentId}", appointmentId);
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("{appointmentId}/grant-medical-access")]
+        [Authorize(Roles = "Patient")]
+        public async Task<IActionResult> GrantMedicalAccess(Guid appointmentId)
+        {
+            var patientId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            await _appointmentService.GrantMedicalHistoryAccessAsync(patientId, appointmentId);
+            return Ok(new { message = "Medical history access granted successfully" });
         }
 
         /// تأكيد موعد (للطبيب)

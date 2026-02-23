@@ -90,5 +90,44 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
 
             await _context.PrescriptionItems.AddAsync(item, cancellationToken);
         }
+
+        // بيرجع الكل 
+        //public async Task<List<PrescriptionItem>> GetCurrentMedicationsByPatientIdAsync(
+        //    int patientId,
+        //    CancellationToken ct = default)
+        //{
+        //    var today = DateTime.UtcNow.Date;
+
+        //    return await _context.PrescriptionItems
+        //        .AsNoTracking()
+        //        .Include(i => i.Prescription)
+        //        .Where(i =>
+        //            i.Prescription.PatientId == patientId &&
+        //            i.ReminderFrequencyType != null &&
+        //            (i.ReminderEndDate == null || i.ReminderEndDate.Value.Date >= today))
+        //        .OrderByDescending(i => i.Prescription.IssuedAt)
+        //        .ToListAsync(ct);
+        //}
+        public async Task<List<PrescriptionItem>> GetCurrentMedicationsByPatientIdAsync(
+            int patientId,
+            CancellationToken ct = default)
+        {
+            var today = DateTime.UtcNow.Date;
+
+            var items = await _context.PrescriptionItems
+                .AsNoTracking()
+                .Include(i => i.Prescription)
+                .Where(i =>
+                    i.Prescription.PatientId == patientId &&
+                    (i.ReminderEndDate == null || i.ReminderEndDate.Value.Date >= today))
+                .OrderByDescending(i => i.Prescription.IssuedAt)
+                .ToListAsync(ct);
+
+            // Distinct على اسم الدواء والجرعة
+            return items
+                .GroupBy(i => new { i.MedicationName, i.Dosage })
+                .Select(g => g.First())
+                .ToList();
+        }
     }
 }

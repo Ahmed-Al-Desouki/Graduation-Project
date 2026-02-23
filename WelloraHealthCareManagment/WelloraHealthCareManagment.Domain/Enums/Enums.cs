@@ -42,7 +42,8 @@ namespace WelloraHealthCareManagment.Domain.EnumForModels
         Once = 0,
         Daily = 1,
         Weekly = 2,
-        EveryXHours = 3
+        Monthly = 3,
+        EveryXHours = 4
     }
 
     //  KEEP the static Enums wrapper for backward compatibility
@@ -90,7 +91,8 @@ namespace WelloraHealthCareManagment.Domain.EnumForModels
             Once = 0,
             Daily = 1,
             Weekly = 2,
-            EveryXHours = 3
+            Monthly = 3,
+            EveryXHours = 4
         }
     }
 }

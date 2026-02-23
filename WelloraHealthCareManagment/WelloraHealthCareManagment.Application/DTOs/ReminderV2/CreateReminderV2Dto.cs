@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 
 namespace HealthCare_.Models.DTOs.V2
@@ -9,17 +10,14 @@ namespace HealthCare_.Models.DTOs.V2
         public Enums.ReminderType Type { get; set; } = Enums.ReminderType.Medication;
         public string Title { get; set; } = "";
         public string? Message { get; set; }
-
         public DateTime StartDate { get; set; } = DateTime.Today;
         public DateTime? EndDate { get; set; }
-
-        // طريقتين لتحديد التكرار (الفلاتر يختار واحدة بس)
-        public string? RRULE { get; set; } // الطريقة الاحترافية
-        public SimpleFrequency? Simple { get; set; } // للي عايز بساطة
-
+        public string? RRULE { get; set; } 
+        public SimpleFrequency? Simple { get; set; }
         public string TimeZoneId { get; set; } = "Africa/Cairo";
-        public int? PrescriptionMedId { get; set; }
-        public Guid AppointmentId { get; internal set; }
+        public Guid? AppointmentId { get; set; }
+        public Guid? PrescriptionId { get; set; }
+        public Guid? PrescriptionItemId { get; set; }
     }
 
     public class SimpleFrequency

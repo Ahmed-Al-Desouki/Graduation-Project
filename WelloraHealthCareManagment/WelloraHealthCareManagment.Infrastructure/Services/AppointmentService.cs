@@ -6,6 +6,7 @@ using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagement.Domain.Factories;
 using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
@@ -37,80 +38,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
-
-        //public async Task<BookAppointmentResponse> BookAppointmentAsync(
-        //    int patientId,
-        //    BookAppointmentRequest request,
-        //    CancellationToken cancellationToken = default)
-        //{
-        //    try
-        //    {
-        //        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        //        _logger.LogInformation(
-        //            "Patient {PatientId} attempting to book slot {SlotId}",
-        //            patientId, request.TimeSlotId);
-
-        //        // 1. Get TimeSlot
-        //        var timeSlot = await _timeSlotRepository.GetByIdWithDoctorAsync(
-        //            request.TimeSlotId, cancellationToken);
-
-        //        if (timeSlot == null)
-        //            throw new NotFoundException("TimeSlot", request.TimeSlotId);
-
-        //        // 2. Check double booking
-        //        var existingAppointment = await _appointmentRepository
-        //            .GetByTimeSlotIdAsync(request.TimeSlotId, cancellationToken);
-
-        //        if (existingAppointment != null)
-        //            throw new DomainException("This time slot is already booked");
-
-        //        // 3. Use Factory to create everything
-        //        var result = _appointmentFactory.CreateAppointment(
-        //            timeSlot,
-        //            patientId,
-        //            request.PatientNotes,
-        //            request.GrantMedicalHistoryAccess,
-        //            sendNotifications: true
-        //        );
-
-        //        // 4. Save all entities
-        //        await _appointmentRepository.AddAsync(result.Appointment, cancellationToken);
-        //        await _timeSlotRepository.UpdateAsync(result.UpdatedTimeSlot, cancellationToken);
-
-        //        if (result.AccessGrant != null)
-        //        {
-        //            await _accessRepository.AddAsync(result.AccessGrant, cancellationToken);
-        //        }
-
-        //        //if (result.Notifications.Any())
-        //        //{
-        //        //    await _notificationRepository.AddRangeAsync(
-        //        //        result.Notifications, cancellationToken);
-        //        //}
-
-        //        await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-        //        _logger.LogInformation(
-        //            "Appointment {AppointmentId} booked successfully by patient {PatientId}",
-        //            result.Appointment.Id, patientId);
-
-        //        return new BookAppointmentResponse
-        //        {
-        //            AppointmentId = result.Appointment.Id,
-        //            AppointmentDate = timeSlot.SlotDate,
-        //            AppointmentTime = timeSlot.StartTime,
-        //            DoctorName = timeSlot.Doctor.User?.FullName ?? "Dr. (Name unavailable)",
-        //            MedicalHistoryAccessGranted = result.AccessGrant != null
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-        //        _logger.LogError(ex, "Error booking appointment for patient {PatientId}", patientId);
-        //        throw;
-        //    }
-        //}
         public async Task<BookAppointmentResponse> BookAppointmentAsync(
             int patientId,
             BookAppointmentRequest request,
@@ -130,6 +57,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 if (timeSlot == null)
                     throw new NotFoundException("TimeSlot", request.TimeSlotId);
+
+                if (timeSlot.IsExpired())
+                    throw new DomainException("This time slot has already passed and cannot be booked");
 
                 if (timeSlot.Doctor == null)
                     throw new DomainException("Doctor information is missing");
@@ -207,10 +137,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
         }
 
-        public async Task CancelAppointmentAsync(
+        public async Task CancelByPatientAsync(
             Guid appointmentId,
-            int userId,
-            string userRole,
+            int patientId,
             CancelAppointmentRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -224,16 +153,22 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 if (appointment == null)
                     throw new NotFoundException("Appointment", appointmentId);
 
+                // Validate ownership
+                if (appointment.PatientId != patientId)
+                    throw new UnauthorizedAccessException("This appointment does not belong to you");
+
+                // Validate cancellable status
+                if (appointment.Status is AppointmentStatus.Completed
+                    or AppointmentStatus.Cancelled
+                    or AppointmentStatus.NoShow)
+                    throw new DomainException("Cannot cancel a completed, cancelled, or no-show appointment");
+
                 // Determine who cancelled
-                var cancelledBy = userRole switch
-                {
-                    "Doctor" => CancelledBy.Doctor,
-                    "Patient" => CancelledBy.Patient,
-                    _ => CancelledBy.System
-                };
+                var cancelledBy = CancelledBy.Patient;
 
                 // Cancel appointment
                 appointment.Cancel(cancelledBy, request.Reason);
+                appointment.ClearPatientData();
 
                 // Free up the time slot
                 var timeSlot = await _timeSlotRepository.GetByIdAsync(
@@ -247,7 +182,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
 
-                // Cancel all reminders for this appointment
+                // Cancel all reminders
                 await _appointmentReminderService.CancelAppointmentRemindersAsync(
                     appointmentId,
                     appointment.PatientId,
@@ -256,13 +191,82 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 _logger.LogInformation(
-                    "Appointment {AppointmentId} cancelled by {CancelledBy}",
-                    appointmentId, cancelledBy);
+                    "Appointment {AppointmentId} cancelled by Patient",
+                    appointmentId);
             }
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                _logger.LogError(ex, "Error cancelling appointment {AppointmentId}", appointmentId);
+                _logger.LogError(ex, "Error cancelling appointment {AppointmentId} by patient", appointmentId);
+                throw;
+            }
+        }
+
+        // Cancel and block appointment by doctor - blocks slot to prevent re-booking
+        public async Task CancelAndBlockByDoctorAsync(
+            Guid appointmentId,
+            int doctorId,
+            CancelAppointmentRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+                var appointment = await _appointmentRepository
+                    .GetByIdAsync(appointmentId, cancellationToken);
+
+                if (appointment == null)
+                    throw new NotFoundException("Appointment", appointmentId);
+
+                // Validate ownership
+                if (appointment.DoctorId != doctorId)
+                    throw new UnauthorizedAccessException("This appointment does not belong to you");
+
+                // Reason is required when doctor cancels
+                if (string.IsNullOrWhiteSpace(request.Reason))
+                    throw new DomainException("Reason is required when doctor cancels an appointment");
+
+                // Determine who cancelled
+                var cancelledBy = CancelledBy.Doctor;
+
+                // Cancel appointment
+                appointment.Cancel(cancelledBy, request.Reason);
+                appointment.ClearPatientData();
+
+                // Get and update the time slot
+                var timeSlot = await _timeSlotRepository.GetByIdAsync(
+                    appointment.TimeSlotId, cancellationToken);
+
+                if (timeSlot != null)
+                {
+                    // Step 1: Free the slot first (remove booking)
+                    timeSlot.MakeAvailable();
+
+                    // Step 2: Then block it to prevent future bookings
+                    timeSlot.Block();
+
+                    await _timeSlotRepository.UpdateAsync(timeSlot, cancellationToken);
+                }
+
+                await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
+
+                // Cancel all reminders
+                await _appointmentReminderService.CancelAppointmentRemindersAsync(
+                    appointmentId,
+                    appointment.PatientId,
+                    cancellationToken);
+
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "Appointment {AppointmentId} cancelled and slot blocked by Doctor. Reason: {Reason}",
+                    appointmentId, request.Reason);
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                _logger.LogError(ex, "Error cancelling and blocking appointment {AppointmentId} by doctor", appointmentId);
                 throw;
             }
         }
@@ -368,59 +372,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 PatientName = $"{a.Patient?.User?.FullName ?? "Patient (Unknown)"}"
             }).ToList();
         }
-
-        //public async Task CancelAppointmentAsync(
-        //    Guid appointmentId,
-        //    int userId,
-        //    string userRole,
-        //    CancelAppointmentRequest request,
-        //    CancellationToken cancellationToken = default)
-        //{
-        //    try
-        //    {
-        //        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        //        var appointment = await _appointmentRepository
-        //            .GetByIdAsync(appointmentId, cancellationToken);
-
-        //        if (appointment == null)
-        //            throw new NotFoundException("Appointment", appointmentId);
-
-        //        // Determine who cancelled
-        //        var cancelledBy = userRole switch
-        //        {
-        //            "Doctor" => CancelledBy.Doctor,
-        //            "Patient" => CancelledBy.Patient,
-        //            _ => CancelledBy.System
-        //        };
-
-        //        // Cancel appointment
-        //        appointment.Cancel(cancelledBy, request.Reason);
-
-        //        // Free up the time slot
-        //        var timeSlot = await _timeSlotRepository.GetByIdAsync(
-        //            appointment.TimeSlotId, cancellationToken);
-
-        //        if (timeSlot != null)
-        //        {
-        //            timeSlot.MakeAvailable();
-        //            await _timeSlotRepository.UpdateAsync(timeSlot, cancellationToken);
-        //        }
-
-        //        await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
-        //        await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-        //        _logger.LogInformation(
-        //            "Appointment {AppointmentId} cancelled by {CancelledBy}",
-        //            appointmentId, cancelledBy);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-        //        _logger.LogError(ex, "Error cancelling appointment {AppointmentId}", appointmentId);
-        //        throw;
-        //    }
-        //}
 
         public async Task ConfirmAppointmentAsync(
             Guid appointmentId,
@@ -596,6 +547,41 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 StartTime = newSlot.StartTime,
                 Message = "New follow-up slot created and booked"
             };
+        }
+
+        public async Task GrantMedicalHistoryAccessAsync(
+            int patientId,
+            Guid appointmentId,
+            CancellationToken ct = default)
+        {
+            var appointment = await _appointmentRepository.GetByIdWithGrantsAsync(appointmentId, ct)
+                ?? throw new NotFoundException("Appointment", appointmentId);
+
+            if (appointment.PatientId != patientId)
+                throw new UnauthorizedAccessException("This is not your appointment");
+
+            // تحقق إن مفيش grant موجودة أصلاً
+            var existingGrant = await _accessRepository.GetActiveGrantAsync(
+                patientId, appointment.DoctorId, appointmentId, ct);
+
+            if (existingGrant != null)
+                throw new DomainException("Medical history access already granted for this appointment");
+
+            var appointmentDateTime = appointment.TimeSlot.SlotDate.Add(appointment.TimeSlot.EndTime);
+            var expiryDate = appointmentDateTime.AddHours(24);
+
+            var grant = MedicalHistoryAccessGrant.Create(
+                patientId: patientId,
+                doctorId: appointment.DoctorId,
+                appointmentId: appointmentId,
+                grantType: GrantType.Appointment,
+                expiresAt: expiryDate,
+                canViewMedicalHistory: true,
+                canViewPrescriptions: true,
+                canViewLabResults: false);
+
+            await _accessRepository.AddAsync(grant, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
         }
     }
 }

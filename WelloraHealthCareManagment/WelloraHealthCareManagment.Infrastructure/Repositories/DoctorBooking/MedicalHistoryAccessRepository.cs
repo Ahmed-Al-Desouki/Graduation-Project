@@ -2,6 +2,7 @@
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Infrastructure.Data;
 using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
 {
@@ -14,6 +15,56 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
             _context = context;
         }
 
+        //public async Task<MedicalHistoryAccessGrant?> GetActiveGrantAsync(
+        //    int patientId,
+        //    int doctorId,
+        //    Guid? appointmentId = null,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    var now = DateTime.UtcNow;
+
+        //    var query = _context.MedicalHistoryAccessGrants
+        //        .Where(g => g.PatientId == patientId
+        //            && g.DoctorId == doctorId
+        //            && g.RevokedAt == null
+        //            && (g.ExpiresAt == null || g.ExpiresAt > now));
+
+        //    if (appointmentId.HasValue)
+        //        query = query.Where(g => g.AppointmentId == appointmentId.Value);
+
+        //    return await query.FirstOrDefaultAsync(cancellationToken);
+        //}
+
+        //public async Task<MedicalHistoryAccessGrant?> GetActiveGrantAsync(
+        //    int patientId,
+        //    int doctorId,
+        //    Guid? appointmentId = null,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    var now = DateTime.UtcNow;
+
+        //    var query = _context.MedicalHistoryAccessGrants
+        //        .Where(g => g.PatientId == patientId
+        //            && g.DoctorId == doctorId
+        //            && g.RevokedAt == null
+        //            && (g.ExpiresAt == null || g.ExpiresAt > now));
+
+        //    // لو appointmentId اتبعت، ابحث بيه
+        //    // لو ملقاش، ارجع أي grant نشطة
+        //    if (appointmentId.HasValue)
+        //    {
+        //        var specificGrant = await query
+        //            .FirstOrDefaultAsync(g => g.AppointmentId == appointmentId.Value, cancellationToken);
+
+        //        if (specificGrant != null)
+        //            return specificGrant;
+        //    }
+
+        //    // ارجع أي grant نشطة بين الدكتور والمريض
+        //    return await query
+        //        .OrderByDescending(g => g.GrantedAt)
+        //        .FirstOrDefaultAsync(cancellationToken);
+        //}
         public async Task<MedicalHistoryAccessGrant?> GetActiveGrantAsync(
             int patientId,
             int doctorId,
@@ -67,6 +118,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
             CancellationToken cancellationToken = default)
         {
             await _context.MedicalHistoryAccessLogs.AddAsync(log, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

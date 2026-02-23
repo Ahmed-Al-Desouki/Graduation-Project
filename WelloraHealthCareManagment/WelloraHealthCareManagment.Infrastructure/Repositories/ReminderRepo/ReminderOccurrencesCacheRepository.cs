@@ -1,7 +1,9 @@
 ﻿using HealthCare_.Models.V2;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Data;
+using WelloraHealthCareManagement.Infrastructure.Services;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
@@ -11,10 +13,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
     public class ReminderOccurrencesCacheRepository : IReminderOccurrencesCacheRepository
     {
         private readonly HealthCarePlusContext _context;
+        public ILogger<ReminderOccurrencesCacheRepository> _logger { get; }
 
-        public ReminderOccurrencesCacheRepository(HealthCarePlusContext context)
+        public ReminderOccurrencesCacheRepository(HealthCarePlusContext context,
+            ILogger<ReminderOccurrencesCacheRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<List<ReminderOccurrencesCache>> GetByPatientAndDateRangeAsync(
@@ -150,6 +155,51 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
             bulkCopy.ColumnMappings.Add("Status", "Status");
 
             await bulkCopy.WriteToServerAsync(dataTable);
+        }
+
+        public async Task DeleteByReminderIdAsync(int reminderId)
+        {
+            var toDelete = await _context.ReminderOccurrencesCache
+                .Where(c => c.ReminderId == reminderId)
+                .ToListAsync();
+
+            if (toDelete.Any())
+            {
+                _context.ReminderOccurrencesCache.RemoveRange(toDelete);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("🗑️ Deleted {Count} old cache entries for ReminderId {ReminderId}", toDelete.Count, reminderId);
+            }
+        }
+
+        public async Task DeleteByReminderAndDateRangeAsync(int reminderId, DateTime fromUtc, DateTime toUtc)
+        {
+            var toDelete = await _context.ReminderOccurrencesCache
+                .Where(c => c.ReminderId == reminderId &&
+                            c.DueDateTimeUtc >= fromUtc &&
+                            c.DueDateTimeUtc < toUtc)
+                .ToListAsync();
+
+            if (toDelete.Any())
+            {
+                _context.ReminderOccurrencesCache.RemoveRange(toDelete);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation(
+                    "Deleted {Count} old cache entries for Reminder {ReminderId} in range {From} to {To}",
+                    toDelete.Count, reminderId, fromUtc, toUtc);
+            }
+        }
+
+        public async Task DeletePastOccurrencesExcludingPrescriptionsAsync(int patientId, DateTime beforeUtc)
+        {
+            await _context.Database.ExecuteSqlRawAsync(
+                @"DELETE FROM ReminderOccurrencesCache
+                    WHERE PatientId = {0}
+                    AND DueDateTimeUtc < {1}
+                    AND ReminderId NOT IN (
+                    SELECT Id FROM ReminderV2s
+                    WHERE PrescriptionItemId IS NOT NULL
+                )",
+                patientId, beforeUtc);
         }
     }
 }

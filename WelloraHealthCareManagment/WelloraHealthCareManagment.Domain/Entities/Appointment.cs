@@ -131,5 +131,11 @@ namespace WelloraHealthCareManagement.Domain.Entities
             FollowUpFromAppointmentId = originalAppointmentId;
             UpdatedAt = DateTime.UtcNow;
         }
+
+        public void ClearPatientData()
+        {
+            PatientNotes = null;
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 }

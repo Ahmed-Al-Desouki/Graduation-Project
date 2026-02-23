@@ -31,11 +31,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
         Task UpdateAsync(TimeSlot slot, CancellationToken cancellationToken = default);
         Task DeleteAsync(TimeSlot slot, CancellationToken cancellationToken = default);
         Task DeleteRangeAsync(List<TimeSlot> slots, CancellationToken cancellationToken = default);
-
         Task<List<TimeSlot>> GetSlotsInDateRangeAsync(
             int doctorId,
             DateTime fromDate,
             DateTime toDate,
+            CancellationToken cancellationToken = default);
+        Task<List<TimeSlot>> GetAvailableAndBookedSlotsForDateAsync(
+            int doctorId,
+            DateTime date,
             CancellationToken cancellationToken = default);
     }
 }

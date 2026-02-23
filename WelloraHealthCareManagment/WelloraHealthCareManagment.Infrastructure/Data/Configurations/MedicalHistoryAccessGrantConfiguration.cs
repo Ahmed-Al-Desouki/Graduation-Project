@@ -82,12 +82,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Data.Configurations
                 .HasForeignKey(x => x.PatientId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(x => x.Doctor)
-                .WithMany()
-                .HasForeignKey(x => x.DoctorId)
-                .HasPrincipalKey(d => d.DoctorId)
-                .OnDelete(DeleteBehavior.NoAction);
-
             builder.HasOne(x => x.Appointment)
                 .WithMany(x => x.AccessGrants)
                 .HasForeignKey(x => x.AppointmentId)

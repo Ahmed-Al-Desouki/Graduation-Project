@@ -131,5 +131,28 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
             _context.Appointments.Update(appointment);
             await Task.CompletedTask;
         }
+
+        public async Task<List<Appointment>> GetCompletedByPatientIdAsync(
+            int patientId,
+            CancellationToken ct = default)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.TimeSlot)
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.MedicalRecord)
+                .Include(a => a.Prescriptions).ThenInclude(p => p.Items)
+                .Where(a => a.PatientId == patientId &&
+                            a.Status == AppointmentStatus.Completed)
+                .OrderByDescending(a => a.TimeSlot.SlotDate)
+                .ToListAsync(ct);
+        }
+        public async Task<Appointment?> GetByIdWithGrantsAsync(Guid appointmentId, CancellationToken ct = default)
+        {
+            return await _context.Appointments
+                .Include(a => a.TimeSlot)
+                .Include(a => a.AccessGrants)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId, ct);
+        }
     }
 }

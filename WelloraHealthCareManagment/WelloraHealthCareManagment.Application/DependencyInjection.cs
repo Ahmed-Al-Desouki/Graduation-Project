@@ -43,7 +43,6 @@ namespace WelloraHealthCareManagement.Application
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
             // Current Medications Handlers
-            //services.AddScoped<GetCurrentMedicationsQueryHandler>();
             //services.AddScoped<GetCurrentMedicationsForShareQueryHandler>();
 
             // Family History Handlers
@@ -78,6 +77,12 @@ namespace WelloraHealthCareManagement.Application
             // Share Token Handlers 
             services.AddScoped<GenerateShareTokenQueryHandler>();
             services.AddScoped<GetMedicalProfileFromShareTokenQueryHandler>();
+
+            // doctor garant medical history handlers
+            services.AddScoped<GetPatientMedicalProfileForDoctorQueryHandler>();
+
+            // current medication handler
+            services.AddScoped<GetCurrentMedicationsQueryHandler>();
 
             // Reminder Handlers 
             services.AddScoped<CreateReminderCommandHandler>();

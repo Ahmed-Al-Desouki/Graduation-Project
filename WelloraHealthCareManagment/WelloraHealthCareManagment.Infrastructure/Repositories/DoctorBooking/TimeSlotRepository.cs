@@ -130,5 +130,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
                 .ThenBy(s => s.StartTime)
                 .ToListAsync(cancellationToken);
         }
+        public async Task<List<TimeSlot>> GetAvailableAndBookedSlotsForDateAsync(
+            int doctorId,
+            DateTime date,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.TimeSlots
+                .Where(s => s.DoctorId == doctorId
+                    && s.SlotDate.Date == date.Date
+                    && (s.Status == SlotStatus.Available || s.Status == SlotStatus.Booked))
+                .ToListAsync(cancellationToken);
+        }
     }
 }

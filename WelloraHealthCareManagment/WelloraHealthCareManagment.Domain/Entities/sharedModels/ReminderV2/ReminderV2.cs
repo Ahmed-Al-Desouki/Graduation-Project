@@ -15,6 +15,8 @@ namespace HealthCare_.Models.V2
 
         public int? PatientId { get; set; }
         public int? DoctorId { get; set; }
+        public Guid? PrescriptionItemId { get; set; }
+        public Guid? PrescriptionId { get; set; }
 
         public Enums.ReminderType Type { get; set; } = Enums.ReminderType.Medication;
 
@@ -36,11 +38,11 @@ namespace HealthCare_.Models.V2
         public string TimeZoneId { get; set; } = "Africa/Cairo";
 
         // روابط
-        public int? PrescriptionMedId { get; set; }
-        //public PrescriptionMed? PrescriptionMed { get; set; }
+        public PrescriptionItem? PrescriptionItem { get; set; }
+
+        public Prescription? Prescription { get; set; }
 
         public Guid? AppointmentId { get; set; }
-        //public Appointment? Appointment { get; set; }
 
         // حالة عامة
         public bool IsActive { get; set; } = true;
