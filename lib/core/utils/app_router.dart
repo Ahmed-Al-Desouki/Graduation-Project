@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/views/booking_calendar_view.dart';
+import 'package:graduation_project/features/booking/presentation/views/schedule_setup_view.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/views/chat_details_view.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_layout.dart';
@@ -37,6 +42,7 @@ import 'package:graduation_project/features/reminder/presentation/views/ringing_
 import 'package:graduation_project/features/splash/presentation/views/widgets/onboarding_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
+import 'package:hive/hive.dart';
 
 abstract class AppRouter {
   static const kSplash = '/';
@@ -64,10 +70,56 @@ abstract class AppRouter {
   static const kAllReminders = '/allReminders';
   static const kAddReminder = '/addReminder';
   static const kChatDetails = '/chatDetails'; // ✅ أضف هذا الثابت
+  static const kDoctorSchedule = '/doctorSchedule';
+  static const kScheduleSetup = '/scheduleSetup';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
       GoRoute(path: kSplash, builder: (context, state) => const SplashBody()),
+
+      // 1. شاشة إعداد الجدول
+      GoRoute(
+        path: kScheduleSetup,
+        builder:
+            (context, state) => BlocProvider(
+              create:
+                  (context) =>
+                      getIt<ScheduleManagementCubit>(), // سحب النسخة من GetIt
+              child: const ScheduleSetupView(),
+            ),
+      ),
+
+      // 2. شاشة الكالندر (تحتاج الـ BookingCalendarCubit)
+      GoRoute(
+        path: kDoctorSchedule,
+        builder: (context, state) {
+          var box = Hive.box('booking_box');
+          bool isSetupComplete = box.get(
+            'isScheduleConfigured',
+            defaultValue: false,
+          );
+
+          if (isSetupComplete) {
+            return MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (context) => getIt<BookingCalendarCubit>(),
+                ),
+                BlocProvider(
+                  create: (context) => getIt<AppointmentActionCubit>(),
+                ),
+              ],
+              child: const BookingCalendarView(),
+            );
+          } else {
+            // لو رايح للـ Setup من هنا برضو لازم توفر الـ Cubit
+            return BlocProvider(
+              create: (context) => getIt<ScheduleManagementCubit>(),
+              child: const ScheduleSetupView(),
+            );
+          }
+        },
+      ),
 
       GoRoute(
         path: kOnboarding,

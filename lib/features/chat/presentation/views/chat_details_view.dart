@@ -22,44 +22,6 @@ class ChatDetailsView extends StatefulWidget {
 class _ChatDetailsViewState extends State<ChatDetailsView> {
   final TextEditingController _messageController = TextEditingController();
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   return BlocProvider(
-  //     create:
-  //         (context) => getIt<ChatDetailsCubit>()..fetchMessages(widget.chatId),
-  //     child: Scaffold(
-  //       appBar: AppBar(
-  //         title: Text(widget.receiverName),
-  //         backgroundColor: const Color(0xFF1B4E8C),
-  //       ),
-  //       body: Column(
-  //         children: [
-  //           // ✅ عرض الرسائل
-  //           Expanded(
-  //             child: BlocBuilder<ChatDetailsCubit, ChatDetailsState>(
-  //               builder: (context, state) {
-  //                 if (state is ChatDetailsSuccess) {
-  //                   return ListView.builder(
-  //                     reverse: true, // الشات يبدأ من الأسفل
-  //                     itemCount: state.messages.length,
-  //                     itemBuilder: (context, index) {
-  //                       // عرض الرسايل من الأحدث للأقدم بسبب reversed
-  //                       final message = state.messages.reversed.toList()[index];
-  //                       return MessageBubble(message: message);
-  //                     },
-  //                   );
-  //                 }
-  //                 return const Center(child: CircularProgressIndicator());
-  //               },
-  //             ),
-  //           ),
-  //           // ✅ منطقة إرسال الرسالة
-  //           _buildMessageInput(context),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
   @override
   Widget build(BuildContext context) {
     return BlocProvider(

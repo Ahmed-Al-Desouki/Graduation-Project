@@ -6,6 +6,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:graduation_project/core/database/local_database_service.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/data/models/auth_token_model.dart';
 
 import 'package:graduation_project/features/auth/data/repo/auth_repo.dart';
@@ -59,6 +60,7 @@ class AuthCubit extends Cubit<AuthState> {
             await _registerDeviceToken();
 
             final uid = await SecureStorageHelper.getUserId();
+            getIt<SessionManager>().updateIdAfterLogin(uid!);
             emit(LoginSuccess(uid: uid!, email: googleUser.email, role: role));
           } catch (e) {
             emit(LoginFailure(errMessage: 'Processing Error: $e'));
@@ -100,7 +102,7 @@ class AuthCubit extends Cubit<AuthState> {
 
             final uid = await SecureStorageHelper.getUserId();
             final role = (await SecureStorageHelper.getUserRole())['role']!;
-
+            getIt<SessionManager>().updateIdAfterLogin(uid!);
             emit(LoginSuccess(uid: uid!, email: email, role: role));
           } catch (e) {
             emit(LoginFailure(errMessage: 'Processing Error: $e'));

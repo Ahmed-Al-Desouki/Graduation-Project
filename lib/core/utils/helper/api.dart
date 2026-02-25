@@ -157,4 +157,13 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<dynamic> patch(String endpoint, {dynamic body}) async {
+    try {
+      final response = await _dio.patch(endpoint, data: body);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

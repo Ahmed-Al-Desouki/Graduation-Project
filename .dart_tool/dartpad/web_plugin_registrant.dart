@@ -9,6 +9,7 @@
 import 'package:app_links_web/app_links_web.dart';
 import 'package:audioplayers_web/audioplayers_web.dart';
 import 'package:awesome_notifications/awesome_notifications_web.dart';
+import 'package:connectivity_plus/src/connectivity_plus_web.dart';
 import 'package:device_info_plus/src/device_info_plus_web.dart';
 import 'package:file_picker/_internal/file_picker_web.dart';
 import 'package:firebase_auth_web/firebase_auth_web.dart';
@@ -29,6 +30,7 @@ void registerPlugins([final Registrar? pluginRegistrar]) {
   AppLinksPluginWeb.registerWith(registrar);
   AudioplayersPlugin.registerWith(registrar);
   AwesomeNotificationsWeb.registerWith(registrar);
+  ConnectivityPlusWebPlugin.registerWith(registrar);
   DeviceInfoPlusWebPlugin.registerWith(registrar);
   FilePickerWeb.registerWith(registrar);
   FirebaseAuthWeb.registerWith(registrar);
