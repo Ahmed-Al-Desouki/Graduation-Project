@@ -12,7 +12,7 @@ class PopularSpecialtiesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final specialties = [
-      "All Doctors",
+      "All Specialties",
       "Cardiology",
       "Dermatology",
       "Pediatrics",

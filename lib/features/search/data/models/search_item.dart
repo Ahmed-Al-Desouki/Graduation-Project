@@ -3,9 +3,16 @@ enum SearchType { doctor, specialty }
 class SearchItem {
   final String title;
   final SearchType type;
+  final SearchType? specialty;
 
-  SearchItem({required this.title, required this.type});
+  SearchItem({required this.title, required this.type, this.specialty});
 }
+// class SearchItem {
+//   final String title;
+//   final SearchType type;
+
+//   SearchItem({required this.title, required this.type});
+// }
 
 final List<SearchItem> searchData = [
   SearchItem(title: "Dr. Sarah Johnson", type: SearchType.doctor),
