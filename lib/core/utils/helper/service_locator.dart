@@ -30,6 +30,14 @@ import 'package:graduation_project/features/reminder/presentation/manager/remind
 import 'package:graduation_project/features/medical_history/data/repository/patient_repo/patient_repo_impl.dart';
 import 'package:graduation_project/features/medical_history/data/service/patient_web_service.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
+import 'package:graduation_project/features/search/data/data_sources/search_remote_data_source.dart';
+import 'package:graduation_project/features/search/data/data_sources/search_remote_data_source_impl.dart';
+import 'package:graduation_project/features/search/data/repositories/search_repo_impl.dart';
+import 'package:graduation_project/features/search/domain/repositories/search_repo.dart';
+import 'package:graduation_project/features/search/domain/use_cases/get_specializations_use_case.dart';
+import 'package:graduation_project/features/search/domain/use_cases/get_top_rated_doctors_use_case.dart';
+import 'package:graduation_project/features/search/domain/use_cases/search_doctors_use_case.dart';
+import 'package:graduation_project/features/search/presentation/manager/search_cubit/search_cubit.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 final getIt = GetIt.instance;
@@ -138,4 +146,30 @@ Future<void> setupServiceLocator() async {
   );
 
   getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<HomeRepository>()));
+
+  getIt.registerLazySingleton<SearchRemoteDataSource>(
+    () => SearchRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerLazySingleton<SearchRepo>(
+    () =>
+        SearchRepositoryImpl(remoteDataSource: getIt<SearchRemoteDataSource>()),
+  );
+
+  getIt.registerLazySingleton(() => SearchDoctorsUseCase(getIt<SearchRepo>()));
+
+  getIt.registerLazySingleton(
+    () => GetSpecializationsUseCase(getIt<SearchRepo>()),
+  );
+  getIt.registerLazySingleton(
+    () => GetTopRatedDoctorsUseCase(getIt<SearchRepo>()),
+  );
+
+  getIt.registerFactory(
+    () => SearchCubit(
+      getIt<SearchDoctorsUseCase>(),
+      getIt<GetSpecializationsUseCase>(),
+      getIt<GetTopRatedDoctorsUseCase>(),
+    ),
+  );
 }

@@ -39,6 +39,8 @@ import 'package:graduation_project/features/auth/presentation/views/test_setting
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/medical_history_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/ringing_view.dart';
+import 'package:graduation_project/features/search/presentation/manager/search_cubit/search_cubit.dart';
+import 'package:graduation_project/features/search/presentation/views/search_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/onboarding_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
@@ -72,6 +74,7 @@ abstract class AppRouter {
   static const kChatDetails = '/chatDetails'; // ✅ أضف هذا الثابت
   static const kDoctorSchedule = '/doctorSchedule';
   static const kScheduleSetup = '/scheduleSetup';
+  static const kSearch = '/search';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -377,6 +380,15 @@ abstract class AppRouter {
             ),
           );
         },
+      ),
+
+      GoRoute(
+        path: kSearch,
+        builder:
+            (context, state) => BlocProvider(
+              create: (context) => getIt<SearchCubit>(),
+              child: const SearchView(),
+            ),
       ),
     ],
   );

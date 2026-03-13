@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
 
 class DoctorCard extends StatelessWidget {
-  final String name;
+  final int doctorId;
+  final String fullName;
   final String imageUrl;
   final String specialty;
   final String rating;
-  final String review;
-  final String experience;
-  final String distance;
+  final int totalReviews;
+  final int yearsOfExperience;
+  final double consultationFee;
+  final bool isActive;
+
   const DoctorCard({
     super.key,
-    required this.name,
+    required this.doctorId,
+    required this.fullName,
     required this.imageUrl,
     required this.specialty,
     required this.rating,
-    required this.review,
-    required this.experience,
-    required this.distance,
+    required this.totalReviews,
+    required this.yearsOfExperience,
+    required this.consultationFee,
+    required this.isActive,
   });
 
   @override
@@ -36,7 +41,12 @@ class DoctorCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 26,
-                    backgroundImage: NetworkImage(imageUrl),
+                    backgroundImage:
+                        imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                    child:
+                        imageUrl.isEmpty
+                            ? const Icon(Icons.person, size: 30)
+                            : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -44,35 +54,20 @@ class DoctorCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          name,
-                          style: TextStyle(
+                          fullName,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(specialty, style: TextStyle(color: Colors.grey)),
+                        const SizedBox(height: 2),
+                        Text(
+                          specialty,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
-                  // Container(
-                  //   padding: const EdgeInsets.symmetric(
-                  //     horizontal: 10,
-                  //     vertical: 4,
-                  //   ),
-                  //   decoration: BoxDecoration(
-                  //     color: color.withOpacity(0.15),
-                  //     borderRadius: BorderRadius.circular(20),
-                  //   ),
-                  //   child: Text(
-                  //     status,
-                  //     style: TextStyle(
-                  //       color: color,
-                  //       fontSize: 12,
-                  //       fontWeight: FontWeight.w600,
-                  //     ),
-                  //   ),
-                  // ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -90,11 +85,14 @@ class DoctorCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(rating),
-                    SizedBox(width: 4),
-                    Text(review, style: TextStyle(color: Colors.grey)),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 4),
+                    Text(
+                      '($totalReviews reviews)',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(width: 12),
                   ],
                 ),
               ),
@@ -103,38 +101,17 @@ class DoctorCard extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 60),
                 child: Row(
                   children: [
-                    Icon(Icons.school, size: 16, color: Colors.grey),
-                    SizedBox(width: 4),
-                    Text(experience),
-                    SizedBox(width: 4),
-                    Icon(Icons.location_on, size: 16, color: Colors.grey),
-                    SizedBox(width: 4),
-                    Text(distance),
+                    const Icon(Icons.school, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text('$yearsOfExperience years exp.'),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    const Text('1.8 km away'),
                   ],
                 ),
               ),
               const SizedBox(height: 15),
-              // Container(
-              //   padding: const EdgeInsets.all(12),
-              //   decoration: BoxDecoration(
-              //     color: const Color(0xFFF1F7FF),
-              //     borderRadius: BorderRadius.circular(10),
-              //   ),
-              //   child: Row(
-              //     children: [
-              //       Text("Next available : "),
-              //       SizedBox(width: 6),
-              //       Text(
-              //         nextAvailable,
-              //         style: TextStyle(
-              //           color: Color(0xFF2563EB),
-              //           fontWeight: FontWeight.bold,
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
-              // const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 child: SizedBox(
