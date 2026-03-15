@@ -18,6 +18,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication
         {
             return await _context.Doctors.FindAsync(doctorId);
         }
+        public async Task<Doctor?> GetByIdWithUserAsync(
+            int doctorId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Doctors
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d => d.DoctorId == doctorId, cancellationToken);
+        }
 
         public async Task<Doctor?> GetByUserIdAsync(int userId)
         {

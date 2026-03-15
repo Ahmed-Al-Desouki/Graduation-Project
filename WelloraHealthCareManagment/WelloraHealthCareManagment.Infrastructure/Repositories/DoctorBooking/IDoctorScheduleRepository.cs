@@ -10,5 +10,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
         Task<List<int>> GetDoctorsWithActiveSchedulesAsync(CancellationToken cancellationToken = default);
         Task AddAsync(DoctorScheduleTemplate template, CancellationToken cancellationToken = default);
         Task UpdateAsync(DoctorScheduleTemplate template, CancellationToken cancellationToken = default);
+        Task<DoctorScheduleTemplate?> GetActiveTemplateWithTimeRangesAsync(
+            int doctorId,
+            CancellationToken cancellationToken = default);
     }
 }

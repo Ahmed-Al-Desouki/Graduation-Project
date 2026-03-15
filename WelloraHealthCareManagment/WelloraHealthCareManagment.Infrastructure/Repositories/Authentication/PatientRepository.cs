@@ -20,6 +20,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication
                 .Include(p => p.MedicalHistory) // Include related data if needed
                 .FirstOrDefaultAsync(p => p.PatientID == patientId);
         }
+        public async Task<Patient?> GetByIdWithUserAsync(
+            int patientId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Patients
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.PatientID == patientId, cancellationToken);
+        }
 
         public async Task<Patient?> GetByUserIdAsync(int userId)
         {

@@ -259,12 +259,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     DoctorId = table.Column<int>(type: "int", nullable: false),
                     TemplateName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    IsOpenEnded = table.Column<bool>(type: "bit", nullable: false),
                     SlotDurationMinutes = table.Column<int>(type: "int", nullable: false),
                     BufferTimeMinutes = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     EffectiveFromDate = table.Column<DateTime>(type: "date", nullable: false),
                     EffectiveToDate = table.Column<DateTime>(type: "date", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -288,7 +289,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     CustomStartTime = table.Column<TimeSpan>(type: "time", nullable: true),
                     CustomEndTime = table.Column<TimeSpan>(type: "time", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -312,7 +313,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     IsAvailable = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -337,13 +338,18 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "Available"),
                     GeneratedFromTemplateId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsManuallyCreated = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    DoctorId1 = table.Column<int>(type: "int", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DoctorScheduleTemplateId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_TimeSlots", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TimeSlots_DoctorScheduleTemplates_DoctorScheduleTemplateId",
+                        column: x => x.DoctorScheduleTemplateId,
+                        principalTable: "DoctorScheduleTemplates",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_TimeSlots_DoctorScheduleTemplates_GeneratedFromTemplateId",
                         column: x => x.GeneratedFromTemplateId,
@@ -353,11 +359,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     table.ForeignKey(
                         name: "FK_TimeSlots_Doctors_DoctorId",
                         column: x => x.DoctorId,
-                        principalTable: "Doctors",
-                        principalColumn: "DoctorId");
-                    table.ForeignKey(
-                        name: "FK_TimeSlots_Doctors_DoctorId1",
-                        column: x => x.DoctorId1,
                         principalTable: "Doctors",
                         principalColumn: "DoctorId");
                 });
@@ -578,7 +579,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     CanViewMedicalHistory = table.Column<bool>(type: "bit", nullable: false),
                     CanViewPrescriptions = table.Column<bool>(type: "bit", nullable: false),
                     CanViewLabResults = table.Column<bool>(type: "bit", nullable: false),
-                    DoctorId1 = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -594,12 +594,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         name: "FK_MedicalHistoryAccessGrants_Doctors_DoctorId",
                         column: x => x.DoctorId,
                         principalTable: "Doctors",
-                        principalColumn: "DoctorId");
-                    table.ForeignKey(
-                        name: "FK_MedicalHistoryAccessGrants_Doctors_DoctorId1",
-                        column: x => x.DoctorId1,
-                        principalTable: "Doctors",
-                        principalColumn: "DoctorId");
+                        principalColumn: "DoctorId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_MedicalHistoryAccessGrants_Patients_PatientId",
                         column: x => x.PatientId,
@@ -1158,11 +1154,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MedicalHistoryAccessGrants_DoctorId1",
-                table: "MedicalHistoryAccessGrants",
-                column: "DoctorId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_MedicalHistoryAccessGrants_PatientId_DoctorId",
                 table: "MedicalHistoryAccessGrants",
                 columns: new[] { "PatientId", "DoctorId" });
@@ -1367,20 +1358,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 column: "HistoryID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TimeSlots_DoctorId_SlotDate_StartTime",
+                name: "IX_TimeSlots_DoctorScheduleTemplateId",
                 table: "TimeSlots",
-                columns: new[] { "DoctorId", "SlotDate", "StartTime" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TimeSlots_DoctorId_SlotDate_Status",
-                table: "TimeSlots",
-                columns: new[] { "DoctorId", "SlotDate", "Status" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TimeSlots_DoctorId1",
-                table: "TimeSlots",
-                column: "DoctorId1");
+                column: "DoctorScheduleTemplateId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TimeSlots_GeneratedFromTemplateId",
@@ -1388,10 +1368,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                 column: "GeneratedFromTemplateId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TimeSlots_Status_SlotDate",
+                name: "IX_TimeSlots_SlotDate",
                 table: "TimeSlots",
-                columns: new[] { "Status", "SlotDate" },
-                filter: "[Status] = 'Available'");
+                column: "SlotDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TimeSlots_Status",
+                table: "TimeSlots",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "UQ_TimeSlot_DoctorDate",
+                table: "TimeSlots",
+                columns: new[] { "DoctorId", "SlotDate", "StartTime" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",

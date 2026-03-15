@@ -40,5 +40,23 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
             int doctorId,
             DateTime date,
             CancellationToken cancellationToken = default);
+
+        // Get all slots for multiple dates (for batch processing)
+        Task<List<TimeSlot>> GetSlotsForDatesAsync(
+            int doctorId,
+            List<DateTime> dates,
+            CancellationToken cancellationToken = default);
+
+        // Get last slot date for doctor (للـ rolling window)
+        Task<DateTime?> GetLastSlotDateAsync(
+            int doctorId,
+            CancellationToken cancellationToken = default);
+
+        Task<List<TimeSlot>> GetSlotsForDaysInRangeAsync(
+            int doctorId,
+            List<DayOfWeek> days,
+            DateTime fromDate,
+            DateTime toDate,
+            CancellationToken cancellationToken = default);
     }
 }

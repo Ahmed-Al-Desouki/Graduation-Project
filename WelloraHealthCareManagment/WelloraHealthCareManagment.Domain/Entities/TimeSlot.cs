@@ -141,7 +141,14 @@ namespace WelloraHealthCareManagement.Domain.Entities
                 UpdatedAt = DateTime.UtcNow;
             }
         }
+        public void UpdateTimes(TimeSpan newStartTime, TimeSpan newEndTime)
+        {
+            if (newEndTime <= newStartTime)
+                throw new DomainException("End time must be after start time");
 
+            StartTime = newStartTime;
+            EndTime = newEndTime;
+        }
         public bool IsExpired()
         {
             var now = DateTime.UtcNow;

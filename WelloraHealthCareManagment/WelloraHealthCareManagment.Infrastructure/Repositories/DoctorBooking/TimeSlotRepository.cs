@@ -141,5 +141,48 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
                     && (s.Status == SlotStatus.Available || s.Status == SlotStatus.Booked))
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<List<TimeSlot>> GetSlotsForDatesAsync(
+            int doctorId,
+            List<DateTime> dates,
+            CancellationToken cancellationToken = default)
+        {
+            var normalizedDates = dates.Select(d => d.Date).Distinct().ToList();
+
+            return await _context.TimeSlots
+                .Where(s => s.DoctorId == doctorId && normalizedDates.Contains(s.SlotDate))
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<DateTime?> GetLastSlotDateAsync(
+            int doctorId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.TimeSlots
+                .Where(s => s.DoctorId == doctorId)
+                .OrderByDescending(s => s.SlotDate)
+                .Select(s => (DateTime?)s.SlotDate)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<List<TimeSlot>> GetSlotsForDaysInRangeAsync(
+            int doctorId,
+            List<DayOfWeek> days,
+            DateTime fromDate,
+            DateTime toDate,
+            CancellationToken cancellationToken = default)
+        {
+            // جيب الـ slots في الـ date range الأول
+            var slots = await _context.TimeSlots
+                .Where(s => s.DoctorId == doctorId
+                    && s.SlotDate >= fromDate
+                    && s.SlotDate <= toDate)
+                .ToListAsync(cancellationToken);
+
+            // فلتر بـ DayOfWeek في الـ memory
+            return slots
+                .Where(s => days.Contains(s.SlotDate.DayOfWeek))
+                .ToList();
+        }
     }
 }

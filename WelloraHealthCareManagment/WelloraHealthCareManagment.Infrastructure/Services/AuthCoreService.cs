@@ -11,6 +11,7 @@ using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagment.Application.DTOs.AuthModels.Login_register.LogIn;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
+using WelloraHealthCareManagment.Application.Interfaces.Search;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
@@ -35,6 +36,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IAvatarService _avatarService;
         private readonly IMfaService _mfaService;
         private readonly IConfiguration _configuration;
+        private readonly IDoctorSearchIndex _searchIndex;
         private readonly ILogger<AuthCoreService> _logger;
 
         public AuthCoreService(
@@ -51,6 +53,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IAvatarService avatarService,
             IMfaService mfaService,
             IConfiguration configuration,
+            IDoctorSearchIndex searchIndex,
             ILogger<AuthCoreService> logger)
         {
             _userRepository = userRepository;
@@ -66,6 +69,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _avatarService = avatarService;
             _mfaService = mfaService;
             _configuration = configuration;
+            _searchIndex = searchIndex;
             _logger = logger;
         }
 
@@ -153,12 +157,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     DoctorId = user.Id,
                     Specialization = "General",
                     YearsOfExperience = 0,
-                    ConsultationFee = 0,
+                    //ConsultationFee = 0,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
 
                 await _doctorRepository.CreateAsync(doctor);
+                _searchIndex.AddDoctor(user.FullName, doctor.Specialization);
             }
         }
 

@@ -154,5 +154,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
                 .Include(a => a.AccessGrants)
                 .FirstOrDefaultAsync(a => a.Id == appointmentId, ct);
         }
+        public async Task<Appointment?> GetByIdForUpdateAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Appointments
+                .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+        }
     }
 }

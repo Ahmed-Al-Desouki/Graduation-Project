@@ -102,8 +102,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
                 .HasDefaultValueSql("GETUTCDATE()");
 
             builder.Property(x => x.UpdatedAt)
-                .IsRequired()
-                .HasDefaultValueSql("GETUTCDATE()");
+                .IsRequired();
+                //.HasDefaultValueSql("GETUTCDATE()");
 
             // Relationships
             //builder.HasOne(x => x.Doctor)

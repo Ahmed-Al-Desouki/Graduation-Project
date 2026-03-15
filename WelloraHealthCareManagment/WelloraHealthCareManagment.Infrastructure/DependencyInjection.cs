@@ -10,9 +10,11 @@ using WelloraHealthCareManagement.Infrastructure.Repositories;
 using WelloraHealthCareManagement.Infrastructure.Services;
 using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Application.Interfaces.AppRepositories.Search;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.Interfaces.Email;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
+using WelloraHealthCareManagment.Application.Interfaces.Search;
 using WelloraHealthCareManagment.Domain.Repositories;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
@@ -26,6 +28,7 @@ using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.MeicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo;
+using WelloraHealthCareManagment.Infrastructure.Repositories.Search;
 using WelloraHealthCareManagment.Infrastructure.Services;
 
 
@@ -77,6 +80,9 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
             services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+            services.AddScoped<IDoctorSearchRepository, DoctorSearchRepository>();
+            services.AddScoped<IPaymentRepository, PaymentRepository>();
+
 
             // Services
             services.AddScoped<ITokenService, TokenService>();
@@ -103,6 +109,12 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IPrescriptionService, PrescriptionService>();
             services.AddScoped<IPrescriptionReminderService, PrescriptionReminderService>();
             services.AddScoped<PrescriptionReminderOccurrenceGenerator>();
+            services.AddScoped<IDoctorSearchService, DoctorSearchService>();
+            services.AddSingleton<IDoctorSearchIndex, DoctorSearchIndex>();
+            services.AddScoped<IServiceProvider, ServiceProvider>();
+            services.AddScoped<IPaymobService, PaymobService>();
+            services.AddScoped<IPaymentService, PaymentService>();
+
 
 
 

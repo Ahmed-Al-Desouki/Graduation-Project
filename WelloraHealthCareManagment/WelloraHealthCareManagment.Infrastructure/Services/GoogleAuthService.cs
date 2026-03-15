@@ -280,7 +280,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                             DoctorId = user.Id,
                             Specialization = "General",
                             YearsOfExperience = 0,
-                            ConsultationFee = 0,
+                            //ConsultationFee = 0,
                             IsActive = true,
                             CreatedAt = DateTime.UtcNow
                         };

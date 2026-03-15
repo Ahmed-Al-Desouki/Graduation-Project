@@ -5,9 +5,10 @@ namespace WelloraHealthCareManagement.Domain.Entities
 {
     public class DoctorScheduleTemplate : BaseEntity
     {
-        public int DoctorId { get; private set; } 
+        public int DoctorId { get; private set; }
         public string TemplateName { get; private set; } = string.Empty;
         public bool IsActive { get; private set; }
+        public bool IsOpenEnded { get; private set; }
         public int SlotDurationMinutes { get; private set; }
         public int BufferTimeMinutes { get; private set; }
         public DateTime EffectiveFromDate { get; private set; }
@@ -32,18 +33,16 @@ namespace WelloraHealthCareManagement.Domain.Entities
         {
             if (doctorId <= 0)
                 throw new DomainException("Doctor ID must be positive");
-
             if (string.IsNullOrWhiteSpace(templateName))
                 throw new DomainException("Template name is required");
-
-            if (slotDurationMinutes is not (15 or 20 or 30 or 45 or 60))
-                throw new DomainException("Slot duration must be 15, 20, 30, 45, or 60 minutes");
-
+            if (slotDurationMinutes < 5 || slotDurationMinutes > 480)
+                throw new DomainException("Slot duration must be between 5 and 480 minutes");
             if (bufferTimeMinutes < 0 || bufferTimeMinutes > 60)
                 throw new DomainException("Buffer time must be between 0 and 60 minutes");
-
-            if (effectiveToDate.HasValue && effectiveToDate < effectiveFromDate)
-                throw new DomainException("End date must be after start date");
+            if (effectiveFromDate.Date < DateTime.UtcNow.Date)
+                throw new DomainException("Effective from date cannot be in the past");
+            if (effectiveToDate.HasValue && effectiveToDate.Value <= effectiveFromDate)
+                throw new DomainException("Effective to date must be after from date");
 
             return new DoctorScheduleTemplate
             {
@@ -55,9 +54,61 @@ namespace WelloraHealthCareManagement.Domain.Entities
                 EffectiveFromDate = effectiveFromDate.Date,
                 EffectiveToDate = effectiveToDate?.Date,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsOpenEnded = !effectiveToDate.HasValue,
+                CreatedAt = DateTime.UtcNow
+                //NO UpdatedAt - let DB handle it
             };
+        }
+
+        public void UpdateSlotDuration(int durationMinutes)
+        {
+            if (durationMinutes < 5 || durationMinutes > 480)
+                throw new DomainException("Slot duration must be between 5 and 480 minutes");
+
+            SlotDurationMinutes = durationMinutes;
+        }
+
+        public void UpdateBufferTime(int bufferMinutes)
+        {
+            if (bufferMinutes < 0 || bufferMinutes > 60)
+                throw new DomainException("Buffer time must be between 0 and 60 minutes");
+
+            BufferTimeMinutes = bufferMinutes;
+        }
+
+        public void MakeOpenEnded()
+        {
+            EffectiveToDate = null;
+            IsOpenEnded = true;
+        }
+
+        public void SetEndDate(DateTime endDate)
+        {
+            if (endDate <= EffectiveFromDate)
+                throw new DomainException("End date must be after start date");
+
+            EffectiveToDate = endDate.Date;
+            IsOpenEnded = false;
+        }
+
+        public void RemoveTimeRange(DayOfWeek dayOfWeek)
+        {
+            var range = _timeRanges.FirstOrDefault(tr => tr.DayOfWeek == dayOfWeek);
+
+            if (range == null)
+                throw new DomainException($"No time range found for {dayOfWeek}");
+
+            range.MarkUnavailable();
+        }
+
+        public void DeleteTimeRange(DayOfWeek dayOfWeek)
+        {
+            var range = _timeRanges.FirstOrDefault(tr => tr.DayOfWeek == dayOfWeek);
+
+            if (range == null)
+                throw new DomainException($"No time range found for {dayOfWeek}");
+
+            _timeRanges.Remove(range);
         }
 
         public void AddTimeRange(DayOfWeek day, TimeSpan startTime, TimeSpan endTime)
@@ -70,19 +121,16 @@ namespace WelloraHealthCareManagement.Domain.Entities
 
             var range = ScheduleTimeRange.Create(Id, day, startTime, endTime);
             _timeRanges.Add(range);
-            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Activate()
         {
             IsActive = true;
-            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Deactivate()
         {
             IsActive = false;
-            UpdatedAt = DateTime.UtcNow;
         }
 
         public void UpdateEffectiveDates(DateTime fromDate, DateTime? toDate)
@@ -92,7 +140,6 @@ namespace WelloraHealthCareManagement.Domain.Entities
 
             EffectiveFromDate = fromDate.Date;
             EffectiveToDate = toDate?.Date;
-            UpdatedAt = DateTime.UtcNow;
         }
 
         public void UpdateSlotSettings(int slotDurationMinutes, int bufferTimeMinutes)
@@ -105,7 +152,6 @@ namespace WelloraHealthCareManagement.Domain.Entities
 
             SlotDurationMinutes = slotDurationMinutes;
             BufferTimeMinutes = bufferTimeMinutes;
-            UpdatedAt = DateTime.UtcNow;
         }
 
         public bool IsEffectiveOn(DateTime date)

@@ -36,6 +36,13 @@ namespace WelloraHealthCareManagement.Domain.Entities
         public IReadOnlyCollection<MedicalHistoryAccessGrant> AccessGrants => _accessGrants.AsReadOnly();
         public Appointment? FollowUpFrom { get; private set; }
 
+        //Payment Relationship
+        public Guid? PaymentId { get; private set; }
+        public Payment? Payment { get; private set; }
+
+        public bool IsPaid { get; private set; }
+        public decimal? ConsultationFee { get; private set; }
+
 
         private Appointment() { }
 
@@ -136,6 +143,22 @@ namespace WelloraHealthCareManagement.Domain.Entities
         {
             PatientNotes = null;
             UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SetConsultationFee(decimal fee)
+        {
+            if (fee < 0)
+                throw new DomainException("Consultation fee cannot be negative");
+
+            ConsultationFee = fee;
+        }
+        public void MarkAsPaid(Guid paymentId)
+        {
+            if (IsPaid)
+                throw new DomainException("Appointment already marked as paid");
+
+            PaymentId = paymentId;
+            IsPaid = true;
         }
     }
 }

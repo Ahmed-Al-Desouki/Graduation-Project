@@ -141,6 +141,15 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
                 .IsRequired()
                 .HasDefaultValueSql("GETUTCDATE()");
 
+            builder.Property(x => x.IsPaid)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            builder.Property(x => x.ConsultationFee)
+                .HasColumnType("decimal(18,2)");
+
+            builder.Property(x => x.PaymentId);
+
             // Relationships
 
             builder.HasOne(x => x.TimeSlot)
@@ -148,11 +157,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
                 .HasForeignKey<Appointment>(x => x.TimeSlotId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            //builder.HasOne(x => x.Doctor)
-            //    .WithMany()
-            //    .HasForeignKey(x => x.DoctorId)
-            //    .HasPrincipalKey(d => d.DoctorID)
-            //    .OnDelete(DeleteBehavior.NoAction);
+            builder.HasOne(x => x.Payment)
+                .WithOne(p => p.Appointment)
+                .HasForeignKey<Payment>(p => p.AppointmentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Patient)
                 .WithMany()

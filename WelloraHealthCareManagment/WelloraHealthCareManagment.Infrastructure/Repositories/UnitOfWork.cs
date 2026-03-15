@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using WelloraHealthCareManagement.Infrastructure.Data;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
@@ -19,7 +20,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Repositories
         {
             return await _context.SaveChangesAsync(cancellationToken);
         }
-
+        public void Detach<T>(T entity) where T : class
+        {
+            _context.Entry(entity).State = EntityState.Detached;
+        }
         public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
             _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);

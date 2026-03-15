@@ -2,6 +2,7 @@
 using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using System.ComponentModel.DataAnnotations;
 using WelloraHealthCareManagement.Domain.Entities;
+using WelloraHealthCareManagement.Domain.Exceptions;
 
 namespace HealthCare_.Models.DoctorModels
 {
@@ -17,7 +18,7 @@ namespace HealthCare_.Models.DoctorModels
         public int YearsOfExperience { get; set; }
 
         [Range(0, 10000)]
-        public decimal ConsultationFee { get; set; }
+        public decimal ConsultationFee { get; private set; }
 
         public bool IsActive { get; set; }
 
@@ -35,14 +36,6 @@ namespace HealthCare_.Models.DoctorModels
 
         public ICollection<ExternalFile> Files { get; set; } = new List<ExternalFile>();
 
-        // === OLD SYSTEM (Commented) ===
-        //public ICollection<DoctorWeeklySchedule> WeeklySchedules { get; set; } = new List<DoctorWeeklySchedule>();
-        //public ICollection<DoctorSlot> Slots { get; set; } = new List<DoctorSlot>();
-        //public ICollection<SessionType> SessionTypes { get; set; } = new List<SessionType>();
-        //public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
-        //public ICollection<Prescriptions> Prescriptions { get; set; } = new List<Prescription>();
-        //public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
-
         // NEW BOOKING SYSTEM (Added) 
         public ICollection<DoctorScheduleTemplate> ScheduleTemplates { get; set; } = new List<DoctorScheduleTemplate>();
         public ICollection<ScheduleException> ScheduleExceptions { get; set; } = new List<ScheduleException>();
@@ -51,5 +44,13 @@ namespace HealthCare_.Models.DoctorModels
         public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
         public ICollection<MedicalHistoryAccessGrant> MedicalHistoryAccessGrants { get; set; } = new List<MedicalHistoryAccessGrant>();
         public ICollection<MedicalHistoryAccessLog> MedicalHistoryAccessLogs { get; set; } = new List<MedicalHistoryAccessLog>();
+
+        public void SetConsultationFee(decimal fee)
+        {
+            if (fee < 0)
+                throw new DomainException("Consultation fee cannot be negative");
+
+            ConsultationFee = fee;
+        }
     }
 }

@@ -92,7 +92,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                         };
                         dto.RRULE = null;
                         _logger.LogInformation(
-                            "✅ [SIMPLE] Reminder DTO for {Med} - Every {Int}h",
+                            " [SIMPLE] Reminder DTO for {Med} - Every {Int}h",
                             item.MedicationName, dto.Simple.IntervalHours);
                     }
                     else
@@ -109,7 +109,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     await generator.GenerateCacheForPrescriptionItemAsync(item, prescription.PatientId, reminder.Id, cacheFrom, cacheTo);
 
                     _logger.LogInformation(
-                        "✅ Reminder {Id} created for {Med}",
+                        " Reminder {Id} created for {Med}",
                         reminder.Id, item.MedicationName);
                     remindersCreated++;
                 }
@@ -123,7 +123,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             }
 
             _logger.LogInformation(
-                "✅ Successfully created {Count} reminders for Prescription {PrescriptionId}",
+                " Successfully created {Count} reminders for Prescription {PrescriptionId}",
                 remindersCreated, prescription.Id);
         }
 
@@ -198,9 +198,104 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             }
         }
 
-        /// <summary>
-        /// ✅ Build RRULE for prescription with proper frequency handling
-        /// </summary>
+        ///  Build RRULE for prescription with proper frequency handling
+        //private string BuildRRuleForPrescription(
+        //    PrescriptionItem item,
+        //    DateTime startDateTime,
+        //    DateTime? endDate,
+        //    string timeZoneId)
+        //{
+        //    var parts = new List<string>();
+
+        //    //  Add frequency
+        //    switch (item.ReminderFrequencyType)
+        //    {
+        //        case RepeatFrequency.Once:
+        //            parts.Add("FREQ=DAILY");
+        //            parts.Add("COUNT=1");
+        //            break;
+
+        //        case RepeatFrequency.Daily:
+        //            parts.Add("FREQ=DAILY");
+        //            break;
+
+        //        case RepeatFrequency.Weekly:
+        //            parts.Add("FREQ=WEEKLY");
+        //            if (item.ReminderWeeklyDays?.Count > 0)
+        //            {
+        //                var days = string.Join(",", item.ReminderWeeklyDays
+        //                    .Select(d => ConvertDayOfWeekToRFC5545(d))
+        //                    .Distinct());
+        //                parts.Add($"BYDAY={days}");
+        //            }
+        //            break;
+
+        //        case RepeatFrequency.Monthly:
+        //            parts.Add("FREQ=MONTHLY");
+        //            parts.Add("BYMONTHDAY=1");
+        //            break;
+
+        //        default:
+        //            throw new ArgumentException($"Unsupported frequency: {item.ReminderFrequencyType}");
+        //    }
+
+        //    //  Add time components
+        //    if (item.ReminderDailyDoseTimes?.Count > 0)
+        //    {
+        //        var sortedTimes = item.ReminderDailyDoseTimes.OrderBy(t => t).ToList();
+        //        var uniqueMinutes = sortedTimes.Select(t => t.Minutes).Distinct().ToList();
+
+        //        if (uniqueMinutes.Count == 1)
+        //        {
+        //            //  Same minute for all times (e.g., 08:00, 12:00, 16:00)
+        //            var uniqueHours = sortedTimes.Select(t => t.Hours).Distinct().OrderBy(h => h).ToList();
+
+        //            if (uniqueHours.Any())
+        //                parts.Add($"BYHOUR={string.Join(",", uniqueHours)}");
+
+        //            parts.Add($"BYMINUTE={uniqueMinutes[0]}");
+        //            parts.Add("BYSECOND=0");
+        //        }
+        //        else
+        //        {
+        //            // ⚠️ Mixed minutes (e.g., 07:30, 14:00, 21:45)
+        //            _logger.LogWarning(
+        //                "⚠️ Mixed minutes detected in ReminderDailyDoseTimes. " +
+        //                "This may cause incorrect occurrences. Times: {Times}",
+        //                string.Join(", ", sortedTimes.Select(t => t.ToString(@"hh\:mm"))));
+
+        //            // Fallback: use first time only
+        //            parts.Add($"BYHOUR={sortedTimes[0].Hours}");
+        //            parts.Add($"BYMINUTE={sortedTimes[0].Minutes}");
+        //            parts.Add("BYSECOND=0");
+        //        }
+        //    }
+
+        //    //  Add UNTIL
+        //    if (endDate.HasValue)
+        //    {
+        //        var inclusiveEnd = endDate.Value.Date.AddDays(1).AddTicks(-1);
+        //        var endUtc = inclusiveEnd.ToUniversalTime();
+        //        parts.Add($"UNTIL={endUtc:yyyyMMddTHHmmssZ}");
+        //    }
+
+        //    var rrule = string.Join(";", parts);
+
+        //    _logger.LogDebug("Built RRULE: {RRULE}", rrule);
+
+        //    // Test parse
+        //    try
+        //    {
+        //        var test = new RecurrencePattern(rrule);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Failed to parse generated RRULE: {RRULE}", rrule);
+        //        throw new ArgumentException($"Generated invalid RRULE: {rrule}", ex);
+        //    }
+
+        //    return rrule;
+        //}
         private string BuildRRuleForPrescription(
             PrescriptionItem item,
             DateTime startDateTime,
@@ -209,7 +304,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         {
             var parts = new List<string>();
 
-            // ✅ Add frequency
+            // أولًا: Frequency
             switch (item.ReminderFrequencyType)
             {
                 case RepeatFrequency.Once:
@@ -241,40 +336,31 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     throw new ArgumentException($"Unsupported frequency: {item.ReminderFrequencyType}");
             }
 
-            // ✅ Add time components
+            // ثانيًا: أوقات الجرعة
             if (item.ReminderDailyDoseTimes?.Count > 0)
             {
                 var sortedTimes = item.ReminderDailyDoseTimes.OrderBy(t => t).ToList();
+                var uniqueHours = sortedTimes.Select(t => t.Hours).Distinct().OrderBy(h => h).ToList();
                 var uniqueMinutes = sortedTimes.Select(t => t.Minutes).Distinct().ToList();
 
+                if (uniqueHours.Any())
+                    parts.Add($"BYHOUR={string.Join(",", uniqueHours)}");
+
                 if (uniqueMinutes.Count == 1)
-                {
-                    // ✅ Same minute for all times (e.g., 08:00, 12:00, 16:00)
-                    var uniqueHours = sortedTimes.Select(t => t.Hours).Distinct().OrderBy(h => h).ToList();
-
-                    if (uniqueHours.Any())
-                        parts.Add($"BYHOUR={string.Join(",", uniqueHours)}");
-
                     parts.Add($"BYMINUTE={uniqueMinutes[0]}");
-                    parts.Add("BYSECOND=0");
-                }
-                else
+                else if (uniqueMinutes.Count > 1)
                 {
-                    // ⚠️ Mixed minutes (e.g., 07:30, 14:00, 21:45)
-                    _logger.LogWarning(
-                        "⚠️ Mixed minutes detected in ReminderDailyDoseTimes. " +
-                        "This may cause incorrect occurrences. Times: {Times}",
-                        string.Join(", ", sortedTimes.Select(t => t.ToString(@"hh\:mm"))));
-
-                    // Fallback: use first time only
-                    parts.Add($"BYHOUR={sortedTimes[0].Hours}");
-                    parts.Add($"BYMINUTE={sortedTimes[0].Minutes}");
-                    parts.Add("BYSECOND=0");
+                    _logger.LogWarning("Mixed minutes detected - using first minute only");
+                    parts.Add($"BYMINUTE={uniqueMinutes[0]}");
                 }
+
+                parts.Add("BYSECOND=0");
             }
 
-            // ✅ Add UNTIL
-            if (endDate.HasValue)
+            // الجزء المهم: ما نضيفش UNTIL لو Once
+            bool addUntil = endDate.HasValue && item.ReminderFrequencyType != RepeatFrequency.Once;
+
+            if (addUntil)
             {
                 var inclusiveEnd = endDate.Value.Date.AddDays(1).AddTicks(-1);
                 var endUtc = inclusiveEnd.ToUniversalTime();
@@ -282,7 +368,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             }
 
             var rrule = string.Join(";", parts);
-
             _logger.LogDebug("Built RRULE: {RRULE}", rrule);
 
             // Test parse
@@ -374,7 +459,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 }
 
                 _logger.LogInformation(
-                    "✅ Cancelled {Count} reminders",
+                    " Cancelled {Count} reminders",
                     prescriptionReminders.Count);
             }
             catch (Exception ex)

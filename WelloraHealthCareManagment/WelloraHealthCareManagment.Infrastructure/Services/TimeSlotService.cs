@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
@@ -39,25 +40,145 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
+        private const int MAX_GENERATION_MONTHS = 3;
+        private const int DEFAULT_BATCH_SIZE = 1000;
+        private const int ROLLING_WINDOW_MONTHS = 2; 
+        //public async Task<GenerateSlotsResponse> GenerateSlotsAsync(
+        //    int doctorId,
+        //    GenerateSlotsRequest request,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        _logger.LogInformation(
+        //            "Generating slots for doctor {DoctorId} from {StartDate} to {EndDate}",
+        //            doctorId, request.StartDate, request.EndDate);
+
+        //        // 1. Get active template
+        //        var template = await _scheduleRepository
+        //            .GetActiveTemplateAsync(doctorId, cancellationToken);
+
+        //        if (template == null)
+        //            throw new DomainException("No active schedule template found for this doctor");
+
+        //        // 2. Get exceptions
+        //        var exceptions = await _exceptionRepository
+        //            .GetExceptionsForPeriodAsync(
+        //                doctorId,
+        //                request.StartDate,
+        //                request.EndDate,
+        //                cancellationToken);
+
+        //        // 3. Generate slots using Factory
+        //        var generatedSlots = _slotGeneratorFactory.GenerateSlotsForPeriod(
+        //            template,
+        //            request.StartDate,
+        //            request.EndDate,
+        //            exceptions
+        //        );
+
+        //        int slotsAdded = 0;
+        //        int slotsSkipped = 0;
+
+        //        // 4. Filter existing slots (مهم للمرونة!)
+        //        foreach (var slot in generatedSlots)
+        //        {
+        //            // Check if slot already exists
+        //            var exists = await _timeSlotRepository.ExistsAsync(
+        //                slot.DoctorId,
+        //                slot.SlotDate,
+        //                slot.StartTime,
+        //                cancellationToken);
+
+        //            if (exists)
+        //            {
+        //                if (request.RegenerateExisting)
+        //                {
+        //                    // حذف القديم وإضافة الجديد
+        //                    var existingSlots = await _timeSlotRepository
+        //                        .GetExistingSlotsForDateAsync(slot.DoctorId, slot.SlotDate, cancellationToken);
+
+        //                    var slotToDelete = existingSlots.FirstOrDefault(s =>
+        //                        s.StartTime == slot.StartTime && s.Status == SlotStatus.Available);
+
+        //                    if (slotToDelete != null)
+        //                    {
+        //                        await _timeSlotRepository.DeleteAsync(slotToDelete, cancellationToken);
+        //                        await _timeSlotRepository.AddAsync(slot, cancellationToken);
+        //                        slotsAdded++;
+        //                    }
+        //                    else
+        //                    {
+        //                        slotsSkipped++; // محجوز - لا يمكن حذفه
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    slotsSkipped++;
+        //                }
+        //            }
+        //            else
+        //            {
+        //                await _timeSlotRepository.AddAsync(slot, cancellationToken);
+        //                slotsAdded++;
+        //            }
+        //        }
+
+        //        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        //        _logger.LogInformation(
+        //            "Generated {SlotsAdded} slots, skipped {SlotsSkipped} for doctor {DoctorId}",
+        //            slotsAdded, slotsSkipped, doctorId);
+
+        //        return new GenerateSlotsResponse
+        //        {
+        //            SlotsGenerated = slotsAdded,
+        //            SlotsSkipped = slotsSkipped,
+        //            GeneratedFrom = request.StartDate,
+        //            GeneratedTo = request.EndDate
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error generating slots for doctor {DoctorId}", doctorId);
+        //        throw;
+        //    }
+        //}
+
         public async Task<GenerateSlotsResponse> GenerateSlotsAsync(
             int doctorId,
             GenerateSlotsRequest request,
             CancellationToken cancellationToken = default)
         {
+            var stopwatch = Stopwatch.StartNew();
+
             try
             {
                 _logger.LogInformation(
                     "Generating slots for doctor {DoctorId} from {StartDate} to {EndDate}",
                     doctorId, request.StartDate, request.EndDate);
 
-                // 1. Get active template
+                // 1. Validation: حد أقصى 3 شهور
+                var monthsDiff = (request.EndDate.Year - request.StartDate.Year) * 12
+                    + request.EndDate.Month - request.StartDate.Month;
+
+                if (monthsDiff > MAX_GENERATION_MONTHS)
+                {
+                    _logger.LogWarning(
+                        "Generation period too long ({Months} months). Limiting to {Max} months",
+                        monthsDiff, MAX_GENERATION_MONTHS);
+
+                    request.EndDate = request.StartDate.AddMonths(MAX_GENERATION_MONTHS);
+                }
+
+                // 2. Get active template
                 var template = await _scheduleRepository
                     .GetActiveTemplateAsync(doctorId, cancellationToken);
 
                 if (template == null)
-                    throw new DomainException("No active schedule template found for this doctor");
+                    throw new DomainException("No active schedule template found");
 
-                // 2. Get exceptions
+                // 3. Get exceptions
                 var exceptions = await _exceptionRepository
                     .GetExceptionsForPeriodAsync(
                         doctorId,
@@ -65,7 +186,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         request.EndDate,
                         cancellationToken);
 
-                // 3. Generate slots using Factory
+                // 4. Generate slots
                 var generatedSlots = _slotGeneratorFactory.GenerateSlotsForPeriod(
                     template,
                     request.StartDate,
@@ -73,66 +194,36 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     exceptions
                 );
 
-                int slotsAdded = 0;
-                int slotsSkipped = 0;
-
-                // 4. Filter existing slots (مهم للمرونة!)
-                foreach (var slot in generatedSlots)
+                // 5. Filter by days (لو مطلوب أيام معينة)
+                if (request.OnlyForDays?.Any() == true)
                 {
-                    // Check if slot already exists
-                    var exists = await _timeSlotRepository.ExistsAsync(
-                        slot.DoctorId,
-                        slot.SlotDate,
-                        slot.StartTime,
-                        cancellationToken);
+                    generatedSlots = generatedSlots
+                        .Where(s => request.OnlyForDays.Contains(s.SlotDate.DayOfWeek))
+                        .ToList();
 
-                    if (exists)
-                    {
-                        if (request.RegenerateExisting)
-                        {
-                            // حذف القديم وإضافة الجديد
-                            var existingSlots = await _timeSlotRepository
-                                .GetExistingSlotsForDateAsync(slot.DoctorId, slot.SlotDate, cancellationToken);
-
-                            var slotToDelete = existingSlots.FirstOrDefault(s =>
-                                s.StartTime == slot.StartTime && s.Status == SlotStatus.Available);
-
-                            if (slotToDelete != null)
-                            {
-                                await _timeSlotRepository.DeleteAsync(slotToDelete, cancellationToken);
-                                await _timeSlotRepository.AddAsync(slot, cancellationToken);
-                                slotsAdded++;
-                            }
-                            else
-                            {
-                                slotsSkipped++; // محجوز - لا يمكن حذفه
-                            }
-                        }
-                        else
-                        {
-                            slotsSkipped++;
-                        }
-                    }
-                    else
-                    {
-                        await _timeSlotRepository.AddAsync(slot, cancellationToken);
-                        slotsAdded++;
-                    }
+                    _logger.LogInformation(
+                        "Filtered slots to only include days: {Days}",
+                        string.Join(", ", request.OnlyForDays));
                 }
 
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                // 6. Process in batches
+                var result = await ProcessSlotsInBatchesAsync(
+                    doctorId,
+                    generatedSlots,
+                    request.RegenerateExisting,
+                    request.BatchSize,
+                    cancellationToken);
+
+                stopwatch.Stop();
+                result.ProcessingTime = stopwatch.Elapsed;
 
                 _logger.LogInformation(
-                    "Generated {SlotsAdded} slots, skipped {SlotsSkipped} for doctor {DoctorId}",
-                    slotsAdded, slotsSkipped, doctorId);
+                    "Generated {SlotsAdded} slots in {Time}ms ({Batches} batches)",
+                    result.SlotsGenerated,
+                    stopwatch.ElapsedMilliseconds,
+                    result.BatchesProcessed);
 
-                return new GenerateSlotsResponse
-                {
-                    SlotsGenerated = slotsAdded,
-                    SlotsSkipped = slotsSkipped,
-                    GeneratedFrom = request.StartDate,
-                    GeneratedTo = request.EndDate
-                };
+                return result;
             }
             catch (Exception ex)
             {
@@ -140,6 +231,241 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 throw;
             }
         }
+
+        // معالجة الـ slots على دفعات لتجنب البطء
+        //private async Task<GenerateSlotsResponse> ProcessSlotsInBatchesAsync(
+        //    int doctorId,
+        //    List<TimeSlot> generatedSlots,
+        //    bool regenerateExisting,
+        //    int batchSize,
+        //    CancellationToken cancellationToken)
+        //{
+        //    int slotsAdded = 0;
+        //    int slotsSkipped = 0;
+        //    int batchesProcessed = 0;
+
+        //    // Handle empty list
+        //    if (!generatedSlots.Any())
+        //    {
+        //        _logger.LogWarning(
+        //            "No slots generated for doctor {DoctorId}. Likely no matching days in the period.",
+        //            doctorId);
+
+        //        return new GenerateSlotsResponse
+        //        {
+        //            SlotsGenerated = 0,
+        //            SlotsSkipped = 0,
+        //            GeneratedFrom = DateTime.UtcNow.Date,
+        //            GeneratedTo = DateTime.UtcNow.Date,
+        //            BatchesProcessed = 0,
+        //            ProcessingTime = TimeSpan.Zero
+        //        };
+        //    }
+
+        //    // تقسيم الـ slots لدفعات
+        //    var batches = generatedSlots
+        //        .Select((slot, index) => new { slot, index })
+        //        .GroupBy(x => x.index / batchSize)
+        //        .Select(g => g.Select(x => x.slot).ToList())
+        //        .ToList();
+
+        //    _logger.LogInformation(
+        //        "Processing {TotalSlots} slots in {BatchCount} batches",
+        //        generatedSlots.Count, batches.Count);
+
+        //    foreach (var batch in batches)
+        //    {
+        //        try
+        //        {
+        //            // Get existing slots for this batch
+        //            var batchDates = batch.Select(s => s.SlotDate.Date).Distinct().ToList();
+        //            var existingSlots = await _timeSlotRepository
+        //                .GetSlotsForDatesAsync(doctorId, batchDates, cancellationToken);
+
+        //            var existingDict = existingSlots
+        //                .GroupBy(s => new { s.SlotDate, s.StartTime })
+        //                .ToDictionary(
+        //                    g => g.Key,
+        //                    g => g.First());
+
+        //            // Process each slot
+        //            foreach (var slot in batch)
+        //            {
+        //                var key = new { SlotDate = slot.SlotDate.Date, slot.StartTime };
+
+        //                if (existingDict.TryGetValue(key, out var existingSlot))
+        //                {
+        //                    if (regenerateExisting)
+        //                    {
+        //                        //  Only regenerate Available slots
+        //                        if (existingSlot.Status == SlotStatus.Available)
+        //                        {
+        //                            // Check if slot properties changed
+        //                            bool needsRegeneration =
+        //                                existingSlot.EndTime != slot.EndTime || // Duration changed
+        //                                existingSlot.GeneratedFromTemplateId != slot.GeneratedFromTemplateId; // Template changed
+
+        //                            if (needsRegeneration)
+        //                            {
+        //                                await _timeSlotRepository.DeleteAsync(existingSlot, cancellationToken);
+        //                                await _timeSlotRepository.AddAsync(slot, cancellationToken);
+        //                                slotsAdded++;
+
+        //                                _logger.LogDebug("Regenerated slot at {Date} {Time}",
+        //                                    slot.SlotDate, slot.StartTime);
+        //                            }
+        //                            else
+        //                            {
+        //                                slotsSkipped++; // Same properties, skip
+        //                            }
+        //                        }
+        //                        else
+        //                        {
+        //                            slotsSkipped++; // Booked/Blocked, cannot regenerate
+
+        //                            _logger.LogWarning(
+        //                                "Cannot regenerate slot at {Date} {Time} - Status: {Status}",
+        //                                existingSlot.SlotDate, existingSlot.StartTime, existingSlot.Status);
+        //                        }
+        //                    }
+        //                    else
+        //                    {
+        //                        slotsSkipped++; // RegenerateExisting = false
+        //                    }
+        //                }
+        //            }
+
+        //            // Save batch
+        //            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        //            batchesProcessed++;
+
+        //            _logger.LogDebug(
+        //                "Processed batch {BatchNum}/{TotalBatches}",
+        //                batchesProcessed, batches.Count);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(ex, "Error processing batch {BatchNum}", batchesProcessed + 1);
+        //            throw;
+        //        }
+        //    }
+
+        //    return new GenerateSlotsResponse
+        //    {
+        //        SlotsGenerated = slotsAdded,
+        //        SlotsSkipped = slotsSkipped,
+        //        GeneratedFrom = generatedSlots.Min(s => s.SlotDate),
+        //        GeneratedTo = generatedSlots.Max(s => s.SlotDate),
+        //        BatchesProcessed = batchesProcessed
+        //    };
+        //}
+
+        private async Task<GenerateSlotsResponse> ProcessSlotsInBatchesAsync(
+    int doctorId,
+    List<TimeSlot> generatedSlots,
+    bool regenerateExisting,
+    int batchSize,
+    CancellationToken cancellationToken)
+        {
+            int slotsAdded = 0;
+            int slotsSkipped = 0;
+            int batchesProcessed = 0;
+
+            if (!generatedSlots.Any())
+            {
+                _logger.LogWarning("No slots generated for doctor {DoctorId}.", doctorId);
+                return new GenerateSlotsResponse
+                {
+                    SlotsGenerated = 0,
+                    SlotsSkipped = 0,
+                    GeneratedFrom = DateTime.UtcNow.Date,
+                    GeneratedTo = DateTime.UtcNow.Date,
+                    BatchesProcessed = 0,
+                    ProcessingTime = TimeSpan.Zero
+                };
+            }
+
+            // ✅ Fix: Guard against zero or negative batchSize
+            if (batchSize <= 0) batchSize = 1000;
+
+            var batches = generatedSlots
+                .Select((slot, index) => new { slot, index })
+                .GroupBy(x => x.index / batchSize)
+                .Select(g => g.Select(x => x.slot).ToList())
+                .ToList();
+
+            _logger.LogInformation(
+                "Processing {TotalSlots} slots in {BatchCount} batches",
+                generatedSlots.Count, batches.Count);
+
+            foreach (var batch in batches)
+            {
+                try
+                {
+                    var batchDates = batch.Select(s => s.SlotDate.Date).Distinct().ToList();
+                    var existingSlots = await _timeSlotRepository
+                        .GetSlotsForDatesAsync(doctorId, batchDates, cancellationToken);
+
+                    var existingDict = existingSlots
+                        .GroupBy(s => new { Date = s.SlotDate.Date, s.StartTime })
+                        .ToDictionary(g => g.Key, g => g.First());
+
+                    foreach (var slot in batch)
+                    {
+                        var key = new { Date = slot.SlotDate.Date, slot.StartTime };
+
+                        if (existingDict.TryGetValue(key, out var existingSlot))
+                        {
+                            if (regenerateExisting && existingSlot.Status == SlotStatus.Available)
+                            {
+                                bool needsRegeneration =
+                                    existingSlot.EndTime != slot.EndTime ||
+                                    existingSlot.GeneratedFromTemplateId != slot.GeneratedFromTemplateId;
+
+                                if (needsRegeneration)
+                                {
+                                    await _timeSlotRepository.DeleteAsync(existingSlot, cancellationToken);
+                                    await _timeSlotRepository.AddAsync(slot, cancellationToken);
+                                    slotsAdded++;
+                                }
+                                else
+                                {
+                                    slotsSkipped++;
+                                }
+                            }
+                            else
+                            {
+                                slotsSkipped++;
+                            }
+                        }
+                        else
+                        {
+                            // ✅ الـ Fix الأساسي: إضافة الـ slot الجديد
+                            await _timeSlotRepository.AddAsync(slot, cancellationToken);
+                            slotsAdded++;
+                        }
+                    }
+
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    batchesProcessed++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing batch {BatchNum}", batchesProcessed + 1);
+                    throw;
+                }
+            }
+
+            return new GenerateSlotsResponse
+            {
+                SlotsGenerated = slotsAdded,
+                SlotsSkipped = slotsSkipped,
+                GeneratedFrom = generatedSlots.Min(s => s.SlotDate),
+                GeneratedTo = generatedSlots.Max(s => s.SlotDate),
+                BatchesProcessed = batchesProcessed
+            };
+        }
+
 
         public async Task<List<AvailableSlotDto>> GetAvailableSlotsAsync(
             int doctorId,

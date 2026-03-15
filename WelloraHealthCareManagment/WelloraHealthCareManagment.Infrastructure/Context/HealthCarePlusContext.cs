@@ -27,15 +27,8 @@ namespace WelloraHealthCareManagment.API.Context
         // DbSets
         public DbSet<Doctor> Doctors { get; set; } = null!;
         public DbSet<Patient> Patients { get; set; } = null!;
-        //public DbSet<DoctorSlot> DoctorSlots { get; set; } = null!;
-        //public DbSet<SessionType> SessionTypes { get; set; } = null!;
         public DbSet<MedicalHistory> MedicalHistories { get; set; } = null!;
-        //public DbSet<MedicalRecord> MedicalRecords { get; set; } = null!;
-        //public DbSet<Appointment> Appointments { get; set; } = null!;
-        //public DbSet<Prescription> Prescriptions { get; set; } = null!;
-        //public DbSet<PrescriptionMed> PrescriptionMeds { get; set; } = null!;
         public DbSet<MedicationsIntake> MedicationsIntakes { get; set; } = null!;
-        //public DbSet<DoctorWeeklySchedule> DoctorWeeklySchedules { get; set; } = null!;
         public DbSet<DosingSchedule> DosingSchedules { get; set; } = null!;
         public DbSet<Review> Reviews { get; set; } = null!;
         public DbSet<ExternalFile> ExternalFiles { get; set; } = null!;
@@ -50,7 +43,6 @@ namespace WelloraHealthCareManagment.API.Context
         public DbSet<ReminderV2> ReminderV2s { get; set; }
         public DbSet<ReminderOccurrenceLog> ReminderOccurrenceLogs { get; set; }
         public DbSet<ReminderOccurrencesCache> ReminderOccurrencesCache { get; set; }
-        //public DbSet<NotificationLog> NotificationLogs { get; set; }
         public DbSet<PatientDevice> PatientDevices { get; set; }
 
         // === Booking System DbSets === دي جداول نظام الحجوزات الجديد
@@ -64,6 +56,8 @@ namespace WelloraHealthCareManagment.API.Context
         public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
         public DbSet<MedicalHistoryAccessGrant> MedicalHistoryAccessGrants => Set<MedicalHistoryAccessGrant>();
         public DbSet<MedicalHistoryAccessLog> MedicalHistoryAccessLogs => Set<MedicalHistoryAccessLog>();
+        public DbSet<Payment> Payments { get; set; }
+
         //public DbSet<AppointmentNotification> AppointmentNotifications => Set<AppointmentNotification>();
 
 
@@ -88,6 +82,7 @@ namespace WelloraHealthCareManagment.API.Context
             modelBuilder.ApplyConfiguration(new PrescriptionItemConfiguration());
             modelBuilder.ApplyConfiguration(new MedicalHistoryAccessGrantConfiguration());
             modelBuilder.ApplyConfiguration(new MedicalHistoryAccessLogConfiguration());
+            modelBuilder.ApplyConfiguration(new PaymentConfiguration());
 
             // ─────────────────────── ApplicationUser ───────────────────────
             modelBuilder.Entity<ApplicationUser>(entity =>
@@ -223,6 +218,12 @@ namespace WelloraHealthCareManagment.API.Context
                 entity.Property(d => d.AverageRating).HasColumnType("float").HasDefaultValue(0);
                 entity.Property(d => d.Description).HasMaxLength(500);
                 entity.Property(d => d.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+
+                entity.Property(d => d.ConsultationFee)
+                    .HasColumnType("decimal(18,2)")
+                    .HasDefaultValue(200)
+                    .IsRequired();
 
                 entity.HasOne(d => d.User)
                       .WithOne(u => u.Doctor)

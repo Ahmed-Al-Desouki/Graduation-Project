@@ -25,5 +25,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication
 
         /// Check if patient exists by user ID
         Task<bool> PatientExistsByUserIdAsync(int userId);
+        Task<Patient?> GetByIdWithUserAsync(
+            int patientId,
+            CancellationToken cancellationToken = default);
     }
 }

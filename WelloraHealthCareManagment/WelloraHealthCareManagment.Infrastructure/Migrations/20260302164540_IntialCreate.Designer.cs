@@ -12,7 +12,7 @@ using WelloraHealthCareManagment.API.Context;
 namespace WelloraHealthCareManagment.Infrastructure.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    [Migration("20260215132808_IntialCreate")]
+    [Migration("20260302164540_IntialCreate")]
     partial class IntialCreate
     {
         /// <inheritdoc />
@@ -1466,6 +1466,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
+                    b.Property<bool>("IsOpenEnded")
+                        .HasColumnType("bit");
+
                     b.Property<int>("SlotDurationMinutes")
                         .HasColumnType("int");
 
@@ -1475,9 +1478,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1514,9 +1515,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<int>("DoctorId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("DoctorId1")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("datetime2");
 
@@ -1546,8 +1544,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.HasIndex("AppointmentId");
 
                     b.HasIndex("DoctorId");
-
-                    b.HasIndex("DoctorId1");
 
                     b.HasIndex("PatientId", "DoctorId");
 
@@ -1786,9 +1782,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1828,9 +1822,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("time");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -1851,13 +1843,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<int>("DoctorId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("DoctorId");
 
-                    b.Property<int?>("DoctorId1")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("DoctorScheduleTemplateId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<TimeSpan>("EndTime")
                         .HasColumnType("time");
@@ -1888,17 +1883,19 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DoctorId1");
+                    b.HasIndex("DoctorScheduleTemplateId");
 
                     b.HasIndex("GeneratedFromTemplateId");
 
-                    b.HasIndex("Status", "SlotDate")
-                        .HasFilter("[Status] = 'Available'");
+                    b.HasIndex("SlotDate")
+                        .HasDatabaseName("IX_TimeSlots_SlotDate");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_TimeSlots_Status");
 
                     b.HasIndex("DoctorId", "SlotDate", "StartTime")
-                        .IsUnique();
-
-                    b.HasIndex("DoctorId", "SlotDate", "Status");
+                        .IsUnique()
+                        .HasDatabaseName("UQ_TimeSlot_DoctorDate");
 
                     b.ToTable("TimeSlots", (string)null);
                 });
@@ -2284,14 +2281,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
-                        .WithMany()
-                        .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", null)
                         .WithMany("MedicalHistoryAccessGrants")
-                        .HasForeignKey("DoctorId1");
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", "Patient")
                         .WithMany()
@@ -2396,17 +2389,17 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
             modelBuilder.Entity("WelloraHealthCareManagement.Domain.Entities.TimeSlot", b =>
                 {
                     b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
-                        .WithMany()
+                        .WithMany("TimeSlots")
                         .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", null)
-                        .WithMany("TimeSlots")
-                        .HasForeignKey("DoctorId1");
+                    b.HasOne("WelloraHealthCareManagement.Domain.Entities.DoctorScheduleTemplate", null)
+                        .WithMany("GeneratedSlots")
+                        .HasForeignKey("DoctorScheduleTemplateId");
 
                     b.HasOne("WelloraHealthCareManagement.Domain.Entities.DoctorScheduleTemplate", "GeneratedFromTemplate")
-                        .WithMany("GeneratedSlots")
+                        .WithMany()
                         .HasForeignKey("GeneratedFromTemplateId")
                         .OnDelete(DeleteBehavior.SetNull);
 
