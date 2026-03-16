@@ -3,6 +3,7 @@ import 'package:graduation_project/features/auth/presentation/views/chat_view.da
 import 'package:graduation_project/features/auth/presentation/views/schedule_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_view.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/views/doctor_profile_view.dart';
 // استورد صفحة بروفايل الدكتور هنا
 
 class DoctorHomeLayout extends StatefulWidget {
@@ -19,9 +20,7 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
     DoctorHomeView(), // شاشة هوم الدكتور اللي هتبدأ ترسمها
     ScheduleView(),
     ChatView(), // مشتركة (الباك بيفرق بالتوكن)
-    Center(
-      child: Text("Doctor Profile"),
-    ), // استبدلها بـ ProfileView الخاص بالدكتور
+    DoctorProfileView(),
     SettingsScreen(), // مشتركة
   ];
 
@@ -46,9 +45,12 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
         ),
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          elevation: 0,
           currentIndex: _currentIndex,
           selectedItemColor: activeBlue,
           unselectedItemColor: inactiveGray,
+          showUnselectedLabels: true,
           onTap: (index) => setState(() => _currentIndex = index),
           items: [
             _buildNavItem(Icons.home_filled, 'Home', 0),

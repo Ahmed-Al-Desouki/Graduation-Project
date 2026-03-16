@@ -9,6 +9,10 @@ import 'package:graduation_project/features/booking/presentation/manager/exam_se
 import 'package:graduation_project/features/booking/presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/views/booking_calendar_view.dart';
 import 'package:graduation_project/features/booking/presentation/views/medical_details_view.dart';
+import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/views/booking_calendar_view.dart';
 import 'package:graduation_project/features/booking/presentation/views/schedule_setup_view.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/views/chat_details_view.dart';
@@ -42,6 +46,8 @@ import 'package:graduation_project/features/auth/presentation/views/test_setting
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/medical_history_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/ringing_view.dart';
+import 'package:graduation_project/features/search/presentation/manager/search_cubit/search_cubit.dart';
+import 'package:graduation_project/features/search/presentation/views/search_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/onboarding_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
@@ -76,6 +82,7 @@ abstract class AppRouter {
   static const kDoctorSchedule = '/doctorSchedule';
   static const kScheduleSetup = '/scheduleSetup';
   static const kMedicalDetails = '/medicalDetails'; // ✅ أضف هذا الثابت
+  static const kSearch = '/search';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -437,6 +444,14 @@ abstract class AppRouter {
             ),
           );
         },
+      ),
+      GoRoute(
+        path: kSearch,
+        builder:
+            (context, state) => BlocProvider(
+              create: (context) => getIt<SearchCubit>(),
+              child: const SearchView(),
+            ),
       ),
     ],
   );

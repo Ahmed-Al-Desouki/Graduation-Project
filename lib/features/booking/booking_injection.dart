@@ -53,6 +53,12 @@ import 'package:graduation_project/features/booking/domain/use_cases/update_appo
 import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/exam_session_cubit/exam_session_cubit.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/book_follow_up_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/create_manual_slot_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/get_doctor_slots_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/update_appointment_status_use_case.dart';
+import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
 import 'package:hive/hive.dart';
 import 'domain/repositories/i_booking_repository.dart';
 import 'data/repositories/booking_repository_impl.dart';

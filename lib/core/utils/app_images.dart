@@ -81,6 +81,11 @@ class Assets {
   static const String imagesFilePlusFillSvgrepoCom =
       "assets/images/file-plus-fill-svgrepo-com.svg";
 
+  /// Assets for imagesFindYourDoctor
+  /// assets/images/find your doctor.png
+  static const String imagesFindYourDoctor =
+      "assets/images/find your doctor.png";
+
   /// Assets for imagesGoogleColorSvgrepoCom
   /// assets/images/google-color-svgrepo-com.svg
   static const String imagesGoogleColorSvgrepoCom =
@@ -106,6 +111,10 @@ class Assets {
   /// Assets for imagesHelp
   /// assets/images/help.svg
   static const String imagesHelp = "assets/images/help.svg";
+
+  /// Assets for imagesHospital
+  /// assets/images/hospital.svg
+  static const String imagesHospital = "assets/images/hospital.svg";
 
   /// Assets for imagesId
   /// assets/images/id.svg
@@ -228,6 +237,10 @@ class Assets {
   /// Assets for imagesSecure
   /// assets/images/secure.svg
   static const String imagesSecure = "assets/images/secure.svg";
+
+  /// Assets for imagesServices
+  /// assets/images/services.svg
+  static const String imagesServices = "assets/images/services.svg";
 
   /// Assets for imagesShieldHeartSolidFull
   /// assets/images/shield-heart-solid-full.svg
