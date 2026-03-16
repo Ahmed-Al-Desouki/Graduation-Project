@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/constant.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
@@ -133,6 +135,15 @@ class ApiService {
 
   Future<dynamic> post(String endpoint, dynamic body) async {
     try {
+      if (body is FormData) {
+        print("📤 Sending Multipart Data (FormData)...");
+        // لو عاوز تشوف الداتا اللي جوه الـ FormData (للتصحيح فقط)
+        for (var element in body.fields) {
+          print("Field: ${element.key} = ${element.value}");
+        }
+      } else {
+        print("📤 Sending Body: ${jsonEncode(body)}");
+      }
       final response = await _dio.post(endpoint, data: body);
       return response.data;
     } catch (e) {

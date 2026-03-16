@@ -53,7 +53,15 @@ abstract class IBookingRepository {
   Future<Either<Failure, void>> confirmAppointment(String id);
   Future<Either<Failure, void>> startAppointment(String id);
   Future<Either<Failure, void>> completeAppointment(String id);
-  Future<Either<Failure, void>> cancelAppointment(String id, String reason);
+  // Future<Either<Failure, void>> cancelAppointment(String id, String reason);
+  Future<Either<Failure, void>> cancelAppointmentByDoctor(
+    String id,
+    String reason,
+  );
+  Future<Either<Failure, void>> cancelAppointmentByPatient(
+    String id,
+    String reason,
+  );
 
   // --- Follow-up ---
   Future<Either<Failure, void>> bookFollowUpExisting(

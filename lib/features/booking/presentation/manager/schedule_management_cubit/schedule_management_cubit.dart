@@ -22,8 +22,9 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
     this.getActiveScheduleUseCase,
   ) : super(ScheduleManagementInitial());
 
-  Future<void> fetchCurrentSchedule(String doctorId) async {
+  Future<void> fetchCurrentSchedule() async {
     emit(ScheduleManagementLoading());
+    final doctorId = getIt<SessionManager>().userId;
     final result = await getActiveScheduleUseCase(doctorId);
 
     result.fold((failure) {

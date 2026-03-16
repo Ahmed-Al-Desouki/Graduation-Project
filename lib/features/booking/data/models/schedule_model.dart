@@ -12,11 +12,14 @@ class ScheduleModel extends ScheduleEntity {
   });
 
   factory ScheduleModel.fromJson(Map<String, dynamic> map) {
+    print(
+      "Parsing field slotDuration: ${map['slotDurationMinutes'].runtimeType}",
+    );
     return ScheduleModel(
       id: map['id'],
       templateName: map['templateName'],
-      slotDurationMinutes: map['slotDurationMinutes'],
-      bufferTimeMinutes: map['bufferTimeMinutes'],
+      slotDurationMinutes: _toInt(map['slotDurationMinutes']),
+      bufferTimeMinutes: _toInt(map['bufferTimeMinutes']),
       effectiveFromDate: DateTime.parse(map['effectiveFromDate']),
       effectiveToDate: DateTime.parse(map['effectiveToDate']),
       timeRanges:
@@ -36,9 +39,43 @@ class TimeRangeModel extends TimeRangeEntity {
 
   factory TimeRangeModel.fromJson(Map<String, dynamic> map) {
     return TimeRangeModel(
-      dayOfWeek: map['dayOfWeek'],
+      dayOfWeek: _parseDayToIndex(map['dayOfWeek']),
       startTime: map['startTime'],
       endTime: map['endTime'],
     );
   }
+
+  // 🛠️ دالة تحويل أيام الأسبوع من String لـ int
+  static int _parseDayToIndex(dynamic value) {
+    if (value is int) return value; // لو جاي رقم أصلاً
+
+    if (value is String) {
+      switch (value.toLowerCase()) {
+        case 'sunday':
+          return 0;
+        case 'monday':
+          return 1;
+        case 'tuesday':
+          return 2;
+        case 'wednesday':
+          return 3;
+        case 'thursday':
+          return 4;
+        case 'friday':
+          return 5;
+        case 'saturday':
+          return 6;
+        default:
+          // لو باعت رقم كـ String "1"
+          return int.tryParse(value) ?? 0;
+      }
+    }
+    return 0;
+  }
+}
+
+int _toInt(dynamic value) {
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value) ?? 0;
+  return 0;
 }

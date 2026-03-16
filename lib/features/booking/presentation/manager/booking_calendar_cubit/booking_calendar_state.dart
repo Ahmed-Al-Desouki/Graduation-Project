@@ -8,16 +8,16 @@ final class BookingCalendarInitial extends BookingCalendarState {}
 final class BookingCalendarLoading extends BookingCalendarState {}
 
 final class BookingCalendarSuccess extends BookingCalendarState {
-  // القائمة الكاملة للشهر (عشان Logic الألوان)
   final List<DaySlotsEntity> allDays;
-  // اليوم المختار حالياً وقائمة المواعيد اللي فيه
   final DateTime selectedDate;
   final List<SlotEntity> selectedDaySlots;
+  final String selectedDayTitle;
 
   BookingCalendarSuccess({
     required this.allDays,
     required this.selectedDate,
     required this.selectedDaySlots,
+    required this.selectedDayTitle, // كلهم الآن Named
   });
 }
 

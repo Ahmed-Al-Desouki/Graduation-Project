@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/manager/exam_session_cubit/exam_session_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/views/booking_calendar_view.dart';
+import 'package:graduation_project/features/booking/presentation/views/medical_details_view.dart';
 import 'package:graduation_project/features/booking/presentation/views/schedule_setup_view.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/views/chat_details_view.dart';
@@ -72,6 +75,7 @@ abstract class AppRouter {
   static const kChatDetails = '/chatDetails'; // ✅ أضف هذا الثابت
   static const kDoctorSchedule = '/doctorSchedule';
   static const kScheduleSetup = '/scheduleSetup';
+  static const kMedicalDetails = '/medicalDetails'; // ✅ أضف هذا الثابت
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -98,6 +102,8 @@ abstract class AppRouter {
             'isScheduleConfigured',
             defaultValue: false,
           );
+          final Map<String, dynamic>? extra =
+              state.extra as Map<String, dynamic>?;
 
           if (isSetupComplete) {
             return MultiBlocProvider(
@@ -109,7 +115,10 @@ abstract class AppRouter {
                   create: (context) => getIt<AppointmentActionCubit>(),
                 ),
               ],
-              child: const BookingCalendarView(),
+              child: BookingCalendarView(
+                followUpPatientName: extra?['patientName'],
+                originalAppointmentId: extra?['originalAppointmentId'],
+              ),
             );
           } else {
             // لو رايح للـ Setup من هنا برضو لازم توفر الـ Cubit
@@ -374,6 +383,57 @@ abstract class AppRouter {
             child: ChatDetailsView(
               chatId: data['chatId'] as String,
               receiverName: data['receiverName'] as String,
+            ),
+          );
+        },
+      ),
+
+      // داخل AppRouter.dart
+      // GoRoute(
+      //   path: kMedicalDetails,
+      //   builder: (context, state) {
+      //     final Map<String, dynamic> extra =
+      //         state.extra as Map<String, dynamic>;
+      //     return MultiBlocProvider(
+      //       providers: [
+      //         BlocProvider(create: (context) => getIt<ExamSessionCubit>()),
+      //         BlocProvider(
+      //           create: (context) => getIt<AppointmentActionCubit>(),
+      //         ),
+      //       ],
+      //       child: MedicalDetailsView(
+
+      //         appointmentId: extra['appointmentId'],
+      //         patientName: extra['patientName'],
+      //         patientNote: extra['patientNote'],
+      //         // هات بيانات الدكتور من الـ SessionManager هنا أو جوا الـ View
+      //         doctorName: getIt<SessionManager>().userName,
+      //         doctorSpecialty: "Specialist", // أو أي حقل متاح
+      //       ),
+      //     );
+      //   },
+      // ),
+      GoRoute(
+        path: kMedicalDetails,
+        builder: (context, state) {
+          // ✅ تأمين الـ extra عشان ميعملش Crash لو مبعوتش
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(create: (context) => getIt<ExamSessionCubit>()),
+              BlocProvider(
+                create: (context) => getIt<AppointmentActionCubit>(),
+              ),
+            ],
+            child: MedicalDetailsView(
+              appointmentId: extra['appointmentId'] ?? '',
+              patientName: extra['patientName'] ?? 'Unknown Patient',
+              patientNote: extra['patientNote'],
+              // ✅ تمرير الحالة (ضروري جداً للوجيك الـ Read-only)
+              initialStatus: extra['status'] ?? 'booked',
+              doctorName: getIt<SessionManager>().userName,
+              doctorSpecialty: "Specialist",
             ),
           );
         },

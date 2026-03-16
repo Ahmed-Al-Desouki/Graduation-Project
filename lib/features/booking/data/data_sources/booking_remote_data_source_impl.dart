@@ -19,7 +19,8 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
       'doctors/$doctorId/schedules',
       body,
     );
-    return response['scheduleId']; // الباك بيرجع ID الجدول الجديد
+    // return response['scheduleId']; // الباك بيرجع ID الجدول الجديد
+    return response['templateId'];
   }
 
   @override
@@ -139,5 +140,31 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   ) async {
     // الـ type بيكون إما existing أو new
     await _apiService.post('appointments/$originalId/follow-up/$type', body);
+  }
+
+  @override
+  Future<void> cancelByDoctor(
+    String appointmentId,
+    // String reason,
+    Map<String, dynamic>? body,
+  ) async {
+    // بناءً على كلامك، الباك عامل أكشن مخصص بيكنسل ويعمل بلوك للسلوت
+    await _apiService.patch(
+      'appointments/$appointmentId/doctor-cancel-block',
+      body: body,
+    );
+  }
+
+  @override
+  Future<void> cancelByPatient(
+    String appointmentId,
+    // String reason,
+    Map<String, dynamic>? body,
+  ) async {
+    // المريض بيكنسل والسلوت بيرجع متاح (Available)
+    await _apiService.patch(
+      'appointments/$appointmentId/patient-cancel',
+      body: body,
+    );
   }
 }

@@ -6,6 +6,7 @@ class SlotEntity {
   final String status; // Available, Booked, Completed, etc.
   final String? patientName;
   final String? appointmentId;
+  final String? patientNote; // ملاحظة المريض (اختياري)
 
   SlotEntity({
     required this.slotId,
@@ -14,5 +15,6 @@ class SlotEntity {
     required this.status,
     this.patientName,
     this.appointmentId,
+    this.patientNote,
   });
 }

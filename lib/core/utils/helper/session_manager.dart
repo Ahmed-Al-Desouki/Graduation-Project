@@ -105,11 +105,13 @@ class SessionManager {
 
   // ✅ متغير لتخزين الـ ID في الذاكرة (Memory Cache)
   String? _cachedUserId;
+  String? _cachedName;
 
   SessionManager(this._authRepository);
 
   // ✅ Getter للحصول على الـ ID فوراً بدون Future
   String get userId => _cachedUserId ?? '';
+  String get userName => _cachedName ?? '';
 
   Future<bool> _hasInternet() async {
     try {
@@ -131,6 +133,7 @@ class SessionManager {
 
       // ✅ تحميل الـ ID من الـ Storage للذاكرة بمجرد التأكد من وجود التوكنز
       _cachedUserId = await SecureStorageHelper.getUserId();
+      _cachedName = await SecureStorageHelper.getUserName();
 
       bool isOnline = await _hasInternet();
 

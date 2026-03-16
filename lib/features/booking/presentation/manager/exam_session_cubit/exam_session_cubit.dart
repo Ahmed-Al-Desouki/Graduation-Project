@@ -1,0 +1,102 @@
+import 'package:bloc/bloc.dart';
+import 'package:graduation_project/features/booking/domain/entities/medical_record_entity.dart';
+import 'package:graduation_project/features/booking/domain/entities/medication_item_entity.dart';
+import 'package:graduation_project/features/booking/domain/entities/prescription_entity.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/add_prescription_items_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/create_prescription_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/get_medical_record_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/get_prescription_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/save_medical_record_use_case.dart';
+import 'package:meta/meta.dart';
+
+part 'exam_session_state.dart';
+
+class ExamSessionCubit extends Cubit<ExamSessionState> {
+  final GetMedicalRecordUseCase getMedicalRecordUseCase;
+  final SaveMedicalRecordUseCase saveMedicalRecordUseCase;
+  final CreatePrescriptionUseCase createPrescriptionUseCase;
+  final GetPrescriptionUseCase getPrescriptionUseCase;
+  final AddPrescriptionItemsUseCase addPrescriptionItemsUseCase;
+  ExamSessionCubit(
+    this.getMedicalRecordUseCase,
+    this.saveMedicalRecordUseCase,
+    this.createPrescriptionUseCase,
+    this.getPrescriptionUseCase,
+    this.addPrescriptionItemsUseCase,
+  ) : super(ExamSessionInitial());
+
+  // 1. جلب السجل الطبي فور فتح الصفحة
+  Future<void> fetchMedicalRecord(String appointmentId) async {
+    emit(MedicalRecordLoading());
+    final result = await getMedicalRecordUseCase(appointmentId);
+
+    result.fold((failure) {
+      // ملحوظة: لو 404 معناها أول مرة كشف، فنرجع للـ Initial عادي مش Failure
+      if (failure.errmessage.contains("404")) {
+        emit(ExamSessionInitial());
+      } else {
+        emit(ExamSessionFailure(failure.errmessage));
+      }
+    }, (record) => emit(MedicalRecordFetched(record)));
+  }
+
+  // 2. حفظ أو تحديث السجل الطبي
+  Future<void> saveMedicalRecord({
+    required String appointmentId,
+    required MedicalRecordEntity record,
+    required bool isUpdate,
+  }) async {
+    emit(MedicalRecordLoading());
+    final result = await saveMedicalRecordUseCase(
+      appointmentId: appointmentId,
+      record: record,
+      isUpdate: isUpdate,
+    );
+
+    result.fold(
+      (failure) => emit(ExamSessionFailure(failure.errmessage)),
+      (message) => emit(MedicalRecordSavedSuccess(message)),
+    );
+  }
+
+  // 3. إنشاء روشتة جديدة
+  Future<void> createPrescription({
+    required String appointmentId,
+    required PrescriptionEntity prescription,
+  }) async {
+    emit(PrescriptionLoading());
+    final result = await createPrescriptionUseCase(appointmentId, prescription);
+
+    result.fold(
+      (failure) => emit(ExamSessionFailure(failure.errmessage)),
+      // (newPrescription) => emit(PrescriptionCreatedSuccess(newPrescription)),
+      (newPrescription) =>
+          emit(PrescriptionCreatedSuccess("Prescription issued successfully!")),
+    );
+  }
+
+  // داخل ExamSessionCubit
+  Future<void> fetchPrescription(String appointmentId) async {
+    emit(MedicalRecordLoading()); // أو حالة Loading خاصة بالروشتة
+    final result = await getPrescriptionUseCase(appointmentId);
+    result.fold(
+      (failure) => emit(ExamSessionFailure(failure.errmessage)),
+      (prescription) => emit(PrescriptionFetchedSuccess(prescription)),
+    );
+  }
+
+  Future<void> addPrescriptionItems({
+    required String prescriptionId,
+    required List<MedicationItemEntity> items,
+  }) async {
+    emit(MedicalRecordLoading());
+    final result = await addPrescriptionItemsUseCase(
+      prescriptionId: prescriptionId,
+      items: items,
+    );
+    result.fold(
+      (failure) => emit(ExamSessionFailure(failure.errmessage)),
+      (message) => emit(PrescriptionCreatedSuccess(message)),
+    );
+  }
+}

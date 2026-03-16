@@ -190,19 +190,19 @@ class BookingRepositoryImpl implements IBookingRepository {
     );
   }
 
-  @override
-  Future<Either<Failure, void>> cancelAppointment(
-    String id,
-    String reason,
-  ) async {
-    return await _handleRemoteRequest(
-      () => remoteDataSource.updateAppointmentStatus(
-        id,
-        'cancel',
-        body: {"reason": reason},
-      ),
-    );
-  }
+  // @override
+  // Future<Either<Failure, void>> cancelAppointment(
+  //   String id,
+  //   String reason,
+  // ) async {
+  //   return await _handleRemoteRequest(
+  //     () => remoteDataSource.updateAppointmentStatus(
+  //       id,
+  //       'cancel',
+  //       body: {"reason": reason},
+  //     ),
+  //   );
+  // }
 
   @override
   Future<Either<Failure, void>> blockSlot(
@@ -240,6 +240,25 @@ class BookingRepositoryImpl implements IBookingRepository {
     });
   }
 
+  @override
+  Future<Either<Failure, void>> cancelAppointmentByDoctor(
+    String id,
+    String reason,
+  ) async {
+    return await _handleRemoteRequest(
+      () => remoteDataSource.cancelByDoctor(id, {"reason": reason}),
+    );
+  }
+
+  @override
+  Future<Either<Failure, void>> cancelAppointmentByPatient(
+    String id,
+    String reason,
+  ) async {
+    return await _handleRemoteRequest(
+      () => remoteDataSource.cancelByPatient(id, {"reason": reason}),
+    );
+  }
   // --- 5. المتابعة (Follow-up) ---
 
   @override
@@ -298,25 +317,25 @@ class BookingRepositoryImpl implements IBookingRepository {
   Future<Either<Failure, ScheduleEntity>> getActiveSchedule(
     String doctorId,
   ) async {
-    if (await networkInfo.isConnected) {
-      try {
-        final remoteData = await remoteDataSource.getActiveSchedule(doctorId);
+    // if (await networkInfo.isConnected) {
+    try {
+      final remoteData = await remoteDataSource.getActiveSchedule(doctorId);
 
-        // حفظ في الكاش المحلي (Hive)
-        await localDataSource.cacheActiveSchedule(remoteData);
+      // حفظ في الكاش المحلي (Hive)
+      await localDataSource.cacheActiveSchedule(remoteData);
 
-        // تحويل الـ JSON لـ Entity (بافتراض وجود MapToEntity mapper)
-        return Right(ScheduleModel.fromJson(remoteData));
-      } catch (e) {
-        return Left(ServerFailure(e.toString()));
-      }
-    } else {
-      try {
-        final localData = await localDataSource.getCachedActiveSchedule();
-        return Right(ScheduleModel.fromJson(localData));
-      } catch (e) {
-        return Left(CacheFailure("لا يوجد جدول مخزن حالياً"));
-      }
+      // تحويل الـ JSON لـ Entity (بافتراض وجود MapToEntity mapper)
+      return Right(ScheduleModel.fromJson(remoteData));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
+    // } else {
+    //   try {
+    //     final localData = await localDataSource.getCachedActiveSchedule();
+    //     return Right(ScheduleModel.fromJson(localData));
+    //   } catch (e) {
+    //     return Left(CacheFailure("لا يوجد جدول مخزن حالياً"));
+    //   }
+    // }
   }
 }

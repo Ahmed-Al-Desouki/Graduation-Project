@@ -4,15 +4,24 @@ import '../../../domain/entities/slot_entity.dart';
 class SlotCard extends StatelessWidget {
   final SlotEntity slot;
   final VoidCallback? onConfirm;
-  final VoidCallback? onStart;
+  final VoidCallback? onCancelByDoctor; // ✅ ميثود جديدة لكنسلة الدكتور
+
+  final VoidCallback? onDetails;
   final VoidCallback? onDelete;
+  final VoidCallback? onBlock; // ✅ ميثود جديدة للبلوك
+  final bool isFollowUpMode; // ✅ لتحديد وضع المتابعة
+  final VoidCallback? onBookFollowUp; // ✅ ميثود جديدة لحجز المتابعة
 
   const SlotCard({
     super.key,
     required this.slot,
     this.onConfirm,
-    this.onStart,
+    this.onCancelByDoctor, // ✅ ميثود جديدة لكنسلة الدكتور
+    this.onDetails,
     this.onDelete,
+    this.onBlock,
+    this.isFollowUpMode = false,
+    this.onBookFollowUp,
   });
 
   @override
@@ -46,23 +55,44 @@ class SlotCard extends StatelessWidget {
         return Colors.blue;
       case 'inprogress':
         return Colors.purple;
+      case 'blocked': // حالة الحظر
+      case 'cancelled': // حالة الإلغاء من الطبيب
+        return Colors.red;
       default:
         return Colors.grey;
     }
   }
 
   Widget _buildTimeLeading() {
+    // تفكيك الوقت (مثلاً لو جاي 14:30 يحوله لـ 02:30 PM)
+    final timeParts = slot.startTime.split(':');
+    int hour = int.parse(timeParts[0]);
+    String minute = timeParts[1];
+    String period = hour >= 12 ? "PM" : "AM";
+
+    // تحويل الساعة لنظام 12 ساعة
+    int displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    String formattedHour = displayHour.toString().padLeft(2, '0');
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          slot.startTime,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          "$formattedHour:$minute",
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: Color(0xFF2D3142),
+          ),
         ),
-        const Text(
-          "AM",
-          style: TextStyle(fontSize: 10),
-        ), // محتاجة بارسينج للـ AM/PM
+        Text(
+          period,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey,
+          ),
+        ),
       ],
     );
   }
@@ -73,49 +103,142 @@ class SlotCard extends StatelessWidget {
     return Text(title, style: const TextStyle(fontWeight: FontWeight.bold));
   }
 
-  // داخل ملف slot_card.dart - ميثود الـ _buildActions المحدثة
-
   Widget _buildActions() {
     final String status = slot.status.toLowerCase();
 
+    // 1. حالات "نهاية الطريق" - أحمر وبدون أكشنز
+    if (status == 'cancelled' || status == 'blocked') {
+      return const Padding(
+        padding: EdgeInsets.only(right: 8.0),
+        child: Text(
+          "No Actions",
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
+    // ✅ لو في وضع متابعة والسلوت متاح، اظهر زرار "Book Follow-up" فقط
+    if (isFollowUpMode && status == 'available') {
+      return ElevatedButton(
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+        onPressed: onBookFollowUp,
+        child: const Text(
+          "Book",
+          style: TextStyle(fontSize: 12, color: Colors.white),
+        ),
+      );
+    }
+
     switch (status) {
       case 'available':
-        return IconButton(
-          icon: const Icon(
-            Icons.block_flipped,
-            color: Colors.redAccent,
-            size: 20,
-          ),
-          onPressed: onDelete, // عمل Block للسلوت
-        );
-
-      case 'pending':
-        return ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        // 2. سلوت فاضي - يقدر يمسحه أو يقفله
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(
+                Icons.delete_forever,
+                color: Colors.red,
+                size: 22,
+              ),
+              onPressed: onDelete,
+              tooltip: 'Delete Slot',
             ),
-          ),
-          onPressed: onConfirm,
-          child: const Text("Confirm", style: TextStyle(fontSize: 12)),
+            IconButton(
+              icon: const Icon(Icons.block, color: Colors.orange, size: 22),
+              onPressed: onBlock,
+              tooltip: 'Block Slot',
+            ),
+          ],
         );
 
+      case 'booked':
       case 'confirmed':
-        return ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+      case 'pending': // دمجناهم كلهم في أكشن واحد
+      case 'completed':
+        // 3. موعد محجوز - زرار "التفاصيل" هو البطل هنا
+        // return Row(
+        //   mainAxisSize: MainAxisSize.min,
+        //   children: [
+        //     ElevatedButton(
+        //       style: ElevatedButton.styleFrom(
+        //         backgroundColor: Colors.blue,
+        //         foregroundColor: Colors.white,
+        //         padding: const EdgeInsets.symmetric(horizontal: 16),
+        //         shape: RoundedRectangleBorder(
+        //           borderRadius: BorderRadius.circular(8),
+        //         ),
+        //       ),
+        //       onPressed: onDetails, // هنا هيروح لصفحة الـ Details
+        //       child: const Text(
+        //         "Details",
+        //         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        //       ),
+        //     ),
+        //     const SizedBox(width: 4),
+        //     IconButton(
+        //       icon: const Icon(
+        //         Icons.cancel_outlined,
+        //         color: Colors.redAccent,
+        //         size: 22,
+        //       ),
+        //       onPressed: onCancelByDoctor,
+        //       //  () {
+        //       //   // نداء ميثود كنسلة الدكتور (اللي بتبلوك الموعد)
+        //       //   context.read<AppointmentActionCubit>().doctorCancel(
+        //       //     slot.appointmentId!,
+        //       //     "Doctor Request",
+        //       //   );
+        //       // },
+        //       tooltip: 'Cancel Appointment',
+        //     ),
+        //   ],
+        // );
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    status == 'completed'
+                        ? Colors.grey
+                        : Colors.blue, // لون مختلف للتمييز
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: onDetails,
+              child: Text(
+                status == 'completed' ? "View Report" : "Details", // نص مختلف
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          ),
-          onPressed: onStart,
-          child: const Text("Start Session", style: TextStyle(fontSize: 12)),
+            if (status != 'completed') ...[
+              // ✅ لا تظهر زرار الكنسلة للمواعيد المنتهية
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(
+                  Icons.cancel_outlined,
+                  color: Colors.redAccent,
+                  size: 22,
+                ),
+                onPressed: onCancelByDoctor,
+                tooltip: 'Cancel Appointment',
+              ),
+            ],
+          ],
         );
 
       case 'inprogress':
+        // 4. الدكتور شغال حالياً
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -124,8 +247,12 @@ class SlotCard extends StatelessWidget {
             border: Border.all(color: Colors.purple),
           ),
           child: const Text(
-            "Live",
-            style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
+            "LIVE",
+            style: TextStyle(
+              color: Colors.purple,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+            ),
           ),
         );
 

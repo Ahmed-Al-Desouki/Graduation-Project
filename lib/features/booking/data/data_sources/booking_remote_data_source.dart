@@ -40,4 +40,15 @@ abstract class BookingRemoteDataSource {
     String type,
     Map<String, dynamic> body,
   );
+
+  Future<void> cancelByDoctor(
+    String appointmentId,
+    // String reason,
+    Map<String, dynamic>? body,
+  );
+  Future<void> cancelByPatient(
+    String appointmentId,
+    // String reason,
+    Map<String, dynamic>? body,
+  );
 }

@@ -41,6 +41,7 @@ class SlotModel extends SlotEntity {
     required super.status,
     super.patientName,
     super.appointmentId,
+    super.patientNote, // تم إضافة الحقل الجديد
   });
 
   factory SlotModel.fromJson(Map<String, dynamic> json) {
@@ -51,6 +52,7 @@ class SlotModel extends SlotEntity {
       status: json['status'],
       patientName: json['patientFullName'],
       appointmentId: json['appointmentId'],
+      patientNote: json['patientNote'], // جلب الملاحظة من JSON
     );
   }
 }
