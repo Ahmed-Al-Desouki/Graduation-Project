@@ -3,9 +3,8 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data;
-using WelloraHealthCareManagement.Infrastructure.Services;
 using WelloraHealthCareManagment.API.Context;
-using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
@@ -86,7 +85,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         public async Task UpdateStatusAsync(
             int reminderId,
             DateTime dueDateTimeUtc,
-            Enums.OccurrenceStatus status)
+            OccurrenceStatus status)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 UPDATE ReminderOccurrencesCache 

@@ -12,6 +12,7 @@ using WelloraHealthCareManagment.Application.DTOs.Payment;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {
@@ -497,16 +498,33 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             return $"{baseUrl}/payment-success.html?appointmentId={appointmentId}&amount={amount}";
         }
 
+        //private string GetFailureRedirectUrl(Guid? appointmentId, string? reason)
+        //{
+        //    var baseUrl = _configuration["App:BaseUrl"] ?? "https://wellorahealthcare.com";
+        //    var url = $"{baseUrl}/payment-failed.html";
+
+        //    if (appointmentId.HasValue)
+        //        url += $"?appointmentId={appointmentId}";
+
+        //    if (!string.IsNullOrEmpty(reason))
+        //        url += $"&reason={Uri.EscapeDataString(reason)}";
+
+        //    return url;
+        //}
         private string GetFailureRedirectUrl(Guid? appointmentId, string? reason)
         {
             var baseUrl = _configuration["App:BaseUrl"] ?? "https://wellorahealthcare.com";
             var url = $"{baseUrl}/payment-failed.html";
+            var separator = "?";  // نبدأ بـ ? دايماً
 
             if (appointmentId.HasValue)
-                url += $"?appointmentId={appointmentId}";
+            {
+                url += $"{separator}appointmentId={appointmentId}";
+                separator = "&";
+            }
 
             if (!string.IsNullOrEmpty(reason))
-                url += $"&reason={Uri.EscapeDataString(reason)}";
+                url += $"{separator}reason={Uri.EscapeDataString(reason)}";
 
             return url;
         }

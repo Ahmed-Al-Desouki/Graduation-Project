@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Prescriptions;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Prescriptions;
 
 namespace WelloraHealthCareManagement.API.Controllers
 {

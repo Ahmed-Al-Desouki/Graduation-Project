@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using WelloraHealthCareManagement.Infrastructure.Data;
 using WelloraHealthCareManagment.API.Context;
-using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.Repositories
 {

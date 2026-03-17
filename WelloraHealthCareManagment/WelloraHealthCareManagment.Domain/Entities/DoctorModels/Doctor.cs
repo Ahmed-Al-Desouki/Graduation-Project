@@ -3,6 +3,7 @@ using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using System.ComponentModel.DataAnnotations;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Exceptions;
+using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
 
 namespace HealthCare_.Models.DoctorModels
 {
@@ -10,12 +11,6 @@ namespace HealthCare_.Models.DoctorModels
     {
         [Key]
         public int DoctorId { get; set; }
-
-        [Required, StringLength(100)]
-        public string Specialization { get; set; }
-
-        [Range(0, 100)]
-        public int YearsOfExperience { get; set; }
 
         [Range(0, 10000)]
         public decimal ConsultationFee { get; private set; }
@@ -33,10 +28,26 @@ namespace HealthCare_.Models.DoctorModels
 
         //Existing Navigation Properties 
         public ApplicationUser User { get; set; } = null!;
+        // ─── بيانات شخصية جديدة ───
+        public DateTime? DateOfBirth { get; set; }
+        public string? NationalId { get; set; }
+        [Required, StringLength(100)]
+        public string Specialization { get; set; }
 
+        [Range(0, 100)]
+        public int YearsOfExperience { get; set; }
+
+        // ─── موقع العيادة ───
+        public string? ClinicAddress { get; set; }
+        public double? ClinicLatitude { get; set; }
+        public double? ClinicLongitude { get; set; }
+        public string? HospitalName { get; set; }
+
+        // ─── حالة البروفايل ───
+        public bool IsProfileCompleted { get; set; } = false;
+
+        // ─── Navigation Properties ───
         public ICollection<ExternalFile> Files { get; set; } = new List<ExternalFile>();
-
-        // NEW BOOKING SYSTEM (Added) 
         public ICollection<DoctorScheduleTemplate> ScheduleTemplates { get; set; } = new List<DoctorScheduleTemplate>();
         public ICollection<ScheduleException> ScheduleExceptions { get; set; } = new List<ScheduleException>();
         public ICollection<TimeSlot> TimeSlots { get; set; } = new List<TimeSlot>();
@@ -44,6 +55,8 @@ namespace HealthCare_.Models.DoctorModels
         public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
         public ICollection<MedicalHistoryAccessGrant> MedicalHistoryAccessGrants { get; set; } = new List<MedicalHistoryAccessGrant>();
         public ICollection<MedicalHistoryAccessLog> MedicalHistoryAccessLogs { get; set; } = new List<MedicalHistoryAccessLog>();
+        public ICollection<DoctorVerification> Verifications { get; set; } = new List<DoctorVerification>();
+        public ICollection<DoctorAchievement> Achievements { get; set; } = new List<DoctorAchievement>();
 
         public void SetConsultationFee(decimal fee)
         {

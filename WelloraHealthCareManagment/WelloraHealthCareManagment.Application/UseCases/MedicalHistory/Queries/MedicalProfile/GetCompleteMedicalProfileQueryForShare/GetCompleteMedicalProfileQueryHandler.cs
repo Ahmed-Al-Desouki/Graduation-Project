@@ -2,7 +2,7 @@
 using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.CurrentMedication.GetCurrentMedications;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.CurrentMedication.GetCurrentMedicationsForShare;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.FamilyHistory.GetFamilyHistoryForShare;

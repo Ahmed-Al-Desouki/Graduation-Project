@@ -1,6 +1,7 @@
 ﻿// File: Models/DTOs/V2/UpdateReminderV2Dto.cs
 using System.Text.Json.Serialization;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.DTOs.V2
 {
@@ -23,6 +24,6 @@ namespace HealthCare_.Models.DTOs.V2
 
         public string? TimeZoneId { get; set; }
         public bool? IsActive { get; set; }
-        public Enums.ReminderStatus? Status { get; set; }
+        public ReminderEnums.ReminderStatus? Status { get; set; }
     }
 }

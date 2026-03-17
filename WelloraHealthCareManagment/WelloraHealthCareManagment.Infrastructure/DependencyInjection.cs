@@ -25,6 +25,8 @@ using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.UserSessions;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.MeicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo;
@@ -82,6 +84,9 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
             services.AddScoped<IDoctorSearchRepository, DoctorSearchRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IDoctorVerificationRepository, DoctorVerificationRepository>();
+            services.AddScoped<IDoctorAchievementRepository, DoctorAchievementRepository>();
+            services.AddScoped<IReviewRepository, ReviewRepository>();
 
 
             // Services
@@ -114,6 +119,8 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IServiceProvider, ServiceProvider>();
             services.AddScoped<IPaymobService, PaymobService>();
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<IDoctorProfileService, DoctorProfileService>();
+            services.AddScoped<IReviewService, ReviewService>();
 
 
 

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
@@ -28,7 +29,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         {
             return await _context.ReminderOccurrenceLogs
                 .CountAsync(l => l.ReminderId == reminderId
-                              && l.Status == Enums.OccurrenceStatus.Taken);
+                              && l.Status == ReminderEnums.OccurrenceStatus.Taken);
         }
 
         public async Task<int> CountTotalByReminderIdAsync(int reminderId)

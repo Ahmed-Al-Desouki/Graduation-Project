@@ -3,8 +3,9 @@ using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {

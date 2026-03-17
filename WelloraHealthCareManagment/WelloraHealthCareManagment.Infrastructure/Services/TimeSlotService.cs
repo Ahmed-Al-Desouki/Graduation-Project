@@ -7,8 +7,8 @@ using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagement.Domain.Factories;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.TimeSlots;
-using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.TimeSlots;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {

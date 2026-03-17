@@ -17,5 +17,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo
         Task<ExternalFile?> GetDoctorFileByIdAsync(int fileId, int doctorId);
         Task<List<ExternalFile>> GetPatientFilesByCategoryAsync(int patientId, string categoryType);
         Task<List<ExternalFile>> GetDoctorFilesByCategoryAsync(int doctorId, string categoryType);
+        Task UpdateAsync(ExternalFile file);
     }
 }

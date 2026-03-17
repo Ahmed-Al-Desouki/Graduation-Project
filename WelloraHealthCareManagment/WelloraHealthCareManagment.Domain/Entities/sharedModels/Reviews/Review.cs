@@ -20,7 +20,7 @@ namespace HealthCare_.Models.sharedModels.Reviews
         [Range(0, 5)]
         public double Rating { get; set; }
         [StringLength(1000)]
-        public string Comment { get; set; }
+        public string? Comment { get; set; }
         [Required]
         public DateTime ReviewDate { get; set; }
         public bool IsVerified { get; set; }
@@ -28,7 +28,7 @@ namespace HealthCare_.Models.sharedModels.Reviews
         //[ForeignKey("AppointmentID")]
         //public Appointment Appointment { get; set; }
         [StringLength(500)]
-        public string FilePath { get; set; }
+        public string? FilePath { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 

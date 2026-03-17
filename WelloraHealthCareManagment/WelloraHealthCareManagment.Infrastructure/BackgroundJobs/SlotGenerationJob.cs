@@ -2,8 +2,8 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.TimeSlots;
-using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.TimeSlots;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.BackgroundJobs
 {

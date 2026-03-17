@@ -4,8 +4,10 @@ using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.API.Context;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Prescriptions;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Prescriptions;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
+using WelloraHealthCareManagement.Domain.Enums;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {

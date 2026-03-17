@@ -41,25 +41,25 @@ internal class Program
 
 
             // ====================== DATABASE ======================
-            //builder.Services.AddDbContext<HealthCarePlusContext>(options =>
-            //{
-            //    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-            //        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            //    options.UseSqlServer(connectionString)
-            //           .AddInterceptors(new UpdateTimestampsInterceptor());
-            //});
             builder.Services.AddDbContext<HealthCarePlusContext>(options =>
             {
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    sqlOptions =>
-                    {
-        
-
-                        sqlOptions.CommandTimeout(60);
-                        sqlOptions.MigrationsAssembly("WelloraHealthCareManagment.Infrastructure");
-                    });
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+                options.UseSqlServer(connectionString)
+                       .AddInterceptors(new UpdateTimestampsInterceptor());
             });
+            //builder.Services.AddDbContext<HealthCarePlusContext>(options =>
+            //{
+            //    options.UseSqlServer(
+            //        builder.Configuration.GetConnectionString("DefaultConnection"),
+            //        sqlOptions =>
+            //        {
+
+
+            //            sqlOptions.CommandTimeout(60);
+            //            sqlOptions.MigrationsAssembly("WelloraHealthCareManagment.Infrastructure");
+            //        });
+            //});
 
             // ====================== HANGFIRE ======================
             builder.Services.AddHangfire(config =>

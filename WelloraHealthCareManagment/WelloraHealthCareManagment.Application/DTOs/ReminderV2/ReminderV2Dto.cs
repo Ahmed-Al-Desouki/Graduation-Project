@@ -1,4 +1,5 @@
 ﻿using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.DTOs.V2
 {
@@ -6,7 +7,7 @@ namespace HealthCare_.Models.DTOs.V2
     {
         public int Id { get; set; }
         public string Title { get; set; } = "";
-        public Enums.ReminderType Type { get; set; }
+        public ReminderEnums.ReminderType Type { get; set; }
         public string? Message { get; set; }  // أضفناه
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }

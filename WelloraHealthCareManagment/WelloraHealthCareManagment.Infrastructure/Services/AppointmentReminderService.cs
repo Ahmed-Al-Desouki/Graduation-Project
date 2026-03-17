@@ -5,6 +5,7 @@ using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
@@ -163,7 +164,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 foreach (var reminder in appointmentReminders)
                 {
                     reminder.IsActive = false;
-                    reminder.Status = Enums.ReminderStatus.Dismissed;
+                    reminder.Status = ReminderEnums.ReminderStatus.Dismissed;
                     reminder.UpdatedAt = DateTime.UtcNow;
                     await _reminderRepository.UpdateAsync(reminder);
                 }
@@ -202,7 +203,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 PatientId = (isDoctor ? null : (int?)userId),
                 DoctorId = isDoctor ? (int?)userId : null,
-                Type = Enums.ReminderType.Appointment,
+                Type = ReminderEnums.ReminderType.Appointment,
                 Title = title,
                 Message = message,
                 StartDateUtc = startDateUtc,
@@ -213,7 +214,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 IsSimpleEveryXHours = false,
                 FirstDoseTime = null,
                 IntervalHours = null,
-                Status = Enums.ReminderStatus.Active,
+                Status = ReminderEnums.ReminderStatus.Active,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

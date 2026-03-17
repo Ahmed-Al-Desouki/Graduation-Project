@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace WelloraHealthCareManagment.Application.Interfaces.RemindersInterface
 {
@@ -22,7 +23,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.RemindersInterface
         Task<List<UpcomingOccurrenceDto>> GetUpcomingAsync(int patientId, int daysAhead = 30);
 
         // Actions
-        Task ConfirmOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId, Enums.IntakeStatus intake = Enums.IntakeStatus.Taken);
+        Task ConfirmOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId, ReminderEnums.IntakeStatus intake = ReminderEnums.IntakeStatus.Taken);
         Task SnoozeOccurrenceAsync(int reminderId, DateTime originalDue, int patientId, int minutes = 15);
         Task SkipOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId);
 

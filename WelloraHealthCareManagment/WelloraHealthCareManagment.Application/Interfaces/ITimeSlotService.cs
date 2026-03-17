@@ -1,4 +1,4 @@
-﻿using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.TimeSlots;
+﻿using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.TimeSlots;
 
 namespace WelloraHealthCareManagement.Application.Interfaces
 {

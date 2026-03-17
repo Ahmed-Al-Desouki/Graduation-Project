@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.DTOs.V2
 {
@@ -14,12 +15,12 @@ namespace HealthCare_.Models.DTOs.V2
         public DateTime DueDateTime { get; set; }
 
         public string TimeZoneId { get; set; } = "Africa/Cairo";
-        public Enums.ReminderType Type { get; set; }
+        public ReminderEnums.ReminderType Type { get; set; }
         public bool IsMedication { get; set; }
         public string? Dosage { get; set; }
 
         //  FIX: Use OccurrenceStatus
-        public Enums.OccurrenceStatus Status { get; set; }
+        public ReminderEnums.OccurrenceStatus Status { get; set; }
 
         //  FIX: Remove hardcoded CanConfirm, make them settable properties
         public bool CanConfirm { get; set; }

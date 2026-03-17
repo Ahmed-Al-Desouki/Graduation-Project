@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services
@@ -287,7 +288,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     DueDateTime = x.DueDateTime,
                     TimeZoneId = x.TimeZoneId,
                     Type = x.Type,
-                    IsMedication = x.Type == Enums.ReminderType.Medication,
+                    IsMedication = x.Type == ReminderEnums.ReminderType.Medication,
                     Dosage = x.Dosage,
                     Status = displayStatus,
                     CanConfirm = canConfirm,
@@ -321,8 +322,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     foreach (var dtUtc in occurrences)
                     {
                         var displayStatus = dtUtc < nowUtc.AddMinutes(-30)
-                            ? Enums.OccurrenceStatus.Missed
-                            : Enums.OccurrenceStatus.Pending;
+                            ? ReminderEnums.OccurrenceStatus.Missed
+                            : ReminderEnums.OccurrenceStatus.Pending;
 
                         var (canConfirm, canSnooze, canSkip, reason) = EvaluateActionAvailability(
                             displayStatus,
@@ -338,7 +339,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                             DueDateTime = _timezoneHelper.ConvertUtcToUserTimezone(_timezoneHelper.EnsureUtc(dtUtc), reminder.TimeZoneId),
                             TimeZoneId = reminder.TimeZoneId,
                             Type = reminder.Type,
-                            IsMedication = reminder.Type == Enums.ReminderType.Medication,
+                            IsMedication = reminder.Type == ReminderEnums.ReminderType.Medication,
                             Dosage = reminder.PrescriptionItem != null
                                 ? $"{reminder.PrescriptionItem.Dosage} {reminder.PrescriptionItem.MedicationName}"
                                 : null,
@@ -503,7 +504,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
         #region ==================== CONFIRM / SNOOZE / SKIP ====================
 
-        public async Task ConfirmOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId, Enums.IntakeStatus intake = Enums.IntakeStatus.Taken)
+        public async Task ConfirmOccurrenceAsync(int reminderId, DateTime dueDateTime, int patientId, ReminderEnums.IntakeStatus intake = ReminderEnums.IntakeStatus.Taken)
         {
             var reminder = await ValidateReminderAccess(reminderId, patientId);
             var dueDateTimeUtc = _timezoneHelper.ConvertUserTimezoneToUtc(dueDateTime, reminder.TimeZoneId);
@@ -517,7 +518,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
             var existingLog = await _logRepository.GetByReminderAndDueDateAsync(reminderId, dueDateTimeUtc);
 
-            if (existingLog?.Status == Enums.OccurrenceStatus.Taken)
+            if (existingLog?.Status == ReminderEnums.OccurrenceStatus.Taken)
             {
                 _logger.LogInformation("Idempotent confirm - already taken: {ReminderId} at {Due}", reminderId, dueDateTimeUtc);
                 return;
@@ -531,7 +532,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 PatientId = patientId
             };
 
-            log.Status = Enums.OccurrenceStatus.Taken;
+            log.Status = ReminderEnums.OccurrenceStatus.Taken;
             log.IntakeStatus = intake;
             log.ConfirmedAt = nowUtc;
             log.ActionedAt = nowUtc;
@@ -542,7 +543,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             else
                 await _logRepository.UpdateAsync(log);
 
-            await _cacheRepository.UpdateStatusAsync(reminderId, dueDateTimeUtc, Enums.OccurrenceStatus.Taken);
+            await _cacheRepository.UpdateStatusAsync(reminderId, dueDateTimeUtc, OccurrenceStatus.Taken);
 
             _logger.LogInformation(
                 "Confirmed occurrence: Reminder={ReminderId}, DueUtc={Due}",
@@ -570,7 +571,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     PatientId = patientId
                 };
 
-            log.Status = Enums.OccurrenceStatus.Snoozed;
+            log.Status = ReminderEnums.OccurrenceStatus.Snoozed;
             log.ActionedAt = DateTime.UtcNow;
 
             if (log.Id == 0)
@@ -586,14 +587,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 PatientId = patientId,
                 DueDateTimeUtc = newDueUtc,
                 DueDateTime = newDueLocal,
-                Status = Enums.OccurrenceStatus.Pending,
+                Status = ReminderEnums.OccurrenceStatus.Pending,
                 IsSnoozeFromOriginal = true,
                 OriginalDueDateTime = originalDueUtc,
                 CreatedAt = DateTime.UtcNow
             };
             await _logRepository.AddAsync(newLog);
 
-            await _cacheRepository.UpdateStatusAsync(reminderId, originalDueUtc, Enums.OccurrenceStatus.Snoozed);
+            await _cacheRepository.UpdateStatusAsync(reminderId, originalDueUtc, OccurrenceStatus.Snoozed);
 
             _logger.LogInformation(
                 "Successfully snoozed occurrence: Reminder={ReminderId}, OriginalDue={Original}, NewDue={New}",
@@ -614,8 +615,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     PatientId = patientId
                 };
 
-            log.Status = Enums.OccurrenceStatus.Skipped;
-            log.IntakeStatus = Enums.IntakeStatus.Skipped;
+            log.Status = ReminderEnums.OccurrenceStatus.Skipped;
+            log.IntakeStatus = ReminderEnums.IntakeStatus.Skipped;
             log.ActionedAt = DateTime.UtcNow;
 
             if (log.Id == 0)
@@ -623,7 +624,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             else
                 await _logRepository.UpdateAsync(log);
 
-            await _cacheRepository.UpdateStatusAsync(reminderId, dueDateTimeUtc, Enums.OccurrenceStatus.Skipped);
+            await _cacheRepository.UpdateStatusAsync(reminderId, dueDateTimeUtc, OccurrenceStatus.Skipped);
         }
 
         #endregion
@@ -654,7 +655,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         {
             var reminder = await ValidateReminderAccess(reminderId, patientId);
             reminder.IsActive = false;
-            reminder.Status = Enums.ReminderStatus.Dismissed;
+            reminder.Status = ReminderEnums.ReminderStatus.Dismissed;
             reminder.UpdatedAt = DateTime.UtcNow;
             await _reminderRepository.UpdateAsync(reminder);
 
@@ -756,34 +757,34 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             }
         }
 
-        private static Enums.OccurrenceStatus DeriveDisplayStatus(Enums.OccurrenceStatus storedStatus, DateTime dueTimeUtc, DateTime nowUtc)
+        private static ReminderEnums.OccurrenceStatus DeriveDisplayStatus(ReminderEnums.OccurrenceStatus storedStatus, DateTime dueTimeUtc, DateTime nowUtc)
         {
-            if (storedStatus is Enums.OccurrenceStatus.Taken or Enums.OccurrenceStatus.Skipped or Enums.OccurrenceStatus.Snoozed)
+            if (storedStatus is ReminderEnums.OccurrenceStatus.Taken or ReminderEnums.OccurrenceStatus.Skipped or ReminderEnums.OccurrenceStatus.Snoozed)
                 return storedStatus;
 
             var minutesFromDue = (nowUtc - dueTimeUtc).TotalMinutes;
 
-            if (storedStatus == Enums.OccurrenceStatus.Scheduled && minutesFromDue >= -WINDOW_OPENS_MINUTES)
-                return Enums.OccurrenceStatus.Pending;
+            if (storedStatus == ReminderEnums.OccurrenceStatus.Scheduled && minutesFromDue >= -WINDOW_OPENS_MINUTES)
+                return ReminderEnums.OccurrenceStatus.Pending;
 
-            if (storedStatus == Enums.OccurrenceStatus.Pending && minutesFromDue > OVERDUE_THRESHOLD_MINUTES)
-                return Enums.OccurrenceStatus.Missed;
+            if (storedStatus == ReminderEnums.OccurrenceStatus.Pending && minutesFromDue > OVERDUE_THRESHOLD_MINUTES)
+                return ReminderEnums.OccurrenceStatus.Missed;
 
-            if (storedStatus == Enums.OccurrenceStatus.Missed && minutesFromDue > (GRACE_PERIOD_HOURS * 60))
-                return Enums.OccurrenceStatus.Expired;
+            if (storedStatus == ReminderEnums.OccurrenceStatus.Missed && minutesFromDue > (GRACE_PERIOD_HOURS * 60))
+                return ReminderEnums.OccurrenceStatus.Expired;
 
             return storedStatus;
         }
 
         private static (bool canConfirm, bool canSnooze, bool canSkip, string? reason) EvaluateActionAvailability(
-            Enums.OccurrenceStatus status,
+            ReminderEnums.OccurrenceStatus status,
             DateTime dueTimeUtc,
             DateTime nowUtc)
         {
-            if (status is Enums.OccurrenceStatus.Taken or Enums.OccurrenceStatus.Skipped)
+            if (status is ReminderEnums.OccurrenceStatus.Taken or ReminderEnums.OccurrenceStatus.Skipped)
                 return (false, false, false, "Already completed");
 
-            if (status == Enums.OccurrenceStatus.Snoozed)
+            if (status == ReminderEnums.OccurrenceStatus.Snoozed)
                 return (false, false, false, "Already snoozed");
 
             var minutesFromDue = (nowUtc - dueTimeUtc).TotalMinutes;

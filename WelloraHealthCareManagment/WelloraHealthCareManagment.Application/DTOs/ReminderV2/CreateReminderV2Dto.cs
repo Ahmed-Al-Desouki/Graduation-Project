@@ -1,13 +1,14 @@
 ﻿using System.Text.Json.Serialization;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.DTOs.V2
 {
     // DTOs/V2/CreateReminderV2Dto.cs
     public class CreateReminderV2Dto
     {
-        public Enums.ReminderType Type { get; set; } = Enums.ReminderType.Medication;
+        public ReminderEnums.ReminderType Type { get; set; } = ReminderEnums.ReminderType.Medication;
         public string Title { get; set; } = "";
         public string? Message { get; set; }
         public DateTime StartDate { get; set; } = DateTime.Today;

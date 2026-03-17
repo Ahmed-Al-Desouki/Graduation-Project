@@ -80,15 +80,24 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Transaction Response Callback - User redirect after payment
         /// GET: api/payment/payment-result
+        //[HttpGet("payment-result")]
+        //public async Task<IActionResult> PaymentResult(
+        //    [FromQuery] string? merchantOrderId,
+        //    [FromQuery] bool success)
+        //{
+        //    var redirectUrl = await _paymentService.HandlePaymentResultRedirectAsync(
+        //        merchantOrderId,
+        //        success);
+
+        //    return Redirect(redirectUrl);
+        //}
         [HttpGet("payment-result")]
         public async Task<IActionResult> PaymentResult(
-            [FromQuery] string? merchantOrderId,
+            [FromQuery(Name = "merchant_order_id")] string? merchantOrderId,
             [FromQuery] bool success)
         {
             var redirectUrl = await _paymentService.HandlePaymentResultRedirectAsync(
-                merchantOrderId,
-                success);
-
+                merchantOrderId, success);
             return Redirect(redirectUrl);
         }
 

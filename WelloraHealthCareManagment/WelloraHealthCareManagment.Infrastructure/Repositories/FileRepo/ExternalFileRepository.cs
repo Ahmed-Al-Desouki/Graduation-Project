@@ -84,5 +84,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo
                 .OrderByDescending(f => f.UploadedAt)
                 .ToListAsync();
         }
+        public async Task UpdateAsync(ExternalFile file)
+        {
+            _context.ExternalFiles.Update(file);
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -248,6 +248,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("float")
                         .HasDefaultValue(0.0);
 
+                    b.Property<string>("ClinicAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("ClinicLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("ClinicLongitude")
+                        .HasColumnType("float");
+
                     b.Property<decimal>("ConsultationFee")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(18,2)")
@@ -258,12 +267,24 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("HospitalName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<bool>("IsProfileCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NationalId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Specialization")
                         .IsRequired()
@@ -1059,7 +1080,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReviewID"));
 
                     b.Property<string>("Comment")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
@@ -2017,6 +2037,89 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.ToTable("TimeSlots", (string)null);
                 });
 
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.DoctorModels.DoctorAchievement", b =>
+                {
+                    b.Property<int>("AchievementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AchievementId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("AchievementId");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("FileId");
+
+                    b.ToTable("DoctorAchievements");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.DoctorModels.DoctorVerification", b =>
+                {
+                    b.Property<int>("VerificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VerificationId"));
+
+                    b.Property<string>("AdminNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FileId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ReviewedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("VerificationId");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("FileId");
+
+                    b.ToTable("DoctorVerifications");
+                });
+
             modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", b =>
                 {
                     b.Property<int>("PatientID")
@@ -2552,6 +2655,40 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Navigation("GeneratedFromTemplate");
                 });
 
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.DoctorModels.DoctorAchievement", b =>
+                {
+                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
+                        .WithMany("Achievements")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ExternalFile", "Image")
+                        .WithMany()
+                        .HasForeignKey("FileId");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Image");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.DoctorModels.DoctorVerification", b =>
+                {
+                    b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
+                        .WithMany("Verifications")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ExternalFile", "File")
+                        .WithMany()
+                        .HasForeignKey("FileId");
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("File");
+                });
+
             modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", b =>
                 {
                     b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "User")
@@ -2565,6 +2702,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
             modelBuilder.Entity("HealthCare_.Models.DoctorModels.Doctor", b =>
                 {
+                    b.Navigation("Achievements");
+
                     b.Navigation("Appointments");
 
                     b.Navigation("Files");
@@ -2580,6 +2719,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Navigation("ScheduleTemplates");
 
                     b.Navigation("TimeSlots");
+
+                    b.Navigation("Verifications");
                 });
 
             modelBuilder.Entity("HealthCare_.Models.PatientModels.MedicalHistoryModels.MedicalHistory", b =>

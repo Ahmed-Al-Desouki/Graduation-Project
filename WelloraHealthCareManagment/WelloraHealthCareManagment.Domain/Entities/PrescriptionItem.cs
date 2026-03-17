@@ -1,5 +1,6 @@
 ﻿using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace WelloraHealthCareManagement.Domain.Entities
 {

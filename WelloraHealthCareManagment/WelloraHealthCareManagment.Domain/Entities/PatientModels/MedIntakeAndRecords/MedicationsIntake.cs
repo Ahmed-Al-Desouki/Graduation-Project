@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.PatientModels.MedIntakeAndRecords
 {
@@ -19,7 +20,7 @@ namespace HealthCare_.Models.PatientModels.MedIntakeAndRecords
         [Required]
         public DateTime DateTaken { get; set; }
 
-        public Enums.IntakeStatus Status { get; set; } = Enums.IntakeStatus.Taken;
+        public ReminderEnums.IntakeStatus Status { get; set; } = ReminderEnums.IntakeStatus.Taken;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }

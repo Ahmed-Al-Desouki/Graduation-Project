@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WelloraHealthCareManagement.Application.Interfaces;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.TimeSlots;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.TimeSlots;
 
 namespace WelloraHealthCareManagement.API.Controllers
 {

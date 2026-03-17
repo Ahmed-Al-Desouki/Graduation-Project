@@ -13,6 +13,7 @@ using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services
@@ -69,7 +70,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
                     var dto = new CreateReminderV2Dto
                     {
-                        Type = Enums.ReminderType.Medication,
+                        Type = ReminderEnums.ReminderType.Medication,
                         Title = $"💊 {item.MedicationName}",
                         Message = BuildReminderMessage(item, prescription.PrescriptionNumber),
                         StartDate = startDateTime,
@@ -155,7 +156,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
                 var dto = new CreateReminderV2Dto
                 {
-                    Type = Enums.ReminderType.Medication,
+                    Type = ReminderEnums.ReminderType.Medication,
                     Title = $"💊 {item.MedicationName}",
                     Message = BuildReminderMessage(item, prescription.PrescriptionNumber),
                     StartDate = startDateTime,

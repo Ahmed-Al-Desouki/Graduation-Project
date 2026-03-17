@@ -1,6 +1,7 @@
 ﻿// File: Models/V2/ReminderOccurrenceLog.cs
 using System.ComponentModel.DataAnnotations;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.V2
 {
@@ -20,12 +21,12 @@ namespace HealthCare_.Models.V2
         public DateTime DueDateTimeUtc { get; set; }
 
         // FIX: Use OccurrenceStatus
-        public Enums.OccurrenceStatus Status { get; set; } = Enums.OccurrenceStatus.Pending;
+        public ReminderEnums.OccurrenceStatus Status { get; set; } = ReminderEnums.OccurrenceStatus.Pending;
 
         public DateTime? ConfirmedAt { get; set; }
         public DateTime? ActionedAt { get; set; } // ✅ ADDED
 
-        public Enums.IntakeStatus? IntakeStatus { get; set; }
+        public ReminderEnums.IntakeStatus? IntakeStatus { get; set; }
 
         // ADDED: Track if action was within valid window
         public bool ActionedWithinWindow { get; set; } = true;

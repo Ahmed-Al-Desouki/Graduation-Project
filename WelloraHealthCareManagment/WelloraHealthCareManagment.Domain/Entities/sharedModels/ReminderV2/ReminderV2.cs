@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.V2
 {
@@ -18,7 +19,7 @@ namespace HealthCare_.Models.V2
         public Guid? PrescriptionItemId { get; set; }
         public Guid? PrescriptionId { get; set; }
 
-        public Enums.ReminderType Type { get; set; } = Enums.ReminderType.Medication;
+        public ReminderEnums.ReminderType Type { get; set; } = ReminderEnums.ReminderType.Medication;
 
         [StringLength(150)]
         public string Title { get; set; } = "Taking medication";
@@ -46,7 +47,7 @@ namespace HealthCare_.Models.V2
 
         // حالة عامة
         public bool IsActive { get; set; } = true;
-        public Enums.ReminderStatus Status { get; set; } = Enums.ReminderStatus.Active;
+        public ReminderEnums.ReminderStatus Status { get; set; } = ReminderEnums.ReminderStatus.Active;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }

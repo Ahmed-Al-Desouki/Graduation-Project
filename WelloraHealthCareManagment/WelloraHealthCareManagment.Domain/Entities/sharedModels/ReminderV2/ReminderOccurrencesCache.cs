@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.V2
 {
@@ -30,13 +31,13 @@ namespace HealthCare_.Models.V2
         [MaxLength(500)]
         public string? Message { get; set; }
 
-        public Enums.ReminderType Type { get; set; }
+        public ReminderEnums.ReminderType Type { get; set; }
 
         [MaxLength(100)]
         public string? Dosage { get; set; }
 
         //  FIX: Use OccurrenceStatus instead of byte
-        public Enums.OccurrenceStatus Status { get; set; } = Enums.OccurrenceStatus.Scheduled;
+        public ReminderEnums.OccurrenceStatus Status { get; set; } = ReminderEnums.OccurrenceStatus.Scheduled;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }

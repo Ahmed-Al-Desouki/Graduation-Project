@@ -1,5 +1,5 @@
 ﻿using WelloraHealthCareManagment.Application.DTOs;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 
 namespace WelloraHealthCareManagement.Application.Interfaces
 {

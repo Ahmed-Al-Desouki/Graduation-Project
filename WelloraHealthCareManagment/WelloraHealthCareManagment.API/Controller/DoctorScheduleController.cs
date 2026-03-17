@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Exceptions;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Schedules;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Schedules;
 
 namespace WelloraHealthCareManagement.API.Controllers
 {

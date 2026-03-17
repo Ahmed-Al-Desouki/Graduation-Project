@@ -1,14 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagement.Domain.Factories;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Schedules;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.TimeSlots;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Schedules;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.TimeSlots;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {

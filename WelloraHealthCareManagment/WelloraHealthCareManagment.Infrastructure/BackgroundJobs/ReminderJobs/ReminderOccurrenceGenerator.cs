@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 
 namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
@@ -102,7 +103,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
                         Title = reminder.Title,
                         Message = reminder.Message ?? "",
                         Type = reminder.Type,
-                        Status = Enums.OccurrenceStatus.Scheduled
+                        Status = ReminderEnums.OccurrenceStatus.Scheduled
                     });
                 }
             }
@@ -280,7 +281,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
                 foreach (var expired in expiredReminders)
                 {
                     expired.IsActive = false;
-                    expired.Status = Enums.ReminderStatus.Dismissed;
+                    expired.Status = ReminderEnums.ReminderStatus.Dismissed;
                     expired.UpdatedAt = nowUtc;
                     await reminderRepo.UpdateAsync(expired);
                 }
@@ -348,7 +349,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
                             Title = reminder.Title,
                             Message = reminder.Message ?? "",
                             Type = reminder.Type,
-                            Status = Enums.OccurrenceStatus.Scheduled
+                            Status = ReminderEnums.OccurrenceStatus.Scheduled
                         });
                     }
 

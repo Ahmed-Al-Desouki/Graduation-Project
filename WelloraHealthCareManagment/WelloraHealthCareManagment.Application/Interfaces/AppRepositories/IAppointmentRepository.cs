@@ -32,5 +32,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
             CancellationToken ct = default);
         Task<Appointment?> GetByIdWithGrantsAsync(Guid appointmentId, CancellationToken ct = default);
         Task<Appointment?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<bool> HasCompletedAppointmentAsync(
+            int patientId,
+            int doctorId,
+            CancellationToken cancellationToken = default);
     }
 }

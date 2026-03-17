@@ -3,7 +3,7 @@
 
 // Models/DTOs/PatientDTO/MedicalProfileDtos.cs
 
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 
 namespace HealthCare_.Models.DTOs.PatientDot.MedicalProfile
 {

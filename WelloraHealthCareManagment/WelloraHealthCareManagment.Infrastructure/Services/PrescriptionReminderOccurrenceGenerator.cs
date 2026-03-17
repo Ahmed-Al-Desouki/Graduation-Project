@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services
@@ -65,8 +66,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     TimeZoneId = "Africa/Cairo",
                     Title = $"Take {item.MedicationName}",
                     Message = $"Dosage: {item.Dosage} - {item.Instructions}",
-                    Type = Enums.ReminderType.Medication,
-                    Status = Enums.OccurrenceStatus.Scheduled
+                    Type = ReminderEnums.ReminderType.Medication,
+                    Status = ReminderEnums.OccurrenceStatus.Scheduled
                 });
             }
 

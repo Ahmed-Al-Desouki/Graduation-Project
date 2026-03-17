@@ -13,9 +13,11 @@ using Microsoft.EntityFrameworkCore;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Infrastructure.Data.Configurations;
 using WelloraHealthCareManagement.Infrastructure.Data.Interceptors;
+using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Entities.sharedModels;
 using WelloraHealthCareManagment.Infrastructure.Data.Configurations;
+using WelloraHealthCareManagment.Domain.Enums;
 
 
 namespace WelloraHealthCareManagment.API.Context
@@ -57,6 +59,8 @@ namespace WelloraHealthCareManagment.API.Context
         public DbSet<MedicalHistoryAccessGrant> MedicalHistoryAccessGrants => Set<MedicalHistoryAccessGrant>();
         public DbSet<MedicalHistoryAccessLog> MedicalHistoryAccessLogs => Set<MedicalHistoryAccessLog>();
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<DoctorAchievement> DoctorAchievements { get; set; }
+        public DbSet<DoctorVerification> DoctorVerifications { get; set; }
 
         //public DbSet<AppointmentNotification> AppointmentNotifications => Set<AppointmentNotification>();
 

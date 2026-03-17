@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 
 public class ReminderCleanupJob
@@ -33,7 +34,7 @@ public class ReminderCleanupJob
             {
                 // 1. Soft delete الـ Reminder نفسه
                 r.IsActive = false;
-                r.Status = Enums.ReminderStatus.Dismissed; // أو Expired حسب enumك
+                r.Status = ReminderEnums.ReminderStatus.Dismissed; // أو Expired حسب enumك
                 r.UpdatedAt = now;
                 await reminderRepo.UpdateAsync(r);
 

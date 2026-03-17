@@ -1,5 +1,6 @@
-﻿using ReminderStatus = WelloraHealthCareManagment.Domain.EnumForModels.Enums.ReminderStatus;
-using ReminderType = WelloraHealthCareManagment.Domain.EnumForModels.Enums.ReminderType;
+﻿
+
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.DTOs.ReminderV2
 {

@@ -1,4 +1,5 @@
 ﻿using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace HealthCare_.Models.DTOs.V2
 {
@@ -7,7 +8,7 @@ namespace HealthCare_.Models.DTOs.V2
         public class ConfirmIntakeRequest
         {
             public int ReminderId { get; set; }
-            public Enums.IntakeStatus Status { get; set; } = Enums.IntakeStatus.Taken;
+            public ReminderEnums.IntakeStatus Status { get; set; } = ReminderEnums.IntakeStatus.Taken;
         }
 
         public class RequiredReminderIdRequest

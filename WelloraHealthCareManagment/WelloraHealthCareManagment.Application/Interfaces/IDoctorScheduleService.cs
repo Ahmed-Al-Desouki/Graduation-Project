@@ -1,4 +1,4 @@
-﻿using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Schedules;
+﻿using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Schedules;
 
 namespace WelloraHealthCareManagement.Application.Interfaces
 {

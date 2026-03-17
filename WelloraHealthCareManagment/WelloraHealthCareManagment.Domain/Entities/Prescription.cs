@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.EnumForModels;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace WelloraHealthCareManagement.Domain.Entities
 {

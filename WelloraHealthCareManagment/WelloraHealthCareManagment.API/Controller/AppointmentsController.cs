@@ -4,7 +4,7 @@ using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
-using WelloraHealthCareManagment.Application.DTOs.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 
 namespace WelloraHealthCareManagement.API.Controllers
 {
