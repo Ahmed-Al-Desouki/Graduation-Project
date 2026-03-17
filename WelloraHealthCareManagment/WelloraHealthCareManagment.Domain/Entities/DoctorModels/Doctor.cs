@@ -48,7 +48,7 @@ namespace HealthCare_.Models.DoctorModels
 
         // ─── Navigation Properties ───
         public ICollection<ExternalFile> Files { get; set; } = new List<ExternalFile>();
-        public ICollection<DoctorScheduleTemplate> ScheduleTemplates { get; set; } = new List<DoctorScheduleTemplate>();
+        //public ICollection<DoctorScheduleTemplate> ScheduleTemplates { get; set; } = new List<DoctorScheduleTemplate>();
         public ICollection<ScheduleException> ScheduleExceptions { get; set; } = new List<ScheduleException>();
         public ICollection<TimeSlot> TimeSlots { get; set; } = new List<TimeSlot>();
         public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();

@@ -24,10 +24,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Repositories
         {
             _context.Entry(entity).State = EntityState.Detached;
         }
-        public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
-        {
-            _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        }
+
+        //public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+        //{
+        //    _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        //}
+        public async Task<IDbContextTransaction> BeginTransactionAsync(
+            CancellationToken ct = default)
+            => await _context.Database.BeginTransactionAsync(ct);
 
         public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
         {

@@ -137,11 +137,11 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
                 .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired();
 
-            builder.HasOne(x => x.GeneratedFromTemplate)
-                .WithMany()
-                .HasForeignKey(x => x.GeneratedFromTemplateId)
-                .OnDelete(DeleteBehavior.SetNull)
-                .IsRequired(false);
+            //builder.HasOne(x => x.GeneratedFromTemplate)
+            //    .WithMany()
+            //    .HasForeignKey(x => x.GeneratedFromTemplateId)
+            //    .OnDelete(DeleteBehavior.SetNull)
+            //    .IsRequired(false);
 
             // Indexes
             builder.HasIndex(x => new { x.DoctorId, x.SlotDate, x.StartTime })

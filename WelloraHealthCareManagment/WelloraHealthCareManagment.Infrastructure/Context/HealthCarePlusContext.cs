@@ -48,8 +48,8 @@ namespace WelloraHealthCareManagment.API.Context
         public DbSet<PatientDevice> PatientDevices { get; set; }
 
         // === Booking System DbSets === دي جداول نظام الحجوزات الجديد
-        public DbSet<DoctorScheduleTemplate> DoctorScheduleTemplates => Set<DoctorScheduleTemplate>();
-        public DbSet<ScheduleTimeRange> ScheduleTimeRanges => Set<ScheduleTimeRange>();
+        //public DbSet<DoctorScheduleTemplate> DoctorScheduleTemplates => Set<DoctorScheduleTemplate>();
+        //public DbSet<ScheduleTimeRange> ScheduleTimeRanges => Set<ScheduleTimeRange>();
         public DbSet<ScheduleException> ScheduleExceptions => Set<ScheduleException>();
         public DbSet<TimeSlot> TimeSlots => Set<TimeSlot>();
         public DbSet<Appointment> Appointments => Set<Appointment>();
@@ -61,6 +61,7 @@ namespace WelloraHealthCareManagment.API.Context
         public DbSet<Payment> Payments { get; set; }
         public DbSet<DoctorAchievement> DoctorAchievements { get; set; }
         public DbSet<DoctorVerification> DoctorVerifications { get; set; }
+        public DbSet<DoctorSlotConfig> DoctorSlotConfigs { get; set; }
 
         //public DbSet<AppointmentNotification> AppointmentNotifications => Set<AppointmentNotification>();
 
@@ -76,8 +77,8 @@ namespace WelloraHealthCareManagment.API.Context
             base.OnModelCreating(modelBuilder);
 
             // Apply all configurations
-            modelBuilder.ApplyConfiguration(new DoctorScheduleTemplateConfiguration());
-            modelBuilder.ApplyConfiguration(new ScheduleTimeRangeConfiguration());
+            //modelBuilder.ApplyConfiguration(new DoctorScheduleTemplateConfiguration());
+            //modelBuilder.ApplyConfiguration(new ScheduleTimeRangeConfiguration());
             modelBuilder.ApplyConfiguration(new ScheduleExceptionConfiguration());
             modelBuilder.ApplyConfiguration(new TimeSlotConfiguration());
             modelBuilder.ApplyConfiguration(new AppointmentConfiguration());

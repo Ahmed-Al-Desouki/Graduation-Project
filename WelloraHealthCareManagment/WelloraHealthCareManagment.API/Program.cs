@@ -10,7 +10,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WelloraHealthCareManagement.Application;
 using WelloraHealthCareManagement.Infrastructure;
-using WelloraHealthCareManagement.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagement.Infrastructure.Data.Interceptors;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;

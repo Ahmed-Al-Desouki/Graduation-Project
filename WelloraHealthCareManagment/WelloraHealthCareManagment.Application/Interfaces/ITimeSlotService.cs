@@ -5,10 +5,10 @@ namespace WelloraHealthCareManagement.Application.Interfaces
     public interface ITimeSlotService
     {
         /// توليد خانات لفترة معينة
-        Task<GenerateSlotsResponse> GenerateSlotsAsync(
-            int doctorId,
-            GenerateSlotsRequest request,
-            CancellationToken cancellationToken = default);
+        //Task<GenerateSlotsResponse> GenerateSlotsAsync(
+        //    int doctorId,
+        //    GenerateSlotsRequest request,
+        //    CancellationToken cancellationToken = default);
 
         /// جلب الخانات المتاحة لطبيب
         Task<List<AvailableSlotDto>> GetAvailableSlotsAsync(

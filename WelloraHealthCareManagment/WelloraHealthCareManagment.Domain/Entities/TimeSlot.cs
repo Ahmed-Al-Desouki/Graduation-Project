@@ -15,7 +15,7 @@ namespace WelloraHealthCareManagement.Domain.Entities
         public bool IsManuallyCreated { get; private set; }
 
         public Doctor Doctor { get; private set; } = null!;
-        public DoctorScheduleTemplate? GeneratedFromTemplate { get; private set; }
+        //public DoctorScheduleTemplate? GeneratedFromTemplate { get; private set; }
         public Appointment? Appointment { get; private set; }
 
         private TimeSlot() { }
@@ -39,6 +39,29 @@ namespace WelloraHealthCareManagement.Domain.Entities
                 Status = SlotStatus.Available,
                 GeneratedFromTemplateId = templateId,
                 IsManuallyCreated = false,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+        }
+
+        public static TimeSlot CreateFromConfig(
+            int doctorId,
+            DateTime slotDate,
+            TimeSpan startTime,
+            TimeSpan endTime)
+        {
+            ValidateSlotData(doctorId, slotDate, startTime, endTime);
+
+            return new TimeSlot
+            {
+                Id = Guid.NewGuid(),
+                DoctorId = doctorId,
+                SlotDate = slotDate.Date,
+                StartTime = startTime,
+                EndTime = endTime,
+                Status = SlotStatus.Available,
+                IsManuallyCreated = false,
+                GeneratedFromTemplateId = null,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

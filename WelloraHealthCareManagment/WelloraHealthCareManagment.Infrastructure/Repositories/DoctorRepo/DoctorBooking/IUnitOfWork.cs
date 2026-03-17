@@ -1,4 +1,6 @@
-﻿namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking
+﻿using Microsoft.EntityFrameworkCore.Storage;
+
+namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking
 {
     /// Unit of Work - للتحكم في الـ Transactions
     ///  التحكم في الـ Transactions
@@ -7,7 +9,8 @@
     public interface IUnitOfWork
     {
         //Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-        Task BeginTransactionAsync(CancellationToken cancellationToken = default);
+        //Task BeginTransactionAsync(CancellationToken cancellationToken = default);
+        Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct = default);
         Task CommitTransactionAsync(CancellationToken cancellationToken = default);
         Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
