@@ -10,6 +10,7 @@ import 'package:graduation_project/features/booking/presentation/views/schedule_
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/views/chat_details_view.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_layout.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/doctor_profile_completion_view.dart';
 import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medical_file_model.dart';
@@ -75,6 +76,7 @@ abstract class AppRouter {
   static const kDoctorSchedule = '/doctorSchedule';
   static const kScheduleSetup = '/scheduleSetup';
   static const kSearch = '/search';
+  static const kDoctorProfileCompletion = '/doctor/profile-completion';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -389,6 +391,11 @@ abstract class AppRouter {
               create: (context) => getIt<SearchCubit>(),
               child: const SearchView(),
             ),
+      ),
+
+      GoRoute(
+        path: kDoctorProfileCompletion,
+        builder: (context, state) => const DoctorProfileCompletionView(),
       ),
     ],
   );

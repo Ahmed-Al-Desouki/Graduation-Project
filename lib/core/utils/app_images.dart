@@ -60,6 +60,11 @@ class Assets {
   /// assets/images/clock.svg
   static const String imagesClock = "assets/images/clock.svg";
 
+  /// Assets for imagesDoctorAnalyzingData
+  /// assets/images/doctor-analyzing-data.png
+  static const String imagesDoctorAnalyzingData =
+      "assets/images/doctor-analyzing-data.png";
+
   /// Assets for imagesDoctor
   /// assets/images/doctor.png
   static const String imagesDoctor = "assets/images/doctor.png";
