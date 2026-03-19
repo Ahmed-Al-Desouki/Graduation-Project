@@ -40,6 +40,18 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
   final List<AchievementModel> _achievements = [];
   final ImagePicker _imagePicker = ImagePicker();
 
+  // ✅ Get file extension
+  String _getFileExtension() {
+    if (_selectedAchievementImage == null) return '';
+    return _selectedAchievementImage!.path.split('.').last.toUpperCase();
+  }
+
+  // ✅ Get file name
+  String _getFileName() {
+    if (_selectedAchievementImage == null) return '';
+    return _selectedAchievementImage!.path.split('/').last;
+  }
+
   // ✅ Controllers للـ Achievement الجديد
   final _achievementTitleController = TextEditingController();
   final _achievementDescriptionController = TextEditingController();
@@ -112,12 +124,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking image: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showSnackBar(context, 'Error picking image: $e', Colors.red);
     }
   }
 
@@ -236,42 +243,96 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
           SizedBox(height: 12.h),
 
           if (_selectedAchievementImage != null) ...[
-            // ✅ Image Preview
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    _selectedAchievementImage!,
-                    height: 150.h,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
+            // ✅ File Info Card (نفس ستايل Verification)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 20.h),
+              decoration: BoxDecoration(
+                color: _getBackgroundColor(),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _getBorderColor(),
+                  width: 1.5,
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Container(
+                margin: EdgeInsets.symmetric(horizontal: 16.w),
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xFFE5E7EB),
+                    width: 1.5,
                   ),
                 ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedAchievementImage = null;
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(6.w),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
+                child: Row(
+                  children: [
+                    SizedBox(height: 12.h),
+                    // ✅ File Icon
+                    Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDBEAFE),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 18,
+                      child: Icon(
+                        Icons.image,
+                        size: 24.sp,
+                        color: const Color(0xFF1B4E8C),
                       ),
                     ),
-                  ),
+                    SizedBox(width: 12.w),
+                    // ✅ File Name
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getFileName(),
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF1F2937),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            _getFileExtension(),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1B4E8C),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // ✅ Remove Button (نفس ستايل Verification)
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedAchievementImage = null;
+                        });
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(6.w),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
             SizedBox(height: 12.h),
           ] else ...[
@@ -389,6 +450,17 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
         ],
       ),
     );
+  }
+
+  // ✅ Helper Methods
+  Color _getBackgroundColor() {
+    if (_selectedAchievementImage != null) return const Color(0xFFDBEAFE);
+    return const Color(0xFFF3F4F6);
+  }
+
+  Color _getBorderColor() {
+    if (_selectedAchievementImage != null) return const Color(0xFF1B4E8C);
+    return const Color(0xFFE5E7EB);
   }
 }
 

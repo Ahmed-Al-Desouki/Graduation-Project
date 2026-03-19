@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'custom_form_text_field.dart';
 
-class BioSection extends StatelessWidget {
+class BioSection extends StatefulWidget {
   final TextEditingController bioController;
 
   const BioSection({super.key, required this.bioController});
 
+  @override
+  State<BioSection> createState() => _BioSectionState();
+}
+
+class _BioSectionState extends State<BioSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -52,27 +57,11 @@ class BioSection extends StatelessWidget {
           CustomFormTextField(
             hintText: 'Brief description about your practice and expertise...',
             fieldType: FieldType.bio,
-            controller: bioController,
+            controller: widget.bioController,
             prefixIcon: Icons.text_fields_outlined,
             minLines: 3,
             maxLines: 5,
-          ),
-          SizedBox(height: 12.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                '${bioController.text.length}/500',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color:
-                      bioController.text.length > 500
-                          ? Colors.red
-                          : const Color(0xFF9CA3AF),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+            maxLength: 500,
           ),
         ],
       ),

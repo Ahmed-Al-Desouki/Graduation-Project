@@ -1,20 +1,77 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:graduation_project/features/doctor_home/presentation/views/widgets/upload_document_item.dart';
+import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
+import 'upload_document_item.dart';
 
-class VerificationSection extends StatelessWidget {
+class VerificationSection extends StatefulWidget {
   final bool medicalLicenseUploaded;
   final bool graduationCertUploaded;
   final bool nationalIdUploaded;
-  final Function(String) onDocumentUploaded;
 
   const VerificationSection({
     super.key,
     required this.medicalLicenseUploaded,
     required this.graduationCertUploaded,
     required this.nationalIdUploaded,
-    required this.onDocumentUploaded,
   });
+
+  @override
+  State<VerificationSection> createState() => _VerificationSectionState();
+}
+
+class _VerificationSectionState extends State<VerificationSection> {
+  // ✅ Selected Files (قبل الـ Upload)
+  File? _medicalLicenseFile;
+  File? _graduationCertFile;
+  File? _nationalIdFile;
+
+  // ✅ Handle File Selection
+  void _onFileSelected(String type, File? file) {
+    setState(() {
+      switch (type) {
+        case 'medical':
+          _medicalLicenseFile = file;
+          break;
+        case 'graduation':
+          _graduationCertFile = file;
+          break;
+        case 'national':
+          _nationalIdFile = file;
+          break;
+      }
+    });
+  }
+
+  // ✅ Pick Document Function (نقلت الدالة هنا)
+  Future<void> _pickDocument(String type) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      allowMultiple: false,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final file = File(result.files.first.path!);
+    final fileSize = result.files.first.size;
+
+    // ✅ Validate file size (Max 10MB)
+    if (fileSize > 10 * 1024 * 1024) {
+      showSnackBar(
+        context,
+        'File size must be less than 10MB. Current size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB',
+        Colors.red,
+      );
+      return;
+    }
+
+    // ✅ نمرر الملف للـ UploadDocumentItem
+    _onFileSelected(type, file);
+
+    showSnackBar(context, 'Document uploaded successfully', Colors.green);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,27 +110,46 @@ class VerificationSection extends StatelessWidget {
             ],
           ),
           SizedBox(height: 24.h),
+          Text(
+            'Upload required documents for admin verification. Each document can only be submitted once.',
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: const Color(0xFF6B7280),
+              height: 1.5,
+            ),
+          ),
+          SizedBox(height: 24.h),
+
           UploadDocumentItem(
             icon: Icons.description,
             label: 'Medical License',
-            isUploaded: medicalLicenseUploaded,
-            onUpload: () => onDocumentUploaded('medical'),
+            isUploaded: widget.medicalLicenseUploaded,
+            selectedFile: _medicalLicenseFile, // ✅ الملف هيظهر هنا
+            onFileSelected: (file) => _onFileSelected('medical', file),
+            onUpload: () => _pickDocument('medical'), // ✅ الدالة الجديدة
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 20.h),
+
           UploadDocumentItem(
             icon: Icons.school,
             label: 'Graduation Certificate',
-            isUploaded: graduationCertUploaded,
-            onUpload: () => onDocumentUploaded('graduation'),
+            isUploaded: widget.graduationCertUploaded,
+            selectedFile: _graduationCertFile, // ✅ الملف هيظهر هنا
+            onFileSelected: (file) => _onFileSelected('graduation', file),
+            onUpload: () => _pickDocument('graduation'), // ✅ الدالة الجديدة
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 20.h),
+
           UploadDocumentItem(
             icon: Icons.badge,
             label: 'National ID',
-            isUploaded: nationalIdUploaded,
-            onUpload: () => onDocumentUploaded('national'),
+            isUploaded: widget.nationalIdUploaded,
+            selectedFile: _nationalIdFile, // ✅ الملف هيظهر هنا
+            onFileSelected: (file) => _onFileSelected('national', file),
+            onUpload: () => _pickDocument('national'), // ✅ الدالة الجديدة
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: 16.h),
+
           Center(
             child: Text(
               'All 3 documents are required for admin approval',

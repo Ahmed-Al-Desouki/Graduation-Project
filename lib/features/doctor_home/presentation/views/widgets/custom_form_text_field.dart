@@ -64,6 +64,33 @@ class CustomFormTextField extends StatefulWidget {
 }
 
 class _CustomFormTextFieldState extends State<CustomFormTextField> {
+  @override
+  void initState() {
+    super.initState();
+    // ✅ أضف listener للـ controller عشان الـ Character Counter
+    if (widget.controller != null) {
+      widget.controller!.addListener(_updateCounter);
+    }
+  }
+
+  @override
+  void dispose() {
+    // ✅ احذف الـ listener لما الـ widget يروح
+    if (widget.controller != null) {
+      widget.controller!.removeListener(_updateCounter);
+    }
+    super.dispose();
+  }
+
+  // ✅ دالة تحديث الـ Counter
+  void _updateCounter() {
+    if (mounted) {
+      setState(() {
+        // هيحدث الـ UI لما الـ text يتغير
+      });
+    }
+  }
+
   TextInputType _getKeyboardType() {
     switch (widget.fieldType) {
       case FieldType.number:

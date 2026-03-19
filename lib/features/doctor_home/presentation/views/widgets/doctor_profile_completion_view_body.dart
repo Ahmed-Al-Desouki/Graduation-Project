@@ -22,7 +22,6 @@ class DoctorProfileCompletionViewBody extends StatefulWidget {
 class _DoctorProfileCompletionViewBodyState
     extends State<DoctorProfileCompletionViewBody> {
   // ✅ Form Keys
-  final _formKey = GlobalKey<FormState>();
   final _personalInfoKey = GlobalKey<FormState>();
   final _professionalInfoKey = GlobalKey<FormState>();
 
@@ -94,9 +93,9 @@ class _DoctorProfileCompletionViewBodyState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ProfileHeaderSection(),
+          ProfileHeaderSection(),
           SizedBox(height: 24.h),
-          const ProfileProgressSection(currentStep: 1, totalSteps: 2),
+          ProfileProgressSection(currentStep: 1, totalSteps: 2),
           SizedBox(height: 24.h),
           PersonalInfoSection(
             formKey: _personalInfoKey,
@@ -122,7 +121,6 @@ class _DoctorProfileCompletionViewBodyState
             medicalLicenseUploaded: _medicalLicenseUploaded,
             graduationCertUploaded: _graduationCertUploaded,
             nationalIdUploaded: _nationalIdUploaded,
-            onDocumentUploaded: _uploadDocument,
           ),
           SizedBox(height: 20.h),
           BioSection(bioController: _bioController),
@@ -193,32 +191,6 @@ class _DoctorProfileCompletionViewBodyState
   //     });
   //   }
   // }
-
-  void _uploadDocument(String type) {
-    // TODO: Implement file upload logic
-    setState(() {
-      switch (type) {
-        case 'medical':
-          _medicalLicenseUploaded = true;
-          break;
-        case 'graduation':
-          _graduationCertUploaded = true;
-          break;
-        case 'national':
-          _nationalIdUploaded = true;
-          break;
-      }
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text("Document uploaded successfully!"),
-        backgroundColor: const Color(0xFF10B981),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
 
   void _validateAndSubmit() {
     if (_personalInfoKey.currentState!.validate() &&
