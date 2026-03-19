@@ -13,6 +13,7 @@ import 'package:graduation_project/features/booking/presentation/manager/appoint
 import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/views/booking_calendar_view.dart';
+import 'package:graduation_project/features/booking/presentation/views/payment_web_view.dart';
 import 'package:graduation_project/features/booking/presentation/views/schedule_setup_view.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/views/chat_details_view.dart';
@@ -83,6 +84,7 @@ abstract class AppRouter {
   static const kScheduleSetup = '/scheduleSetup';
   static const kMedicalDetails = '/medicalDetails'; // ✅ أضف هذا الثابت
   static const kSearch = '/search';
+  static const kPaymentWebView = '/paymentWebView'; // ✅ أضف هذا الثابت
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -101,16 +103,81 @@ abstract class AppRouter {
       ),
 
       // 2. شاشة الكالندر (تحتاج الـ BookingCalendarCubit)
+      // GoRoute(
+      //   path: kDoctorSchedule,
+      //   builder: (context, state) {
+      //     var box = Hive.box('booking_box');
+      //     bool isSetupComplete = box.get(
+      //       'isScheduleConfigured',
+      //       defaultValue: false,
+      //     );
+      //     final Map<String, dynamic>? extra =
+      //         state.extra as Map<String, dynamic>?;
+
+      //     if (isSetupComplete) {
+      //       return MultiBlocProvider(
+      //         providers: [
+      //           BlocProvider(
+      //             create: (context) => getIt<BookingCalendarCubit>(),
+      //           ),
+      //           BlocProvider(
+      //             create: (context) => getIt<AppointmentActionCubit>(),
+      //           ),
+      //         ],
+      //         child: BookingCalendarView(
+      //           followUpPatientName: extra?['patientName'],
+      //           originalAppointmentId: extra?['originalAppointmentId'],
+      //         ),
+      //       );
+      //     } else {
+      //       // لو رايح للـ Setup من هنا برضو لازم توفر الـ Cubit
+      //       return BlocProvider(
+      //         create: (context) => getIt<ScheduleManagementCubit>(),
+      //         child: const ScheduleSetupView(),
+      //       );
+      //     }
+      //   },
+      // ),
+
+      // 2. شاشة الكالندر (تدعم الطبيب والمريض)
       GoRoute(
         path: kDoctorSchedule,
         builder: (context, state) {
+          // 1️⃣ استلام البيانات من الـ extra
+          final Map<String, dynamic>? extra =
+              state.extra as Map<String, dynamic>?;
+          final bool isPatientView =
+              extra?['isPatientView'] ?? false; // الافتراضي دكتور
+
+          // 2️⃣ لو "مريض"، افتح الكالندر فوراً بدون فحص الـ Hive (Setup)
+          if (isPatientView) {
+            return MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (context) => getIt<BookingCalendarCubit>(),
+                ),
+                BlocProvider(
+                  create: (context) => getIt<AppointmentActionCubit>(),
+                ),
+              ],
+              child: BookingCalendarView(
+                isPatientView: true,
+                doctorId:
+                    extra?['doctorId']
+                        ?.toString(), // ID الدكتور اللي المريض اختاره من البحث
+                doctorName: extra?['doctorName'],
+                consultationFee:
+                    (extra?['consultationFee'] as num?)?.toDouble(),
+              ),
+            );
+          }
+
+          // 3️⃣ لو "دكتور"، كمل اللوجيك القديم بتاع فحص الـ Setup
           var box = Hive.box('booking_box');
           bool isSetupComplete = box.get(
             'isScheduleConfigured',
             defaultValue: false,
           );
-          final Map<String, dynamic>? extra =
-              state.extra as Map<String, dynamic>?;
 
           if (isSetupComplete) {
             return MultiBlocProvider(
@@ -123,12 +190,12 @@ abstract class AppRouter {
                 ),
               ],
               child: BookingCalendarView(
+                isPatientView: false,
                 followUpPatientName: extra?['patientName'],
                 originalAppointmentId: extra?['originalAppointmentId'],
               ),
             );
           } else {
-            // لو رايح للـ Setup من هنا برضو لازم توفر الـ Cubit
             return BlocProvider(
               create: (context) => getIt<ScheduleManagementCubit>(),
               child: const ScheduleSetupView(),
@@ -136,7 +203,6 @@ abstract class AppRouter {
           }
         },
       ),
-
       GoRoute(
         path: kOnboarding,
         builder: (context, state) => const OnboardingView(),
@@ -452,6 +518,14 @@ abstract class AppRouter {
               create: (context) => getIt<SearchCubit>(),
               child: const SearchView(),
             ),
+      ),
+
+      GoRoute(
+        path: kPaymentWebView,
+        builder: (context, state) {
+          final String url = state.extra as String;
+          return PaymentWebViewPage(url: url);
+        },
       ),
     ],
   );

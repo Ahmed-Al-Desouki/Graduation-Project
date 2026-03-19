@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 
 class DoctorCard extends StatelessWidget {
   final int doctorId;
@@ -118,7 +120,19 @@ class DoctorCard extends StatelessWidget {
                   width: double.infinity,
                   height: 46,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      context.push(
+                        AppRouter
+                            .kDoctorSchedule, // المسار اللي إنت معرفه للكالندر
+                        extra: {
+                          'doctorId': doctorId.toString(),
+                          'doctorName': fullName,
+                          'isPatientView':
+                              true, // ✅ أهم Flag عشان نخفي الترس والتحكم
+                          'consultationFee': consultationFee,
+                        },
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       shape: RoundedRectangleBorder(

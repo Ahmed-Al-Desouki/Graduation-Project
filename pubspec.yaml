@@ -61,7 +61,7 @@ dependencies:
   firebase_auth: ^6.1.0
   file_picker: ^8.3.7
   open_filex: ^4.3.2
-  path_provider: ^2.1.1
+  path_provider: ^2.1.5
   firebase_messaging: ^16.0.4
   showcaseview: ^3.0.0
   rrule: ^0.2.17
@@ -79,6 +79,10 @@ dependencies:
   flutter_cache_manager: ^3.4.1
   internet_connection_checker: ^3.0.1
   table_calendar: ^3.2.0
+  shimmer: ^3.0.0
+  pdf: ^3.12.0
+  printing: ^5.14.3
+  webview_flutter: ^4.13.1
 
   
 

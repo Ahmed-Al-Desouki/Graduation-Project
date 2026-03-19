@@ -38,16 +38,24 @@ import 'package:graduation_project/features/booking/data/data_sources/booking_re
 import 'package:graduation_project/features/booking/data/data_sources/medical_remote_data_source.dart';
 import 'package:graduation_project/features/booking/data/data_sources/medical_remote_data_source_impl.dart';
 import 'package:graduation_project/features/booking/data/repositories/medical_repository_impl.dart';
+import 'package:graduation_project/features/booking/data/repositories/payment_repository_impl.dart';
 import 'package:graduation_project/features/booking/domain/repositories/medical_repository.dart';
+import 'package:graduation_project/features/booking/domain/repositories/payment_repository.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/add_custom_hours_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/add_day_off_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/add_prescription_items_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/block_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/book_follow_up_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/create_appointment_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_manual_slot_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/create_payment_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_prescription_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/delete_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_doctor_slots_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_medical_record_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_prescription_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/remove_exception_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/remove_working_day_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/save_medical_record_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/update_appointment_status_use_case.dart';
 import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
@@ -102,6 +110,10 @@ Future<void> initBookingInjection() async {
     () => MedicalRepositoryImpl(sl()), // sl هنا هي الـ MedicalRemoteDataSource
   );
 
+  sl.registerLazySingleton<PaymentRepository>(
+    () => PaymentRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()),
+  );
+
   // 3. ✅ إضافة الـ UseCases الناقصة (تأكد من الـ imports)
   sl.registerLazySingleton(() => CreateScheduleUseCase(sl()));
   sl.registerLazySingleton(() => GenerateSlotsUseCase(sl()));
@@ -121,14 +133,22 @@ Future<void> initBookingInjection() async {
   sl.registerLazySingleton(() => DeleteSlotUseCase(sl()));
   sl.registerLazySingleton(() => GetPrescriptionUseCase(sl()));
   sl.registerLazySingleton(() => AddPrescriptionItemsUseCase(sl()));
+  sl.registerLazySingleton(() => CreatePaymentUseCase(sl()));
+  sl.registerLazySingleton(() => CreateAppointmentUseCase(sl()));
+  sl.registerLazySingleton(() => AddCustomHoursUseCase(sl()));
+  sl.registerLazySingleton(() => AddDayOffUseCase(sl()));
+  sl.registerLazySingleton(() => RemoveExceptionUseCase(sl()));
+  sl.registerLazySingleton(() => RemoveWorkingDayUseCase(sl()));
 
   // 4. Cubits
-  sl.registerFactory(() => ScheduleManagementCubit(sl(), sl(), sl()));
+  sl.registerFactory(
+    () => ScheduleManagementCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
+  );
   sl.registerFactory(() => BookingCalendarCubit(sl()));
   sl.registerFactory(() => ExamSessionCubit(sl(), sl(), sl(), sl(), sl()));
 
   // تأكد إن ترتيب الـ sl() هنا مطابق لترتيب الـ parameters في الـ Constructor بتاع الـ Cubit
   sl.registerFactory(
-    () => AppointmentActionCubit(sl(), sl(), sl(), sl(), sl()),
+    () => AppointmentActionCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
   );
 }

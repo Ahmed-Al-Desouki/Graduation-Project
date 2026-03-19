@@ -14,6 +14,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_timezone
   local_auth_windows
   passkeys_windows
+  printing
   url_launcher_windows
 )
 

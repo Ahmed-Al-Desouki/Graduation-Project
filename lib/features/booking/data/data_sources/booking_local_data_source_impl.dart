@@ -27,14 +27,26 @@ class BookingLocalDataSourceImpl implements BookingLocalDataSource {
   }
 
   @override
-  Future<void> cacheActiveSchedule(Map<String, dynamic> schedule) async {
-    await _box.put(kCachedScheduleKey, schedule);
+  Future<void> cacheActiveSchedule(List<dynamic> config) async {
+    await _box.put(kCachedScheduleKey, config);
   }
 
+  // @override
+  // Future<Map<String, dynamic>> getCachedActiveSchedule() async {
+  //   final Map? data = _box.get(kCachedScheduleKey);
+  //   if (data != null) return Map<String, dynamic>.from(data);
+  //   throw Exception("No cached schedule found");
+  // }
   @override
-  Future<Map<String, dynamic>> getCachedActiveSchedule() async {
-    final Map? data = _box.get(kCachedScheduleKey);
-    if (data != null) return Map<String, dynamic>.from(data);
+  Future<List<dynamic>> getCachedActiveSchedule() async {
+    // ✅ التغيير من Map? لـ List?
+    final List? data = _box.get(kCachedScheduleKey);
+
+    if (data != null) {
+      // ✅ نرجعه كـ List<dynamic> عشان الموديل (fromV2List) يعرف يقراه
+      return List<dynamic>.from(data);
+    }
+
     throw Exception("No cached schedule found");
   }
 
@@ -58,6 +70,8 @@ class BookingLocalDataSourceImpl implements BookingLocalDataSource {
                   'status': s.status,
                   'patientFullName': s.patientName,
                   'appointmentId': s.appointmentId,
+                  'patientNote':
+                      s.patientNote, // ✅ لازم نضيف السطر ده عشان الملاحظات متضيعش
                 },
               )
               .toList(),

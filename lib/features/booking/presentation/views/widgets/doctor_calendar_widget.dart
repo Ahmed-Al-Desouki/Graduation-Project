@@ -23,6 +23,8 @@ class DoctorCalendarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TableCalendar(
+      rowHeight: 45,
+      calendarFormat: CalendarFormat.month,
       focusedDay: focusedDay,
       firstDay: DateTime.now().subtract(const Duration(days: 365)),
       lastDay: DateTime.now().add(const Duration(days: 365)),
@@ -50,44 +52,71 @@ class DoctorCalendarWidget extends StatelessWidget {
         ),
       ),
       // ✅ تلوين الأيام ريسبونسيف بناءً على الداتا
-      calendarBuilders: CalendarBuilders(
-        defaultBuilder: (context, day, focusedDay) {
-          final dayData =
-              allDays
-                  .where(
-                    (d) =>
-                        d.date.year == day.year &&
-                        d.date.month == day.month &&
-                        d.date.day == day.day,
-                  )
-                  .firstOrNull;
+      // calendarBuilders: CalendarBuilders(
+      //   defaultBuilder: (context, day, focusedDay) {
+      //     final dayData =
+      //         allDays
+      //             .where(
+      //               (d) =>
+      //                   d.date.year == day.year &&
+      //                   d.date.month == day.month &&
+      //                   d.date.day == day.day,
+      //             )
+      //             .firstOrNull;
 
-          if (dayData != null) {
-            return Container(
-              margin: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                // بنفسجي لو محجوز بالكامل، أخضر لو متاح
-                color:
-                    dayData.isFullyBooked
-                        ? Colors.purple.withOpacity(0.3)
-                        : Colors.green.withOpacity(0.3),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: dayData.isFullyBooked ? Colors.purple : Colors.green,
-                  width: 1,
+      //     if (dayData != null) {
+      //       return Container(
+      //         margin: const EdgeInsets.all(4),
+      //         decoration: BoxDecoration(
+      //           // بنفسجي لو محجوز بالكامل، أخضر لو متاح
+      //           color:
+      //               dayData.isFullyUnavailable
+      //                   ? Colors.purple.withOpacity(0.3)
+      //                   : Colors.green.withOpacity(0.3),
+      //           shape: BoxShape.circle,
+      //           border: Border.all(
+      //             color:
+      //                 dayData.isFullyUnavailable ? Colors.purple : Colors.green,
+      //             width: 1,
+      //           ),
+      //         ),
+      //         child: Center(child: Text('${day.day}')),
+      //       );
+      //     }
+      //     return null;
+      //   },
+      // ),
+      calendarBuilders: CalendarBuilders(
+        prioritizedBuilder: (context, day, focusedDay) {
+          final dayData =
+              allDays.where((d) => isSameDay(d.date, day)).firstOrNull;
+          if (dayData == null) return null;
+
+          final Color color = dayData.stateColor;
+          final bool isSelected = isSameDay(day, selectedDay);
+
+          return Container(
+            margin: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.orange : color.withOpacity(0.15),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? Colors.orange : color,
+                width: 1.5,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                '${day.day}',
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.black87,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
-              child: Center(child: Text('${day.day}')),
-            );
-          }
-          return null;
+            ),
+          );
         },
       ),
-
-      // onDaySelected: (selectedDay, focusedDay) {
-      //   // تحديث المواعيد المعروضة بالأسفل عند الضغط
-      //   context.read<BookingCalendarCubit>().selectDate(selectedDay);
-      // },
     );
   }
 }

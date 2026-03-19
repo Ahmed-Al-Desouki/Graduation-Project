@@ -18,3 +18,8 @@ final class AppointmentActionFailure extends AppointmentActionState {
   final String errMessage;
   AppointmentActionFailure(this.errMessage);
 }
+
+class PaymentNavigatedToWebView extends AppointmentActionState {
+  final String url;
+  PaymentNavigatedToWebView(this.url);
+}

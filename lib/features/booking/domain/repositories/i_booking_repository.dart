@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:graduation_project/core/errors/failures.dart';
 import 'package:graduation_project/features/booking/domain/entities/appointment_entity.dart';
+import 'package:graduation_project/features/booking/domain/entities/booking_entity.dart';
 import 'package:graduation_project/features/booking/domain/entities/day_slots_entity.dart';
 import 'package:graduation_project/features/booking/domain/entities/schedule_entity.dart';
 
@@ -80,4 +81,11 @@ abstract class IBookingRepository {
   );
 
   Future<Either<Failure, ScheduleEntity>> getActiveSchedule(String doctorId);
+
+  Future<Either<Failure, String>> createAppointment(BookingEntity booking);
+
+  Future<Either<Failure, void>> removeWorkingDay(
+    String doctorId,
+    int dayOfWeek,
+  );
 }

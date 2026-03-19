@@ -60,7 +60,11 @@ class AuthCubit extends Cubit<AuthState> {
             await _registerDeviceToken();
 
             final uid = await SecureStorageHelper.getUserId();
-            getIt<SessionManager>().updateIdAfterLogin(uid!);
+            final name = await SecureStorageHelper.getUserName();
+            getIt<SessionManager>().updateUserDataAfterLogin(
+              id: uid!,
+              name: name!,
+            );
             emit(LoginSuccess(uid: uid!, email: googleUser.email, role: role));
           } catch (e) {
             emit(LoginFailure(errMessage: 'Processing Error: $e'));
@@ -101,8 +105,12 @@ class AuthCubit extends Cubit<AuthState> {
             await _registerDeviceToken();
 
             final uid = await SecureStorageHelper.getUserId();
+            final name = await SecureStorageHelper.getUserName();
             final role = (await SecureStorageHelper.getUserRole())['role']!;
-            getIt<SessionManager>().updateIdAfterLogin(uid!);
+            getIt<SessionManager>().updateUserDataAfterLogin(
+              id: uid!,
+              name: name!,
+            );
             emit(LoginSuccess(uid: uid!, email: email, role: role));
           } catch (e) {
             emit(LoginFailure(errMessage: 'Processing Error: $e'));

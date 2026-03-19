@@ -205,8 +205,9 @@ class SessionManager {
     );
   }
 
-  void updateIdAfterLogin(String id) {
+  void updateUserDataAfterLogin({required String id, required String name}) {
     _cachedUserId = id;
-    print("💡 SessionManager: Memory Cache updated with ID: $id");
+    _cachedName = name; // ✅ كدة الاسم هيتحفظ في الذاكرة فوراً
+    print("💡 SessionManager: Memory Cache updated - ID: $id, Name: $name");
   }
 }

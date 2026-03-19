@@ -52,7 +52,7 @@ class SlotModel extends SlotEntity {
       status: json['status'],
       patientName: json['patientFullName'],
       appointmentId: json['appointmentId'],
-      patientNote: json['patientNote'], // جلب الملاحظة من JSON
+      patientNote: json['patientNotes'], // جلب الملاحظة من JSON
     );
   }
 }

@@ -38,7 +38,32 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
     context.read<ScheduleManagementCubit>().fetchCurrentSchedule();
   }
 
+  List<int> initiallyEnabledDays = [];
   // ✅ دالة سحرية لملء البيانات فور وصولها من السيرفر
+  // void _populateFields(ScheduleEntity schedule) {
+  //   setState(() {
+  //     durationController.text = schedule.slotDurationMinutes.toString();
+  //     bufferController.text = schedule.bufferTimeMinutes.toString();
+  //     startDate = schedule.effectiveFromDate;
+  //     endDate = schedule.effectiveToDate;
+
+  //     // تصفير الأيام أولاً
+  //     for (var day in weeklySettings) {
+  //       day.isEnabled = false;
+  //     }
+
+  //     // ملء الأيام بناءً على ما جاء من السيرفر
+  //     for (var range in schedule.timeRanges) {
+  //       int index = range.dayOfWeek;
+  //       if (index >= 0 && index < 7) {
+  //         weeklySettings[index].isEnabled = true;
+  //         weeklySettings[index].startTime = _parseTimeString(range.startTime);
+  //         weeklySettings[index].endTime = _parseTimeString(range.endTime);
+  //       }
+  //     }
+  //   });
+  // }
+
   void _populateFields(ScheduleEntity schedule) {
     setState(() {
       durationController.text = schedule.slotDurationMinutes.toString();
@@ -46,18 +71,22 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
       startDate = schedule.effectiveFromDate;
       endDate = schedule.effectiveToDate;
 
-      // تصفير الأيام أولاً
+      initiallyEnabledDays.clear(); // تصفير القائمة
+
       for (var day in weeklySettings) {
         day.isEnabled = false;
       }
 
-      // ملء الأيام بناءً على ما جاء من السيرفر
       for (var range in schedule.timeRanges) {
+        print("DEBUG: Range DayIndex: ${range.dayOfWeek}");
         int index = range.dayOfWeek;
         if (index >= 0 && index < 7) {
           weeklySettings[index].isEnabled = true;
           weeklySettings[index].startTime = _parseTimeString(range.startTime);
           weeklySettings[index].endTime = _parseTimeString(range.endTime);
+
+          // ✅ سجل إن اليوم ده كان موجود فعلاً في السيرفر
+          initiallyEnabledDays.add(index);
         }
       }
     });
@@ -110,7 +139,10 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
                 SizedBox(height: screenHeight * 0.03),
 
                 WeeklyScheduleSection(weeklySettings: weeklySettings),
+                SizedBox(height: screenHeight * 0.03),
 
+                // 3. ✅ إضافة قسم الاستثناءات (إجازات / ساعات خاصة)
+                _buildExceptionsSection(context),
                 SizedBox(height: screenHeight * 0.04),
 
                 ElevatedButton(
@@ -137,9 +169,56 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
     );
   }
 
-  void _onSavePressed() {
-    final enabledDays = weeklySettings.where((day) => day.isEnabled).toList();
+  // void _onSavePressed() {
+  //   final enabledDays = weeklySettings.where((day) => day.isEnabled).toList();
 
+  //   if (enabledDays.isEmpty) {
+  //     showSnackBar(
+  //       context,
+  //       "Please enable at least one working day",
+  //       Colors.red,
+  //     );
+  //     return;
+  //   }
+  //   final doctorId = getIt<SessionManager>().userId;
+  //   // ✅ تجميع البيانات داخل Entity واحدة
+  //   final schedule = ScheduleEntity(
+  //     id: doctorId,
+  //     templateName: "Main Doctor Schedule",
+  //     slotDurationMinutes: int.tryParse(durationController.text) ?? 30,
+  //     bufferTimeMinutes: int.tryParse(bufferController.text) ?? 5,
+  //     effectiveFromDate: startDate,
+  //     effectiveToDate: endDate,
+  //     timeRanges:
+  //         enabledDays
+  //             .map(
+  //               (day) => TimeRangeEntity(
+  //                 dayOfWeek: day.dayIndex,
+  //                 startTime: _formatTime(day.startTime),
+  //                 endTime: _formatTime(day.endTime),
+  //               ),
+  //             )
+  //             .toList(),
+  //   );
+
+  //   // نداء الكيوبت بإرسال الـ Entity فقط
+  //   context.read<ScheduleManagementCubit>().saveDoctorSchedule(
+  //     schedule: schedule,
+  //   );
+  // }
+
+  void _onSavePressed() async {
+    final cubit = context.read<ScheduleManagementCubit>();
+
+    // 1. تحديد الأيام اللي اتمسحت (كانت enabled وبقت disabled)
+    for (int dayIndex in initiallyEnabledDays) {
+      if (!weeklySettings[dayIndex].isEnabled) {
+        await cubit.deleteDayConfig(dayIndex);
+      }
+    }
+
+    // 2. تجميع الأيام المفعلة حالياً للحفظ
+    final enabledDays = weeklySettings.where((day) => day.isEnabled).toList();
     if (enabledDays.isEmpty) {
       showSnackBar(
         context,
@@ -148,11 +227,10 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
       );
       return;
     }
-    final doctorId = getIt<SessionManager>().userId;
-    // ✅ تجميع البيانات داخل Entity واحدة
+
     final schedule = ScheduleEntity(
-      id: doctorId,
-      templateName: "Main Doctor Schedule",
+      id: getIt<SessionManager>().userId,
+      templateName: "Main Schedule",
       slotDurationMinutes: int.tryParse(durationController.text) ?? 30,
       bufferTimeMinutes: int.tryParse(bufferController.text) ?? 5,
       effectiveFromDate: startDate,
@@ -169,9 +247,334 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
               .toList(),
     );
 
-    // نداء الكيوبت بإرسال الـ Entity فقط
-    context.read<ScheduleManagementCubit>().saveDoctorSchedule(
-      schedule: schedule,
+    cubit.saveDoctorSchedule(schedule: schedule);
+  }
+
+  Widget _buildExceptionsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Exceptions & Holidays",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _showDayOffDialog(context),
+                icon: const Icon(Icons.beach_access, color: Colors.orange),
+                label: const Text("Add Day Off"),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _showCustomHoursDialog(context),
+                icon: const Icon(Icons.timer, color: Colors.blue),
+                label: const Text("Custom Hours"),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showCustomHoursDialog(BuildContext context) {
+    final cubit = context.read<ScheduleManagementCubit>();
+    DateTime selectedDate = DateTime.now();
+    TimeOfDay startTime = const TimeOfDay(hour: 9, minute: 0);
+    TimeOfDay endTime = const TimeOfDay(hour: 13, minute: 0);
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder:
+          (dialogContext) => BlocProvider.value(
+            value: cubit,
+            child: StatefulBuilder(
+              builder:
+                  (context, setDialogState) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    title: Column(
+                      children: [
+                        const Icon(
+                          Icons.timer_outlined,
+                          size: 40,
+                          color: Colors.blue,
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          "Custom Work Hours",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildModernSelector(
+                            label: "Working Date",
+                            value: DateFormat(
+                              'EEE, dd MMM yyyy',
+                            ).format(selectedDate),
+                            icon: Icons.calendar_today,
+                            color: Colors.blue.shade50,
+                            onTap: () async {
+                              DateTime? picked = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDate,
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime.now().add(
+                                  const Duration(days: 365),
+                                ),
+                              );
+                              if (picked != null)
+                                setDialogState(() => selectedDate = picked);
+                            },
+                          ),
+                          const SizedBox(height: 15),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildModernSelector(
+                                  label: "From",
+                                  value: startTime.format(context),
+                                  icon: Icons.login,
+                                  color: Colors.green.shade50,
+                                  onTap: () async {
+                                    TimeOfDay? picked = await showTimePicker(
+                                      context: context,
+                                      initialTime: startTime,
+                                    );
+                                    if (picked != null)
+                                      setDialogState(() => startTime = picked);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _buildModernSelector(
+                                  label: "To",
+                                  value: endTime.format(context),
+                                  icon: Icons.logout,
+                                  color: Colors.red.shade50,
+                                  onTap: () async {
+                                    TimeOfDay? picked = await showTimePicker(
+                                      context: context,
+                                      initialTime: endTime,
+                                    );
+                                    if (picked != null)
+                                      setDialogState(() => endTime = picked);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          TextField(
+                            controller: reasonController,
+                            decoration: InputDecoration(
+                              labelText: "Reason",
+                              prefixIcon: const Icon(Icons.edit_note),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    actionsPadding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 10,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          "Discard",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () {
+                          context
+                              .read<ScheduleManagementCubit>()
+                              .setCustomHours(
+                                selectedDate,
+                                _formatTime(startTime),
+                                _formatTime(endTime),
+                                reasonController.text,
+                              );
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          "Apply Change",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+            ),
+          ),
+    );
+  }
+
+  void _showDayOffDialog(BuildContext context) {
+    final cubit = context.read<ScheduleManagementCubit>();
+    DateTime selectedDate = DateTime.now();
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder:
+          (dialogContext) => BlocProvider.value(
+            value: cubit,
+            child: StatefulBuilder(
+              builder:
+                  (context, setDialogState) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    backgroundColor: Colors.white,
+                    title: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.orange.shade50,
+                          child: const Icon(
+                            Icons.beach_access_rounded,
+                            size: 35,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        const Text(
+                          "Set a Holiday",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildModernSelector(
+                          label: "Holiday Date",
+                          value: DateFormat(
+                            'EEEE, dd MMM',
+                          ).format(selectedDate),
+                          icon: Icons.event_available,
+                          color: Colors.orange.shade50,
+                          onTap: () async {
+                            DateTime? picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDate,
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365),
+                              ),
+                            );
+                            if (picked != null)
+                              setDialogState(() => selectedDate = picked);
+                          },
+                        ),
+                        const SizedBox(height: 15),
+                        TextField(
+                          controller: reasonController,
+                          maxLines: 2,
+                          decoration: InputDecoration(
+                            labelText: "Holiday Reason (Optional)",
+                            hintText: "e.g. Travel, Personal break...",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Cancel"),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          context.read<ScheduleManagementCubit>().setDayOff(
+                            selectedDate,
+                            reasonController.text,
+                          );
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          "Confirm Holiday",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+            ),
+          ),
+    );
+  }
+
+  Widget _buildModernSelector({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black.withOpacity(0.05)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: Colors.black54),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 11, color: Colors.black54),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

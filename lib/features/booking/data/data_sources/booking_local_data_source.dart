@@ -6,8 +6,10 @@ abstract class BookingLocalDataSource {
   Future<List<DaySlotsModel>> getCachedDaySlots();
 
   // حفظ وجلب الجدول النشط للدكتور
-  Future<void> cacheActiveSchedule(Map<String, dynamic> schedule);
-  Future<Map<String, dynamic>> getCachedActiveSchedule();
+  // Future<void> cacheActiveSchedule(Map<String, dynamic> schedule);
+  Future<void> cacheActiveSchedule(List<dynamic> config);
+
+  Future<List<dynamic>> getCachedActiveSchedule();
 
   // مسح الكاش عند تسجيل الخروج أو التحديث الإجباري
   Future<void> clearCache();

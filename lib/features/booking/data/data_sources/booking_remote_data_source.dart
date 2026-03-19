@@ -3,7 +3,9 @@ import 'package:graduation_project/features/booking/data/models/requests/day_slo
 abstract class BookingRemoteDataSource {
   // --- Schedules ---
   Future<String> createSchedule(String doctorId, Map<String, dynamic> body);
-  Future<Map<String, dynamic>> getActiveSchedule(String doctorId);
+  // Future<Map<String, dynamic>> getActiveSchedule(String doctorId);
+
+  Future<List<dynamic>> getActiveSchedule(String doctorId);
 
   // --- Exceptions ---
   Future<void> addDayOff(String doctorId, Map<String, dynamic> body);
@@ -51,4 +53,12 @@ abstract class BookingRemoteDataSource {
     // String reason,
     Map<String, dynamic>? body,
   );
+
+  Future<String> createAppointment(Map<String, dynamic> body);
+
+  // --- Payment ---
+  // ✅ ميثود إنشاء الدفع (بترجع الـ JSON اللي فيه الـ paymentUrl)
+  Future<Map<String, dynamic>> createPayment(Map<String, dynamic> body);
+
+  Future<void> removeWorkingDay(String doctorId, int dayOfWeek);
 }
