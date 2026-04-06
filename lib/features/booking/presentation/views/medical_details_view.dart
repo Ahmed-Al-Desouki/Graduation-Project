@@ -14,6 +14,7 @@ import '../../domain/entities/medical_record_entity.dart';
 
 class MedicalDetailsView extends StatefulWidget {
   final String appointmentId;
+  final String patientId; // ✅ تأكد من استلام ID المريض
   final String patientName;
   final String? patientImage;
   final String doctorName;
@@ -25,6 +26,7 @@ class MedicalDetailsView extends StatefulWidget {
   const MedicalDetailsView({
     super.key,
     required this.appointmentId,
+    required this.patientId,
     required this.patientName,
     this.patientImage,
     required this.doctorName,
@@ -115,6 +117,25 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.history_edu,
+              color: Color(0xFF9333EA),
+              size: 28,
+            ),
+            tooltip: "View Medical History",
+            onPressed: () {
+              // الانتقال لصفحة الهيستوري مع تمرير ID المريض وعلم الـ DoctorView
+              context.push(
+                AppRouter.kMedicalHistory,
+                extra: {
+                  'patientId': widget.patientId, // تأكد إنك استلمته من الكالندر
+                  'appointmentId': widget.appointmentId,
+                  'isDoctorView': true, // 👈 دي اللي هتقفل أزرار التعديل
+                },
+              );
+            },
+          ),
           if (isCompleted) // يظهر فقط لما الجلسة تخلص
             IconButton(
               icon: const Icon(Icons.picture_as_pdf, color: Colors.redAccent),
@@ -610,13 +631,14 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
   }
 
   Widget _buildPrescriptionItemsList() {
-    if (prescriptionItems.isEmpty)
+    if (prescriptionItems.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(20),
           child: Text("No medicines added"),
         ),
       );
+    }
 
     return ListView.builder(
       shrinkWrap: true,

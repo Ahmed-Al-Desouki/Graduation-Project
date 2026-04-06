@@ -501,6 +501,7 @@ abstract class AppRouter {
             ],
             child: MedicalDetailsView(
               appointmentId: extra['appointmentId'] ?? '',
+              patientId: extra['patientId'] ?? '',
               patientName: extra['patientName'] ?? 'Unknown Patient',
               patientNote: extra['patientNote'],
               // ✅ تمرير الحالة (ضروري جداً للوجيك الـ Read-only)
