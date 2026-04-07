@@ -1,9 +1,11 @@
 import 'package:bloc/bloc.dart';
+import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
 import 'package:graduation_project/features/booking/domain/entities/medical_record_entity.dart';
 import 'package:graduation_project/features/booking/domain/entities/medication_item_entity.dart';
 import 'package:graduation_project/features/booking/domain/entities/prescription_entity.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/add_prescription_items_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_prescription_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/get_appointment_full_details_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_medical_record_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_prescription_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/save_medical_record_use_case.dart';
@@ -12,6 +14,7 @@ import 'package:meta/meta.dart';
 part 'exam_session_state.dart';
 
 class ExamSessionCubit extends Cubit<ExamSessionState> {
+  final GetAppointmentFullDetailsUseCase getAppointmentFullDetailsUseCase;
   final GetMedicalRecordUseCase getMedicalRecordUseCase;
   final SaveMedicalRecordUseCase saveMedicalRecordUseCase;
   final CreatePrescriptionUseCase createPrescriptionUseCase;
@@ -23,7 +26,19 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
     this.createPrescriptionUseCase,
     this.getPrescriptionUseCase,
     this.addPrescriptionItemsUseCase,
+    this.getAppointmentFullDetailsUseCase,
   ) : super(ExamSessionInitial());
+
+  Future<void> fetchAppointmentDetails(String appointmentId) async {
+    emit(MedicalRecordLoading()); // استخدم اللودينج العادي بتاعك
+
+    final result = await getAppointmentFullDetailsUseCase(appointmentId);
+
+    result.fold(
+      (failure) => emit(ExamSessionFailure(failure.errmessage)),
+      (details) => emit(AppointmentDetailsFetched(details)), // 👈 ستيت جديدة
+    );
+  }
 
   // 1. جلب السجل الطبي فور فتح الصفحة
   Future<void> fetchMedicalRecord(String appointmentId) async {

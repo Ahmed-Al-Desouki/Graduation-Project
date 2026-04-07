@@ -4,13 +4,9 @@ import 'package:graduation_project/features/medical_history/domain/models/lab_re
 
 class LabResultCard extends StatelessWidget {
   final LabResultModel result;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
 
-  const LabResultCard({
-    super.key,
-    required this.result,
-    required this.onDelete,
-  });
+  const LabResultCard({super.key, required this.result, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -89,18 +85,18 @@ class LabResultCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            IconButton(
-              onPressed: onDelete,
-              icon: const Icon(
-                Icons.delete_outline_rounded,
-                color: Colors.redAccent,
-                size: 22,
+            if (onDelete != null)
+              IconButton(
+                onPressed: onDelete,
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Colors.redAccent,
+                  size: 22,
+                ),
+                splashRadius: 20,
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
               ),
-              splashRadius: 20,
-              constraints: const BoxConstraints(),
-              padding: const EdgeInsets.all(8),
-            ),
           ],
         ),
       ),

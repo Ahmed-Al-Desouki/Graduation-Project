@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:graduation_project/core/errors/failures.dart';
-import 'package:graduation_project/features/booking/domain/entities/appointment_entity.dart';
+import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
 import 'package:graduation_project/features/booking/domain/entities/booking_entity.dart';
 import 'package:graduation_project/features/booking/domain/entities/day_slots_entity.dart';
 import 'package:graduation_project/features/booking/domain/entities/schedule_entity.dart';
@@ -47,10 +47,8 @@ abstract class IBookingRepository {
   Future<Either<Failure, void>> blockSlot(String doctorId, String slotId);
 
   // --- Appointments Control ---
-  Future<Either<Failure, List<AppointmentEntity>>> getDoctorAppointments(
-    DateTime date,
-    String status,
-  );
+  Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
+  getDoctorAppointments(DateTime date, String status);
   Future<Either<Failure, void>> confirmAppointment(String id);
   Future<Either<Failure, void>> startAppointment(String id);
   Future<Either<Failure, void>> completeAppointment(String id);
@@ -88,4 +86,7 @@ abstract class IBookingRepository {
     String doctorId,
     int dayOfWeek,
   );
+
+  Future<Either<Failure, AppointmentFullDetailsEntity>>
+  getAppointmentFullDetails(String appointmentId);
 }

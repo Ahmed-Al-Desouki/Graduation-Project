@@ -61,4 +61,7 @@ abstract class BookingRemoteDataSource {
   Future<Map<String, dynamic>> createPayment(Map<String, dynamic> body);
 
   Future<void> removeWorkingDay(String doctorId, int dayOfWeek);
+
+  // داخل abstract class BookingRemoteDataSource
+  Future<Map<String, dynamic>> getAppointmentFullDetails(String appointmentId);
 }

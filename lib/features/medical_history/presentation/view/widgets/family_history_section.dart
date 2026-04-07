@@ -12,16 +12,19 @@ import 'package:graduation_project/features/medical_history/presentation/view/wi
 class FamilyHistorySection extends StatelessWidget {
   final List<FamilyHistoryModel> familyHistory;
   final int historyId;
+  final bool isDoctorView;
 
   const FamilyHistorySection({
     super.key,
     required this.familyHistory,
     required this.historyId,
+    required this.isDoctorView,
   });
 
   @override
   Widget build(BuildContext context) {
     return MedicalSectionCard(
+      isReadOnly: isDoctorView,
       title: "Family History",
       icon: Icons.family_restroom,
       themeColor: const Color(0xFFFF9800),
@@ -42,6 +45,7 @@ class FamilyHistorySection extends StatelessWidget {
             'familyHistory': familyHistory,
             'historyId': historyId,
             'cubit': context.read<PatientProfileCubit>(),
+            'isReadOnly': isDoctorView,
           },
         );
       },
@@ -51,25 +55,31 @@ class FamilyHistorySection extends StatelessWidget {
             return FamilyHistoryCard(
               item: item,
               onEdit:
-                  () => FamilyHistoryDialog.show(
-                    context,
-                    historyId,
-                    context.read<PatientProfileCubit>(),
-                    itemToEdit: item,
-                  ),
-              onDelete:
-                  () => showDeleteConfirmation(
-                    context: context,
-                    title: "Delete Record",
-                    message:
-                        "Are you sure you want to delete '${item.condition}'?",
-                    onConfirm: () {
-                      context.read<PatientProfileCubit>().deleteFamilyHistory(
-                        item.familyHistoryID!,
+                  isDoctorView
+                      ? null
+                      : () => FamilyHistoryDialog.show(
+                        context,
                         historyId,
-                      );
-                    },
-                  ),
+                        context.read<PatientProfileCubit>(),
+                        itemToEdit: item,
+                      ),
+              onDelete:
+                  isDoctorView
+                      ? null
+                      : () => showDeleteConfirmation(
+                        context: context,
+                        title: "Delete Record",
+                        message:
+                            "Are you sure you want to delete '${item.condition}'?",
+                        onConfirm: () {
+                          context
+                              .read<PatientProfileCubit>()
+                              .deleteFamilyHistory(
+                                item.familyHistoryID!,
+                                historyId,
+                              );
+                        },
+                      ),
             );
           }).toList(),
     );

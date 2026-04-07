@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/get_patient_profile_for_doctor_use_case.dart';
 import 'package:graduation_project/features/medical_history/data/repository/patient_repo/patient_repo.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medication_model.dart';
@@ -15,7 +16,11 @@ part 'patient_profile_state.dart';
 
 class PatientProfileCubit extends Cubit<PatientProfileState> {
   final PatientRepository _patientRepository;
-  PatientProfileCubit(this._patientRepository) : super(PatientProfileInitial());
+  final GetPatientProfileForDoctorUseCase getPatientProfileForDoctorUseCase;
+  PatientProfileCubit(
+    this._patientRepository,
+    this.getPatientProfileForDoctorUseCase,
+  ) : super(PatientProfileInitial());
   Future<void> getProfile() async {
     emit(PatientProfileLoading());
     var box = await Hive.openBox('medical_history_cache');
@@ -187,5 +192,33 @@ class PatientProfileCubit extends Cubit<PatientProfileState> {
         getProfile();
       },
     );
+  }
+
+  Future<void> getMedicalHistory({
+    required bool isDoctorView,
+    String? patientId,
+    String? appointmentId,
+  }) async {
+    // 1. لو وضع الدكتور: هننادي الـ UseCase الجديد ونعمل Emit هنا
+    if (isDoctorView) {
+      emit(PatientProfileLoading());
+
+      final result = await getPatientProfileForDoctorUseCase(
+        patientId!,
+        appointmentId!,
+      );
+
+      result.fold(
+        // ✅ تصحيح: إضافة اسم الباراميتر errMessage
+        (failure) =>
+            emit(PatientProfileFailure(errMessage: failure.errmessage)),
+        // ✅ تصحيح: إضافة اسم الباراميتر profile
+        (profile) => emit(PatientProfileSuccess(profile: profile)),
+      );
+    }
+    // 2. لو وضع المريض: هننادي ميثود getProfile القديمة وهي هتتولى الـ Emit والـ Cache
+    else {
+      await getProfile();
+    }
   }
 }

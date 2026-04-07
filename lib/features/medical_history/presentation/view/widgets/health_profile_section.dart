@@ -8,11 +8,13 @@ import 'profile_edit_form.dart';
 
 class HealthProfileSection extends StatefulWidget {
   final PatientProfileModel profile;
+  final bool isDoctorView;
   final Function(Map<String, dynamic>) onSave;
 
   const HealthProfileSection({
     super.key,
     required this.profile,
+    required this.isDoctorView,
     required this.onSave,
   });
 
@@ -42,21 +44,22 @@ class _HealthProfileSectionState extends State<HealthProfileSection> {
                 imagePath: Assets.imagesUserRegular,
                 title: "Personal Information",
               ),
-              TextButton.icon(
-                onPressed: () => setState(() => isEditMode = !isEditMode),
-                icon: Icon(
-                  isEditMode ? Icons.close : Icons.edit,
-                  size: 18,
-                  color: isEditMode ? Colors.red : const Color(0xff4a90e2),
-                ),
-                label: Text(
-                  isEditMode ? "Cancel" : "Edit",
-                  style: TextStyle(
+              if (!widget.isDoctorView)
+                TextButton.icon(
+                  onPressed: () => setState(() => isEditMode = !isEditMode),
+                  icon: Icon(
+                    isEditMode ? Icons.close : Icons.edit,
+                    size: 18,
                     color: isEditMode ? Colors.red : const Color(0xff4a90e2),
-                    fontWeight: FontWeight.bold,
+                  ),
+                  label: Text(
+                    isEditMode ? "Cancel" : "Edit",
+                    style: TextStyle(
+                      color: isEditMode ? Colors.red : const Color(0xff4a90e2),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const Divider(height: 30),

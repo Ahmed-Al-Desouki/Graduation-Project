@@ -12,16 +12,18 @@ import 'package:graduation_project/features/medical_history/presentation/view/wi
 class MedicationsSection extends StatelessWidget {
   final List<MedicationModel> medications;
   final int historyId;
-
+  final bool isReadOnly;
   const MedicationsSection({
     super.key,
     required this.medications,
     required this.historyId,
+    required this.isReadOnly,
   });
 
   @override
   Widget build(BuildContext context) {
     return MedicalSectionCard(
+      isReadOnly: isReadOnly,
       title: "Current Medications",
       icon: Icons.medication,
       themeColor: const Color(0xFF9C27B0),
@@ -42,6 +44,7 @@ class MedicationsSection extends StatelessWidget {
             'medications': medications,
             'historyId': historyId,
             'cubit': context.read<PatientProfileCubit>(),
+            'isReadOnly': isReadOnly,
           },
         );
       },
@@ -51,24 +54,28 @@ class MedicationsSection extends StatelessWidget {
             return MedicationCard(
               item: item,
               onEdit:
-                  () => MedicationDialog.show(
-                    context,
-                    historyId,
-                    context.read<PatientProfileCubit>(),
-                    medToEdit: item,
-                  ),
+                  isReadOnly
+                      ? null
+                      : () => MedicationDialog.show(
+                        context,
+                        historyId,
+                        context.read<PatientProfileCubit>(),
+                        medToEdit: item,
+                      ),
               onDelete:
-                  () => showDeleteConfirmation(
-                    context: context,
-                    title: "Delete Medication",
-                    message:
-                        "Are you sure you want to delete '${item.medicationName}'?",
-                    onConfirm: () {
-                      context.read<PatientProfileCubit>().deleteSelfMedication(
-                        item.currentMedicationID!,
-                      );
-                    },
-                  ),
+                  isReadOnly
+                      ? null
+                      : () => showDeleteConfirmation(
+                        context: context,
+                        title: "Delete Medication",
+                        message:
+                            "Are you sure you want to delete '${item.medicationName}'?",
+                        onConfirm: () {
+                          context
+                              .read<PatientProfileCubit>()
+                              .deleteSelfMedication(item.currentMedicationID!);
+                        },
+                      ),
             );
           }).toList(),
     );

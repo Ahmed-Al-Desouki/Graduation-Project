@@ -11,12 +11,14 @@ class AllMedicationsView extends StatefulWidget {
   final List<MedicationModel> allMedications;
   final int historyId;
   final PatientProfileCubit cubit;
+  final bool isReadOnly;
 
   const AllMedicationsView({
     super.key,
     required this.allMedications,
     required this.historyId,
     required this.cubit,
+    required this.isReadOnly,
   });
 
   @override
@@ -71,33 +73,39 @@ class _AllMedicationsViewState extends State<AllMedicationsView> {
             itemCount: list.length,
             emptyMessage: "No medications found.",
             onFabPressed:
-                () => MedicationDialog.show(
-                  context,
-                  widget.historyId,
-                  widget.cubit,
-                ),
+                widget.isReadOnly
+                    ? null
+                    : () => MedicationDialog.show(
+                      context,
+                      widget.historyId,
+                      widget.cubit,
+                    ),
             itemBuilder:
                 (ctx, i) => MedicationCard(
                   item: list[i],
                   onEdit:
-                      () => MedicationDialog.show(
-                        context,
-                        widget.historyId,
-                        widget.cubit,
-                        medToEdit: list[i],
-                      ),
+                      widget.isReadOnly
+                          ? null
+                          : () => MedicationDialog.show(
+                            context,
+                            widget.historyId,
+                            widget.cubit,
+                            medToEdit: list[i],
+                          ),
                   onDelete:
-                      () => showDeleteConfirmation(
-                        context: context,
-                        title: "Delete",
-                        message: "Delete '${list[i].medicationName}'?",
-                        onConfirm:
-                            () => context
-                                .read<PatientProfileCubit>()
-                                .deleteSelfMedication(
-                                  list[i].currentMedicationID!,
-                                ),
-                      ),
+                      widget.isReadOnly
+                          ? null
+                          : () => showDeleteConfirmation(
+                            context: context,
+                            title: "Delete",
+                            message: "Delete '${list[i].medicationName}'?",
+                            onConfirm:
+                                () => context
+                                    .read<PatientProfileCubit>()
+                                    .deleteSelfMedication(
+                                      list[i].currentMedicationID!,
+                                    ),
+                          ),
                 ),
           );
         },

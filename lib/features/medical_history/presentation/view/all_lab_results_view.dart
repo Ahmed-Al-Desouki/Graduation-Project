@@ -12,6 +12,7 @@ class AllLabResultsView extends StatefulWidget {
   final List<MedicalFileModel> labTests, radiologyFiles;
   final int historyId;
   final PatientProfileCubit cubit;
+  final bool isReadOnly;
 
   const AllLabResultsView({
     super.key,
@@ -19,6 +20,7 @@ class AllLabResultsView extends StatefulWidget {
     required this.radiologyFiles,
     required this.historyId,
     required this.cubit,
+    required this.isReadOnly,
   });
 
   @override
@@ -71,25 +73,29 @@ class _AllLabResultsViewState extends State<AllLabResultsView> {
             itemCount: list.length,
             emptyMessage: "No files found.",
             onFabPressed:
-                () => MedicalFileUploadDialog.show(
-                  context,
-                  widget.historyId,
-                  widget.cubit,
-                ),
+                widget.isReadOnly
+                    ? null
+                    : () => MedicalFileUploadDialog.show(
+                      context,
+                      widget.historyId,
+                      widget.cubit,
+                    ),
             itemBuilder:
                 (ctx, i) => LabResultCard(
                   result: list[i],
                   onDelete:
-                      () => showDeleteConfirmation(
-                        context: context,
-                        title: "Delete File",
-                        message:
-                            "Are you sure you want to delete '${list[i].title}'?",
-                        onConfirm:
-                            () => context
-                                .read<PatientProfileCubit>()
-                                .deleteMedicalFile(int.parse(list[i].id)),
-                      ),
+                      widget.isReadOnly
+                          ? null
+                          : () => showDeleteConfirmation(
+                            context: context,
+                            title: "Delete File",
+                            message:
+                                "Are you sure you want to delete '${list[i].title}'?",
+                            onConfirm:
+                                () => context
+                                    .read<PatientProfileCubit>()
+                                    .deleteMedicalFile(int.parse(list[i].id)),
+                          ),
                 ),
           );
         },

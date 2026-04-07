@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:graduation_project/features/medical_history/domain/models/patient_profile_model.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/repositories/medical_repository.dart';
 import '../data_sources/medical_remote_data_source.dart';
@@ -166,6 +167,27 @@ class MedicalRepositoryImpl implements MedicalRepository {
         models,
       );
       return Right(message);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PatientProfileModel>> getPatientProfileForDoctor({
+    required String patientId,
+    required String appointmentId,
+  }) async {
+    try {
+      // 1. نداء الداتا سورس
+      final response = await remoteDataSource.getPatientProfileForDoctor(
+        patientId,
+        appointmentId,
+      );
+
+      // 2. تحويل الـ JSON للموديل العبقري اللي إنت لسه باعتهولي
+      final model = PatientProfileModel.fromJson(response);
+
+      return Right(model);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

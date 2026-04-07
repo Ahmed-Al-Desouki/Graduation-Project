@@ -6,6 +6,7 @@ import 'package:graduation_project/core/utils/helper/network_info.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
 import 'package:graduation_project/features/booking/booking_injection.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/get_patient_profile_for_doctor_use_case.dart';
 import 'package:graduation_project/features/chat/data/repositories/mock_chat_repository.dart';
 import 'package:graduation_project/features/chat/domain/repositories/i_chat_repository.dart';
 import 'package:graduation_project/features/chat/domain/use_cases/get_chat_previews_use_case.dart';
@@ -118,6 +119,10 @@ Future<void> setupServiceLocator() async {
     () => SendMessageUseCase(getIt<IChatRepository>()),
   );
 
+  getIt.registerLazySingleton<GetPatientProfileForDoctorUseCase>(
+    () => GetPatientProfileForDoctorUseCase(getIt()),
+  );
+
   getIt.registerFactory<AuthCubit>(
     () => AuthCubit(getIt<AuthRepositoryimpl>()),
   );
@@ -127,7 +132,10 @@ Future<void> setupServiceLocator() async {
   );
 
   getIt.registerFactory<PatientProfileCubit>(
-    () => PatientProfileCubit(getIt<PatientRepositoryImpl>()),
+    () => PatientProfileCubit(
+      getIt<PatientRepositoryImpl>(),
+      getIt<GetPatientProfileForDoctorUseCase>(),
+    ),
   );
 
   getIt.registerFactory<MedicalqrCubit>(

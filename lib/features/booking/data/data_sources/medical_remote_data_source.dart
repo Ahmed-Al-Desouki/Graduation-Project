@@ -25,4 +25,9 @@ abstract class MedicalRemoteDataSource {
     String prescriptionId,
     List<MedicationItemModel> items,
   );
+
+  Future<Map<String, dynamic>> getPatientProfileForDoctor(
+    String pId,
+    String aId,
+  );
 }

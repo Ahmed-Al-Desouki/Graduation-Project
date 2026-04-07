@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/medical_qr/medicalqr_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
+import 'package:graduation_project/features/medical_history/presentation/view/medical_history_access_denied.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/medical_history_app_bar.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/medical_history_main_list.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/medical_history_no_internet.dart';
@@ -14,7 +15,15 @@ import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'widgets/medical_history_drawer.dart';
 
 class MedicalHistoryView extends StatefulWidget {
-  const MedicalHistoryView({super.key});
+  final bool isDoctorView;
+  final String? patientId;
+  final String? appointmentId;
+  const MedicalHistoryView({
+    super.key,
+    this.isDoctorView = false, // القيمة الافتراضية مريض
+    this.patientId,
+    this.appointmentId,
+  });
   @override
   State<MedicalHistoryView> createState() => _MedicalHistoryViewState();
 }
@@ -39,7 +48,13 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => getIt<PatientProfileCubit>()..getProfile(),
+          create:
+              (context) =>
+                  getIt<PatientProfileCubit>()..getMedicalHistory(
+                    isDoctorView: widget.isDoctorView,
+                    patientId: widget.patientId,
+                    appointmentId: widget.appointmentId,
+                  ),
         ),
         BlocProvider(create: (context) => getIt<MedicalqrCubit>()),
       ],
@@ -86,11 +101,14 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
                   child: BlocBuilder<PatientProfileCubit, PatientProfileState>(
                     builder: (context, state) {
                       return MedicalHistoryAppBar(
+                        isDoctorView: widget.isDoctorView,
                         scaffoldKey: _scaffoldKey,
                         drawerBtnKey: _drawerBtnKey,
                         totalSteps: totalSteps,
                         showQrButton:
-                            state is PatientProfileSuccess && !state.isOffline,
+                            !widget.isDoctorView &&
+                            state is PatientProfileSuccess &&
+                            !state.isOffline,
                         onQrPressed: () {
                           if (state is PatientProfileSuccess) {
                             context.read<MedicalqrCubit>().generateQrCode(
@@ -192,6 +210,9 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
         }
 
         if (state is PatientProfileFailure) {
+          if (state.errMessage.contains('403')) {
+            return const MedicalHistoryAccessDenied();
+          }
           if (state.errMessage.toLowerCase().contains('internet') ||
               state.errMessage.toLowerCase().contains('connection')) {
             return MedicalHistoryNoInternet(
@@ -202,12 +223,15 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
         }
 
         if (state is PatientProfileSuccess) {
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => _checkAndStartShowcase(context),
-          );
+          if (!widget.isDoctorView) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => _checkAndStartShowcase(context),
+            );
+          }
 
           return MedicalHistoryMainList(
             profile: state.profile,
+            isDoctorView: widget.isDoctorView,
             isOffline: state.isOffline,
             totalSteps: totalSteps,
             profileKey: _profileKey,

@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:graduation_project/features/medical_history/domain/models/patient_profile_model.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/medical_record_entity.dart';
 import '../entities/prescription_entity.dart';
@@ -30,4 +31,9 @@ abstract class MedicalRepository {
     String prescriptionId,
     List<MedicationItemEntity> items,
   );
+
+  Future<Either<Failure, PatientProfileModel>> getPatientProfileForDoctor({
+    required String patientId,
+    required String appointmentId,
+  });
 }

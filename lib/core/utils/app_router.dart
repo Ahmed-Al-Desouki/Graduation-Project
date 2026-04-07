@@ -332,9 +332,20 @@ abstract class AppRouter {
           );
         },
       ),
+      // GoRoute(
+      //   path: kMedicalHistory,
+      //   builder: (context, state) => const MedicalHistoryView(),
+      // ),
       GoRoute(
         path: kMedicalHistory,
-        builder: (context, state) => const MedicalHistoryView(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return MedicalHistoryView(
+            isDoctorView: extra['isDoctorView'] ?? false,
+            patientId: extra['patientId']?.toString(),
+            appointmentId: extra['appointmentId']?.toString(),
+          );
+        },
       ),
 
       GoRoute(
@@ -345,6 +356,7 @@ abstract class AppRouter {
             allSurgeries: extras['surgeries'] as List<SurgeryModel>,
             historyId: extras['historyId'] as int,
             cubit: extras['cubit'] as PatientProfileCubit,
+            isReadOnly: extras['isReadOnly'] ?? false,
           );
         },
       ),
@@ -364,6 +376,7 @@ abstract class AppRouter {
               allMedications: extras['medications'] as List<MedicationModel>,
               historyId: extras['historyId'] as int,
               cubit: extras['cubit'] as PatientProfileCubit,
+              isReadOnly: extras['isReadOnly'] ?? false,
             ),
           );
         },
@@ -379,6 +392,7 @@ abstract class AppRouter {
             allRecords: extras['familyHistory'] as List<FamilyHistoryModel>,
             historyId: extras['historyId'] as int,
             cubit: extras['cubit'] as PatientProfileCubit,
+            isReadOnly: extras['isReadOnly'] ?? false,
           );
         },
       ),
@@ -404,6 +418,7 @@ abstract class AppRouter {
             radiologyFiles: radiologyFiles,
             historyId: extras['historyId'] as int,
             cubit: extras['cubit'] as PatientProfileCubit,
+            isReadOnly: extras['isReadOnly'] ?? false,
           );
         },
       ),

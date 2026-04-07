@@ -11,12 +11,14 @@ class AllSurgeriesView extends StatefulWidget {
   final List<SurgeryModel> allSurgeries;
   final int historyId;
   final PatientProfileCubit cubit;
+  final bool isReadOnly;
 
   const AllSurgeriesView({
     super.key,
     required this.allSurgeries,
     required this.historyId,
     required this.cubit,
+    required this.isReadOnly,
   });
 
   @override
@@ -66,31 +68,40 @@ class _AllSurgeriesViewState extends State<AllSurgeriesView> {
             itemCount: list.length,
             emptyMessage: "No surgeries found.",
             onFabPressed:
-                () =>
-                    SurgeryDialog.show(context, widget.historyId, widget.cubit),
+                widget.isReadOnly
+                    ? null
+                    : () => SurgeryDialog.show(
+                      context,
+                      widget.historyId,
+                      widget.cubit,
+                    ),
             itemBuilder:
                 (ctx, i) => SurgeryCard(
                   surgery: list[i],
                   onEdit:
-                      () => SurgeryDialog.show(
-                        context,
-                        widget.historyId,
-                        widget.cubit,
-                        surgeryToEdit: list[i],
-                      ),
+                      widget.isReadOnly
+                          ? null
+                          : () => SurgeryDialog.show(
+                            context,
+                            widget.historyId,
+                            widget.cubit,
+                            surgeryToEdit: list[i],
+                          ),
                   onDelete:
-                      () => showDeleteConfirmation(
-                        context: context,
-                        title: "Delete Surgery",
-                        message: "Delete '${list[i].name}'?",
-                        onConfirm:
-                            () => context
-                                .read<PatientProfileCubit>()
-                                .deleteSurgery(
-                                  list[i].surgeryID!,
-                                  widget.historyId,
-                                ),
-                      ),
+                      widget.isReadOnly
+                          ? null
+                          : () => showDeleteConfirmation(
+                            context: context,
+                            title: "Delete Surgery",
+                            message: "Delete '${list[i].name}'?",
+                            onConfirm:
+                                () => context
+                                    .read<PatientProfileCubit>()
+                                    .deleteSurgery(
+                                      list[i].surgeryID!,
+                                      widget.historyId,
+                                    ),
+                          ),
                 ),
           );
         },

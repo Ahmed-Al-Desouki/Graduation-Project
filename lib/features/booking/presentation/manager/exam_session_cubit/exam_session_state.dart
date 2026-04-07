@@ -37,3 +37,9 @@ class ExamSessionFailure extends ExamSessionState {
   final String errMessage;
   ExamSessionFailure(this.errMessage);
 }
+
+// أضف هذا السطر في ملف exam_session_state.dart
+class AppointmentDetailsFetched extends ExamSessionState {
+  final AppointmentFullDetailsEntity details;
+  AppointmentDetailsFetched(this.details);
+}

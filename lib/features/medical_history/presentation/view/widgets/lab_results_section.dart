@@ -14,12 +14,14 @@ class LabResultsSection extends StatelessWidget {
   final List<MedicalFileModel> labTests;
   final List<MedicalFileModel> radiologyFiles;
   final int medicalHistoryId;
+  final bool isReadOnly;
 
   const LabResultsSection({
     super.key,
     required this.labTests,
     required this.radiologyFiles,
     required this.medicalHistoryId,
+    required this.isReadOnly,
   });
 
   @override
@@ -48,6 +50,7 @@ class LabResultsSection extends StatelessWidget {
     combinedList.sort((a, b) => b.date.compareTo(a.date));
 
     return MedicalSectionCard(
+      isReadOnly: isReadOnly,
       title: "Lab Results & Radiology",
       icon: Icons.biotech_rounded,
       themeColor: const Color(0xFF06B6D4),
@@ -69,6 +72,7 @@ class LabResultsSection extends StatelessWidget {
             'radiologyFiles': radiologyFiles,
             'historyId': medicalHistoryId,
             'cubit': context.read<PatientProfileCubit>(),
+            'isReadOnly': isReadOnly, // 👈 التعديل هنا
           },
         );
       },
@@ -78,16 +82,19 @@ class LabResultsSection extends StatelessWidget {
             return LabResultCard(
               result: item,
               onDelete:
-                  () => showDeleteConfirmation(
-                    context: context,
-                    title: "Delete File",
-                    message: "Are you sure you want to delete '${item.title}'?",
-                    onConfirm: () {
-                      context.read<PatientProfileCubit>().deleteMedicalFile(
-                        int.parse(item.id),
-                      );
-                    },
-                  ),
+                  isReadOnly
+                      ? null
+                      : () => showDeleteConfirmation(
+                        context: context,
+                        title: "Delete File",
+                        message:
+                            "Are you sure you want to delete '${item.title}'?",
+                        onConfirm: () {
+                          context.read<PatientProfileCubit>().deleteMedicalFile(
+                            int.parse(item.id),
+                          );
+                        },
+                      ),
             );
           }).toList(),
     );

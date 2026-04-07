@@ -8,17 +8,20 @@ import 'package:graduation_project/features/medical_history/presentation/view/wi
 class SocialHistorySection extends StatelessWidget {
   final SocialHistoryModel? socialHistory;
   final int historyId;
+  final bool isDoctorView;
 
   const SocialHistorySection({
     super.key,
     required this.socialHistory,
     required this.historyId,
+    required this.isDoctorView,
   });
 
   @override
   Widget build(BuildContext context) {
     return MedicalSectionCard(
       title: "Social History",
+      isReadOnly: isDoctorView,
       icon: Icons.people_alt,
       themeColor: const Color(0xFF689F38),
       iconBgColor: const Color(0xFFF1F8E9),

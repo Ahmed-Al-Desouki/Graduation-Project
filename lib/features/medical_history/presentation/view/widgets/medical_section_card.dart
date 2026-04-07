@@ -11,6 +11,7 @@ class MedicalSectionCard extends StatelessWidget {
   final VoidCallback? onViewAllTap;
   final Widget? actionWidget;
   final String emptyMessage;
+  final bool isReadOnly;
 
   const MedicalSectionCard({
     super.key,
@@ -23,6 +24,7 @@ class MedicalSectionCard extends StatelessWidget {
     this.onViewAllTap,
     this.actionWidget,
     this.emptyMessage = "No records found.",
+    this.isReadOnly = false,
   });
 
   @override
@@ -76,7 +78,7 @@ class MedicalSectionCard extends StatelessWidget {
                 ),
               ),
 
-              if (actionWidget != null)
+              if (actionWidget != null && !isReadOnly)
                 actionWidget!
               else if (onViewAllTap != null)
                 TextButton(
@@ -124,7 +126,7 @@ class MedicalSectionCard extends StatelessWidget {
           else
             ...children,
 
-          if (onAddTap != null) ...[
+          if (!isReadOnly && onAddTap != null) ...[
             const SizedBox(height: 20),
             DottedAddButton(
               onTap: onAddTap!,

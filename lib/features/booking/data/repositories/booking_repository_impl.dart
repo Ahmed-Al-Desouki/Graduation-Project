@@ -4,9 +4,9 @@ import 'package:graduation_project/core/utils/helper/network_info.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
-import 'package:graduation_project/features/booking/data/models/appointment_model.dart';
+import 'package:graduation_project/features/booking/data/models/appointment_full_details_model.dart';
 import 'package:graduation_project/features/booking/data/models/schedule_model.dart';
-import 'package:graduation_project/features/booking/domain/entities/appointment_entity.dart';
+import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
 import 'package:graduation_project/features/booking/domain/entities/booking_entity.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/day_slots_entity.dart';
@@ -25,42 +25,6 @@ class BookingRepositoryImpl implements IBookingRepository {
     required this.localDataSource,
     required this.networkInfo,
   });
-
-  // --- 1. إدارة الجداول (Schedules) ---
-
-  // @override
-  // Future<Either<Failure, String>> createSchedule(
-  //   ScheduleEntity schedule,
-  // ) async {
-  //   return await _handleRemoteRequest(() async {
-  //     final body = {
-  //       "templateName": schedule.templateName,
-  //       "slotDurationMinutes": schedule.slotDurationMinutes,
-  //       "bufferTimeMinutes": schedule.bufferTimeMinutes,
-  //       "effectiveFromDate": schedule.effectiveFromDate.toIso8601String(),
-  //       "effectiveToDate": schedule.effectiveToDate.toIso8601String(),
-  //       "timeRanges":
-  //           schedule.timeRanges
-  //               .map(
-  //                 (e) => {
-  //                   "dayOfWeek": e.dayOfWeek,
-  //                   "startTime": e.startTime,
-  //                   "endTime": e.endTime,
-  //                 },
-  //               )
-  //               .toList(),
-  //     };
-  //     final doctorId = getIt<SessionManager>().userId;
-  //     // ✅ ضيف الـ print ده عشان تشوف الـ ID في الـ Terminal قبل ما يبعت
-  //     print("DEBUG: Doctor ID from SessionManager is: '$doctorId'");
-
-  //     // if (doctorId.isEmpty) {
-  //     //   return Left(ServerFailure("Doctor ID is empty. Please re-login."));
-  //     // }
-  //     // 2. هنبعت الـ ID النصي الجاهز للـ Remote Data Source
-  //     return await remoteDataSource.createSchedule(doctorId, body);
-  //   });
-  // }
 
   @override
   Future<Either<Failure, String>> createSchedule(
@@ -138,17 +102,17 @@ class BookingRepositoryImpl implements IBookingRepository {
   }
 
   @override
-  Future<Either<Failure, List<AppointmentEntity>>> getDoctorAppointments(
-    DateTime date,
-    String status,
-  ) async {
+  Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
+  getDoctorAppointments(DateTime date, String status) async {
     return await _handleRemoteRequest(() async {
       final response = await remoteDataSource.getDoctorAppointments(
         date.toIso8601String(),
         status,
       );
       // تحويل الـ JSON لموديلات ثم لـ Entities
-      return response.map((json) => AppointmentModel.fromJson(json)).toList();
+      return response
+          .map((json) => AppointmentFullDetailsModel.fromJson(json))
+          .toList();
     });
   }
 
@@ -415,5 +379,22 @@ class BookingRepositoryImpl implements IBookingRepository {
     return await _handleRemoteRequest(
       () => remoteDataSource.removeWorkingDay(doctorId, dayOfWeek),
     );
+  }
+
+  // داخل class BookingRepositoryImpl
+
+  @override
+  Future<Either<Failure, AppointmentFullDetailsEntity>>
+  getAppointmentFullDetails(String appointmentId) async {
+    return await _handleRemoteRequest(() async {
+      // 1. طلب البيانات الخام (JSON) من الـ Remote Data Source
+      final response = await remoteDataSource.getAppointmentFullDetails(
+        appointmentId,
+      );
+
+      // 2. تحويل الـ JSON لموديل (الذي يرث من الـ Entity)
+      // ملاحظة: تأكد إنك عملت ملف الموديل اللي اتفقنا عليه في الرد السابق
+      return AppointmentFullDetailsModel.fromJson(response);
+    });
   }
 }

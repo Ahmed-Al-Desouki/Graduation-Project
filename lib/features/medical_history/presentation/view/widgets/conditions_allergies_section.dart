@@ -8,7 +8,13 @@ import 'dotted_add_button.dart';
 
 class ConditionsAllergiesSection extends StatefulWidget {
   final PatientProfileModel profile;
-  const ConditionsAllergiesSection({super.key, required this.profile});
+  final bool isReadOnly;
+
+  const ConditionsAllergiesSection({
+    super.key,
+    required this.profile,
+    required this.isReadOnly,
+  });
 
   @override
   State<ConditionsAllergiesSection> createState() =>
@@ -73,29 +79,30 @@ class _ConditionsAllergiesSectionState
                   ],
                 ),
               ),
-              InkWell(
-                onTap: () => setState(() => _isEditing = !_isEditing),
-                borderRadius: BorderRadius.circular(20),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _isEditing ? Colors.red : const Color(0xFF84CC16),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    _isEditing ? "Done" : "Manage",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+              if (!widget.isReadOnly)
+                InkWell(
+                  onTap: () => setState(() => _isEditing = !_isEditing),
+                  borderRadius: BorderRadius.circular(20),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _isEditing ? Colors.red : const Color(0xFF84CC16),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _isEditing ? "Done" : "Manage",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
 
@@ -109,13 +116,15 @@ class _ConditionsAllergiesSectionState
           ...conditions.map(
             (item) => HealthItemCard(
               item: item,
-              isEditing: _isEditing,
+              isEditing: widget.isReadOnly ? false : _isEditing,
               onDelete:
-                  () => _updateList(
-                    item.name,
-                    HealthType.condition,
-                    isDelete: true,
-                  ),
+                  widget.isReadOnly
+                      ? null // 👈 هنا الزتونة: السلة هتختفي
+                      : () => _updateList(
+                        item.name,
+                        HealthType.condition,
+                        isDelete: true,
+                      ),
             ),
           ),
           if (conditions.isEmpty)
@@ -132,29 +141,32 @@ class _ConditionsAllergiesSectionState
           ...allergies.map(
             (item) => HealthItemCard(
               item: item,
-              isEditing: _isEditing,
+              isEditing: widget.isReadOnly ? false : _isEditing,
               onDelete:
-                  () => _updateList(
-                    item.name,
-                    HealthType.allergy,
-                    isDelete: true,
-                  ),
+                  widget.isReadOnly
+                      ? null // 👈 هنا الزتونة: السلة هتختفي
+                      : () => _updateList(
+                        item.name,
+                        HealthType.allergy,
+                        isDelete: true,
+                      ),
             ),
           ),
           if (allergies.isEmpty) _buildEmptyState("No allergies added."),
+          if (!widget.isReadOnly) ...[
+            const SizedBox(height: 24),
 
-          const SizedBox(height: 24),
-
-          Opacity(
-            opacity: _isEditing ? 0.5 : 1.0,
-            child: IgnorePointer(
-              ignoring: _isEditing,
-              child: DottedAddButton(
-                onTap: _showAddTypeDialog,
-                text: "Add New Condition or Allergy",
+            Opacity(
+              opacity: _isEditing ? 0.5 : 1.0,
+              child: IgnorePointer(
+                ignoring: _isEditing,
+                child: DottedAddButton(
+                  onTap: _showAddTypeDialog,
+                  text: "Add New Condition or Allergy",
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

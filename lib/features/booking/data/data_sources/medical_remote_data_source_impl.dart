@@ -72,4 +72,17 @@ class MedicalRemoteDataSourceImpl implements MedicalRemoteDataSource {
     );
     return data['message'] ?? "Items Added Successfully";
   }
+
+  @override
+  Future<Map<String, dynamic>> getPatientProfileForDoctor(
+    String pId,
+    String aId,
+  ) async {
+    // GET medical-profile/doctor-view/10?appointmentId=xxx
+    final response = await _apiService.get(
+      'medical-profile/doctor-view/$pId',
+      queryParameters: {'appointmentId': aId},
+    );
+    return response as Map<String, dynamic>;
+  }
 }

@@ -4,13 +4,13 @@ import 'package:graduation_project/features/medical_history/domain/models/health
 class HealthItemCard extends StatelessWidget {
   final HealthItem item;
   final bool isEditing;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
 
   const HealthItemCard({
     super.key,
     required this.item,
     required this.isEditing,
-    required this.onDelete,
+    this.onDelete,
   });
 
   @override
@@ -47,7 +47,7 @@ class HealthItemCard extends StatelessWidget {
               maxLines: 1,
             ),
           ),
-          if (isEditing) ...[
+          if (isEditing && onDelete != null) ...[
             const SizedBox(width: 8),
             InkWell(
               onTap: onDelete,

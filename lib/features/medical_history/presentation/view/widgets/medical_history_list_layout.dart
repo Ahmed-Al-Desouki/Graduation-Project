@@ -15,7 +15,7 @@ class MedicalHistoryListLayout extends StatelessWidget {
   final String emptyMessage;
   final Color themeColor;
   final IconData fabIcon;
-  final VoidCallback onFabPressed;
+  final VoidCallback? onFabPressed;
 
   const MedicalHistoryListLayout({
     super.key,
@@ -32,7 +32,7 @@ class MedicalHistoryListLayout extends StatelessWidget {
     required this.emptyMessage,
     this.themeColor = const Color(0xFF2563EB),
     this.fabIcon = Icons.add,
-    required this.onFabPressed,
+    this.onFabPressed,
   });
 
   @override
@@ -133,11 +133,14 @@ class MedicalHistoryListLayout extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: onFabPressed,
-        backgroundColor: themeColor,
-        child: Icon(fabIcon, color: Colors.white),
-      ),
+      floatingActionButton:
+          onFabPressed == null
+              ? null
+              : FloatingActionButton(
+                onPressed: onFabPressed,
+                backgroundColor: themeColor,
+                child: Icon(fabIcon, color: Colors.white),
+              ),
     );
   }
 }

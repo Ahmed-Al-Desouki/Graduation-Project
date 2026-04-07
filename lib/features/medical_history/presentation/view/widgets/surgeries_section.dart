@@ -12,16 +12,19 @@ import 'package:graduation_project/features/medical_history/presentation/view/wi
 class SurgeriesSection extends StatelessWidget {
   final List<SurgeryModel> surgeries;
   final int historyId;
+  final bool isReadOnly;
 
   const SurgeriesSection({
     super.key,
     required this.surgeries,
     required this.historyId,
+    required this.isReadOnly,
   });
 
   @override
   Widget build(BuildContext context) {
     return MedicalSectionCard(
+      isReadOnly: isReadOnly,
       title: "Surgeries",
       icon: Icons.local_hospital,
       themeColor: const Color(0xFF00ACC1),
@@ -42,6 +45,7 @@ class SurgeriesSection extends StatelessWidget {
             'surgeries': surgeries,
             'historyId': historyId,
             'cubit': context.read<PatientProfileCubit>(),
+            'isReadOnly': isReadOnly,
           },
         );
       },
@@ -51,25 +55,29 @@ class SurgeriesSection extends StatelessWidget {
             return SurgeryCard(
               surgery: surgery,
               onEdit:
-                  () => SurgeryDialog.show(
-                    context,
-                    historyId,
-                    context.read<PatientProfileCubit>(),
-                    surgeryToEdit: surgery,
-                  ),
-              onDelete:
-                  () => showDeleteConfirmation(
-                    context: context,
-                    title: "Delete Surgery",
-                    message:
-                        "Are you sure you want to delete '${surgery.name}'?",
-                    onConfirm: () {
-                      context.read<PatientProfileCubit>().deleteSurgery(
-                        surgery.surgeryID!,
+                  isReadOnly
+                      ? null
+                      : () => SurgeryDialog.show(
+                        context,
                         historyId,
-                      );
-                    },
-                  ),
+                        context.read<PatientProfileCubit>(),
+                        surgeryToEdit: surgery,
+                      ),
+              onDelete:
+                  isReadOnly
+                      ? null
+                      : () => showDeleteConfirmation(
+                        context: context,
+                        title: "Delete Surgery",
+                        message:
+                            "Are you sure you want to delete '${surgery.name}'?",
+                        onConfirm: () {
+                          context.read<PatientProfileCubit>().deleteSurgery(
+                            surgery.surgeryID!,
+                            historyId,
+                          );
+                        },
+                      ),
             );
           }).toList(),
     );

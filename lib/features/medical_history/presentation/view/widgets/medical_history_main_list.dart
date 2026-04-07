@@ -14,6 +14,7 @@ import 'medications_section.dart';
 import 'lab_results_section.dart';
 
 class MedicalHistoryMainList extends StatelessWidget {
+  final bool isDoctorView;
   final PatientProfileModel profile;
   final bool isOffline;
   final int totalSteps;
@@ -28,6 +29,7 @@ class MedicalHistoryMainList extends StatelessWidget {
 
   const MedicalHistoryMainList({
     super.key,
+    required this.isDoctorView,
     required this.profile,
     required this.isOffline,
     required this.totalSteps,
@@ -59,6 +61,7 @@ class MedicalHistoryMainList extends StatelessWidget {
                   'Health Profile',
                   2,
                   HealthProfileSection(
+                    isDoctorView: isDoctorView,
                     profile: profile,
                     onSave:
                         (m) => context
@@ -72,6 +75,7 @@ class MedicalHistoryMainList extends StatelessWidget {
                   'Family History',
                   3,
                   FamilyHistorySection(
+                    isDoctorView: isDoctorView,
                     familyHistory: profile.familyHistory,
                     historyId: profile.medicalHistoryID,
                   ),
@@ -82,6 +86,7 @@ class MedicalHistoryMainList extends StatelessWidget {
                   'Social History',
                   4,
                   SocialHistorySection(
+                    isDoctorView: isDoctorView,
                     socialHistory: profile.socialHistory,
                     historyId: profile.medicalHistoryID,
                   ),
@@ -91,7 +96,10 @@ class MedicalHistoryMainList extends StatelessWidget {
                   conditionsKey,
                   'Conditions',
                   5,
-                  ConditionsAllergiesSection(profile: profile),
+                  ConditionsAllergiesSection(
+                    isReadOnly: isDoctorView,
+                    profile: profile,
+                  ),
                 ),
 
                 _wrap(
@@ -106,6 +114,7 @@ class MedicalHistoryMainList extends StatelessWidget {
                   'Surgeries',
                   7,
                   SurgeriesSection(
+                    isReadOnly: isDoctorView,
                     surgeries: profile.surgeries,
                     historyId: profile.medicalHistoryID,
                   ),
@@ -116,6 +125,7 @@ class MedicalHistoryMainList extends StatelessWidget {
                   'Medications',
                   8,
                   MedicationsSection(
+                    isReadOnly: isDoctorView,
                     medications: [
                       ...profile.currentMedications,
                       ...profile.patientSelfMedications,
@@ -129,6 +139,7 @@ class MedicalHistoryMainList extends StatelessWidget {
                   'Lab & Radiology',
                   9,
                   LabResultsSection(
+                    isReadOnly: isDoctorView,
                     labTests: profile.labTests,
                     radiologyFiles: profile.radiologyFiles,
                     medicalHistoryId: profile.medicalHistoryID,

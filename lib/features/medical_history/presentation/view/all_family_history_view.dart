@@ -10,12 +10,14 @@ class AllFamilyHistoryView extends StatefulWidget {
   final List<dynamic> allRecords;
   final int historyId;
   final PatientProfileCubit cubit;
+  final bool isReadOnly;
 
   const AllFamilyHistoryView({
     super.key,
     required this.allRecords,
     required this.historyId,
     required this.cubit,
+    required this.isReadOnly,
   });
 
   @override
@@ -50,34 +52,40 @@ class _AllFamilyHistoryViewState extends State<AllFamilyHistoryView> {
             itemCount: list.length,
             emptyMessage: "No records found.",
             onFabPressed:
-                () => FamilyHistoryDialog.show(
-                  context,
-                  widget.historyId,
-                  widget.cubit,
-                ),
+                widget.isReadOnly
+                    ? null
+                    : () => FamilyHistoryDialog.show(
+                      context,
+                      widget.historyId,
+                      widget.cubit,
+                    ),
             itemBuilder:
                 (ctx, i) => FamilyHistoryCard(
                   item: list[i],
                   onEdit:
-                      () => FamilyHistoryDialog.show(
-                        context,
-                        widget.historyId,
-                        widget.cubit,
-                        itemToEdit: list[i],
-                      ),
+                      widget.isReadOnly
+                          ? null
+                          : () => FamilyHistoryDialog.show(
+                            context,
+                            widget.historyId,
+                            widget.cubit,
+                            itemToEdit: list[i],
+                          ),
                   onDelete:
-                      () => showDeleteConfirmation(
-                        context: context,
-                        title: "Delete",
-                        message: "Delete '${list[i].condition}'?",
-                        onConfirm:
-                            () => context
-                                .read<PatientProfileCubit>()
-                                .deleteFamilyHistory(
-                                  list[i].familyHistoryID!,
-                                  widget.historyId,
-                                ),
-                      ),
+                      widget.isReadOnly
+                          ? null
+                          : () => showDeleteConfirmation(
+                            context: context,
+                            title: "Delete",
+                            message: "Delete '${list[i].condition}'?",
+                            onConfirm:
+                                () => context
+                                    .read<PatientProfileCubit>()
+                                    .deleteFamilyHistory(
+                                      list[i].familyHistoryID!,
+                                      widget.historyId,
+                                    ),
+                          ),
                 ),
           );
         },

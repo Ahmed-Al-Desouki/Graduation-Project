@@ -56,6 +56,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
   DateTime? followUpDate;
   List<MedicationItemEntity> prescriptionItems = [];
   String? currentPrescriptionId;
+  String? _actualPatientId;
 
   // هل الموعد مكتمل؟ (للقراءة فقط)
   bool get isCompleted => widget.initialStatus.toLowerCase() == 'completed';
@@ -70,8 +71,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
 
     // جلب البيانات المسجلة مسبقاً
     final cubit = context.read<ExamSessionCubit>();
-    cubit.fetchMedicalRecord(widget.appointmentId);
-    cubit.fetchPrescription(widget.appointmentId);
+    cubit.fetchAppointmentDetails(widget.appointmentId);
   }
 
   Widget _buildMedicalDetailsShimmer() {
@@ -129,7 +129,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
               context.push(
                 AppRouter.kMedicalHistory,
                 extra: {
-                  'patientId': widget.patientId, // تأكد إنك استلمته من الكالندر
+                  'patientId': _actualPatientId, // تأكد إنك استلمته من الكالندر
                   'appointmentId': widget.appointmentId,
                   'isDoctorView': true, // 👈 دي اللي هتقفل أزرار التعديل
                 },
@@ -158,14 +158,43 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
           // مراقب جلب البيانات
           BlocListener<ExamSessionCubit, ExamSessionState>(
             listener: (context, state) {
-              if (state is MedicalRecordFetched) {
-                _populateMedicalData(state.record);
-              } else if (state is PrescriptionFetchedSuccess) {
+              if (state is AppointmentDetailsFetched) {
+                // ✅ الستيت الجديدة الشاملة
+                final details = state.details;
                 setState(() {
-                  prescriptionItems = List.from(state.prescription.items);
-                  currentPrescriptionId = state.prescription.prescriptionId;
+                  _actualPatientId =
+                      details.patientId
+                          .toString(); // ✅ سجل الـ ID اللي جه من السيرفر
                 });
-              } else if (state is PrescriptionCreatedSuccess) {
+                // 1. ملء بيانات السجل الطبي لو موجودة
+                if (details.medicalRecord != null) {
+                  _populateMedicalData(details.medicalRecord!);
+                  setState(
+                    () => isStarted = true,
+                  ); // لو فيه ريكورد يبقى بدأت فعلاً
+                }
+
+                // 2. ملء الروشتات (بناخد أول روشتة لأن الأيندبوينت بتبعت لستة)
+                if (details.prescriptions != null &&
+                    details.prescriptions!.isNotEmpty) {
+                  setState(() {
+                    prescriptionItems = List.from(
+                      details.prescriptions!.first.items,
+                    );
+                    currentPrescriptionId =
+                        details.prescriptions!.first.prescriptionId;
+                  });
+                }
+              }
+              // if (state is MedicalRecordFetched) {
+              //   _populateMedicalData(state.record);
+              // } else if (state is PrescriptionFetchedSuccess) {
+              //   setState(() {
+              //     prescriptionItems = List.from(state.prescription.items);
+              //     currentPrescriptionId = state.prescription.prescriptionId;
+              //   });
+              // } else
+              if (state is PrescriptionCreatedSuccess) {
                 // ✅ نحدث البيانات من السيرفر فوراً عشان الـ IDs تنزل والسلة تختفي
                 context.read<ExamSessionCubit>().fetchPrescription(
                   widget.appointmentId,
@@ -281,42 +310,6 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
       ],
     );
   }
-
-  // 3. قسم ملاحظات المريض
-  // Widget _buildPatientNoteSection() {
-  //   return Container(
-  //     width: double.infinity,
-  //     padding: const EdgeInsets.all(16),
-  //     decoration: BoxDecoration(
-  //       color: Colors.orange.withOpacity(0.05),
-  //       borderRadius: BorderRadius.circular(15),
-  //       border: Border.all(color: Colors.orange.withOpacity(0.2)),
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         const Row(
-  //           children: [
-  //             Icon(Icons.note_alt, size: 18, color: Colors.orange),
-  //             SizedBox(width: 8),
-  //             Text(
-  //               "Patient's Note",
-  //               style: TextStyle(
-  //                 fontWeight: FontWeight.bold,
-  //                 color: Colors.orange,
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         const SizedBox(height: 8),
-  //         Text(
-  //           widget.patientNote ?? "No additional notes provided by patient.",
-  //           style: const TextStyle(fontSize: 14, color: Colors.black87),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildPatientNoteSection() {
     return Container(
@@ -768,48 +761,6 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
     }
   }
 
-  // Widget _buildProfileCard() {
-  //   return Container(
-  //     padding: const EdgeInsets.all(16),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(20),
-  //       boxShadow: [
-  //         BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10),
-  //       ],
-  //     ),
-  //     child: Row(
-  //       children: [
-  //         CircleAvatar(
-  //           radius: 25,
-  //           backgroundImage:
-  //               widget.patientImage != null
-  //                   ? NetworkImage(widget.patientImage!)
-  //                   : null,
-  //           child:
-  //               widget.patientImage == null ? const Icon(Icons.person) : null,
-  //         ),
-  //         const SizedBox(width: 15),
-  //         Column(
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             Text(
-  //               widget.patientName,
-  //               style: const TextStyle(
-  //                 fontWeight: FontWeight.bold,
-  //                 fontSize: 16,
-  //               ),
-  //             ),
-  //             const Text(
-  //               "Patient Profile",
-  //               style: TextStyle(color: Colors.grey, fontSize: 12),
-  //             ),
-  //           ],
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
   Widget _buildProfileCard() {
     return Container(
       width: double.infinity,

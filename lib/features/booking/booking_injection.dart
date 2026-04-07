@@ -51,6 +51,7 @@ import 'package:graduation_project/features/booking/domain/use_cases/create_manu
 import 'package:graduation_project/features/booking/domain/use_cases/create_payment_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_prescription_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/delete_slot_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/get_appointment_full_details_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_doctor_slots_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_medical_record_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_prescription_use_case.dart';
@@ -139,13 +140,16 @@ Future<void> initBookingInjection() async {
   sl.registerLazySingleton(() => AddDayOffUseCase(sl()));
   sl.registerLazySingleton(() => RemoveExceptionUseCase(sl()));
   sl.registerLazySingleton(() => RemoveWorkingDayUseCase(sl()));
+  sl.registerLazySingleton(() => GetAppointmentFullDetailsUseCase(sl()));
 
   // 4. Cubits
   sl.registerFactory(
     () => ScheduleManagementCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
   );
   sl.registerFactory(() => BookingCalendarCubit(sl()));
-  sl.registerFactory(() => ExamSessionCubit(sl(), sl(), sl(), sl(), sl()));
+  sl.registerFactory(
+    () => ExamSessionCubit(sl(), sl(), sl(), sl(), sl(), sl()),
+  );
 
   // تأكد إن ترتيب الـ sl() هنا مطابق لترتيب الـ parameters في الـ Constructor بتاع الـ Cubit
   sl.registerFactory(

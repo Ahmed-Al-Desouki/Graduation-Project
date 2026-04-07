@@ -13,6 +13,7 @@ class MedicalHistoryAppBar extends StatelessWidget
   final VoidCallback onQrPressed;
   final bool showQrButton;
   final int totalSteps;
+  final bool isDoctorView;
 
   const MedicalHistoryAppBar({
     super.key,
@@ -21,6 +22,7 @@ class MedicalHistoryAppBar extends StatelessWidget
     required this.onQrPressed,
     this.showQrButton = false,
     required this.totalSteps,
+    required this.isDoctorView,
   });
 
   @override
@@ -36,7 +38,18 @@ class MedicalHistoryAppBar extends StatelessWidget
           size: 20,
           color: Color(0xFF111827),
         ),
-        onPressed: () => context.go(AppRouter.kHomePatient),
+        onPressed: () {
+          // ❌ بدلاً من: context.go(AppRouter.kHomePatient)
+          // ✅ استخدم:
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            // لو مفيش شاشة يرجع لها (حالة احتياطية) يروح للهوم المناسب
+            context.go(
+              isDoctorView ? AppRouter.kHomeDoctor : AppRouter.kHomePatient,
+            );
+          }
+        },
       ),
       actions: [
         if (showQrButton)
