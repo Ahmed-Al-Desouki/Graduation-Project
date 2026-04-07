@@ -13,6 +13,15 @@ import 'package:graduation_project/features/chat/domain/use_cases/get_messages_u
 import 'package:graduation_project/features/chat/domain/use_cases/send_messages_use_case.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_cubit/chat_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
+import 'package:graduation_project/features/doctor_home/data/data_sources/doctor_profile_remote_data_source.dart';
+import 'package:graduation_project/features/doctor_home/data/data_sources/doctor_profile_remote_data_source_impl.dart';
+import 'package:graduation_project/features/doctor_home/data/repositories/doctor_profile_repository_impl.dart';
+import 'package:graduation_project/features/doctor_home/domain/repositories/doctor_profile_repository.dart';
+import 'package:graduation_project/features/doctor_home/domain/use_cases/add_achievement_use_case.dart';
+import 'package:graduation_project/features/doctor_home/domain/use_cases/complete_profile_use_case.dart';
+import 'package:graduation_project/features/doctor_home/domain/use_cases/update_location_use_case.dart';
+import 'package:graduation_project/features/doctor_home/domain/use_cases/upload_verification_document_use_case.dart';
+import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
 import 'package:graduation_project/features/home/data/repos/home_repo_impl.dart';
 import 'package:graduation_project/features/home/data/service/home_web_service.dart';
 import 'package:graduation_project/features/home/domain/repos/home_repo.dart';
@@ -170,6 +179,40 @@ Future<void> setupServiceLocator() async {
       getIt<SearchDoctorsUseCase>(),
       getIt<GetSpecializationsUseCase>(),
       getIt<GetTopRatedDoctorsUseCase>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<DoctorProfileRemoteDataSource>(
+    () => DoctorProfileRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerLazySingleton<DoctorProfileRepository>(
+    () => DoctorProfileRepositoryImpl(getIt<DoctorProfileRemoteDataSource>()),
+  );
+
+  getIt.registerLazySingleton<CompleteProfileUseCase>(
+    () => CompleteProfileUseCase(getIt<DoctorProfileRepository>()),
+  );
+
+  getIt.registerLazySingleton<UploadVerificationDocumentUseCase>(
+    () => UploadVerificationDocumentUseCase(getIt<DoctorProfileRepository>()),
+  );
+
+  getIt.registerLazySingleton<UpdateLocationUseCase>(
+    () => UpdateLocationUseCase(getIt<DoctorProfileRepository>()),
+  );
+
+  getIt.registerLazySingleton<AddAchievementUseCase>(
+    () => AddAchievementUseCase(getIt<DoctorProfileRepository>()),
+  );
+
+  getIt.registerFactory<DoctorProfileCubit>(
+    () => DoctorProfileCubit(
+      getIt<CompleteProfileUseCase>(),
+      getIt<UploadVerificationDocumentUseCase>(),
+      getIt<UpdateLocationUseCase>(),
+      getIt<AddAchievementUseCase>(),
+      getIt<DoctorProfileRepository>(),
     ),
   );
 }

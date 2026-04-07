@@ -66,38 +66,80 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
 
   // ✅ Pick Image Function
   Future<void> _pickAchievementImage() async {
-    final ImageSource? source = await showDialog<ImageSource>(
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
       context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ), // حواف دائرية من فوق
+      ),
       builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.white,
-            title: const Text(
-              'Select Image Source',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B4E8C),
+          (context) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 5,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    'Select Image Source',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1B4E8C),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B4E8C).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Color(0xFF1B4E8C),
+                      ),
+                    ),
+                    title: const Text(
+                      'Camera',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    onTap: () => Navigator.pop(context, ImageSource.camera),
+                  ),
+
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B4E8C).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.photo_library,
+                        color: Color(0xFF1B4E8C),
+                      ),
+                    ),
+                    title: const Text(
+                      'Gallery',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    onTap: () => Navigator.pop(context, ImageSource.gallery),
+                  ),
+                ],
               ),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(
-                    Icons.camera_alt,
-                    color: Color(0xFF1B4E8C),
-                  ),
-                  title: const Text('Camera'),
-                  onTap: () => Navigator.pop(context, ImageSource.camera),
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.photo_library,
-                    color: Color(0xFF1B4E8C),
-                  ),
-                  title: const Text('Gallery'),
-                  onTap: () => Navigator.pop(context, ImageSource.gallery),
-                ),
-              ],
             ),
           ),
     );

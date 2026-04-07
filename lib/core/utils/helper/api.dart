@@ -166,4 +166,19 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<dynamic> postMultipart(String endpoint, FormData formData) async {
+    try {
+      final response = await _dio.post(
+        endpoint,
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      );
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

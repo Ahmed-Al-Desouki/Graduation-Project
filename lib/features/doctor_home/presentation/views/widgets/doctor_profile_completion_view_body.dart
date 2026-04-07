@@ -8,7 +8,7 @@ import 'package:graduation_project/features/doctor_home/presentation/views/widge
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/professional_details_section.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/profile_completion_button.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/profile_header_section.dart';
-import 'package:graduation_project/features/doctor_home/presentation/views/widgets/profile_progress_section.dart';
+//import 'package:graduation_project/features/doctor_home/presentation/views/widgets/profile_progress_section.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/verification_section.dart';
 
 class DoctorProfileCompletionViewBody extends StatefulWidget {
@@ -94,8 +94,8 @@ class _DoctorProfileCompletionViewBodyState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ProfileHeaderSection(),
-          SizedBox(height: 24.h),
-          ProfileProgressSection(currentStep: 1, totalSteps: 2),
+          //SizedBox(height: 24.h),
+          // ProfileProgressSection(currentStep: 1, totalSteps: 2),
           SizedBox(height: 24.h),
           PersonalInfoSection(
             formKey: _personalInfoKey,
