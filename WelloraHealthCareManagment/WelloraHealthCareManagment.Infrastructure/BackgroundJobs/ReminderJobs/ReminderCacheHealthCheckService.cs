@@ -42,11 +42,20 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
 
                     var emptyPatients = new List<int>();
 
-                    foreach (var pid in activePatientIds.Take(100)) // عشان ما نعملش load كبير
-                    {
-                        var cache = await cacheRepo.GetByPatientAndDateRangeAsync(
-                            pid, todayUtc, in30Days);
+                    // Before: checked cache for any data, re-enqueued if empty
+                    // Problem: patients with no active reminders always have empty cache → infinite loop
 
+                    // After: skip patients with no active reminders before checking cache
+                    foreach (var pid in activePatientIds.Take(100))
+                    {
+                        var activeReminders = await reminderRepo.GetActiveByPatientIdAsync(pid);
+                        if (!activeReminders.Any())
+                        {
+                            _logger.LogDebug("Patient {PatientId} has no active reminders — skipping health check", pid);
+                            continue; // Not a cache problem, patient genuinely has nothing
+                        }
+
+                        var cache = await cacheRepo.GetByPatientAndDateRangeAsync(pid, todayUtc, in30Days);
                         if (!cache.Any())
                         {
                             emptyPatients.Add(pid);

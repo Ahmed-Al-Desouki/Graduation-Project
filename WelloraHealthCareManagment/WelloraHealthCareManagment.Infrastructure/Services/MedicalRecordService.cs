@@ -82,6 +82,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 }
 
                 await _medicalRecordRepository.AddAsync(record, cancellationToken);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 _logger.LogInformation(
@@ -150,6 +152,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 }
 
                 await _medicalRecordRepository.UpdateAsync(record, cancellationToken);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 _logger.LogInformation(

@@ -60,8 +60,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     Comment = request.Comment,
                     ReviewDate = DateTime.UtcNow,
                     IsVerified = true,   
-                    CreatedAt = DateTime.UtcNow,
-                    FilePath = string.Empty
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 await _reviewRepository.CreateAsync(review);

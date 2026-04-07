@@ -5,3 +5,7 @@ obj/
 *.suo
 *.cache
 *.log
+# Firebase
+firebase-service-account.json
+*.json.key
+secrets.json

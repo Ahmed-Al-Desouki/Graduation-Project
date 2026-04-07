@@ -1,5 +1,6 @@
 ﻿using HealthCare_.Models.V2;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 
@@ -8,10 +9,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
     public class ReminderRepository : IReminderRepository
     {
         private readonly HealthCarePlusContext _context;
+        private readonly ILogger<ReminderRepository> _logger;
 
-        public ReminderRepository(HealthCarePlusContext context)
+        public ReminderRepository(HealthCarePlusContext context,ILogger<ReminderRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<ReminderV2?> GetByIdAsync(int reminderId, int patientId)
@@ -26,7 +29,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         {
             return await _context.ReminderV2s
                 .AsNoTracking()
-                .Where(r => r.PatientId == patientId)
+                .Where(r => r.PatientId == patientId && r.IsActive == true)
                 .ToListAsync();
         }
 
@@ -34,8 +37,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         {
             return await _context.ReminderV2s
                 .AsNoTracking()
-                //.Include(r => r.PrescriptionMed)
                 .Where(r => r.PatientId == patientId && r.IsActive)
+                .Include(r => r.PrescriptionItem)
                 .ToListAsync();
         }
 
@@ -89,14 +92,30 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
                 .ToListAsync();
         }
 
-        public async Task<List<ReminderV2>> GetAllExpiredActiveRemindersAsync(DateTime now)
+        public async Task<IList<ReminderV2>> GetAllExpiredActiveRemindersAsync(DateTime asOfUtc)
         {
             return await _context.ReminderV2s
-                .Where(r =>
-                    r.IsActive &&                    
-                    r.EndDateUtc.HasValue &&          
-                    r.EndDateUtc < now)           
+                .Where(r => r.EndDateUtc.HasValue && r.EndDateUtc.Value < asOfUtc)
                 .ToListAsync();
+        }
+        public async Task HardDeleteAsync(int reminderId)
+        {
+            var reminder = await _context.ReminderV2s
+                .FirstOrDefaultAsync(r => r.Id == reminderId);
+
+            if (reminder is null)
+            {
+                _logger.LogWarning(
+                    "HardDeleteAsync called for Reminder {ReminderId} but it was not found — skipping",
+                    reminderId);
+                return;
+            }
+
+            _context.ReminderV2s.Remove(reminder);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Hard deleted Reminder {ReminderId} from database", reminderId);
         }
     }
 }

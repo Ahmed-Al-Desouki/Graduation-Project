@@ -11,6 +11,7 @@ using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
+using WelloraHealthCareManagment.Infrastructure.Helpers;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services
 {
@@ -361,34 +362,26 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         }
 
         private IEnumerable<DateTime> GenerateOccurrencesWithIcalNetFull(
-            ReminderV2 reminder,
-            DateTime fromUtcInclusive,
-            DateTime toUtcExclusive)
+    ReminderV2 reminder,
+    DateTime fromUtcInclusive,
+    DateTime toUtcExclusive)
         {
             try
             {
                 var timeZoneId = reminder.TimeZoneId ?? "Africa/Cairo";
                 var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-
                 var calendar = new Calendar();
                 calendar.AddTimeZone(VTimeZone.FromSystemTimeZone(tz));
-
                 var ev = new CalendarEvent { Uid = $"reminder-{reminder.Id}" };
 
                 // MODE 1: SIMPLE EVERY X HOURS
-                if (reminder.IsSimpleEveryXHours && reminder.FirstDoseTime.HasValue && reminder.IntervalHours.HasValue)
+                if (reminder.IsSimpleEveryXHours &&
+                    reminder.FirstDoseTime.HasValue &&
+                    reminder.IntervalHours.HasValue)
                 {
-                    _logger.LogDebug(
-                        "Reminder {Id} SIMPLE MODE: FirstDose={FirstDose}, Interval={Interval}h (RRULE=NULL)",
-                        reminder.Id, reminder.FirstDoseTime, reminder.IntervalHours);
-
-                    var dtStart = DateTime.SpecifyKind(reminder.StartDateUtc.Date, DateTimeKind.Unspecified);
-                    dtStart = dtStart.Add(reminder.FirstDoseTime.Value);
-
-                    var dtStartUtc = TimeZoneInfo.ConvertTimeToUtc(
-                        DateTime.SpecifyKind(dtStart, DateTimeKind.Unspecified), tz);
-
-                    ev.DtStart = new CalDateTime(dtStart, timeZoneId);
+                    var dtStart = reminder.StartDateUtc.Date.Add(reminder.FirstDoseTime.Value);
+                    ev.DtStart = new CalDateTime(
+                        DateTime.SpecifyKind(dtStart, DateTimeKind.Unspecified), timeZoneId);
                     ev.Summary = reminder.Title;
 
                     var rruleStr = $"FREQ=HOURLY;INTERVAL={reminder.IntervalHours.Value}";
@@ -398,104 +391,97 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                             reminder.EndDateUtc.Value.Date.AddDays(1).AddTicks(-1),
                             DateTimeKind.Unspecified);
                         var untilUtc = TimeZoneInfo.ConvertTimeToUtc(untilLocal, tz);
-                        rruleStr += $";UNTIL={untilUtc:yyyyMMddTHHmmss}Z";
+                        rruleStr += $";UNTIL={untilUtc:yyyyMMddTHHmmssZ}";
                     }
-
                     ev.RecurrenceRules.Add(new RecurrencePattern(rruleStr));
-                    _logger.LogDebug("Generated RRULE for simple mode: {RRULE}", rruleStr);
                 }
                 // MODE 2: RRULE
                 else if (!string.IsNullOrWhiteSpace(reminder.RRULE))
                 {
-                    _logger.LogDebug(
-                        "Reminder {Id} RRULE MODE: {RRULE}",
-                        reminder.Id, reminder.RRULE);
-
+                    var cleanRRule = RruleHelper.RemoveDtStartFromRRule(reminder.RRULE);
                     var startLocal = TimeZoneInfo.ConvertTimeFromUtc(reminder.StartDateUtc, tz);
-                    var dtStart = DateTime.SpecifyKind(startLocal, DateTimeKind.Unspecified);
-                    var rrule = reminder.RRULE.ToUpperInvariant();
+                    var (hour, minute) = RruleHelper.ExtractFirstTimeFromRRule(cleanRRule);
 
-                    if (rrule.Contains("BYHOUR"))
-                    {
-                        var match = Regex.Match(rrule, @"BYHOUR=(\d+)");
-                        if (match.Success)
-                        {
-                            var hour = int.Parse(match.Groups[1].Value);
-                            dtStart = new DateTime(dtStart.Year, dtStart.Month, dtStart.Day, hour, 0, 0);
-                            dtStart = DateTime.SpecifyKind(dtStart, DateTimeKind.Unspecified);
-                        }
-                    }
-                    else
-                    {
-                        dtStart = new DateTime(dtStart.Year, dtStart.Month, dtStart.Day, 9, 0, 0);
-                        dtStart = DateTime.SpecifyKind(dtStart, DateTimeKind.Unspecified);
-                    }
+                    var dtStartLocal = startLocal.Date
+                        .AddHours(hour ?? 9)
+                        .AddMinutes(minute ?? 0);
 
-                    ev.DtStart = new CalDateTime(dtStart, timeZoneId);
+                    // FIX 2A: Advance to first day that actually matches the recurrence pattern
+                    dtStartLocal = RruleHelper.AdvanceDtStartToFirstValidOccurrence(
+                        dtStartLocal, cleanRRule);
+
+                    ev.DtStart = new CalDateTime(
+                        DateTime.SpecifyKind(dtStartLocal, DateTimeKind.Unspecified), timeZoneId);
                     ev.Summary = reminder.Title;
 
                     try
                     {
-                        ev.RecurrenceRules.Add(new RecurrencePattern(rrule));
-                        _logger.LogDebug("RRULE parsed successfully: {RRULE}", rrule);
+                        ev.RecurrenceRules.Add(new RecurrencePattern(cleanRRule));
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex,
-                            "Failed to parse RRULE for Reminder {ReminderId}: {RRULE}. Error: {Error}",
-                            reminder.Id, reminder.RRULE, ex.Message);
-                        throw;
+                            "Failed to parse RRULE for Reminder {ReminderId}: {RRULE}",
+                            reminder.Id, cleanRRule);
+                        throw new InvalidOperationException(
+                            $"Invalid RRULE for reminder {reminder.Id}: {cleanRRule}", ex);
                     }
-                }
-                else
-                {
-                    throw new InvalidOperationException(
-                        $"Reminder {reminder.Id} is in invalid state");
-                }
 
-                if (reminder.EndDateUtc.HasValue && !reminder.RRULE?.ToUpperInvariant().Contains("UNTIL") == true)
-                {
-                    if (ev.RecurrenceRules.Any())
+                    if (reminder.EndDateUtc.HasValue &&
+                        !cleanRRule.Contains("UNTIL", StringComparison.OrdinalIgnoreCase))
                     {
                         var untilLocal = DateTime.SpecifyKind(
                             reminder.EndDateUtc.Value.Date.AddDays(1).AddTicks(-1),
                             DateTimeKind.Unspecified);
                         var untilUtc = TimeZoneInfo.ConvertTimeToUtc(untilLocal, tz);
-                        ev.RecurrenceRules[0].Until = untilUtc;
+                        if (ev.RecurrenceRules.Any())
+                            ev.RecurrenceRules[0].Until = untilUtc;
                     }
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"Reminder {reminder.Id} is in invalid state after validation");
                 }
 
                 calendar.Events.Add(ev);
 
                 var fromUtcSafe = DateTime.SpecifyKind(fromUtcInclusive, DateTimeKind.Utc);
                 var toUtcSafe = DateTime.SpecifyKind(toUtcExclusive, DateTimeKind.Utc);
-
                 var fromLocal = TimeZoneInfo.ConvertTimeFromUtc(fromUtcSafe, tz);
                 var toLocal = TimeZoneInfo.ConvertTimeFromUtc(toUtcSafe, tz);
 
                 var occurrencesLocal = calendar.GetOccurrences(fromLocal, toLocal);
-
                 var results = new List<DateTime>();
 
                 foreach (var occ in occurrencesLocal)
                 {
                     var localTime = occ.Period.StartTime.AsDateTimeOffset.DateTime;
-                    var utcTime = TimeZoneInfo.ConvertTimeToUtc(
-                        DateTime.SpecifyKind(localTime, DateTimeKind.Unspecified),
-                        tz);
+                    DateTime utcTime;
+                    try
+                    {
+                        utcTime = TimeZoneInfo.ConvertTimeToUtc(
+                            DateTime.SpecifyKind(localTime, DateTimeKind.Unspecified), tz);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        _logger.LogWarning(ex,
+                            "Skipping invalid local time due to DST: {LocalTime}", localTime);
+                        continue;
+                    }
 
                     if (utcTime >= fromUtcSafe && utcTime < toUtcSafe)
-                    {
                         results.Add(DateTime.SpecifyKind(utcTime, DateTimeKind.Utc));
-                    }
                 }
 
-                _logger.LogInformation("Reminder {Id}: Generated {Count} occurrences", reminder.Id, results.Count);
+                _logger.LogInformation(
+                    "Reminder {Id}: Generated {Count} occurrences", reminder.Id, results.Count);
                 return results.OrderBy(dt => dt);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Critical error generating occurrences for reminder {ReminderId}", reminder.Id);
+                _logger.LogError(ex,
+                    "Critical error generating occurrences for reminder {ReminderId}", reminder.Id);
                 throw;
             }
         }

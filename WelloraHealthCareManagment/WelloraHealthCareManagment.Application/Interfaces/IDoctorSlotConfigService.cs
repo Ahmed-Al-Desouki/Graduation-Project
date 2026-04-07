@@ -22,10 +22,10 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             CancellationToken ct = default);
 
         // ── Slot Generation ──
-        Task<GenerateSlotsResponse> GenerateSlotsAsync(
-            int doctorId,
-            GenerateSlotsByConfigRequest request,
-            CancellationToken ct = default);
+        //Task<GenerateSlotsResponse> GenerateSlotsAsync(
+        //    int doctorId,
+        //    GenerateSlotsByConfigRequest request,
+        //    CancellationToken ct = default);
 
         // ── Exceptions (Day Off / Custom Hours) ──
         Task AddDayOffAsync(

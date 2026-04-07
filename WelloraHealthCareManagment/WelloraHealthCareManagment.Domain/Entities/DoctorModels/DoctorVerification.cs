@@ -1,4 +1,5 @@
-﻿using HealthCare_.Models.DoctorModels;
+﻿// UPDATE: Domain/Entities/DoctorModels/DoctorVerification.cs
+using HealthCare_.Models.DoctorModels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WelloraHealthCareManagment.Domain.Enums;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 
 namespace WelloraHealthCareManagment.Domain.Entities.DoctorModels
 {
@@ -36,7 +38,17 @@ namespace WelloraHealthCareManagment.Domain.Entities.DoctorModels
         // ─── بيانات الأدمن ───
         [StringLength(1000)]
         public string? AdminNotes { get; set; }
+
+        // NEW: Explicit rejection reason shown to doctor
+        [StringLength(1000)]
+        public string? RejectionReason { get; set; }
+
         public int? ReviewedByAdminId { get; set; }
+
+        // NEW: Navigation property for admin who reviewed
+        [ForeignKey(nameof(ReviewedByAdminId))]
+        public ApplicationUser? ReviewedByAdmin { get; set; }
+
         public DateTime? ReviewedAt { get; set; }
 
         // ─── Audit ───

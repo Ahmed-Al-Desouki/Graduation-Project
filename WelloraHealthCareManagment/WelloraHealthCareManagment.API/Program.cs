@@ -13,6 +13,7 @@ using WelloraHealthCareManagement.Infrastructure;
 using WelloraHealthCareManagement.Infrastructure.Data.Interceptors;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
+using WelloraHealthCareManagment.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs;
 
 
@@ -228,6 +229,15 @@ internal class Program
                 "cleanup-all-expired-reminders-daily",
                 job => job.CleanupAllExpiredRemindersAsync(),
                 Cron.Hourly(12));
+
+            RecurringJob.AddOrUpdate<SlotRollingWindowJob>(
+                recurringJobId: "slot-rolling-window",
+                methodCall: job => job.ExecuteAsync(CancellationToken.None),
+                cronExpression: Cron.Daily(hour: 2),
+                options: new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.Utc
+                });
 
             app.UseExceptionHandler(errorApp =>
             {

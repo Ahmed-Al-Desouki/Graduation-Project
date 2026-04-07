@@ -4,9 +4,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Factories;
-using WelloraHealthCareManagement.Infrastructure.Configuration;
 using WelloraHealthCareManagement.Infrastructure.Repositories;
 using WelloraHealthCareManagement.Infrastructure.Services;
+using WelloraHealthCareManagement.Infrastructure.Services.Admin;
+using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories.Search;
@@ -14,12 +15,15 @@ using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.Interfaces.Email;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Application.Interfaces.Search;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Repositories;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs;
+using WelloraHealthCareManagment.Infrastructure.Configuration;
 using WelloraHealthCareManagment.Infrastructure.Repositories;
+using WelloraHealthCareManagment.Infrastructure.Repositories.AdminRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.UserSessions;
@@ -31,7 +35,7 @@ using WelloraHealthCareManagment.Infrastructure.Repositories.MeicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Search;
 using WelloraHealthCareManagment.Infrastructure.Services;
-
+using WelloraHealthCareManagment.Infrastructure.Services.Admin;
 
 namespace WelloraHealthCareManagement.Infrastructure
 {
@@ -41,103 +45,143 @@ namespace WelloraHealthCareManagement.Infrastructure
             this IServiceCollection services,
             IConfiguration configuration)
         {
-
-            var cloudName = configuration["Cloudinary:CloudName"];
-            var apiKey = configuration["Cloudinary:ApiKey"];
-            Console.WriteLine($"DEBUG - CloudName: {cloudName}");
-            Console.WriteLine($"DEBUG - ApiKey: {apiKey}");
-
-            // Configure Cloudinary settings first
+            // ====================== CONFIGURATION ======================
             services.Configure<CloudinarySettings>(
                 configuration.GetSection("Cloudinary"));
 
-            services.AddHttpContextAccessor();  
+            services.AddHttpContextAccessor();
+            services.Configure<FirebaseSettings>(configuration.GetSection("Firebase"));
 
-            // Repositories
+            services.AddAutoMapper(cfg =>
+            {
+            }, typeof(WelloraHealthCareManagment.Application.Mappings.AdminMappingProfile).Assembly);
+
+            // ====================== REPOSITORIES ======================
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            // Auth
             services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IPatientRepository, PatientRepository>(); 
-            services.AddScoped<IDoctorRepository, DoctorRepository>(); 
-            services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>(); 
-            services.AddScoped<IExternalFileRepository, ExternalFileRepository>(); 
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IRevokedTokenRepository, RevokedTokenRepository>();
             services.AddScoped<IUserSessionRepository, UserSessionRepository>();
             services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
+            services.AddScoped<IOtpRepository, OtpRepository>();
+            services.AddScoped<IUserStatusRepository, UserStatusRepository>();
+
+            // Patient
+            services.AddScoped<IPatientRepository, PatientRepository>();
+
+            // Doctor
+            services.AddScoped<IDoctorRepository, DoctorRepository>();
+            services.AddScoped<IDoctorVerificationRepository, DoctorVerificationRepository>();
+            services.AddScoped<IDoctorAchievementRepository, DoctorAchievementRepository>();
+            services.AddScoped<IDoctorSearchRepository, DoctorSearchRepository>();
+            services.AddScoped<IDoctorVerificationRepository, DoctorVerificationRepository>();
+            services.AddScoped<IDoctorSlotConfigRepository, DoctorSlotConfigRepository>();
+
+            // Medical History
+            services.AddScoped<IMedicalHistoryRepository, MedicalHistoryRepository>();
+            services.AddScoped<IMedicalHistoryAccessRepository, MedicalHistoryAccessRepository>();
+            services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
             services.AddScoped<ICurrentMedicationRepository, CurrentMedicationRepository>();
             services.AddScoped<IFamilyHistoryRepository, FamilyHistoryRepository>();
             services.AddScoped<ISelfMedicationRepository, SelfMedicationRepository>();
             services.AddScoped<ISocialHistoryRepository, SocialHistoryRepository>();
             services.AddScoped<ISurgeryRepository, SurgeryRepository>();
-            services.AddScoped<IOtpRepository, OtpRepository>();
             services.AddScoped<IMedicalFileRepository, MedicalFileRepository>();
+
+            // Appointments & Slots
+            services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
+            services.AddScoped<IScheduleExceptionRepository, ScheduleExceptionRepository>();
+
+            // Prescriptions & Reviews
+            services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+            services.AddScoped<IReviewRepository, ReviewRepository>();
+
+            // Reminders
             services.AddScoped<IReminderRepository, ReminderRepository>();
             services.AddScoped<IReminderOccurrencesCacheRepository, ReminderOccurrencesCacheRepository>();
             services.AddScoped<IReminderOccurrenceLogRepository, ReminderOccurrenceLogRepository>();
-            //services.AddScoped<IDoctorScheduleRepository, DoctorScheduleRepository>();
-            services.AddScoped<IScheduleExceptionRepository, ScheduleExceptionRepository>();
-            services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
-            services.AddScoped<IAppointmentRepository, AppointmentRepository>();
-            services.AddScoped<IMedicalHistoryAccessRepository, MedicalHistoryAccessRepository>();
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
-            services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
-            services.AddScoped<IDoctorSearchRepository, DoctorSearchRepository>();
+
+            // Files & Payments
+            services.AddScoped<IExternalFileRepository, ExternalFileRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
-            services.AddScoped<IDoctorVerificationRepository, DoctorVerificationRepository>();
-            services.AddScoped<IDoctorAchievementRepository, DoctorAchievementRepository>();
-            services.AddScoped<IReviewRepository, ReviewRepository>();
-            services.AddScoped<IDoctorSlotConfigService, DoctorSlotConfigService>();
-            services.AddScoped<ITimeSlotService, TimeSlotService>();
 
+            // Admin
+            services.AddScoped<INotificationRepository, NotificationRepository>();// from admi to doctor
+            services.AddScoped<ITicketRepository, TicketRepository>();
+            services.AddScoped<ITicketMessageRepository, TicketMessageRepository>();
+            services.AddScoped<IAdminActionLogRepository, AdminActionLogRepository>();
 
-            // Services
+            // ====================== SERVICES ======================
+            // Auth
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IEmailService, EmailService>();
-            services.AddScoped<ICloudStorageService, CloudinaryService>(); 
-            services.AddScoped<IAvatarService, AvatarService>();
             services.AddScoped<IPasswordService, PasswordService>();
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             services.AddScoped<IAuthCoreService, AuthCoreService>();
             services.AddScoped<IDeviceService, DeviceService>();
-            services.AddScoped<IFileUploadService, FileUploadService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IShareTokenService, ShareTokenService>();
-            services.AddHttpContextAccessor(); // ضروري للـ CurrentUserService
-            services.AddScoped<IReminderV2Service, ReminderV2Service>();
-            services.AddScoped<IReminderOccurrenceGenerator, ReminderOccurrenceGenerator>();
-            services.AddScoped<ITimezoneHelper, TimezoneHelper>();
             services.AddScoped<IRevokedTokenCleanupService, RevokedTokenCleanupService>();
-            //services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
-            services.AddScoped<ITimeSlotService, TimeSlotService>();
+
+            // Storage & Files
+            services.AddScoped<ICloudStorageService, CloudinaryService>();
+            services.AddScoped<IAvatarService, AvatarService>();
+            services.AddScoped<IFileUploadService, FileUploadService>();
+
+            // Appointments & Slots
             services.AddScoped<IAppointmentService, AppointmentService>();
             services.AddScoped<IAppointmentReminderService, AppointmentReminderService>();
+            services.AddScoped<ITimeSlotService, TimeSlotService>();
+            services.AddScoped<IDoctorSlotConfigService, DoctorSlotConfigService>();
+            services.AddScoped<ISlotGenerationService, SlotGenerationService>();
+
+            // Medical
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<IPrescriptionService, PrescriptionService>();
             services.AddScoped<IPrescriptionReminderService, PrescriptionReminderService>();
             services.AddScoped<PrescriptionReminderOccurrenceGenerator>();
+
+            // Reminders
+            services.AddScoped<IReminderV2Service, ReminderV2Service>();
+            services.AddScoped<IReminderOccurrenceGenerator, ReminderOccurrenceGenerator>();
+            services.AddScoped<ITimezoneHelper, TimezoneHelper>();
+
+            // Doctors
             services.AddScoped<IDoctorSearchService, DoctorSearchService>();
             services.AddSingleton<IDoctorSearchIndex, DoctorSearchIndex>();
-            services.AddScoped<IServiceProvider, ServiceProvider>();
-            services.AddScoped<IPaymobService, PaymobService>();
-            services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IDoctorProfileService, DoctorProfileService>();
             services.AddScoped<IReviewService, ReviewService>();
-            services.AddScoped<IDoctorSlotConfigRepository, DoctorSlotConfigRepository>();
-            services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
-            services.AddScoped<IScheduleExceptionRepository, ScheduleExceptionRepository>();
+
+            // Payment
+            services.AddScoped<IPaymobService, PaymobService>();
+            services.AddScoped<IPaymentService, PaymentService>();
+
+            // Admin Services
+            services.AddScoped<IAdminAuditService, AdminAuditService>();
+            services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+            services.AddScoped<IReviewModerationService, ReviewModerationService>();
+            services.AddScoped<IDoctorVerificationService, DoctorVerificationService>();
+            services.AddScoped<ITicketService, TicketService>();
+            services.AddScoped<IUserManagementService, UserManagementService>();
+            services.AddScoped<IUserSearchService, UserSearchService>();
 
 
+            //NOTIFICATION
+            services.AddSingleton<IFirebaseNotificationService, FirebaseNotificationService>();
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
 
-
-            // Background Jobs 
-            services.AddScoped<ReminderJobOrchestrator>();
+            // ====================== BACKGROUND JOBS ======================
+            services.AddTransient<SlotRollingWindowJob>();
+            services.AddTransient<ReminderJobOrchestrator>();
             services.AddHostedService<ReminderCacheHealthCheckService>();
             services.AddHostedService<RevokedTokensCleanupBackgroundService>();
-            //services.AddHostedService<SlotGenerationJob>();
 
-            //Domain Factories
+            // ====================== DOMAIN FACTORIES ======================
             services.AddScoped<IAppointmentFactory, AppointmentFactory>();
-            //services.AddScoped<ITimeSlotGeneratorFactory, TimeSlotGeneratorFactory>();
 
 
 

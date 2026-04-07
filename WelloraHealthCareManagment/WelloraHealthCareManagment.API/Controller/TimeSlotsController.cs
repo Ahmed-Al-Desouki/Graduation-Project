@@ -20,25 +20,6 @@ namespace WelloraHealthCareManagement.API.Controllers
             _logger = logger;
         }
 
-        /// توليد خانات لفترة معينة (للطبيب فقط)
-        //[HttpPost("generate")]
-        //[Authorize(Roles = "Doctor")]
-        //public async Task<IActionResult> GenerateSlots(
-        //    int doctorId,
-        //    [FromBody] GenerateSlotsRequest request)
-        //{
-        //    try
-        //    {
-        //        var result = await _timeSlotService.GenerateSlotsAsync(doctorId, request);
-        //        return Ok(result);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error generating slots for doctor {DoctorId}", doctorId);
-        //        return BadRequest(new { error = ex.Message });
-        //    }
-        //}
-
         /// جلب الخانات المتاحة (للمرضى)
         [HttpGet("available")]
         [AllowAnonymous]

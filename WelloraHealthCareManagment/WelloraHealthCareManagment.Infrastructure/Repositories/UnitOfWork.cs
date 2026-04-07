@@ -4,6 +4,14 @@ using WelloraHealthCareManagement.Infrastructure.Data;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
+/// <summary>
+/// IMPORTANT: This class is registered as Scoped — one instance per HTTP request.
+/// Do NOT use this class in Singleton services or Hangfire background jobs directly.
+/// Hangfire jobs must create a new IServiceScope before resolving IUnitOfWork:
+///   using var scope = _serviceProvider.CreateScope();
+///   var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+/// </summary>
+
 namespace WelloraHealthCareManagement.Infrastructure.Repositories
 {
     public class UnitOfWork : IUnitOfWork
@@ -31,17 +39,16 @@ namespace WelloraHealthCareManagement.Infrastructure.Repositories
         //}
         public async Task<IDbContextTransaction> BeginTransactionAsync(
             CancellationToken ct = default)
-            => await _context.Database.BeginTransactionAsync(ct);
-
+        {
+            _transaction = await _context.Database.BeginTransactionAsync(ct);
+            return _transaction;
+        }
         public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                await SaveChangesAsync(cancellationToken);
                 if (_transaction != null)
-                {
                     await _transaction.CommitAsync(cancellationToken);
-                }
             }
             catch
             {

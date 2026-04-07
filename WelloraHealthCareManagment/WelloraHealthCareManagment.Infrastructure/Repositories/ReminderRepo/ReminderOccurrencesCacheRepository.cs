@@ -200,5 +200,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
                 )",
                 patientId, beforeUtc);
         }
+        public async Task DeleteAllPastOccurrencesAsync(DateTime beforeUtc)
+        {
+            await _context.Database.ExecuteSqlRawAsync(
+                @"DELETE FROM ReminderOccurrencesCache
+                 WHERE DueDateTimeUtc < {0}",
+                beforeUtc);
+
+            _logger.LogInformation(
+                "Deleted all past cache rows before {BeforeUtc}", beforeUtc);
+        }
     }
 }

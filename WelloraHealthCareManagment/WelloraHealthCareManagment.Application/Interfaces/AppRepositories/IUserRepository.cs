@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 
 namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
 {
@@ -31,6 +32,44 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
         Task<IdentityResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword);
         Task<bool> IsEmailConfirmedAsync(ApplicationUser user);
 
+        Task<List<ApplicationUser>> GetAllUsersWithDoctorAsync(CancellationToken ct = default);
 
+        Task<int> CountUsersFilteredAsync(
+            string? role = null,
+            bool? isBlocked = null,
+            bool? isSuspended = null,
+            bool? isVerified = null,
+            string? specialization = null,
+            double? minRating = null,
+            DateTime? registeredAfter = null,
+            DateTime? registeredBefore = null,
+            List<int>? userIds = null,
+            CancellationToken ct = default);
+
+        Task<Dictionary<int, UserStatus>> GetUserStatusesByUserIdsAsync(
+            List<int> userIds, CancellationToken ct = default);
+
+        Task<Dictionary<int, int>> GetDoctorReviewCountsAsync(
+            List<int> doctorIds, CancellationToken ct = default);
+
+        Task<List<ApplicationUser>> SearchUsersFilteredAsync(
+            string? role = null,
+            bool? isBlocked = null,
+            bool? isSuspended = null,
+            bool? isVerified = null,
+            string? specialization = null,
+            double? minRating = null,
+            DateTime? registeredAfter = null,
+            DateTime? registeredBefore = null,
+            string? sortBy = null,
+            bool descending = false,
+            int page = 1,
+            int pageSize = 10,
+            List<int>? userIds = null,
+            CancellationToken ct = default);
+
+        Task<List<int>> GetUserIdsByNameOrEmailAsync(List<string> namesOrEmails, CancellationToken ct = default);
+        Task<int> GetDoctorReviewCountAsync(int doctorId, CancellationToken ct = default);
+        Task<ApplicationUser?> GetByIdWithDoctorAsync(int userId, CancellationToken ct = default);
     }
 }

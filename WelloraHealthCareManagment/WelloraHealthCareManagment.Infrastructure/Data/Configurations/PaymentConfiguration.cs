@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
+using WelloraHealthCareManagment.Application.DTOs;
 
 namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
 {

@@ -1,5 +1,4 @@
-﻿
-namespace WelloraHealthCareManagement.Infrastructure.Configuration
+﻿namespace WelloraHealthCareManagment.Infrastructure.Configuration
 {
     public class CloudinarySettings
     {

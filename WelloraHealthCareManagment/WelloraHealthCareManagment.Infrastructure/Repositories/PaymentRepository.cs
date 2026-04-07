@@ -2,6 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using WelloraHealthCareManagement.Domain.Entities;
+using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 
@@ -20,8 +21,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             Guid appointmentId,
             CancellationToken cancellationToken = default)
         {
-            _context.ChangeTracker.Clear();
-
             return await _context.Payments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
@@ -33,7 +32,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             string paymobOrderId,
             CancellationToken cancellationToken = default)
         {
-            _context.ChangeTracker.Clear();
+            
 
             return await _context.Payments
                 .AsNoTracking()
@@ -46,7 +45,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             string paymobOrderId,
             CancellationToken cancellationToken = default)
         {
-            _context.ChangeTracker.Clear();
+            
 
             return await _context.Payments
                 .FirstOrDefaultAsync(
@@ -54,19 +53,25 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                     cancellationToken);
         }
 
+        //public async Task<Payment?> GetByIdAsync(
+        //    Guid paymentId,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    // مش محتاج Clear ولا Include للـ Appointment هنا
+        //    return await _context.Payments
+        //        .AsNoTracking()
+        //        .Include(p => p.Doctor)
+        //            .ThenInclude(d => d.User)
+        //        .Include(p => p.Patient)
+        //            .ThenInclude(pat => pat.User)
+        //        .FirstOrDefaultAsync(p => p.Id == paymentId, cancellationToken);
+        //}
         public async Task<Payment?> GetByIdAsync(
             Guid paymentId,
             CancellationToken cancellationToken = default)
         {
-            _context.ChangeTracker.Clear();
-
             return await _context.Payments
                 .AsNoTracking()
-                .Include(p => p.Appointment)
-                .Include(p => p.Doctor)
-                    .ThenInclude(d => d.User)
-                .Include(p => p.Patient)
-                    .ThenInclude(pat => pat.User)
                 .FirstOrDefaultAsync(p => p.Id == paymentId, cancellationToken);
         }
 
@@ -74,8 +79,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             int patientId,
             CancellationToken cancellationToken = default)
         {
-            _context.ChangeTracker.Clear();
-
+            // نجيب بس الـ fields المحتاجة عبر Select anonymous type
+            // بس لأن الـ interface بيرجع List<Payment>، نضيف AsNoTracking بس
             return await _context.Payments
                 .AsNoTracking()
                 .Include(p => p.Doctor)
@@ -85,6 +90,54 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<List<Payment>> GetRefundedPaymentsAsync(
+       DateTime? fromDate = null,
+       DateTime? toDate = null,
+       CancellationToken cancellationToken = default)
+        {
+            var query = _context.Payments
+                .Where(p => p.Status == PaymentStatus.Refunded);
+
+            if (fromDate.HasValue)
+                query = query.Where(p => p.RefundedAt >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(p => p.RefundedAt <= toDate.Value);
+
+            return await query
+                .Include(p => p.Patient)
+                    .ThenInclude(p => p.User)
+                .Include(p => p.Doctor)
+                    .ThenInclude(d => d.User)
+                .OrderByDescending(p => p.RefundedAt)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<decimal> GetTotalRefundedAmountAsync(
+            int? patientId = null,
+            int? doctorId = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.Payments
+                .Where(p => p.Status == PaymentStatus.Refunded);
+
+            if (patientId.HasValue)
+                query = query.Where(p => p.PatientId == patientId.Value);
+
+            if (doctorId.HasValue)
+                query = query.Where(p => p.DoctorId == doctorId.Value);
+
+            if (fromDate.HasValue)
+                query = query.Where(p => p.RefundedAt >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(p => p.RefundedAt <= toDate.Value);
+
+            return await query.SumAsync(p => p.RefundAmount ?? 0, cancellationToken);
+        }
+
         public async Task AddAsync(
             Payment payment,
             CancellationToken cancellationToken = default)
@@ -92,11 +145,21 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             await _context.Payments.AddAsync(payment, cancellationToken);
         }
 
+        //public async Task UpdateAsync(
+        //    Payment payment,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    _context.Payments.Update(payment);
+        //    await Task.CompletedTask;
+        //}
         public async Task UpdateAsync(
             Payment payment,
             CancellationToken cancellationToken = default)
         {
-            _context.Payments.Update(payment);
+            var entry = _context.Entry(payment);
+            if (entry.State == EntityState.Detached)
+                _context.Payments.Attach(payment).State = EntityState.Modified;
+            // لو كان tracked بالفعل، EF هيعرف التغييرات تلقائياً
             await Task.CompletedTask;
         }
 
@@ -107,5 +170,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             _context.Payments.Remove(payment);
             await Task.CompletedTask;
         }
+
+
     }
 }

@@ -13,6 +13,10 @@ namespace WelloraHealthCareManagment.Application.DTOs.Payment
         public decimal Amount { get; set; }
         public RefundReason Reason { get; set; }
         public string? Notes { get; set; }
+
+        // Optional — if provided, used directly instead of recalculating.
+        // Passed from AppointmentService to avoid double calculation.
+        public decimal? RefundPercentage { get; set; }
     }
 
     public class RefundPaymentResponse
@@ -21,5 +25,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.Payment
         public string Message { get; set; } = string.Empty;
         public string? RefundTransactionId { get; set; }
         public decimal RefundedAmount { get; set; }
+        public decimal? RefundPercentage { get; set; }
+        public bool IsAlreadyRefunded { get; set; }
     }
 }

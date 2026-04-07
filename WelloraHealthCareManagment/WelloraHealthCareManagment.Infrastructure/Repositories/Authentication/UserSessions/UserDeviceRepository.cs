@@ -54,5 +54,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.
                 .Select(d => d.FcmToken)
                 .ToListAsync();
         }
+        public async Task<List<string>> GetAllActiveDeviceTokensAsync(int userId, CancellationToken ct = default)
+        {
+            return await _context.PatientDevices
+                .Where(d => d.PatientId == userId)
+                .Select(d => d.FcmToken)
+                .Distinct()
+                .ToListAsync(ct);
+        }
     }
 }

@@ -24,13 +24,14 @@ namespace HealthCare_.Models.sharedModels.Reviews
         [Required]
         public DateTime ReviewDate { get; set; }
         public bool IsVerified { get; set; }
-        //public Guid? AppointmentID { get; set; }
-        //[ForeignKey("AppointmentID")]
-        //public Appointment Appointment { get; set; }
-        [StringLength(500)]
-        public string? FilePath { get; set; }
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+        public int? DeletedByAdminId { get; set; }
+        public string? DeletionReason { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
+        // Navigation
+        public ApplicationUser? DeletedByAdmin { get; set; }
 
     }
 }

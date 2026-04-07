@@ -34,6 +34,8 @@ namespace WelloraHealthCareManagement.Domain.Entities
         public string? RefundTransactionId { get; private set; }
         public RefundReason? RefundReason { get; private set; }
         public string? RefundNotes { get; private set; }
+        public decimal? RefundPercentage { get; private set; }
+        public CancelledBy? RefundInitiatedBy { get; private set; }
 
         // Failure Details
         public string? FailureReason { get; private set; }
@@ -45,6 +47,7 @@ namespace WelloraHealthCareManagement.Domain.Entities
         public Appointment Appointment { get; private set; } = null!;
         public Patient Patient { get; private set; } = null!;
         public Doctor Doctor { get; private set; } = null!;
+
 
         private Payment() { }
 
@@ -101,32 +104,112 @@ namespace WelloraHealthCareManagement.Domain.Entities
             PaymobCallbackData = callbackData;
         }
 
+        //public void MarkAsRefunded(
+        //    decimal refundAmount,
+        //    string refundTransactionId,
+        //    RefundReason reason,
+        //    string? notes = null)
+        //{
+        //    if (Status != PaymentStatus.Paid)
+        //        throw new DomainException("Can only refund paid payments");
+
+        //    if (refundAmount > Amount)
+        //        throw new DomainException("Refund amount cannot exceed payment amount");
+
+        //    Status = PaymentStatus.Refunded;
+        //    RefundAmount = refundAmount;
+        //    RefundTransactionId = refundTransactionId;
+        //    RefundReason = reason;
+        //    RefundNotes = notes;
+        //    RefundedAt = DateTime.UtcNow;
+        //}
+
+        public bool CanBeRefunded()
+        {
+            // Payment must be in Paid status
+            if (Status != PaymentStatus.Paid)
+                return false;
+
+            // Cannot refund if already refunded
+            if (Status == PaymentStatus.Refunded)
+                return false;
+
+            // Must have a valid Paymob transaction ID
+            if (string.IsNullOrWhiteSpace(PaymobTransactionId))
+                return false;
+
+            // Check if within refund window (e.g., 30 days)
+            if (PaidAt.HasValue &&
+                DateTime.UtcNow > PaidAt.Value.AddDays(30))
+                return false;
+
+            return true;
+        }
+
+
+        /// استرجاع كامل أو جزئي للمبلغ المدفوع
         public void MarkAsRefunded(
             decimal refundAmount,
+            decimal refundPercentage,
             string refundTransactionId,
             RefundReason reason,
+            CancelledBy initiatedBy,
             string? notes = null)
         {
-            if (Status != PaymentStatus.Paid)
-                throw new DomainException("Can only refund paid payments");
+            // Validation
+            if (!CanBeRefunded())
+                throw new InvalidOperationException(
+                    "Payment cannot be refunded in its current state");
 
-            if (refundAmount > Amount)
-                throw new DomainException("Refund amount cannot exceed payment amount");
+            if (refundAmount <= 0 || refundAmount > Amount)
+                throw new ArgumentException(
+                    $"Invalid refund amount. Must be between 0 and {Amount}");
 
+            if (refundPercentage < 0 || refundPercentage > 100)
+                throw new ArgumentException(
+                    "Refund percentage must be between 0 and 100");
+
+            if (string.IsNullOrWhiteSpace(refundTransactionId))
+                throw new ArgumentException("Refund transaction ID is required");
+
+            // RefundReason is now an enum, so no need to check for string.IsNullOrWhiteSpace(reason)
+            // as the enum cannot be null (unless nullable), and the caller must provide a valid value.
+
+            // Update state
             Status = PaymentStatus.Refunded;
             RefundAmount = refundAmount;
+            RefundPercentage = refundPercentage;
             RefundTransactionId = refundTransactionId;
             RefundReason = reason;
+            RefundInitiatedBy = initiatedBy;
             RefundNotes = notes;
             RefundedAt = DateTime.UtcNow;
         }
 
-        public bool CanBeRefunded()
+
+        /// حساب مبلغ الاسترجاع بناءً على النسبة المئوية
+        public static decimal CalculateRefundAmount(
+            decimal paidAmount,
+            decimal refundPercentage)
         {
-            return Status == PaymentStatus.Paid
-                && !RefundedAt.HasValue
-                && PaidAt.HasValue
-                && PaidAt.Value.AddDays(30) > DateTime.UtcNow; // 30-day refund window
+            if (refundPercentage < 0 || refundPercentage > 100)
+                throw new ArgumentException(
+                    "Refund percentage must be between 0 and 100");
+
+            return Math.Round(paidAmount * (refundPercentage / 100), 2);
+        }
+
+
+        /// التحقق من إمكانية الاسترجاع بناءً على توقيت الإلغاء
+        public bool IsEligibleForRefund(DateTime appointmentDateTime, int minimumHoursBeforeAppointment = 24)
+        {
+            if (!CanBeRefunded())
+                return false;
+
+            // Check if cancellation is at least X hours before appointment
+            var hoursUntilAppointment = (appointmentDateTime - DateTime.UtcNow).TotalHours;
+
+            return hoursUntilAppointment >= minimumHoursBeforeAppointment;
         }
     }
 }

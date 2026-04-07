@@ -4,6 +4,7 @@ using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Schedules;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.SlotConfig;
+using WelloraHealthCareManagment.Application.Interfaces;
 
 namespace WelloraHealthCareManagement.API.Controllers
 {
@@ -13,13 +14,16 @@ namespace WelloraHealthCareManagement.API.Controllers
     public class DoctorSlotConfigController : ControllerBase
     {
         private readonly IDoctorSlotConfigService _service;
+        private readonly ISlotGenerationService _slotGenerationService;
         private readonly ILogger<DoctorSlotConfigController> _logger;
 
         public DoctorSlotConfigController(
             IDoctorSlotConfigService service,
+            ISlotGenerationService slotGenerationService,
             ILogger<DoctorSlotConfigController> logger)
         {
             _service = service;
+            _slotGenerationService = slotGenerationService;
             _logger = logger;
         }
 
@@ -102,7 +106,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         {
             try
             {
-                var result = await _service.GenerateSlotsAsync(doctorId, request, ct);
+                var result = await _slotGenerationService.GenerateAsync(doctorId, request, ct);
                 return Ok(result);
             }
             catch (DomainException ex)

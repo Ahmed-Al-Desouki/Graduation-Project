@@ -3,8 +3,8 @@ using CloudinaryDotNet.Actions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WelloraHealthCareManagement.Application.Interfaces;
-using WelloraHealthCareManagement.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Http;
+using WelloraHealthCareManagment.Infrastructure.Configuration;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {

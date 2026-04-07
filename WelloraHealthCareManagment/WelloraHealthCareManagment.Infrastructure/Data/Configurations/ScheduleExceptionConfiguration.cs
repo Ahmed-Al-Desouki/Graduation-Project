@@ -116,6 +116,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
             builder.HasIndex(x => new { x.DoctorId, x.ExceptionDate })
                 .IsUnique()
                 .HasDatabaseName("UQ_DoctorException");
+
+            builder.HasIndex(e => new { e.DoctorId, e.ExceptionDate })
+                .HasDatabaseName("IX_ScheduleExceptions_DoctorId_ExceptionDate");
         }
     }
 }

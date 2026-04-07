@@ -154,24 +154,22 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     "Cancelling reminders for AppointmentId={AppointmentId}",
                     appointmentId);
 
-                // Get all reminders for this appointment
-                var reminders = await _reminderRepository.GetAllByPatientIdAsync(patientId);
+                var appointmentReminders = await _reminderRepository
+                    .GetByAppointmentIdAsync(appointmentId);
 
-                var appointmentReminders = reminders
-                    .Where(r => r.AppointmentId == appointmentId && r.IsActive)
+                var activeReminders = appointmentReminders
+                    .Where(r => r.IsActive)
                     .ToList();
 
-                foreach (var reminder in appointmentReminders)
+                foreach (var reminder in activeReminders)
                 {
-                    reminder.IsActive = false;
-                    reminder.Status = ReminderEnums.ReminderStatus.Dismissed;
-                    reminder.UpdatedAt = DateTime.UtcNow;
-                    await _reminderRepository.UpdateAsync(reminder);
+                    // مسح فوري من الـ DB — مش محتاجين grace period للـ appointment reminders
+                    await _reminderRepository.HardDeleteAsync(reminder.Id);
                 }
 
                 _logger.LogInformation(
-                    "Cancelled {Count} reminders for AppointmentId={AppointmentId}",
-                    appointmentReminders.Count, appointmentId);
+                    "Hard deleted {Count} reminders for AppointmentId={AppointmentId}",
+                    activeReminders.Count, appointmentId);
             }
             catch (Exception ex)
             {

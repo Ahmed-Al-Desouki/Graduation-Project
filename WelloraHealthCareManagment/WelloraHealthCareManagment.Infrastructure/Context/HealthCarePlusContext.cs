@@ -13,11 +13,15 @@ using Microsoft.EntityFrameworkCore;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Infrastructure.Data.Configurations;
 using WelloraHealthCareManagement.Infrastructure.Data.Interceptors;
+using WelloraHealthCareManagment.Domain.Entities.AdminLogs;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
+using WelloraHealthCareManagment.Domain.Entities.Notifications;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Entities.sharedModels;
-using WelloraHealthCareManagment.Infrastructure.Data.Configurations;
+using WelloraHealthCareManagment.Domain.Entities.Support;
+using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 using WelloraHealthCareManagment.Domain.Enums;
+using WelloraHealthCareManagment.Infrastructure.Data.Configurations;
 
 
 namespace WelloraHealthCareManagment.API.Context
@@ -46,10 +50,6 @@ namespace WelloraHealthCareManagment.API.Context
         public DbSet<ReminderOccurrenceLog> ReminderOccurrenceLogs { get; set; }
         public DbSet<ReminderOccurrencesCache> ReminderOccurrencesCache { get; set; }
         public DbSet<PatientDevice> PatientDevices { get; set; }
-
-        // === Booking System DbSets === دي جداول نظام الحجوزات الجديد
-        //public DbSet<DoctorScheduleTemplate> DoctorScheduleTemplates => Set<DoctorScheduleTemplate>();
-        //public DbSet<ScheduleTimeRange> ScheduleTimeRanges => Set<ScheduleTimeRange>();
         public DbSet<ScheduleException> ScheduleExceptions => Set<ScheduleException>();
         public DbSet<TimeSlot> TimeSlots => Set<TimeSlot>();
         public DbSet<Appointment> Appointments => Set<Appointment>();
@@ -62,8 +62,11 @@ namespace WelloraHealthCareManagment.API.Context
         public DbSet<DoctorAchievement> DoctorAchievements { get; set; }
         public DbSet<DoctorVerification> DoctorVerifications { get; set; }
         public DbSet<DoctorSlotConfig> DoctorSlotConfigs { get; set; }
-
-        //public DbSet<AppointmentNotification> AppointmentNotifications => Set<AppointmentNotification>();
+        public DbSet<UserStatus> UserStatuses { get; set; } = null!;
+        public DbSet<Notification> Notifications { get; set; } = null!;
+        public DbSet<Ticket> Tickets { get; set; } = null!;
+        public DbSet<TicketMessage> TicketMessages { get; set; } = null!;
+        public DbSet<AdminActionLog> AdminActionLogs { get; set; } = null!;
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -88,6 +91,29 @@ namespace WelloraHealthCareManagment.API.Context
             modelBuilder.ApplyConfiguration(new MedicalHistoryAccessGrantConfiguration());
             modelBuilder.ApplyConfiguration(new MedicalHistoryAccessLogConfiguration());
             modelBuilder.ApplyConfiguration(new PaymentConfiguration());
+            modelBuilder.ApplyConfiguration(new UserStatusConfiguration());
+            modelBuilder.ApplyConfiguration(new NotificationConfiguration());
+            modelBuilder.ApplyConfiguration(new TicketConfiguration());
+            modelBuilder.ApplyConfiguration(new TicketMessageConfiguration());
+            modelBuilder.ApplyConfiguration(new AdminActionLogConfiguration());
+            modelBuilder.ApplyConfiguration(new DoctorVerificationConfiguration());
+
+            modelBuilder.Entity<DoctorSlotConfig>()
+                .HasIndex(c => new { c.DoctorId, c.DayOfWeek })
+                .IsUnique()
+                .HasDatabaseName("IX_DoctorSlotConfigs_DoctorId_DayOfWeek_Unique");
+            // للـ GetActiveConfigsAsync
+            modelBuilder.Entity<DoctorSlotConfig>()
+              .HasIndex(c => new { c.DoctorId, c.IsActive })
+              .HasDatabaseName("IX_DoctorSlotConfigs_DoctorId_IsActive");
+
+            // Unique constraint — Architecture #4
+            modelBuilder.Entity<DoctorSlotConfig>()
+                .HasIndex(c => new { c.DoctorId, c.DayOfWeek })
+                .IsUnique()
+                .HasDatabaseName("IX_DoctorSlotConfigs_DoctorId_DayOfWeek_Unique");
+
+
 
             // ─────────────────────── ApplicationUser ───────────────────────
             modelBuilder.Entity<ApplicationUser>(entity =>
@@ -550,22 +576,24 @@ namespace WelloraHealthCareManagment.API.Context
                 entity.Property(r => r.TargetType).HasMaxLength(50).IsRequired();
                 entity.Property(r => r.Rating).HasColumnType("float").IsRequired();
                 entity.Property(r => r.Comment).HasMaxLength(1000);
-                entity.Property(r => r.FilePath).HasMaxLength(500);
                 entity.Property(r => r.ReviewDate).IsRequired();
                 entity.Property(r => r.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
-
                 entity.HasOne(r => r.User)
                       .WithMany(u => u.Reviews)
                       .HasForeignKey(r => r.UserID)
                       .OnDelete(DeleteBehavior.Restrict)
                       .IsRequired();
+                entity.Property(r => r.IsDeleted).HasDefaultValue(false);
+                entity.Property(r => r.DeletionReason).HasMaxLength(500);
+                entity.HasOne(r => r.DeletedByAdmin)
+                      .WithMany()
+                      .HasForeignKey(r => r.DeletedByAdminId)
+                      .OnDelete(DeleteBehavior.Restrict)
+                      .IsRequired(false);
 
-                //entity.HasOne(r => r.Appointment)
-                //      .WithMany(a => a.Reviews)
-                //      .HasForeignKey(r => r.AppointmentID)
-                //      .OnDelete(DeleteBehavior.SetNull);
+                entity.HasIndex(r => r.IsDeleted);
+                entity.HasIndex(r => new { r.TargetType, r.TargetID, r.IsDeleted });
 
-                //entity.HasIndex(r => new { r.UserID, r.AppointmentID });
             });
 
             // ─────────────────────── ExternalFile ───────────────────────

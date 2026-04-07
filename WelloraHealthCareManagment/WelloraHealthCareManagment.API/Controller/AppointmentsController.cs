@@ -27,25 +27,28 @@ namespace WelloraHealthCareManagement.API.Controllers
         /// حجز موعد (للمريض)
         [HttpPost("book")]
         [Authorize(Roles = "Patient")]
-        public async Task<IActionResult> BookAppointment(
-            [FromBody] BookAppointmentRequest request)
+        public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentRequest request)
         {
             try
             {
                 var patientId = GetUserId();
-
-                var response = await _appointmentService.BookAppointmentAsync(
-                    patientId, request);
-
+                var response = await _appointmentService.BookAppointmentAsync(patientId, request);
                 return Ok(response);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error booking appointment");
-                return BadRequest(new { error = ex.Message });
+                return StatusCode(500, new { error = "An unexpected error occurred" });
             }
         }
-
         /// جلب تفاصيل موعد
         [HttpGet("{appointmentId}")]
         public async Task<IActionResult> GetAppointmentDetails(Guid appointmentId)
@@ -143,43 +146,68 @@ namespace WelloraHealthCareManagement.API.Controllers
             }
         }
 
-        // Cancel by patient - restores slot availability
-        [HttpPatch("{appointmentId}/patient-cancel")]
+        // Cancel and block by doctor - prevents re-booking of the slot
+        [HttpPost("{appointmentId}/cancel-patient")]
         [Authorize(Roles = "Patient")]
-        public async Task<IActionResult> CancelByPatient(
-            Guid appointmentId,
-            [FromBody] CancelAppointmentRequest request)
+        public async Task<IActionResult> CancelAppointmentByPatient(
+                Guid appointmentId,
+                [FromBody] CancelAppointmentRequest request)
         {
             try
             {
                 var patientId = GetUserId();
-                await _appointmentService.CancelByPatientAsync(appointmentId, patientId, request);
-                return Ok(new { message = "Appointment cancelled successfully by patient" });
+                var result = await _appointmentService.CancelByPatientAsync(
+                    appointmentId,
+                    patientId,
+                    request);
+
+                if (!result.Success)
+                    return BadRequest(new { message = result.Message });
+
+                return Ok(new
+                {
+                    message = result.Message,
+                    refundAmount = result.RefundAmount,
+                    refundPercentage = result.RefundPercentage,
+                    refundProcessed = result.RefundProcessed
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in patient cancel for appointment {AppointmentId}", appointmentId);
-                return BadRequest(new { error = ex.Message });
+                _logger.LogError(ex, "Error cancelling appointment {AppointmentId}", appointmentId);
+                return StatusCode(500, new { message = "An error occurred while cancelling the appointment" });
             }
         }
 
-        // Cancel and block by doctor - prevents re-booking of the slot
-        [HttpPatch("{appointmentId}/doctor-cancel-block")]
+        [HttpPost("{appointmentId}/doctor-cancel-block")]
         [Authorize(Roles = "Doctor")]
-        public async Task<IActionResult> CancelAndBlockByDoctor(
-            Guid appointmentId,
-            [FromBody] CancelAppointmentRequest request)
+        public async Task<IActionResult> CancelAppointmentByDoctor(
+        Guid appointmentId,
+        [FromBody] CancelAppointmentRequest request)
         {
             try
             {
                 var doctorId = GetUserId();
-                await _appointmentService.CancelAndBlockByDoctorAsync(appointmentId, doctorId, request);
-                return Ok(new { message = "Appointment cancelled and slot blocked successfully by doctor" });
+                var result = await _appointmentService.CancelAndBlockByDoctorAsync(
+                    appointmentId,
+                    doctorId,
+                    request);
+
+                if (!result.Success)
+                    return BadRequest(new { message = result.Message });
+
+                return Ok(new
+                {
+                    message = result.Message,
+                    refundAmount = result.RefundAmount,
+                    refundPercentage = result.RefundPercentage,
+                    refundProcessed = result.RefundProcessed
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in doctor cancel-block for appointment {AppointmentId}", appointmentId);
-                return BadRequest(new { error = ex.Message });
+                _logger.LogError(ex, "Error cancelling appointment {AppointmentId}", appointmentId);
+                return StatusCode(500, new { message = "An error occurred while cancelling the appointment" });
             }
         }
 
@@ -202,10 +230,18 @@ namespace WelloraHealthCareManagement.API.Controllers
                 await _appointmentService.ConfirmAppointmentAsync(appointmentId);
                 return Ok(new { message = "Appointment confirmed" });
             }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error confirming appointment {AppointmentId}", appointmentId);
-                return BadRequest(new { error = ex.Message });
+                return StatusCode(500, new { error = "An unexpected error occurred" });
             }
         }
 
@@ -219,10 +255,18 @@ namespace WelloraHealthCareManagement.API.Controllers
                 await _appointmentService.StartAppointmentAsync(appointmentId);
                 return Ok(new { message = "Appointment started" });
             }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting appointment {AppointmentId}", appointmentId);
-                return BadRequest(new { error = ex.Message });
+                return StatusCode(500, new { error = "An unexpected error occurred" });
             }
         }
 
@@ -236,10 +280,18 @@ namespace WelloraHealthCareManagement.API.Controllers
                 await _appointmentService.CompleteAppointmentAsync(appointmentId);
                 return Ok(new { message = "Appointment completed" });
             }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error completing appointment {AppointmentId}", appointmentId);
-                return BadRequest(new { error = ex.Message });
+                return StatusCode(500, new { error = "An unexpected error occurred" });
             }
         }
 

@@ -1,5 +1,4 @@
-﻿// Infrastructure/BackgroundJobs/ReminderJobOrchestrator.cs
-using Hangfire;
+﻿using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
@@ -20,56 +19,57 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
             _logger = logger;
         }
 
-        // يُنَفّذ يوميًا الساعة 3 فجرًا
         public async Task RunDailyGenerationAsync()
         {
-            _logger.LogInformation("🌅 Daily Reminder Orchestration started");
+            _logger.LogInformation("Daily Reminder Orchestration started");
+
             try
             {
-                using var scope = _serviceProvider.CreateScope();
-                var reminderRepo = scope.ServiceProvider.GetRequiredService<IReminderRepository>();
+                await using var scope = _serviceProvider.CreateAsyncScope();
+
+                var reminderRepo = scope.ServiceProvider
+                    .GetRequiredService<IReminderRepository>();
 
                 var patientIds = await reminderRepo.GetAllActivePatientIdsAsync();
 
                 foreach (var pid in patientIds)
                 {
                     BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
-                        j => j.GenerateForPatientAsync(pid)
-                    );
+                        j => j.GenerateForPatientAsync(pid));
                 }
 
-                _logger.LogInformation("✅ {Count} patients scheduled for cache generation", patientIds.Count);
+                _logger.LogInformation(
+                    "{Count} patients scheduled for cache generation",
+                    patientIds.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "❌ Daily Reminder Orchestration failed");
+                _logger.LogCritical(ex, "Daily Reminder Orchestration failed");
                 throw;
             }
         }
 
-        // Health Check للكاش
         public async Task<bool> CacheHealthCheckAsync()
         {
             try
             {
+                // scope واحد بس — بيحل مشكلة الـ scopeين المنفصلين
                 await using var scope = _serviceProvider.CreateAsyncScope();
-                var cacheRepo = scope.ServiceProvider.GetRequiredService<IReminderOccurrencesCacheRepository>();
 
-                var today = DateTime.Today;
-                var nextMonth = today.AddDays(30);
+                var cacheRepo = scope.ServiceProvider
+                    .GetRequiredService<IReminderOccurrencesCacheRepository>();
 
-                // Check if there's any data for active patients
-                using var innerScope = _serviceProvider.CreateScope();
-                var reminderRepo = innerScope.ServiceProvider.GetRequiredService<IReminderRepository>();
+                var reminderRepo = scope.ServiceProvider
+                    .GetRequiredService<IReminderRepository>();
+
                 var activePatientIds = await reminderRepo.GetAllActivePatientIdsAsync();
 
                 if (!activePatientIds.Any())
                 {
-                    _logger.LogInformation("No active patients - cache is healthy");
+                    _logger.LogInformation("No active patients — cache is healthy");
                     return true;
                 }
 
-                // Sample check on first patient
                 var samplePatientId = activePatientIds.First();
                 var todayUtc = DateTime.UtcNow.Date;
                 var nextMonthUtc = todayUtc.AddDays(30);
@@ -79,16 +79,18 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
 
                 if (!hasData.Any())
                 {
-                    _logger.LogWarning("⚠️ Cache is empty for sample patient {PatientId}!", samplePatientId);
+                    _logger.LogWarning(
+                        "Cache is empty for sample patient {PatientId}",
+                        samplePatientId);
                     return false;
                 }
 
-                _logger.LogInformation("✅ Cache health check passed");
+                _logger.LogInformation("Cache health check passed");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Cache health check failed");
+                _logger.LogError(ex, "Cache health check failed");
                 return false;
             }
         }

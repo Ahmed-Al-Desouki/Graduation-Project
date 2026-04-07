@@ -12,5 +12,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication
         Task AddDeviceAsync(int patientId, string fcmToken);
         Task RemoveDeviceAsync(int patientId, string fcmToken);
         Task<List<string>> GetDeviceTokensAsync(int patientId);
+        Task<List<string>> GetAllActiveDeviceTokensAsync(int userId, CancellationToken ct = default);
     }
 }

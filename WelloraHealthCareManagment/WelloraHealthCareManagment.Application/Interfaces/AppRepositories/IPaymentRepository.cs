@@ -17,6 +17,20 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
         Task UpdateAsync(Payment payment, CancellationToken cancellationToken = default);
         Task DeleteAsync(Payment payment, CancellationToken cancellationToken = default);
         Task<Payment?> GetByPaymobOrderIdForUpdateAsync(string paymobOrderId, CancellationToken cancellationToken = default);
+        Task<List<Payment>> GetRefundedPaymentsAsync(
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            CancellationToken cancellationToken = default);
+
+        //Task<List<Payment>> GetPendingRefundsAsync(
+        //    CancellationToken cancellationToken = default);
+
+        Task<decimal> GetTotalRefundedAmountAsync(
+            int? patientId = null,
+            int? doctorId = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            CancellationToken cancellationToken = default);
 
     }
 }

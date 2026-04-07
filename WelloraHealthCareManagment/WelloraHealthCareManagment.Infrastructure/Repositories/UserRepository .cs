@@ -1,69 +1,48 @@
-﻿using HealthCare_.Models.sharedModels.ApplicationsAndSession;
+﻿// Infrastructure/Repositories/UserRepository.cs
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
+using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly HealthCarePlusContext _context;
 
-        public UserRepository(UserManager<ApplicationUser> userManager)
+        public UserRepository(UserManager<ApplicationUser> userManager, HealthCarePlusContext context)
         {
             _userManager = userManager;
+            _context = context;
         }
-
-        #region Basic User Operations
 
         public async Task<ApplicationUser?> GetByEmailAsync(string email)
-        {
-            return await _userManager.FindByEmailAsync(email);
-        }
+            => await _userManager.FindByEmailAsync(email);
 
         public async Task<ApplicationUser?> GetByIdAsync(int userId)
-        {
-            return await _userManager.FindByIdAsync(userId.ToString());
-        }
+            => await _userManager.FindByIdAsync(userId.ToString());
 
         public async Task<IdentityResult> CreateUserAsync(ApplicationUser user, string password)
-        {
-            return await _userManager.CreateAsync(user, password);
-        }
+            => await _userManager.CreateAsync(user, password);
 
         public async Task<IdentityResult> AddToRoleAsync(ApplicationUser user, string role)
-        {
-            return await _userManager.AddToRoleAsync(user, role);
-        }
+            => await _userManager.AddToRoleAsync(user, role);
 
         public async Task<IdentityResult> UpdateUserAsync(ApplicationUser user)
-        {
-            return await _userManager.UpdateAsync(user);
-        }
+            => await _userManager.UpdateAsync(user);
 
         public async Task<bool> CheckPasswordAsync(ApplicationUser user, string password)
-        {
-            return await _userManager.CheckPasswordAsync(user, password);
-        }
+            => await _userManager.CheckPasswordAsync(user, password);
 
         public async Task<IList<string>> GetRolesAsync(ApplicationUser user)
-        {
-            return await _userManager.GetRolesAsync(user);
-        }
-
-        #endregion
-
-        #region MFA Operations
+            => await _userManager.GetRolesAsync(user);
 
         public async Task<IdentityResult> AddClaimAsync(ApplicationUser user, Claim claim)
-        {
-            return await _userManager.AddClaimAsync(user, claim);
-        }
+            => await _userManager.AddClaimAsync(user, claim);
 
         public async Task<bool> IsTwoFactorEnabledAsync(int userId)
         {
@@ -75,51 +54,207 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         {
             var user = await GetByIdAsync(userId);
             if (user == null)
-            {
-                return IdentityResult.Failed(new IdentityError
-                {
-                    Description = "User not found"
-                });
-            }
-
+                return IdentityResult.Failed(new IdentityError { Description = "User not found" });
             user.TwoFactorEnabled = enabled;
             return await _userManager.UpdateAsync(user);
         }
 
-        #endregion
-
-
-        #region Password Reset Operations
-
         public async Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user)
-        {
-            return await _userManager.GeneratePasswordResetTokenAsync(user);
-        }
+            => await _userManager.GeneratePasswordResetTokenAsync(user);
 
-        public async Task<IdentityResult> ResetPasswordAsync(
-            ApplicationUser user,
-            string token,
-            string newPassword)
-        {
-            return await _userManager.ResetPasswordAsync(user, token, newPassword);
-        }
+        public async Task<IdentityResult> ResetPasswordAsync(ApplicationUser user, string token, string newPassword)
+            => await _userManager.ResetPasswordAsync(user, token, newPassword);
 
-        public async Task<IdentityResult> ChangePasswordAsync(
-            ApplicationUser user,
-            string currentPassword,
-            string newPassword)
-        {
-            return await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
-        }
+        public async Task<IdentityResult> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword)
+            => await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
 
         public async Task<bool> IsEmailConfirmedAsync(ApplicationUser user)
+            => await _userManager.IsEmailConfirmedAsync(user);
+
+        // الدوال  لـ UserSearchService
+        public async Task<List<ApplicationUser>> GetAllUsersWithDoctorAsync(CancellationToken ct = default)
         {
-            return await _userManager.IsEmailConfirmedAsync(user);
+            return await _context.Users
+                .Include(u => u.Doctor)
+                .AsNoTracking()
+                .ToListAsync(ct);
         }
 
-        #endregion
+        public async Task<List<ApplicationUser>> SearchUsersFilteredAsync(
+            string? role = null,
+            bool? isBlocked = null,
+            bool? isSuspended = null,
+            bool? isVerified = null,
+            string? specialization = null,
+            double? minRating = null,
+            DateTime? registeredAfter = null,
+            DateTime? registeredBefore = null,
+            string? sortBy = null,
+            bool descending = false,
+            int page = 1,
+            int pageSize = 10,
+            List<int>? userIds = null,
+            CancellationToken ct = default)
+        {
+            var query = _context.Users
+                .Include(u => u.Doctor)
+                .AsQueryable();
 
+            if (!string.IsNullOrWhiteSpace(role))
+                query = query.Where(u => u.Role == role);
 
+            if (userIds != null && userIds.Any())
+                query = query.Where(u => userIds.Contains(u.Id));
 
+            if (isBlocked.HasValue || isSuspended.HasValue)
+            {
+                var statusQuery = _context.UserStatuses.AsQueryable();
+                if (isBlocked.HasValue)
+                    statusQuery = statusQuery.Where(us => us.IsBlocked == isBlocked.Value);
+                if (isSuspended.HasValue)
+                    statusQuery = statusQuery.Where(us => us.IsSuspended == isSuspended.Value);
+
+                var filteredIds = await statusQuery.Select(us => us.UserId).ToListAsync(ct);
+                query = query.Where(u => filteredIds.Contains(u.Id));
+            }
+
+            if (role == "Doctor" || isVerified.HasValue || !string.IsNullOrWhiteSpace(specialization) || minRating.HasValue)
+            {
+                query = query.Where(u => u.Doctor != null);
+
+                if (!string.IsNullOrWhiteSpace(specialization))
+                    query = query.Where(u => u.Doctor!.Specialization.ToLower().Contains(specialization.ToLower()));
+
+                if (minRating.HasValue)
+                    query = query.Where(u => u.Doctor!.AverageRating >= minRating.Value);
+
+                if (isVerified.HasValue)
+                    query = query.Where(u => u.Doctor!.IsActive == isVerified.Value);
+            }
+
+            if (registeredAfter.HasValue)
+                query = query.Where(u => u.CreatedAt >= registeredAfter.Value);
+
+            if (registeredBefore.HasValue)
+                query = query.Where(u => u.CreatedAt <= registeredBefore.Value);
+
+            // Sorting
+            query = sortBy?.ToLower() switch
+            {
+                "createdat" => descending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
+                "rating" => descending
+                    ? query.OrderByDescending(u => u.Doctor != null ? u.Doctor.AverageRating : 0)
+                    : query.OrderBy(u => u.Doctor != null ? u.Doctor.AverageRating : 0),
+                "reviewcount" => descending
+                    ? query.OrderByDescending(u => u.Reviews.Count(r => !r.IsDeleted))
+                    : query.OrderBy(u => u.Reviews.Count(r => !r.IsDeleted)),
+                _ => descending ? query.OrderByDescending(u => u.FullName) : query.OrderBy(u => u.FullName)
+            };
+
+            return await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
+        public async Task<int> CountUsersFilteredAsync(
+            string? role = null,
+            bool? isBlocked = null,
+            bool? isSuspended = null,
+            bool? isVerified = null,
+            string? specialization = null,
+            double? minRating = null,
+            DateTime? registeredAfter = null,
+            DateTime? registeredBefore = null,
+            List<int>? userIds = null,
+            CancellationToken ct = default)
+        {
+            var query = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(role))
+                query = query.Where(u => u.Role == role);
+
+            if (userIds != null && userIds.Any())
+                query = query.Where(u => userIds.Contains(u.Id));
+
+            if (isBlocked.HasValue || isSuspended.HasValue)
+            {
+                var statusQuery = _context.UserStatuses.AsQueryable();
+                if (isBlocked.HasValue) statusQuery = statusQuery.Where(us => us.IsBlocked == isBlocked.Value);
+                if (isSuspended.HasValue) statusQuery = statusQuery.Where(us => us.IsSuspended == isSuspended.Value);
+
+                var filteredIds = await statusQuery.Select(us => us.UserId).ToListAsync(ct);
+                query = query.Where(u => filteredIds.Contains(u.Id));
+            }
+
+            if (role == "Doctor" || isVerified.HasValue || !string.IsNullOrWhiteSpace(specialization) || minRating.HasValue)
+            {
+                query = query.Where(u => u.Doctor != null);
+
+                if (!string.IsNullOrWhiteSpace(specialization))
+                    query = query.Where(u => u.Doctor!.Specialization.ToLower().Contains(specialization.ToLower()));
+
+                if (minRating.HasValue)
+                    query = query.Where(u => u.Doctor!.AverageRating >= minRating.Value);
+
+                if (isVerified.HasValue)
+                    query = query.Where(u => u.Doctor!.IsActive == isVerified.Value);
+            }
+
+            if (registeredAfter.HasValue)
+                query = query.Where(u => u.CreatedAt >= registeredAfter.Value);
+
+            if (registeredBefore.HasValue)
+                query = query.Where(u => u.CreatedAt <= registeredBefore.Value);
+
+            return await query.CountAsync(ct);
+        }
+
+        public async Task<Dictionary<int, UserStatus>> GetUserStatusesByUserIdsAsync(List<int> userIds, CancellationToken ct = default)
+        {
+            if (userIds == null || userIds.Count == 0)
+                return new Dictionary<int, UserStatus>();
+
+            return await _context.UserStatuses
+                .Where(us => userIds.Contains(us.UserId))
+                .ToDictionaryAsync(us => us.UserId, ct);
+        }
+
+        public async Task<Dictionary<int, int>> GetDoctorReviewCountsAsync(List<int> doctorIds, CancellationToken ct = default)
+        {
+            if (doctorIds == null || doctorIds.Count == 0)
+                return new Dictionary<int, int>();
+
+            return await _context.Reviews
+                .Where(r => r.TargetType == "Doctor" && doctorIds.Contains(r.TargetID) && !r.IsDeleted)
+                .GroupBy(r => r.TargetID)
+                .Select(g => new { DoctorId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.DoctorId, x => x.Count, ct);
+        }
+
+        public async Task<int> GetDoctorReviewCountAsync(int doctorId, CancellationToken ct = default)
+        {
+            return await _context.Reviews
+                .CountAsync(r => r.TargetType == "Doctor" && r.TargetID == doctorId && !r.IsDeleted, ct);
+        }
+
+        public async Task<List<int>> GetUserIdsByNameOrEmailAsync(List<string> namesOrEmails, CancellationToken ct = default)
+        {
+            if (namesOrEmails == null || namesOrEmails.Count == 0)
+                return new List<int>();
+
+            return await _context.Users
+                .Where(u => namesOrEmails.Contains(u.FullName.ToLower()) ||
+                           (u.Email != null && namesOrEmails.Contains(u.Email.ToLower())))
+                .Select(u => u.Id)
+                .ToListAsync(ct);
+        }
+        public async Task<ApplicationUser?> GetByIdWithDoctorAsync(int userId, CancellationToken ct = default)
+        {
+            return await _context.Users
+                .Include(u => u.Doctor)
+                .FirstOrDefaultAsync(u => u.Id == userId, ct);
+        }
     }
 }

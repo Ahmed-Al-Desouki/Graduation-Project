@@ -126,14 +126,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         //    }
         //}
         public async Task<CreatePaymentResponse> CreatePaymentAsync(
-    Guid appointmentId,
-    decimal amount,
-    PaymentMethod paymentMethod,
-    string patientEmail,
-    string patientPhone,
-    string patientFirstName,
-    string patientLastName,
-    CancellationToken cancellationToken = default)
+            Guid appointmentId,
+            decimal amount,
+            PaymentMethod paymentMethod,
+            string patientEmail,
+            string patientPhone,
+            string patientFirstName,
+            string patientLastName,
+            CancellationToken cancellationToken = default)
         {
             _logger.LogInformation(
                 "Starting Paymob payment creation for appointment {AppointmentId}, Amount: {Amount} EGP, Method: {Method}",
@@ -253,10 +253,73 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
         }
 
+        //public async Task<RefundPaymentResponse> RefundPaymentAsync(
+        //    string transactionId,
+        //    decimal amountCents,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        _logger.LogInformation(
+        //            "Initiating refund for transaction {TransactionId}, Amount: {Amount} piasters",
+        //            transactionId, amountCents);
+
+        //        // Authenticate
+        //        var authToken = await AuthenticateAsync(cancellationToken);
+
+        //        // Call refund API
+        //        var client = new RestClient(_baseUrl);
+        //        var request = new RestRequest("/acceptance/void_refund/refund", Method.Post);
+
+        //        var body = new
+        //        {
+        //            auth_token = authToken,
+        //            transaction_id = int.Parse(transactionId),
+        //            amount_cents = (int)amountCents
+        //        };
+
+        //        request.AddJsonBody(body);
+
+        //        var response = await client.ExecuteAsync(request, cancellationToken);
+
+        //        if (response.IsSuccessful && !string.IsNullOrEmpty(response.Content))
+        //        {
+        //            var refundResponse = JsonConvert.DeserializeObject<dynamic>(response.Content);
+
+        //            _logger.LogInformation(
+        //                "Refund successful for transaction {TransactionId}",
+        //                transactionId);
+
+        //            return new RefundPaymentResponse
+        //            {
+        //                Success = true,
+        //                Message = "Refund processed successfully",
+        //                RefundTransactionId = refundResponse?.id?.ToString(),
+        //                RefundedAmount = amountCents / 100
+        //            };
+        //        }
+
+        //        _logger.LogError("Refund failed: {Error}", response.ErrorMessage);
+        //        return new RefundPaymentResponse
+        //        {
+        //            Success = false,
+        //            Message = $"Refund failed: {response.ErrorMessage}"
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error processing refund for transaction {TransactionId}", transactionId);
+        //        return new RefundPaymentResponse
+        //        {
+        //            Success = false,
+        //            Message = $"Refund error: {ex.Message}"
+        //        };
+        //    }
+        //}
         public async Task<RefundPaymentResponse> RefundPaymentAsync(
-            string transactionId,
-            decimal amountCents,
-            CancellationToken cancellationToken = default)
+    string transactionId,
+    decimal amountCents,
+    CancellationToken cancellationToken = default)
         {
             try
             {
@@ -278,17 +341,52 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     amount_cents = (int)amountCents
                 };
 
+                _logger.LogInformation(
+                    "Refund request body: transaction_id={TransactionId}, amount_cents={AmountCents}",
+                    transactionId, (int)amountCents);
+
                 request.AddJsonBody(body);
 
                 var response = await client.ExecuteAsync(request, cancellationToken);
+
+                // ← الجزء الجديد: نطبع كل التفاصيل
+                _logger.LogInformation(
+                    "Paymob refund raw response => StatusCode: {StatusCode}, IsSuccessful: {IsSuccessful}, Content: {Content}, ErrorMessage: {ErrorMessage}",
+                    response.StatusCode,
+                    response.IsSuccessful,
+                    response.Content ?? "(null)",
+                    response.ErrorMessage ?? "(null)");
 
                 if (response.IsSuccessful && !string.IsNullOrEmpty(response.Content))
                 {
                     var refundResponse = JsonConvert.DeserializeObject<dynamic>(response.Content);
 
+                    // ← نطبع الـ parsed response
                     _logger.LogInformation(
-                        "Refund successful for transaction {TransactionId}",
-                        transactionId);
+                        "Paymob refund parsed response: id={Id}, success={Success}, pending={Pending}",
+                        (string?)refundResponse?.id?.ToString() ?? "(null)",
+                        (string?)refundResponse?.success?.ToString() ?? "(null)",
+                        (string?)refundResponse?.pending?.ToString() ?? "(null)");
+
+                    // تحقق إن الـ refund نجح فعلاً
+                    bool isSuccess = refundResponse?.success == true || refundResponse?.id != null;
+
+                    if (!isSuccess)
+                    {
+                        _logger.LogWarning(
+                            "Paymob refund returned 200 but success=false. Full response: {Content}",
+                            response.Content);
+
+                        return new RefundPaymentResponse
+                        {
+                            Success = false,
+                            Message = $"Refund rejected by Paymob: {response.Content}"
+                        };
+                    }
+
+                    _logger.LogInformation(
+                        "Refund successful for transaction {TransactionId}, RefundId: {RefundId}",
+                        transactionId, (string?)refundResponse?.id?.ToString());
 
                     return new RefundPaymentResponse
                     {
@@ -299,16 +397,25 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     };
                 }
 
-                _logger.LogError("Refund failed: {Error}", response.ErrorMessage);
+                // ← في حالة فشل الـ HTTP request
+                _logger.LogError(
+                    "Refund HTTP request failed => StatusCode: {StatusCode}, Content: {Content}, Error: {Error}",
+                    response.StatusCode,
+                    response.Content ?? "(null)",
+                    response.ErrorMessage ?? "(null)");
+
                 return new RefundPaymentResponse
                 {
                     Success = false,
-                    Message = $"Refund failed: {response.ErrorMessage}"
+                    Message = $"Refund failed. StatusCode: {response.StatusCode}, Content: {response.Content ?? "(empty)"}"
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing refund for transaction {TransactionId}", transactionId);
+                _logger.LogError(ex,
+                    "Exception during refund for transaction {TransactionId}: {Message}",
+                    transactionId, ex.Message);
+
                 return new RefundPaymentResponse
                 {
                     Success = false,

@@ -1,5 +1,6 @@
 ﻿using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Domain.ValueObjects;
 
 namespace WelloraHealthCareManagement.Application.Interfaces
 {
@@ -37,16 +38,28 @@ namespace WelloraHealthCareManagement.Application.Interfaces
         //    CancelAppointmentRequest request,
         //    CancellationToken cancellationToken = default);
 
-        Task CancelByPatientAsync(
+        //Task CancelByPatientAsync(
+        //    Guid appointmentId,
+        //    int patientId,
+        //    CancelAppointmentRequest request,
+        //    CancellationToken ct = default);
+        Task<CancellationResult> CancelByPatientAsync(
             Guid appointmentId,
             int patientId,
             CancelAppointmentRequest request,
-            CancellationToken ct = default);
-        Task CancelAndBlockByDoctorAsync(
+            CancellationToken cancellationToken = default);
+
+        //Task CancelAndBlockByDoctorAsync(
+        //    Guid appointmentId,
+        //    int doctorId,
+        //    CancelAppointmentRequest request,
+        //    CancellationToken ct = default);
+
+        Task<CancellationResult> CancelAndBlockByDoctorAsync(
             Guid appointmentId,
             int doctorId,
             CancelAppointmentRequest request,
-            CancellationToken ct = default);
+            CancellationToken cancellationToken = default);
 
         /// تأكيد موعد
         Task ConfirmAppointmentAsync(

@@ -32,12 +32,6 @@ namespace HealthCare_.Models.sharedModels.ApplicationsAndSession
         // ─────────────── Security / 2FA ───────────────
         public override bool TwoFactorEnabled { get; set; } = true;
 
-        //[StringLength(200)]
-        //public string? AuthenticatorKey { get; set; }
-
-        //[StringLength(1000)]
-        //public string? RecoveryCodes { get; set; }
-
         // ─────────────── Passkey / WebAuthn ───────────────
         [StringLength(500)] // زيادة للأمان
         public string? PasskeyCredentialId { get; set; }

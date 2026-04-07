@@ -14,6 +14,7 @@ using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 using WelloraHealthCareManagment.Domain.Enums;
+using WelloraHealthCareManagment.Infrastructure.Helpers;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services
@@ -105,7 +106,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     var reminder = await _reminderService.CreateAsync(prescription.PatientId, dto);
                     var generator = _serviceProvider.GetRequiredService<PrescriptionReminderOccurrenceGenerator>();
 
-                    var cacheFrom = item.ReminderStartDate?.ToUniversalTime() ?? DateTime.UtcNow;
+                    //var cacheFrom = item.ReminderStartDate?.ToUniversalTime() ?? DateTime.UtcNow;
+                    //var cacheTo = (item.ReminderEndDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(90)).AddDays(1);
+
+                    var cacheFrom = RruleHelper.ClampToTodayUtc(item.ReminderStartDate);
                     var cacheTo = (item.ReminderEndDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(90)).AddDays(1);
                     await generator.GenerateCacheForPrescriptionItemAsync(item, prescription.PatientId, reminder.Id, cacheFrom, cacheTo);
 
@@ -186,7 +190,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 var reminder = await _reminderService.CreateAsync(patientId, dto);
                 var generator = _serviceProvider.GetRequiredService<PrescriptionReminderOccurrenceGenerator>();
 
-                var cacheFrom = item.ReminderStartDate?.ToUniversalTime() ?? DateTime.UtcNow;
+                //var cacheFrom = item.ReminderStartDate?.ToUniversalTime() ?? DateTime.UtcNow;
+                //var cacheTo = (item.ReminderEndDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(90)).AddDays(1);
+
+                var cacheFrom = RruleHelper.ClampToTodayUtc(item.ReminderStartDate);
                 var cacheTo = (item.ReminderEndDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(90)).AddDays(1);
                 await generator.GenerateCacheForPrescriptionItemAsync(item, patientId, reminder.Id, cacheFrom, cacheTo);
 

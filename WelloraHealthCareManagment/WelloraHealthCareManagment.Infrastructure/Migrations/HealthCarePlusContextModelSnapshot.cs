@@ -1088,9 +1088,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<string>("FilePath")
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DeletionReason")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("bit");
@@ -1117,7 +1128,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.HasKey("ReviewID");
 
+                    b.HasIndex("DeletedByAdminId");
+
+                    b.HasIndex("IsDeleted");
+
                     b.HasIndex("UserID");
+
+                    b.HasIndex("TargetType", "TargetID", "IsDeleted");
 
                     b.ToTable("Reviews");
                 });
@@ -1384,7 +1401,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.HasIndex("TimeSlotId")
                         .IsUnique()
-                        .HasDatabaseName("UQ_Appointment_TimeSlot");
+                        .HasDatabaseName("UQ_Appointment_TimeSlot")
+                        .HasFilter("[Status] <> 'Cancelled' AND [Status] <> 'NoShow'");
 
                     b.HasIndex("DoctorId", "Status")
                         .HasDatabaseName("IX_Appointments_Doctor_Status");
@@ -1640,9 +1658,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<decimal?>("RefundAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("RefundInitiatedBy")
+                        .HasColumnType("int");
+
                     b.Property<string>("RefundNotes")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal?>("RefundPercentage")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("RefundReason")
                         .HasMaxLength(30)
@@ -1868,7 +1892,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.HasIndex("DoctorId", "ExceptionDate")
                         .IsUnique()
-                        .HasDatabaseName("UQ_DoctorException");
+                        .HasDatabaseName("IX_ScheduleExceptions_DoctorId_ExceptionDate");
 
                     b.ToTable("ScheduleExceptions", (string)null);
                 });
@@ -1923,11 +1947,70 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_TimeSlots_Status");
 
+                    b.HasIndex("DoctorId", "SlotDate")
+                        .HasDatabaseName("IX_TimeSlots_DoctorId_SlotDate");
+
                     b.HasIndex("DoctorId", "SlotDate", "StartTime")
                         .IsUnique()
                         .HasDatabaseName("UQ_TimeSlot_DoctorDate");
 
+                    b.HasIndex("DoctorId", "SlotDate", "Status")
+                        .HasDatabaseName("IX_TimeSlots_DoctorId_SlotDate_Status");
+
                     b.ToTable("TimeSlots", (string)null);
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.AdminLogs.AdminActionLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AdminId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("TargetEntity")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TargetId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActionType");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("AdminId", "CreatedAt");
+
+                    b.HasIndex("TargetEntity", "TargetId");
+
+                    b.ToTable("AdminActionLogs");
                 });
 
             modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.DoctorModels.DoctorAchievement", b =>
@@ -2003,7 +2086,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DoctorId");
+                    b.HasIndex("DoctorId", "DayOfWeek")
+                        .IsUnique()
+                        .HasDatabaseName("IX_DoctorSlotConfigs_DoctorId_DayOfWeek_Unique");
+
+                    b.HasIndex("DoctorId", "IsActive")
+                        .HasDatabaseName("IX_DoctorSlotConfigs_DoctorId_IsActive");
 
                     b.ToTable("DoctorSlotConfigs");
                 });
@@ -2023,11 +2111,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<int>("DoctorId")
                         .HasColumnType("int");
 
-                    b.Property<int>("DocumentType")
-                        .HasColumnType("int");
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("FileId")
                         .HasColumnType("int");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime?>("ReviewedAt")
                         .HasColumnType("datetime2");
@@ -2035,11 +2128,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<int?>("ReviewedByAdminId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(450)")
+                        .HasDefaultValue("Pending");
 
                     b.Property<DateTime>("SubmittedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -2050,7 +2148,66 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.HasIndex("FileId");
 
+                    b.HasIndex("ReviewedByAdminId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SubmittedAt");
+
+                    b.HasIndex("DoctorId", "Status");
+
                     b.ToTable("DoctorVerifications");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RelatedEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RelatedEntityType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Type");
+
+                    b.HasIndex("UserId", "IsRead", "CreatedAt");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", b =>
@@ -2073,6 +2230,161 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Patients");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.Support.Ticket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ClosedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category");
+
+                    b.HasIndex("ClosedByAdminId");
+
+                    b.HasIndex("Priority");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId", "Status", "CreatedAt");
+
+                    b.ToTable("Tickets");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.Support.TicketMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsFromAdmin")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("TicketId", "CreatedAt");
+
+                    b.ToTable("TicketMessages");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.UserManagement.UserStatus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlockReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("BlockedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("BlockedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSuspended")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("SuspendedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("SuspendedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SuspensionEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SuspensionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BlockedByAdminId");
+
+                    b.HasIndex("IsBlocked");
+
+                    b.HasIndex("IsSuspended");
+
+                    b.HasIndex("SuspendedByAdminId");
+
+                    b.HasIndex("SuspensionEndDate");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserStatuses");
                 });
 
             modelBuilder.Entity("ExternalFile", b =>
@@ -2300,11 +2612,18 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
             modelBuilder.Entity("HealthCare_.Models.sharedModels.Reviews.Review", b =>
                 {
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "DeletedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("DeletedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "User")
                         .WithMany("Reviews")
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("DeletedByAdmin");
 
                     b.Navigation("User");
                 });
@@ -2555,6 +2874,17 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Navigation("Doctor");
                 });
 
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.AdminLogs.AdminActionLog", b =>
+                {
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "Admin")
+                        .WithMany()
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Admin");
+                });
+
             modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.DoctorModels.DoctorAchievement", b =>
                 {
                     b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
@@ -2588,16 +2918,35 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
                         .WithMany("Verifications")
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ExternalFile", "File")
                         .WithMany()
-                        .HasForeignKey("FileId");
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "ReviewedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Doctor");
 
                     b.Navigation("File");
+
+                    b.Navigation("ReviewedByAdmin");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.Notifications.Notification", b =>
+                {
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", b =>
@@ -2607,6 +2956,68 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasForeignKey("WelloraHealthCareManagment.Domain.Entities.PatientModels.Patient", "PatientID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.Support.Ticket", b =>
+                {
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "ClosedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("ClosedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ClosedByAdmin");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.Support.TicketMessage", b =>
+                {
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("WelloraHealthCareManagment.Domain.Entities.Support.Ticket", "Ticket")
+                        .WithMany("Messages")
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Sender");
+
+                    b.Navigation("Ticket");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.UserManagement.UserStatus", b =>
+                {
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "BlockedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("BlockedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "SuspendedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("SuspendedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "User")
+                        .WithOne()
+                        .HasForeignKey("WelloraHealthCareManagment.Domain.Entities.UserManagement.UserStatus", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BlockedByAdmin");
+
+                    b.Navigation("SuspendedByAdmin");
 
                     b.Navigation("User");
                 });
@@ -2697,6 +3108,11 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Navigation("Reminders");
 
                     b.Navigation("SelfMedications");
+                });
+
+            modelBuilder.Entity("WelloraHealthCareManagment.Domain.Entities.Support.Ticket", b =>
+                {
+                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }

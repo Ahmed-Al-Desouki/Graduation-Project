@@ -49,94 +49,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         #region Callback Processing
 
-        //public async Task<ProcessCallbackResult> ProcessPaymobCallbackAsync(
-        //    PaymobCallbackRequest callback,
-        //    string hmacHeader,
-        //    CancellationToken cancellationToken = default)
-        //{
-        //    try
-        //    {
-        //        _logger.LogInformation(
-        //            "Processing Paymob callback for order {OrderId}, Transaction {TransactionId}",
-        //            callback.obj.order.id,
-        //            callback.obj.id);
-
-        //        // 1. Verify HMAC
-        //        if (string.IsNullOrEmpty(hmacHeader))
-        //        {
-        //            _logger.LogWarning("Callback received without HMAC header");
-        //            return new ProcessCallbackResult
-        //            {
-        //                Success = false,
-        //                Message = "HMAC header missing"
-        //            };
-        //        }
-
-        //        var isValid = await _paymobService.VerifyCallbackAsync(callback, hmacHeader);
-
-        //        if (!isValid)
-        //        {
-        //            _logger.LogError("HMAC verification failed");
-        //            return new ProcessCallbackResult
-        //            {
-        //                Success = false,
-        //                Message = "Invalid HMAC signature"
-        //            };
-        //        }
-
-        //        // 2. Find payment
-        //        var orderId = callback.obj.order.id.ToString();
-        //        var payment = await _paymentRepository.GetByPaymobOrderIdAsync(
-        //            orderId,
-        //            cancellationToken);
-
-        //        if (payment == null)
-        //        {
-        //            _logger.LogWarning("Payment not found for order {OrderId}", orderId);
-        //            return new ProcessCallbackResult
-        //            {
-        //                Success = false,
-        //                Message = "Payment not found"
-        //            };
-        //        }
-
-        //        // 3. Serialize callback for debugging
-        //        var callbackJson = JsonConvert.SerializeObject(callback);
-
-        //        // 4. Process based on status
-        //        if (callback.obj.success && !callback.obj.pending)
-        //        {
-        //            return await HandleSuccessfulPaymentAsync(
-        //                payment,
-        //                callback,
-        //                callbackJson,
-        //                cancellationToken);
-        //        }
-        //        else if (callback.obj.pending)
-        //        {
-        //            return await HandlePendingPaymentAsync(
-        //                payment,
-        //                cancellationToken);
-        //        }
-        //        else
-        //        {
-        //            return await HandleFailedPaymentAsync(
-        //                payment,
-        //                callback,
-        //                callbackJson,
-        //                cancellationToken);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error processing Paymob callback");
-        //        return new ProcessCallbackResult
-        //        {
-        //            Success = false,
-        //            Message = $"Error: {ex.Message}"
-        //        };
-        //    }
-        //}
         public async Task<ProcessCallbackResult> ProcessPaymobCallbackAsync(
             PaymobCallbackRequest callback,
             string hmacHeader,
@@ -226,49 +138,11 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
         }
 
-        //private async Task<ProcessCallbackResult> HandleSuccessfulPaymentAsync(
-        //    Payment payment,
-        //    PaymobCallbackRequest callback,
-        //    string callbackJson,
-        //    CancellationToken cancellationToken)
-        //{
-        //    _logger.LogInformation(
-        //        "Payment successful for appointment {AppointmentId}",
-        //        payment.AppointmentId);
-
-        //    // Update payment
-        //    payment.MarkAsPaid(
-        //        callback.obj.id.ToString(),
-        //        callback.obj.integration_id,
-        //        callbackJson);
-
-        //    await _paymentRepository.UpdateAsync(payment, cancellationToken);
-
-        //    // Update appointment
-        //    var appointment = await _appointmentRepository.GetByIdAsync(
-        //        payment.AppointmentId,
-        //        cancellationToken);
-
-        //    if (appointment != null)
-        //    {
-        //        appointment.MarkAsPaid(payment.Id);
-        //        await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
-        //    }
-
-        //    await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        //    return new ProcessCallbackResult
-        //    {
-        //        Success = true,
-        //        Message = "Payment confirmed",
-        //        AppointmentId = payment.AppointmentId
-        //    };
-        //}
         private async Task<ProcessCallbackResult> HandleSuccessfulPaymentAsync(
-    string paymobOrderId,
-    PaymobCallbackRequest callback,
-    string callbackJson,
-    CancellationToken cancellationToken)
+            string paymobOrderId,
+            PaymobCallbackRequest callback,
+            string callbackJson,
+            CancellationToken cancellationToken)
         {
             //  Get payment WITH TRACKING for update
             var payment = await _paymentRepository.GetByPaymobOrderIdForUpdateAsync(
@@ -328,47 +202,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             };
         }
 
-        //private async Task<ProcessCallbackResult> HandlePendingPaymentAsync(
-        //    Payment payment,
-        //    CancellationToken cancellationToken)
-        //{
-        //    _logger.LogInformation(
-        //        "Payment pending for appointment {AppointmentId}",
-        //        payment.AppointmentId);
-
-        //    return new ProcessCallbackResult
-        //    {
-        //        Success = true,
-        //        Message = "Payment pending",
-        //        AppointmentId = payment.AppointmentId
-        //    };
-        //}
-
-        //private async Task<ProcessCallbackResult> HandleFailedPaymentAsync(
-        //    Payment payment,
-        //    PaymobCallbackRequest callback,
-        //    string callbackJson,
-        //    CancellationToken cancellationToken)
-        //{
-        //    _logger.LogWarning(
-        //        "Payment failed for appointment {AppointmentId}: {Reason}",
-        //        payment.AppointmentId,
-        //        callback.obj.data.message);
-
-        //    payment.MarkAsFailed(
-        //        callback.obj.data.message ?? "Payment declined",
-        //        callbackJson);
-
-        //    await _paymentRepository.UpdateAsync(payment, cancellationToken);
-        //    await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        //    return new ProcessCallbackResult
-        //    {
-        //        Success = true,
-        //        Message = "Payment failure recorded",
-        //        AppointmentId = payment.AppointmentId
-        //    };
-        //}
         private async Task<ProcessCallbackResult> HandlePendingPaymentAsync(
             Guid appointmentId,
             CancellationToken cancellationToken)
@@ -384,33 +217,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 AppointmentId = appointmentId
             };
         }
-        //private async Task<ProcessCallbackResult> HandleFailedPaymentAsync(
-        //    Payment payment,
-        //    PaymobCallbackRequest callback,
-        //    string callbackJson,
-        //    CancellationToken cancellationToken)
-        //{
-        //    var reason = "Payment declined by gateway";
-
-        //    _logger.LogWarning(
-        //        "Payment failed for appointment {AppointmentId}: {Reason}",
-        //        payment.AppointmentId,
-        //        reason);
-
-        //    payment.MarkAsFailed(
-        //        reason,
-        //        callbackJson);
-
-        //    await _paymentRepository.UpdateAsync(payment, cancellationToken);
-        //    await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        //    return new ProcessCallbackResult
-        //    {
-        //        Success = true,
-        //        Message = "Payment failure recorded",
-        //        AppointmentId = payment.AppointmentId
-        //    };
-        //}
         private async Task<ProcessCallbackResult> HandleFailedPaymentAsync(
             string paymobOrderId,
             PaymobCallbackRequest callback,
@@ -498,19 +304,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             return $"{baseUrl}/payment-success.html?appointmentId={appointmentId}&amount={amount}";
         }
 
-        //private string GetFailureRedirectUrl(Guid? appointmentId, string? reason)
-        //{
-        //    var baseUrl = _configuration["App:BaseUrl"] ?? "https://wellorahealthcare.com";
-        //    var url = $"{baseUrl}/payment-failed.html";
-
-        //    if (appointmentId.HasValue)
-        //        url += $"?appointmentId={appointmentId}";
-
-        //    if (!string.IsNullOrEmpty(reason))
-        //        url += $"&reason={Uri.EscapeDataString(reason)}";
-
-        //    return url;
-        //}
         private string GetFailureRedirectUrl(Guid? appointmentId, string? reason)
         {
             var baseUrl = _configuration["App:BaseUrl"] ?? "https://wellorahealthcare.com";
@@ -533,114 +326,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         #region Payment Creation
 
-        //public async Task<CreatePaymentResponse> CreatePaymentAsync(
-        //    CreatePaymentRequest request,
-        //    CancellationToken cancellationToken = default)
-        //{
-        //    try
-        //    {
-        //        _logger.LogInformation(
-        //            "Creating payment for appointment {AppointmentId}",
-        //            request.AppointmentId);
-
-        //        // 1. Get appointment
-        //        var appointment = await _appointmentRepository.GetByIdAsync(
-        //            request.AppointmentId,
-        //            cancellationToken);
-
-        //        if (appointment == null)
-        //            throw new NotFoundException("Appointment", request.AppointmentId);
-
-        //        if (appointment.IsPaid)
-        //            throw new DomainException("Appointment already paid");
-
-        //        // 2. Get doctor (for consultation fee)
-        //        var doctor = await _doctorRepository.GetByIdAsync(
-        //            appointment.DoctorId,
-        //            cancellationToken);
-
-        //        if (doctor == null)
-        //            throw new NotFoundException("Doctor", appointment.DoctorId);
-
-        //        // 3. Get patient (for billing info)
-        //        var patient = await _patientRepository.GetByIdAsync(
-        //            appointment.PatientId,
-        //            cancellationToken);
-
-        //        if (patient == null)
-        //            throw new NotFoundException("Patient", appointment.PatientId);
-
-        //        // 4. Create payment entity
-        //        var amount = appointment.ConsultationFee ?? doctor.ConsultationFee;
-
-        //        var payment = Payment.CreatePending(
-        //            appointment.Id,
-        //            appointment.PatientId,
-        //            appointment.DoctorId,
-        //            amount,
-        //            request.PaymentMethod);
-
-        //        await _paymentRepository.AddAsync(payment, cancellationToken);
-        //        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        //        // 5. Create Paymob payment
-        //        //var paymobResponse = await _paymobService.CreatePaymentAsync(
-        //        //    appointment.Id,
-        //        //    amount,
-        //        //    request.PaymentMethod,
-        //        //    patient.User.Email,
-        //        //    patient.User.PhoneNumber ?? "",
-        //        //    patient.User.FullName.Split(' ')[0],
-        //        //    patient.User.FullName.Contains(' ')
-        //        //        ? patient.User.FullName.Split(' ')[1]
-        //        //        : "",
-        //        //    cancellationToken);
-        //        var paymobResponse = await _paymobService.CreatePaymentAsync(
-        //            appointment.Id,
-        //            amount,
-        //            request.PaymentMethod,
-        //            patient.User.Email ?? "no-email@domain.com",  // fallback مهم
-        //            patient.User.PhoneNumber ?? "0123456789",
-        //            string.IsNullOrEmpty(patient.User.FullName) ? "Patient" : patient.User.FullName.Split(' ')[0],
-        //            patient.User.FullName?.Split(' ').Length > 1 ? patient.User.FullName.Split(' ')[1] : "",
-        //            cancellationToken);
-
-        //        if (paymobResponse == null)
-        //        {
-        //            _logger.LogError("Paymob CreatePaymentAsync returned null for appointment {AppointmentId}", request.AppointmentId);
-        //            throw new DomainException("Failed to initialize payment gateway session. Please try again later.");
-        //        }
-
-        //        _logger.LogInformation("Paymob response received - OrderId: {OrderId}, PaymentUrl: {Url}",
-        //            paymobResponse.PaymobOrderId, paymobResponse.PaymentUrl);
-
-
-        //        // 6. Update payment with Paymob order ID
-        //        //payment.SetPaymobOrderId(paymobResponse.PaymobOrderId);
-        //        payment.SetPaymobOrderId(paymobResponse.PaymobOrderId ?? throw new InvalidOperationException("Paymob Order ID is null"));
-
-        //        await _paymentRepository.UpdateAsync(payment, cancellationToken);
-        //        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-
-        //        // 7. Return response
-        //        return new CreatePaymentResponse
-        //        {
-        //            PaymentUrl = paymobResponse.PaymentUrl,
-        //            PaymentId = payment.Id,
-        //            PaymobOrderId = paymobResponse.PaymobOrderId,
-        //            Amount = amount
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex,
-        //            "Error creating payment for appointment {AppointmentId}",
-        //            request.AppointmentId);
-        //        throw;
-        //    }
-        //}
-        // Infrastructure/Services/PaymentService.cs
 
         public async Task<CreatePaymentResponse> CreatePaymentAsync(
             CreatePaymentRequest request,
@@ -842,60 +527,221 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             try
             {
                 _logger.LogInformation(
-                    "Processing refund for payment {PaymentId}",
-                    request.PaymentId);
+                    "Processing refund for payment {PaymentId}, Amount: {Amount} EGP",
+                    request.PaymentId, request.Amount);
 
-                // 1. Get payment
+                
+                // 1. GET AND VALIDATE PAYMENT
+                // الحصول على الدفع والتحقق منه
+                
+
                 var payment = await _paymentRepository.GetByIdAsync(
                     request.PaymentId,
                     cancellationToken);
 
                 if (payment == null)
-                    throw new NotFoundException("Payment", request.PaymentId);
-
-                // 2. Validate refund eligibility
-                if (!payment.CanBeRefunded())
-                    throw new DomainException("Payment cannot be refunded");
-
-                // 3. Process refund with Paymob
-                var amountCents = request.Amount * 100;
-
-                var paymobRefund = await _paymobService.RefundPaymentAsync(
-                    payment.PaymobTransactionId,
-                    amountCents,
-                    cancellationToken);
-
-                if (!paymobRefund.Success)
                 {
+                    _logger.LogWarning("Payment {PaymentId} not found", request.PaymentId);
+                    throw new NotFoundException("Payment", request.PaymentId);
+                }
+
+                
+                // 2. VALIDATE REFUND ELIGIBILITY
+                // التحقق من أهلية الاسترجاع
+                
+
+                // 2.1 Check if can be refunded
+                if (!payment.CanBeRefunded())
+                {
+                    _logger.LogWarning(
+                        "Payment {PaymentId} cannot be refunded. Status: {Status}",
+                        request.PaymentId, payment.Status);
+
                     return new RefundPaymentResponse
                     {
                         Success = false,
-                        Message = paymobRefund.Message
+                        Message = $"Payment cannot be refunded. Current status: {payment.Status}"
                     };
                 }
 
-                // 4. Update payment
+                // 2.2 Validate refund amount
+                if (request.Amount <= 0 || request.Amount > payment.Amount)
+                {
+                    _logger.LogWarning(
+                        "Invalid refund amount {Amount} for payment {PaymentId} (original: {OriginalAmount})",
+                        request.Amount, request.PaymentId, payment.Amount);
+
+                    return new RefundPaymentResponse
+                    {
+                        Success = false,
+                        Message = $"Invalid refund amount. Must be between 0 and {payment.Amount} EGP"
+                    };
+                }
+
+                // 2.3 Check if already refunded (Idempotency check)
+                if (payment.Status == PaymentStatus.Refunded)
+                {
+                    _logger.LogWarning(
+                        "Payment {PaymentId} is already refunded. Transaction ID: {TransactionId}",
+                        request.PaymentId, payment.RefundTransactionId);
+
+                    // Return existing refund details (Idempotent response)
+                    return new RefundPaymentResponse
+                    {
+                        Success = true,
+                        Message = "Payment was already refunded",
+                        RefundTransactionId = payment.RefundTransactionId,
+                        RefundedAmount = payment.RefundAmount ?? request.Amount,
+                        IsAlreadyRefunded = true  // New flag to indicate this was already done
+                    };
+                }
+
+                
+                // 3. PROCESS REFUND WITH PAYMOB
+                // معالجة الاسترجاع عبر Paymob مع Retry Logic
+                
+
+                var amountCents = request.Amount * 100;
+                RefundPaymentResponse? paymobRefund = null;
+                Exception? lastException = null;
+
+                // Retry logic: 3 attempts
+                for (int attempt = 1; attempt <= 3; attempt++)
+                {
+                    try
+                    {
+                        _logger.LogInformation(
+                            "Paymob refund attempt {Attempt}/3 for payment {PaymentId}",
+                            attempt, request.PaymentId);
+
+                        paymobRefund = await _paymobService.RefundPaymentAsync(
+                            payment.PaymobTransactionId,
+                            amountCents,
+                            cancellationToken);
+
+                        if (paymobRefund != null && paymobRefund.Success)
+                        {
+                            _logger.LogInformation(
+                                "Paymob refund successful on attempt {Attempt}. Transaction ID: {TransactionId}",
+                                attempt, paymobRefund.RefundTransactionId);
+                            break; // Success, exit retry loop
+                        }
+
+                        _logger.LogWarning(
+                            "Paymob refund attempt {Attempt} failed: {Message}",
+                            attempt, paymobRefund?.Message ?? "Unknown error");
+
+                        // Wait before retry (exponential backoff)
+                        if (attempt < 3)
+                        {
+                            var delayMs = attempt * 1000; // 1s, 2s
+                            _logger.LogInformation("Retrying after {Delay}ms...", delayMs);
+                            await Task.Delay(delayMs, cancellationToken);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lastException = ex;
+                        _logger.LogError(ex,
+                            "Exception during Paymob refund attempt {Attempt} for payment {PaymentId}",
+                            attempt, request.PaymentId);
+
+                        if (attempt < 3)
+                        {
+                            var delayMs = attempt * 1000;
+                            await Task.Delay(delayMs, cancellationToken);
+                        }
+                    }
+                }
+
+                
+                // 4. HANDLE REFUND RESULT
+                // معالجة نتيجة الاسترجاع
+                
+
+                if (paymobRefund == null || !paymobRefund.Success)
+                {
+                    _logger.LogError(
+                        "Paymob refund failed after 3 attempts for payment {PaymentId}. Last error: {Error}",
+                        request.PaymentId,
+                        lastException?.Message ?? paymobRefund?.Message ?? "Unknown error");
+
+                    // Mark payment as "Refund Pending" for manual processing
+                    // You might want to add a new status for this: PaymentStatus.RefundPending
+
+                    return new RefundPaymentResponse
+                    {
+                        Success = false,
+                        Message = $"Refund processing failed after multiple attempts: " +
+                                  $"{paymobRefund?.Message ?? lastException?.Message ?? "Unknown error"}. " +
+                                  "Your refund will be processed manually within 24 hours."
+                    };
+                }
+
+                
+                // 5. UPDATE PAYMENT ENTITY
+                // تحديث كيان الدفع
+                
+
+                // Determine who initiated the cancellation from the RefundReason enum
+                CancelledBy initiatedBy = request.Reason switch
+                {
+                    RefundReason.PatientCancellation => CancelledBy.Patient,
+                    RefundReason.DoctorCancellation => CancelledBy.Doctor,
+                    RefundReason.DoctorDayOff => CancelledBy.Doctor,
+                    RefundReason.SystemError => CancelledBy.System,
+                    _ => CancelledBy.System
+                };
+
+                // Calculate percentage
+                var refundPercentage = request.RefundPercentage
+                    ?? (request.Amount / payment.Amount) * 100;
+
                 payment.MarkAsRefunded(
-                    request.Amount,
-                    paymobRefund.RefundTransactionId ?? "",
-                    request.Reason,
-                    request.Notes);
+                    refundAmount: request.Amount,
+                    refundPercentage: refundPercentage,
+                    refundTransactionId: paymobRefund.RefundTransactionId ?? "",
+                    reason: request.Reason,
+                    initiatedBy: initiatedBy,
+                    notes: request.Notes);
 
                 await _paymentRepository.UpdateAsync(payment, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                //await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "Refund completed successfully for payment {PaymentId}. " +
+                    "Amount: {Amount} EGP ({Percentage}%), Transaction ID: {TransactionId}",
+                    request.PaymentId,
+                    request.Amount,
+                    refundPercentage,
+                    paymobRefund.RefundTransactionId);
+
+                
+                // 6. RETURN SUCCESS RESPONSE
+                // إرجاع الاستجابة
+                
 
                 return new RefundPaymentResponse
                 {
                     Success = true,
-                    Message = "Refund processed successfully",
+                    Message = $"Refund processed successfully. {request.Amount:F2} EGP will be " +
+                              "returned to your payment method within 3-5 business days.",
                     RefundTransactionId = paymobRefund.RefundTransactionId,
-                    RefundedAmount = request.Amount
+                    RefundedAmount = request.Amount,
+                    RefundPercentage = refundPercentage
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing refund for payment {PaymentId}", request.PaymentId);
-                throw;
+                _logger.LogError(ex,
+                    "Unexpected error processing refund for payment {PaymentId}",
+                    request.PaymentId);
+
+                return new RefundPaymentResponse
+                {
+                    Success = false,
+                    Message = $"Unexpected error during refund: {ex.Message}. Please contact support."
+                };
             }
         }
 
@@ -913,8 +759,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         }
 
         public async Task<List<PaymentHistoryDto>> GetPatientPaymentHistoryAsync(
-            int patientId,
-            CancellationToken cancellationToken = default)
+     int patientId,
+     CancellationToken cancellationToken = default)
         {
             var payments = await _paymentRepository.GetPatientPaymentsAsync(
                 patientId,
@@ -929,6 +775,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 Method = p.Method,
                 PaidAt = p.PaidAt,
                 CreatedAt = p.CreatedAt,
+                // بنستخدم بس FullName — مش محتاجين كل Doctor object
                 DoctorName = p.Doctor?.User?.FullName ?? "Unknown"
             }).ToList();
         }

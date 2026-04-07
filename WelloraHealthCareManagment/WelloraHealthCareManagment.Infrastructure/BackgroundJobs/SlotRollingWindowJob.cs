@@ -1,69 +1,56 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Hangfire;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.SlotConfig;
+using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs
 {
-    public class SlotRollingWindowJob : BackgroundService
+    public class SlotRollingWindowJob
     {
-        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<SlotRollingWindowJob> _logger;
 
         private const int ROLLING_WINDOW_MONTHS = 2;
 
+        // IMPORTANT: Inject IServiceProvider only — NOT the scoped services directly.
+        // Hangfire jobs share a single instance across executions; injecting scoped
+        // services directly causes stale DbContext and threading issues.
+        // Each execution must create its own scope.
         public SlotRollingWindowJob(
-            IServiceScopeFactory scopeFactory,
+            IServiceProvider serviceProvider,
             ILogger<SlotRollingWindowJob> logger)
         {
-            _scopeFactory = scopeFactory;
+            _serviceProvider = serviceProvider;
             _logger = logger;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        [DisableConcurrentExecution(timeoutInSeconds: 300)]
+        [AutomaticRetry(Attempts = 2)]
+        public async Task ExecuteAsync(CancellationToken ct = default)
         {
             _logger.LogInformation(
-                "SlotRollingWindowJob started — will run every 24 hours at {Time}",
-                DateTime.UtcNow);
+                "SlotRollingWindowJob started at {Time}", DateTime.UtcNow);
 
-            await DoWorkAsync(stoppingToken);
+            // كل execution بياخد scope جديد — بيضمن fresh DbContext
+            await using var scope = _serviceProvider.CreateAsyncScope();
 
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
-
-                try
-                {
-                    await DoWorkAsync(stoppingToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "SlotRollingWindowJob error");
-                }
-            }
-        }
-
-        private async Task DoWorkAsync(CancellationToken ct)
-        {
-            using var scope = _scopeFactory.CreateScope();
-
-            var configRepo = scope.ServiceProvider
+            var configRepository = scope.ServiceProvider
                 .GetRequiredService<IDoctorSlotConfigRepository>();
 
-            var slotConfigService = scope.ServiceProvider
-                .GetRequiredService<IDoctorSlotConfigService>();
-
-            var timeSlotRepo = scope.ServiceProvider
+            var timeSlotRepository = scope.ServiceProvider
                 .GetRequiredService<ITimeSlotRepository>();
 
-            var doctorIds = await configRepo
+            var slotGenerationService = scope.ServiceProvider
+                .GetRequiredService<ISlotGenerationService>();
+
+            var doctorIds = await configRepository
                 .GetDoctorsWithActiveConfigsAsync(ct);
 
             _logger.LogInformation(
-                "RollingWindowJob: processing {Count} doctors",
-                doctorIds.Count);
+                "RollingWindowJob: processing {Count} doctors", doctorIds.Count);
 
             var targetEndDate = DateTime.UtcNow.Date.AddMonths(ROLLING_WINDOW_MONTHS);
 
@@ -71,11 +58,10 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs
             {
                 try
                 {
-                    var lastSlotDate = await timeSlotRepo
+                    var lastSlotDate = await timeSlotRepository
                         .GetLastSlotDateAsync(doctorId, ct);
 
-                    if (lastSlotDate.HasValue
-                        && lastSlotDate.Value.Date >= targetEndDate)
+                    if (lastSlotDate?.Date >= targetEndDate)
                     {
                         _logger.LogDebug(
                             "Doctor {DoctorId} already covered until {Date}",
@@ -87,12 +73,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs
                         ? lastSlotDate.Value.Date.AddDays(1)
                         : DateTime.UtcNow.Date;
 
-                    _logger.LogInformation(
-                        "Extending slots for doctor {DoctorId}: {Start} → {End}",
-                        doctorId, startDate, targetEndDate);
-
-                    // GenerateSlotsAsync دلوقتي بتأخذ Exceptions في الاعتبار تلقائياً
-                    var result = await slotConfigService.GenerateSlotsAsync(
+                    var result = await slotGenerationService.GenerateAsync(
                         doctorId,
                         new GenerateSlotsByConfigRequest
                         {
@@ -113,6 +94,9 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs
                         "RollingWindowJob failed for doctor {DoctorId}", doctorId);
                 }
             }
+
+            _logger.LogInformation(
+                "SlotRollingWindowJob completed at {Time}", DateTime.UtcNow);
         }
     }
 }

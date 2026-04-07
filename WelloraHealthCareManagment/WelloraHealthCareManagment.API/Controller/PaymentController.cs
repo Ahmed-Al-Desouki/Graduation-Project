@@ -7,7 +7,7 @@ using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagment.Application.DTOs.Payment;
 
 namespace WelloraHealthCareManagement.API.Controllers
-{
+{       
     [ApiController]
     [Route("api/[controller]")]
     public class PaymentController : ControllerBase
@@ -26,42 +26,6 @@ namespace WelloraHealthCareManagement.API.Controllers
             _configuration = configuration;
         }
 
-        /// Paymob Transaction Processed Callback
-        /// POST: api/payment/paymob-callback
-        //[HttpPost("paymob-callback")]
-        //[Consumes("application/json")]
-        //public async Task<IActionResult> PaymobCallback([FromBody] PaymobCallbackRequest callback)
-        //{
-        //    var hmacHeader = Request.Headers["hmac"].ToString();
-
-        //    var result = await _paymentService.ProcessPaymobCallbackAsync(
-        //        callback,
-        //        hmacHeader,
-        //        CancellationToken.None);
-
-        //    if (result.Success)
-        //        return Ok(new { message = result.Message });
-
-        //    return BadRequest(new { message = result.Message });
-        //}
-
-        //[HttpPost("paymob-callback")]
-        //public async Task<IActionResult> PaymobCallback([FromBody] PaymobCallbackRequest callback)
-        //{
-        //    var hmac = Request.Query["hmac"].FirstOrDefault()
-        //        ?? Request.Headers["hmac"].FirstOrDefault()
-        //        ?? Request.Form["hmac"].FirstOrDefault();
-
-        //    var result = await _paymentService.ProcessPaymobCallbackAsync(
-        //        callback,
-        //        hmac,
-        //        CancellationToken.None);
-
-        //    if (result.Success)
-        //        return Ok(new { message = result.Message });
-
-        //    return BadRequest(new { message = result.Message });
-        //}
 
         [HttpPost("paymob-callback")]
         public async Task<IActionResult> PaymobCallback([FromBody] PaymobCallbackRequest callback)
@@ -79,18 +43,6 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         /// Transaction Response Callback - User redirect after payment
-        /// GET: api/payment/payment-result
-        //[HttpGet("payment-result")]
-        //public async Task<IActionResult> PaymentResult(
-        //    [FromQuery] string? merchantOrderId,
-        //    [FromQuery] bool success)
-        //{
-        //    var redirectUrl = await _paymentService.HandlePaymentResultRedirectAsync(
-        //        merchantOrderId,
-        //        success);
-
-        //    return Redirect(redirectUrl);
-        //}
         [HttpGet("payment-result")]
         public async Task<IActionResult> PaymentResult(
             [FromQuery(Name = "merchant_order_id")] string? merchantOrderId,
@@ -102,7 +54,6 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         /// Create payment for appointment booking
-        /// POST: api/payment/create
         [HttpPost("create")]
         public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequest request)
         {
@@ -114,7 +65,6 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         /// Refund a payment
-        /// POST: api/payment/refund
         [HttpPost("refund")]
         public async Task<IActionResult> RefundPayment([FromBody] RefundPaymentRequest request)
         {
@@ -129,7 +79,6 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         /// Get payment details by appointment ID
-        /// GET: api/payment/appointment/{appointmentId}
         [HttpGet("appointment/{appointmentId:guid}")]
         public async Task<IActionResult> GetPaymentByAppointment(Guid appointmentId)
         {
@@ -153,7 +102,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
             return Ok(payments);
         }
-        /// Test Paymob configuration (DEVELOPMENT ONLY)
+
         /// GET: api/payment/test-config
         [HttpGet("test-config")]
         public IActionResult TestConfiguration()

@@ -1,4 +1,5 @@
 ﻿using HealthCare_.Models.DoctorModels;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
@@ -6,7 +7,9 @@ using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagement.Domain.Factories;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.DTOs.Payment;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Domain.ValueObjects;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
@@ -19,6 +22,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IMedicalHistoryAccessRepository _accessRepository;
         private readonly IAppointmentReminderService _appointmentReminderService;
         private readonly IAppointmentFactory _appointmentFactory;
+        private readonly IPaymentRepository _paymentRepository;
+        private readonly IPaymentService _paymentService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<AppointmentService> _logger;
 
@@ -28,6 +33,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IMedicalHistoryAccessRepository accessRepository,
             IAppointmentReminderService appointmentReminderService,
             IAppointmentFactory appointmentFactory,
+            IPaymentRepository paymentRepository,   
+            IPaymentService paymentService,
             IUnitOfWork unitOfWork,
             ILogger<AppointmentService> logger)
         {
@@ -36,9 +43,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _accessRepository = accessRepository;
             _appointmentReminderService = appointmentReminderService;
             _appointmentFactory = appointmentFactory;
+            _paymentRepository = paymentRepository;
+            _paymentService = paymentService;
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
+
         public async Task<BookAppointmentResponse> BookAppointmentAsync(
             int patientId,
             BookAppointmentRequest request,
@@ -60,7 +70,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     throw new NotFoundException("TimeSlot", request.TimeSlotId);
 
                 if (timeSlot.IsExpired())
-                    throw new DomainException("This time slot has already passed and cannot be booked");
+                    throw new DomainException(
+                        "This time slot has already passed and cannot be booked");
 
                 if (timeSlot.Doctor == null)
                     throw new DomainException("Doctor information is missing");
@@ -79,10 +90,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     patientId,
                     request.PatientNotes);
 
-                // 4. Update TimeSlot
+                // 4. Book TimeSlot
                 timeSlot.Book();
 
-                // 5. Save Appointment & TimeSlot
+                // 5. Persist Appointment & TimeSlot together
                 await _appointmentRepository.AddAsync(appointment, cancellationToken);
                 await _timeSlotRepository.UpdateAsync(timeSlot, cancellationToken);
 
@@ -101,25 +112,37 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         expiresAt: expiryDate,
                         canViewMedicalHistory: true,
                         canViewPrescriptions: true,
-                        canViewLabResults: false
-                    );
+                        canViewLabResults: false);
 
                     await _accessRepository.AddAsync(accessGrant, cancellationToken);
                 }
 
-                // 7. Create Appointment Reminders using ReminderV2 system
-                await _appointmentReminderService.CreateAppointmentRemindersAsync(
-                    appointment,
-                    timeSlot,
-                    patientId,
-                    timeSlot.DoctorId,
-                    cancellationToken);
-
+                // 7. Save everything and commit atomically
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                // 8. Create Reminders AFTER commit — non-critical
+                try
+                {
+                    await _appointmentReminderService.CreateAppointmentRemindersAsync(
+                        appointment,
+                        timeSlot,
+                        patientId,
+                        timeSlot.DoctorId,
+                        cancellationToken);
+                }
+                catch (Exception reminderEx)
+                {
+                    _logger.LogWarning(reminderEx,
+                        "Failed to create reminders for appointment {AppointmentId} — booking still succeeded",
+                        appointment.Id);
+                }
 
                 _logger.LogInformation(
                     "Appointment {AppointmentId} booked successfully by patient {PatientId}",
                     appointment.Id, patientId);
+
+  
 
                 return new BookAppointmentResponse
                 {
@@ -133,144 +156,69 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                _logger.LogError(ex, "Error booking appointment for patient {PatientId}", patientId);
+                _logger.LogError(ex,
+                    "Error booking appointment for patient {PatientId}", patientId);
                 throw;
             }
         }
 
-        public async Task CancelByPatientAsync(
+        public async Task<CancellationResult> CancelByPatientAsync(
             Guid appointmentId,
             int patientId,
             CancelAppointmentRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            // Validate ownership
+            var appointment = await _appointmentRepository
+                .GetByIdAsync(appointmentId, cancellationToken);
 
-                var appointment = await _appointmentRepository
-                    .GetByIdAsync(appointmentId, cancellationToken);
+            if (appointment == null)
+                throw new NotFoundException("Appointment", appointmentId);
 
-                if (appointment == null)
-                    throw new NotFoundException("Appointment", appointmentId);
+            if (appointment.PatientId != patientId)
+                throw new UnauthorizedAccessException(
+                    "This appointment does not belong to you");
 
-                // Validate ownership
-                if (appointment.PatientId != patientId)
-                    throw new UnauthorizedAccessException("This appointment does not belong to you");
-
-                // Validate cancellable status
-                if (appointment.Status is AppointmentStatus.Completed
-                    or AppointmentStatus.Cancelled
-                    or AppointmentStatus.NoShow)
-                    throw new DomainException("Cannot cancel a completed, cancelled, or no-show appointment");
-
-                // Determine who cancelled
-                var cancelledBy = CancelledBy.Patient;
-
-                // Cancel appointment
-                appointment.Cancel(cancelledBy, request.Reason);
-                appointment.ClearPatientData();
-
-                // Free up the time slot
-                var timeSlot = await _timeSlotRepository.GetByIdAsync(
-                    appointment.TimeSlotId, cancellationToken);
-
-                if (timeSlot != null)
-                {
-                    timeSlot.MakeAvailable();
-                    await _timeSlotRepository.UpdateAsync(timeSlot, cancellationToken);
-                }
-
-                await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
-
-                // Cancel all reminders
-                await _appointmentReminderService.CancelAppointmentRemindersAsync(
-                    appointmentId,
-                    appointment.PatientId,
-                    cancellationToken);
-
-                await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-                _logger.LogInformation(
-                    "Appointment {AppointmentId} cancelled by Patient",
-                    appointmentId);
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                _logger.LogError(ex, "Error cancelling appointment {AppointmentId} by patient", appointmentId);
-                throw;
-            }
+            return await ProcessCancellationAsync(
+                appointment,
+                cancelledBy: CancelledBy.Patient,
+                reason: request.Reason,
+                blockSlotAfterCancel: false,
+                checkCancellationWindow: true,
+                cancellationToken: cancellationToken);
         }
 
-        // Cancel and block appointment by doctor - blocks slot to prevent re-booking
-        public async Task CancelAndBlockByDoctorAsync(
+        public async Task<CancellationResult> CancelAndBlockByDoctorAsync(
             Guid appointmentId,
             int doctorId,
             CancelAppointmentRequest request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            // Validate ownership
+            var appointment = await _appointmentRepository
+                .GetByIdAsync(appointmentId, cancellationToken);
 
-                var appointment = await _appointmentRepository
-                    .GetByIdAsync(appointmentId, cancellationToken);
+            if (appointment == null)
+                throw new NotFoundException("Appointment", appointmentId);
 
-                if (appointment == null)
-                    throw new NotFoundException("Appointment", appointmentId);
+            if (appointment.DoctorId != doctorId)
+                throw new UnauthorizedAccessException(
+                    "This appointment does not belong to you");
 
-                // Validate ownership
-                if (appointment.DoctorId != doctorId)
-                    throw new UnauthorizedAccessException("This appointment does not belong to you");
+            if (string.IsNullOrWhiteSpace(request.Reason))
+                throw new DomainException(
+                    "Reason is required when doctor cancels an appointment");
 
-                // Reason is required when doctor cancels
-                if (string.IsNullOrWhiteSpace(request.Reason))
-                    throw new DomainException("Reason is required when doctor cancels an appointment");
-
-                // Determine who cancelled
-                var cancelledBy = CancelledBy.Doctor;
-
-                // Cancel appointment
-                appointment.Cancel(cancelledBy, request.Reason);
-                appointment.ClearPatientData();
-
-                // Get and update the time slot
-                var timeSlot = await _timeSlotRepository.GetByIdAsync(
-                    appointment.TimeSlotId, cancellationToken);
-
-                if (timeSlot != null)
-                {
-                    // Step 1: Free the slot first (remove booking)
-                    timeSlot.MakeAvailable();
-
-                    // Step 2: Then block it to prevent future bookings
-                    timeSlot.Block();
-
-                    await _timeSlotRepository.UpdateAsync(timeSlot, cancellationToken);
-                }
-
-                await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
-
-                // Cancel all reminders
-                await _appointmentReminderService.CancelAppointmentRemindersAsync(
-                    appointmentId,
-                    appointment.PatientId,
-                    cancellationToken);
-
-                await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-                _logger.LogInformation(
-                    "Appointment {AppointmentId} cancelled and slot blocked by Doctor. Reason: {Reason}",
-                    appointmentId, request.Reason);
-            }
-            catch (Exception ex)
-            {
-                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-                _logger.LogError(ex, "Error cancelling and blocking appointment {AppointmentId} by doctor", appointmentId);
-                throw;
-            }
+            return await ProcessCancellationAsync(
+                appointment,
+                cancelledBy: CancelledBy.Doctor,
+                reason: request.Reason,
+                blockSlotAfterCancel: true,
+                checkCancellationWindow: false,
+                cancellationToken: cancellationToken);
         }
+
+
 
         public async Task<AppointmentDetailsDto?> GetAppointmentDetailsAsync(
             Guid appointmentId,
@@ -437,6 +385,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 }
 
                 await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
                 _logger.LogInformation("Appointment {AppointmentId} completed", appointmentId);
@@ -583,6 +533,188 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             await _accessRepository.AddAsync(grant, ct);
             await _unitOfWork.SaveChangesAsync(ct);
+        }
+
+        // PRIVATE 
+        private async Task<CancellationResult> ProcessCancellationAsync(
+            Appointment appointment,
+            CancelledBy cancelledBy,
+            string? reason,
+            bool blockSlotAfterCancel,
+            bool checkCancellationWindow,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "{CancelledBy} attempting to cancel appointment {AppointmentId}",
+                    cancelledBy, appointment.Id);
+
+                // 1. Validate cancellable status
+                if (appointment.Status is AppointmentStatus.Completed
+                    or AppointmentStatus.Cancelled
+                    or AppointmentStatus.NoShow)
+                {
+                    return CancellationResult.Failed(
+                        "Cannot cancel a completed, cancelled, or no-show appointment");
+                }
+
+                // 2. Get time slot
+                var timeSlot = await _timeSlotRepository
+                    .GetByIdAsync(appointment.TimeSlotId, cancellationToken);
+
+                if (timeSlot == null)
+                    return CancellationResult.Failed("Time slot not found");
+
+                var appointmentDateTime = timeSlot.SlotDate.Add(timeSlot.StartTime);
+
+                // 3. Process refund if payment exists
+                decimal? refundAmount = null;
+                decimal? refundPercentage = null;
+                string? refundTransactionId = null;
+                bool refundProcessed = false;
+
+                var payment = await _paymentRepository
+                    .GetByAppointmentIdAsync(appointment.Id, cancellationToken);
+
+                if (payment != null && payment.Status == PaymentStatus.Paid)
+                {
+                    _logger.LogInformation(
+                        "Appointment {AppointmentId} is paid. Processing refund...",
+                        appointment.Id);
+
+                    // 3.1 Check cancellation window (patient only)
+                    if (checkCancellationWindow &&
+                        !CancellationPolicy.CanCancelWithRefund(appointmentDateTime, payment.PaidAt))
+                    {
+                        await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+
+                        var remainingTime = CancellationPolicy
+                            .GetRemainingCancellationWindow(appointmentDateTime);
+
+                        return CancellationResult.Failed(
+                            $"Cannot cancel. You must cancel at least " +
+                            $"{CancellationPolicy.MINIMUM_CANCELLATION_HOURS} hours before the appointment. " +
+                            $"Cancellation deadline was {remainingTime.TotalHours:F1} hours ago.");
+                    }
+
+                    // 3.2 Calculate refund
+                    refundPercentage = cancelledBy == CancelledBy.Patient
+                        ? CancellationPolicy.PATIENT_CANCELLATION_REFUND_PERCENTAGE
+                        : CancellationPolicy.DOCTOR_CANCELLATION_REFUND_PERCENTAGE;
+
+                    refundAmount = CancellationPolicy.CalculateRefundAmount(
+                        payment.Amount, cancelledBy);
+
+                    _logger.LogInformation(
+                        "Refund: {Amount} EGP ({Percentage}%)",
+                        refundAmount, refundPercentage);
+
+                    // 3.3 Process refund
+                    try
+                    {
+                        var refundRequest = new RefundPaymentRequest
+                        {
+                            PaymentId = payment.Id,
+                            Amount = refundAmount.Value,
+                            Reason = cancelledBy == CancelledBy.Patient
+                                ? RefundReason.PatientCancellation
+                                : RefundReason.DoctorCancellation,
+                            RefundPercentage = refundPercentage,
+                            Notes = $"{cancelledBy} cancelled appointment {appointment.Id}. " +
+                                    $"Reason: {reason ?? "No reason provided"}"
+                        };
+
+                        var refundResponse = await _paymentService
+                            .RefundPaymentAsync(refundRequest, cancellationToken);
+
+                        if (!refundResponse.Success)
+                        {
+                            _logger.LogError(
+                                "Refund failed for appointment {AppointmentId}: {Message}",
+                                appointment.Id, refundResponse.Message);
+
+                            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+
+                            return CancellationResult.Failed(
+                                $"Refund processing failed: {refundResponse.Message}. Please contact support.");
+                        }
+
+                        refundTransactionId = refundResponse.RefundTransactionId;
+                        refundProcessed = true;
+
+                        _logger.LogInformation(
+                            "Refund processed. Transaction ID: {TransactionId}",
+                            refundTransactionId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "Exception during refund for appointment {AppointmentId}",
+                            appointment.Id);
+
+                        await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+
+                        return CancellationResult.Failed(
+                            $"Refund processing error: {ex.Message}. Please try again later.");
+                    }
+                }
+                else if (payment != null)
+                {
+                    _logger.LogInformation(
+                        "Appointment {AppointmentId} payment status is {Status}. No refund needed.",
+                        appointment.Id, payment.Status);
+                }
+                else
+                {
+                    _logger.LogInformation(
+                        "Appointment {AppointmentId} has no payment. Proceeding with cancellation only.",
+                        appointment.Id);
+                }
+
+                // 4. Cancel appointment
+                appointment.Cancel(cancelledBy, reason);
+                appointment.ClearPatientData();
+
+                // 5. Update time slot
+                timeSlot.MakeAvailable();
+                if (blockSlotAfterCancel)
+                    timeSlot.Block();
+
+                await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
+                await _timeSlotRepository.UpdateAsync(timeSlot, cancellationToken);
+
+                // 6. Cancel reminders
+                await _appointmentReminderService.CancelAppointmentRemindersAsync(
+                    appointment.Id,
+                    appointment.PatientId,
+                    cancellationToken);
+
+                // 7. Save and commit
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "Appointment {AppointmentId} cancelled by {CancelledBy}. Refund: {RefundProcessed}, Amount: {RefundAmount}",
+                    appointment.Id, cancelledBy, refundProcessed, refundAmount);
+
+                var message = refundProcessed
+                    ? $"Appointment cancelled successfully. {refundPercentage}% refund ({refundAmount:F2} EGP) will be processed within 3-5 business days."
+                    : "Appointment cancelled successfully. No refund applicable.";
+
+                return CancellationResult.Succeeded(
+                    message, refundAmount, refundPercentage, refundTransactionId);
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                _logger.LogError(ex,
+                    "Error cancelling appointment {AppointmentId}",
+                    appointment.Id);
+                throw;
+            }
         }
     }
 }

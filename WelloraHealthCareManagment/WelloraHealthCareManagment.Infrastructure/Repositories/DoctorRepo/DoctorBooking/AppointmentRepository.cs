@@ -45,20 +45,25 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
             CancellationToken cancellationToken = default)
         {
             return await _context.Appointments
-                .FirstOrDefaultAsync(a => a.TimeSlotId == timeSlotId, cancellationToken);
+                .FirstOrDefaultAsync(a =>
+                    a.TimeSlotId == timeSlotId &&
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.NoShow,
+                    cancellationToken);
         }
 
         public async Task<List<Appointment>> GetPatientAppointmentsAsync(
-           int patientId,
-           AppointmentStatus? status = null,
-           CancellationToken cancellationToken = default)
+            int patientId,
+            AppointmentStatus? status = null,
+            CancellationToken cancellationToken = default)
         {
             var query = _context.Appointments
+                .AsNoTracking()  // ← أضيف هنا
                 .Include(a => a.TimeSlot)
-                .Include(a => a.Doctor)                 
-                    .ThenInclude(d => d.User)         
-                .Include(a => a.Patient)              
-                    .ThenInclude(p => p.User)           
+                .Include(a => a.Doctor)
+                    .ThenInclude(d => d.User)
+                .Include(a => a.Patient)
+                    .ThenInclude(p => p.User)
                 .Where(a => a.PatientId == patientId);
 
             if (status.HasValue)
@@ -71,17 +76,18 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
         }
 
         public async Task<List<Appointment>> GetDoctorAppointmentsAsync(
-           int doctorId,
-           DateTime? date = null,
-           AppointmentStatus? status = null,
-           CancellationToken cancellationToken = default)
+             int doctorId,
+             DateTime? date = null,
+             AppointmentStatus? status = null,
+             CancellationToken cancellationToken = default)
         {
             var query = _context.Appointments
+                .AsNoTracking()  // ← أضيف هنا
                 .Include(a => a.TimeSlot)
-                .Include(a => a.Doctor)                  
-                    .ThenInclude(d => d.User)             
-                .Include(a => a.Patient)                  
-                    .ThenInclude(p => p.User)            
+                .Include(a => a.Doctor)
+                    .ThenInclude(d => d.User)
+                .Include(a => a.Patient)
+                    .ThenInclude(p => p.User)
                 .Where(a => a.DoctorId == doctorId);
 
             if (date.HasValue)
@@ -97,20 +103,22 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
         }
 
         public async Task<List<Appointment>> GetUpcomingAppointmentsAsync(
-            int doctorId,
-            int count = 10,
-            CancellationToken cancellationToken = default)
+             int doctorId,
+             int count = 10,
+             CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
 
             return await _context.Appointments
+                .AsNoTracking() 
                 .Include(a => a.TimeSlot)
-                .Include(a => a.Doctor)                    
-                    .ThenInclude(d => d.User)              
-                .Include(a => a.Patient)                  
-                    .ThenInclude(p => p.User)           
+                .Include(a => a.Doctor)
+                    .ThenInclude(d => d.User)
+                .Include(a => a.Patient)
+                    .ThenInclude(p => p.User)
                 .Where(a => a.DoctorId == doctorId
-                    && (a.Status == AppointmentStatus.Confirmed || a.Status == AppointmentStatus.Pending)
+                    && (a.Status == AppointmentStatus.Confirmed
+                        || a.Status == AppointmentStatus.Pending)
                     && a.TimeSlot.SlotDate >= now.Date)
                 .OrderBy(a => a.TimeSlot.SlotDate)
                 .ThenBy(a => a.TimeSlot.StartTime)
@@ -125,11 +133,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
             await _context.Appointments.AddAsync(appointment, cancellationToken);
         }
 
+        //public async Task UpdateAsync(
+        //    Appointment appointment,
+        //    CancellationToken cancellationToken = default)
+        //{
+        //    _context.Appointments.Update(appointment);
+        //    await Task.CompletedTask;
+        //}
         public async Task UpdateAsync(
             Appointment appointment,
             CancellationToken cancellationToken = default)
         {
-            _context.Appointments.Update(appointment);
+            var entry = _context.Entry(appointment);
+            if (entry.State == EntityState.Detached)
+                _context.Appointments.Attach(appointment).State = EntityState.Modified;
             await Task.CompletedTask;
         }
 
@@ -175,5 +192,11 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
                     a.Status == AppointmentStatus.Completed,
                     cancellationToken);
         }
+        public async Task<List<Appointment>> GetByTimeSlotIdsAsync(
+            List<Guid> slotIds,
+            CancellationToken ct = default)
+            => await _context.Appointments
+                .Where(a => slotIds.Contains(a.TimeSlotId))
+                .ToListAsync(ct);
     }
 }
