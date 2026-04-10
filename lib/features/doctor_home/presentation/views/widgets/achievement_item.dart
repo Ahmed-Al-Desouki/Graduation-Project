@@ -43,7 +43,7 @@ class AchievementItem extends StatelessWidget {
                 ),
               ),
               GestureDetector(
-                onTap: onDelete, // تم تمرير الوظيفة هنا
+                onTap: onDelete,
                 child: Container(
                   padding: EdgeInsets.all(4.w),
                   decoration: BoxDecoration(

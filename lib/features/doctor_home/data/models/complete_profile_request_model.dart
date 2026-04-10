@@ -21,7 +21,7 @@ class CompleteProfileRequestModel extends CompleteProfileRequestEntity {
       'yearsOfExperience': yearsOfExperience,
       'consultationFee': consultationFee,
       'nationalId': nationalId,
-      if (bio != null) 'bio': bio, // ✅ هيضاف من الباك بعدين
+      if (bio != null) 'bio': bio,
     };
   }
 }

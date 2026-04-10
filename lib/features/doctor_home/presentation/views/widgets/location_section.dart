@@ -7,6 +7,9 @@ class LocationSection extends StatelessWidget {
   final TextEditingController addressController;
   final VoidCallback onPickLocation;
   final String? selectedLocation;
+  final double? latitude;
+  final double? longitude;
+  final Function(double?, double?)? onCoordinatesSelected;
 
   const LocationSection({
     super.key,
@@ -14,6 +17,9 @@ class LocationSection extends StatelessWidget {
     required this.addressController,
     required this.onPickLocation,
     this.selectedLocation,
+    this.latitude,
+    this.longitude,
+    this.onCoordinatesSelected,
   });
 
   @override
@@ -63,26 +69,32 @@ class LocationSection extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
 
-          CustomFormTextField(
-            label: 'Clinic Address',
-            hintText: 'Building number, street name, floor',
-            fieldType: FieldType.text,
-            controller: addressController,
-            prefixIcon: Icons.home,
-            minLines: 1,
-            maxLines: 3,
-            maxLength: 500,
-          ),
-          SizedBox(height: 16.h),
+          // CustomFormTextField(
+          //   label: 'Clinic Address',
+          //   hintText: 'Building number, street name, floor',
+          //   fieldType: FieldType.text,
+          //   controller: addressController,
+          //   prefixIcon: Icons.home,
+          //   minLines: 1,
+          //   maxLines: 3,
+          //   maxLength: 500,
+          // ),
+          // SizedBox(height: 16.h),
 
-          // Pick from Map Button
+          // ✅ Pick from Map Button
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: onPickLocation,
-              icon: const Icon(Icons.map, color: Color(0xFF3B82F6)),
+              icon: Row(
+                children: [
+                  SizedBox(width: 10.w),
+                  Icon(Icons.map, color: Color(0xFF3B82F6)),
+                ],
+              ),
               label: Text(
-                selectedLocation ?? 'Pick Location from Map',
+                selectedLocation ?? 'Pick Location',
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -100,7 +112,7 @@ class LocationSection extends StatelessWidget {
             ),
           ),
 
-          // Location Info
+          // ✅ Location Info (لو فيه موقع مختار)
           if (selectedLocation != null) ...[
             SizedBox(height: 12.h),
             Container(
@@ -109,24 +121,42 @@ class LocationSection extends StatelessWidget {
                 color: const Color(0xFFDBEAFE),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: Color(0xFF1B4E8C),
-                    size: 20,
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Text(
-                      selectedLocation!,
-                      style: const TextStyle(
-                        fontSize: 13,
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
                         color: Color(0xFF1B4E8C),
-                        fontWeight: FontWeight.w500,
+                        size: 20,
+                      ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: Text(
+                          selectedLocation!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF1B4E8C),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // ✅ اعرض الـ Coordinates لو موجودة
+                  if (latitude != null && longitude != null) ...[
+                    SizedBox(height: 8.h),
+                    Text(
+                      'Coordinates: ${latitude!.toStringAsFixed(6)}, ${longitude!.toStringAsFixed(6)}',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: const Color(0xFF6B7280),
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),

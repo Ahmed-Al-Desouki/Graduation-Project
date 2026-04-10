@@ -5,8 +5,24 @@ import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_state.dart';
 
-class ProfileCompletionLoadingView extends StatelessWidget {
+class ProfileCompletionLoadingView extends StatefulWidget {
   const ProfileCompletionLoadingView({super.key});
+
+  @override
+  State<ProfileCompletionLoadingView> createState() =>
+      _ProfileCompletionLoadingViewState();
+}
+
+class _ProfileCompletionLoadingViewState
+    extends State<ProfileCompletionLoadingView> {
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Start polling when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DoctorProfileCubit>().startAdminReviewPolling();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +85,7 @@ class ProfileCompletionLoadingView extends StatelessWidget {
 
                 // ✅ Description
                 Text(
-                  'Our admin team is reviewing your submitted information. This process may take up to 24-48 hours. You will be notified once your profile is approved.',
+                  'Our admin team is reviewing your submitted information. This process may take up to a few minutes. You will be notified once your profile is approved.',
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: const Color(0xFF6B7280),
@@ -100,6 +116,7 @@ class ProfileCompletionLoadingView extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'You can close this app and check back later. We\'ll send you a notification when your profile is approved.',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13.sp,
                             color: const Color(0xFF1B4E8C),

@@ -1,13 +1,14 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/features/auth/presentation/views/chat_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/schedule_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
+import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_view.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/profile_completion_dialog.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/doctor_profile_view.dart';
-// استورد صفحة بروفايل الدكتور هنا
 
 class DoctorHomeLayout extends StatefulWidget {
   const DoctorHomeLayout({super.key});
@@ -21,8 +22,8 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
 
   // ✅ Flag لتحديد إذا كان البروفايل مكتمل أو لا
   // في المستقبل هنجيبها من الـ API أو الـ Local Storage
-  final bool _isProfileComplete =
-      false; // غيّرها لـ true لما تخلص شاشة البيانات
+  bool _isProfileComplete = false; // مش final
+  bool _isLoadingStatus = true;
 
   // ✅ نتأكد إن الـ Dialog يظهر مرة واحدة بس
   bool _hasShownDialog = false;
@@ -42,13 +43,35 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
   @override
   void initState() {
     super.initState();
-    // ✅ أظهر الـ Dialog بعد ما الـ Widget يترسم
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isProfileComplete && !_hasShownDialog) {
-        _showProfileCompletionDialog();
-        _hasShownDialog = true;
-      }
-    });
+    _loadProfileStatus();
+  }
+
+  Future<void> _loadProfileStatus() async {
+    final result =
+        await getIt<DoctorProfileCubit>().repository.checkProfileStatus();
+
+    result.fold(
+      (_) {
+        if (mounted) setState(() => _isLoadingStatus = false);
+      },
+      (data) {
+        if (mounted) {
+          final isActive = data['isActive'] == true;
+          setState(() {
+            _isProfileComplete = isActive;
+            _isLoadingStatus = false;
+          });
+
+          // لو مش مكتمل، اظهر الـ dialog
+          if (!isActive && !_hasShownDialog) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showProfileCompletionDialog();
+              _hasShownDialog = true;
+            });
+          }
+        }
+      },
+    );
   }
 
   // ✅ دالة إظهار الـ Dialog
@@ -62,6 +85,9 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingStatus) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return Scaffold(
       // ✅ لو البروفايل مش مكتمل، نعمل Blur على كل الشاشة
       body: Stack(

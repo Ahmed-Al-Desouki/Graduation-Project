@@ -9,8 +9,10 @@ import 'package:graduation_project/features/booking/presentation/views/booking_c
 import 'package:graduation_project/features/booking/presentation/views/schedule_setup_view.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/views/chat_details_view.dart';
+import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_layout.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_profile_completion_view.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/profile_completion_loading_view.dart';
 import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medical_file_model.dart';
@@ -77,6 +79,7 @@ abstract class AppRouter {
   static const kScheduleSetup = '/scheduleSetup';
   static const kSearch = '/search';
   static const kDoctorProfileCompletion = '/doctor/profile-completion';
+  static const kProfileCompletionLoading = '/doctor/profile-completion/loading';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -186,9 +189,18 @@ abstract class AppRouter {
 
       GoRoute(
         path: kHomeDoctor,
-        builder: (context, state) => const DoctorHomeLayout(),
+        builder:
+            (context, state) => BlocProvider(
+              create:
+                  (_) => getIt<DoctorProfileCubit>(),
+              child: const DoctorHomeLayout(),
+            ),
       ),
 
+      // GoRoute(
+      //   path: kHomeDoctor,
+      //   builder: (context, state) => const DoctorHomeLayout(),
+      // ),
       GoRoute(
         path: kReminder,
         builder:
@@ -396,6 +408,15 @@ abstract class AppRouter {
       GoRoute(
         path: kDoctorProfileCompletion,
         builder: (context, state) => const DoctorProfileCompletionView(),
+      ),
+
+      GoRoute(
+        path: AppRouter.kProfileCompletionLoading,
+        builder:
+            (context, state) => BlocProvider.value(
+              value: getIt<DoctorProfileCubit>(),
+              child: const ProfileCompletionLoadingView(),
+            ),
       ),
     ],
   );

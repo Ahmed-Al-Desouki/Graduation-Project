@@ -18,6 +18,5 @@ abstract class DoctorProfileRepository {
 
   Future<Either<Failure, bool>> addAchievement(AchievementEntity achievement);
 
-  // ✅ للـ Loading Screen
   Future<Either<Failure, Map<String, dynamic>>> checkProfileStatus();
 }

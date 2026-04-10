@@ -103,6 +103,12 @@ class DoctorProfileRepositoryImpl implements DoctorProfileRepository {
     try {
       final result = await remoteDataSource.checkProfileStatus();
       return Right(result);
+    } on DioException catch (e) {
+      // ✅ لو الـ doctor لسه مفيش ليه profile، ده مش error
+      if (e.response?.statusCode == 404) {
+        return Right({'isProfileCompleted': false, 'isActive': false});
+      }
+      return Left(ServerFailure.fromDioException(e));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

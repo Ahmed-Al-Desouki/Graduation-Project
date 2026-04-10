@@ -25,11 +25,17 @@ class AchievementModel {
 class OptionalDetailsSection extends StatefulWidget {
   final TextEditingController titleController;
   final TextEditingController descriptionController;
+  final Function({  // ✅ أضف الـ callback ده
+    required String title,
+    String? description,
+    File? image,
+  })? onAddAchievement;  // ✅ اختياري
 
   const OptionalDetailsSection({
     super.key,
     required this.titleController,
     required this.descriptionController,
+    this.onAddAchievement,  // ✅ أضف الـ parameter ده
   });
 
   @override
@@ -172,29 +178,61 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
 
   // ✅ Add Achievement Function
   void _addAchievement() {
-    if (_achievementTitleController.text.isEmpty) {
-      showSnackBar(context, 'Please enter achievement title', Colors.red);
-      return;
-    }
-
-    setState(() {
-      _achievements.add(
-        AchievementModel(
-          title: _achievementTitleController.text,
-          description: _achievementDescriptionController.text,
-          image: _selectedAchievementImage,
-          createdAt: DateTime.now(),
-        ),
-      );
-
-      // Reset fields
-      _achievementTitleController.clear();
-      _achievementDescriptionController.clear();
-      _selectedAchievementImage = null;
-    });
-
-    showSnackBar(context, 'Achievement added successfully', Colors.green);
+  if (_achievementTitleController.text.isEmpty) {
+    showSnackBar(context, 'Please enter achievement title', Colors.red);
+    return;
   }
+
+  // ✅ Call Cubit if callback exists
+  if (widget.onAddAchievement != null) {
+    widget.onAddAchievement!(
+      title: _achievementTitleController.text,
+      description: _achievementDescriptionController.text,
+      image: _selectedAchievementImage,
+    );
+  }
+
+  // ✅ Add to local list for UI preview
+  setState(() {
+    _achievements.add(
+      AchievementModel(
+        title: _achievementTitleController.text,
+        description: _achievementDescriptionController.text,
+        image: _selectedAchievementImage,
+        createdAt: DateTime.now(),
+      ),
+    );
+    _achievementTitleController.clear();
+    _achievementDescriptionController.clear();
+    _selectedAchievementImage = null;
+  });
+
+  showSnackBar(context, 'Achievement added successfully', Colors.green);
+}
+  // void _addAchievement() {
+  //   if (_achievementTitleController.text.isEmpty) {
+  //     showSnackBar(context, 'Please enter achievement title', Colors.red);
+  //     return;
+  //   }
+
+  //   setState(() {
+  //     _achievements.add(
+  //       AchievementModel(
+  //         title: _achievementTitleController.text,
+  //         description: _achievementDescriptionController.text,
+  //         image: _selectedAchievementImage,
+  //         createdAt: DateTime.now(),
+  //       ),
+  //     );
+
+  //     // Reset fields
+  //     _achievementTitleController.clear();
+  //     _achievementDescriptionController.clear();
+  //     _selectedAchievementImage = null;
+  //   });
+
+  //   showSnackBar(context, 'Achievement added successfully', Colors.green);
+  // }
 
   @override
   Widget build(BuildContext context) {

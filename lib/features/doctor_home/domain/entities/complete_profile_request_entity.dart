@@ -6,7 +6,7 @@ class CompleteProfileRequestEntity {
   final int yearsOfExperience;
   final double consultationFee;
   final String nationalId;
-  final String? bio; // ✅ هيضاف من الباك بعدين
+  final String? bio;
 
   CompleteProfileRequestEntity({
     required this.fullName,

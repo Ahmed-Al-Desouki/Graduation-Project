@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:graduation_project/features/doctor_home/domain/repositories/doctor_profile_repository.dart';
@@ -129,7 +130,6 @@ class DoctorProfileCubit extends Cubit<DoctorProfileState> {
   Future<void> checkProfileStatus() async {
     emit(ProfileStatusLoading());
 
-    // TODO: Implement repository method
     final result = await repository.checkProfileStatus();
 
     result.fold((failure) => emit(ProfileStatusFailure(failure.errmessage)), (
@@ -147,21 +147,80 @@ class DoctorProfileCubit extends Cubit<DoctorProfileState> {
   }
 
   // ✅ 6. Admin Review Check (Polling every 5 seconds)
+  Timer? _pollingTimer;
+
   Future<void> startAdminReviewPolling() async {
     emit(AdminReviewLoading());
 
-    // TODO: Implement polling logic
-    // Timer.periodic(Duration(seconds: 5), (timer) async {
-    //   final result = await checkProfileStatus();
-    //   result.fold(
-    //     (failure) => emit(AdminReviewRejected(failure.errmessage)),
-    //     (data) {
-    //       if (data['isActive'] == true) {
-    //         timer.cancel();
-    //         emit(AdminReviewApproved());
-    //       }
-    //     },
-    //   );
-    // });
+    _pollingTimer?.cancel(); // ✅ ألغِ أي timer سابق
+
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      try {
+        final result = await repository.checkProfileStatus();
+
+        result.fold(
+          (failure) {
+            timer.cancel();
+            emit(AdminReviewRejected(failure.errmessage));
+          },
+          (data) {
+            if (data['isActive'] == true) {
+              timer.cancel();
+              emit(AdminReviewApproved());
+            }
+            // لو isActive = false، كمل الـ polling
+          },
+        );
+      } catch (e) {
+        timer.cancel();
+        emit(AdminReviewRejected(e.toString()));
+      }
+    });
   }
+
+  // ✅ أضف الدالة دي عشان توقف الـ polling
+  void stopAdminReviewPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+  }
+
+  // ✅ نظّف الـ timer لما الـ Cubit يتقفل
+  @override
+  Future<void> close() {
+    stopAdminReviewPolling();
+    return super.close();
+  }
+  // Future<void> startAdminReviewPolling() async {
+  //   emit(AdminReviewLoading());
+
+  //   Timer.periodic(const Duration(seconds: 5), (timer) async {
+  //     final result = await repository.checkProfileStatus();
+
+  //     result.fold(
+  //       (failure) {
+  //         timer.cancel();
+  //         emit(AdminReviewRejected(failure.errmessage));
+  //       },
+  //       (data) {
+  //         if (data['isActive'] == true) {
+  //           timer.cancel();
+  //           emit(AdminReviewApproved());
+  //         }
+  //       },
+  //     );
+  //   });
+  //   // TODO: Implement polling logic
+  //   // Timer.periodic(Duration(seconds: 5), (timer) async {
+  //   //   final result = await checkProfileStatus();
+  //   //   result.fold(
+  //   //     (failure) => emit(AdminReviewRejected(failure.errmessage)),
+  //   //     (data) {
+  //   //       if (data['isActive'] == true) {
+  //   //         timer.cancel();
+  //   //         emit(AdminReviewApproved());
+  //   //       }
+  //   //     },
+  //   //   );
+  //   // });
+  // }
 }
