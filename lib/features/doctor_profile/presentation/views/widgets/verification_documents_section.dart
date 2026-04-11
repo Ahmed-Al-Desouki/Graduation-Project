@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
-import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/achievement_tile.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/verification_documents_tile.dart';
 
-class AchievementsSection extends StatelessWidget {
-  const AchievementsSection({super.key});
+class VerificationDocumentsSection extends StatelessWidget {
+  const VerificationDocumentsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,26 +19,30 @@ class AchievementsSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
               Text(
-                "Achievements & Awards",
+                "Verification Documents",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
-              AchievementTile(
-                title: "Top Doctor 2023",
-                description: "New York Magazine",
-                image: Assets.imagesCertificate,
+
+              VerificationDocumentsTile(
+                icon: Icons.description,
+                color: Colors.purple,
+                title: "Medical License",
+                image: Assets.imagesAward,
               ),
               SizedBox(height: 15),
-              AchievementTile(
-                title: "Excellence in Patient Care",
-                description: "American Heart Association",
-                image: Assets.imagesCertificate,
+              VerificationDocumentsTile(
+                icon: Icons.school,
+                color: Colors.blue,
+                title: "Graduation Certificate",
+                image: Assets.imagesAward,
               ),
               SizedBox(height: 15),
-              AchievementTile(
-                title: "Research Publication Award",
-                description: "Journal of Cardiology",
-                image: Assets.imagesCertificate,
+              VerificationDocumentsTile(
+                icon: Icons.badge,
+                color: Colors.green,
+                title: "National ID",
+                image: Assets.imagesAward,
               ),
             ],
           ),

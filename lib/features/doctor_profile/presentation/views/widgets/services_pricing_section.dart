@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
-import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/service_price_item.dart';
 
 class ServicesPricingSection extends StatelessWidget {
   const ServicesPricingSection({super.key});
@@ -17,46 +17,68 @@ class ServicesPricingSection extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 "Services & Pricing",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
 
-              ServicePriceItem(
-                icon: Icons.videocam,
-                iconColor: Colors.blue,
-                title: "Video Consultation",
-                subtitle: "30 minutes session",
-                price: "\$45",
-              ),
-              SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: SvgPicture.asset(
+                        Assets.imagesUserDoctor,
+                        width: 22,
+                        height: 22,
+                        colorFilter: ColorFilter.mode(
+                          Colors.purple,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
 
-              ServicePriceItem(
-                imageAsset: Assets.imagesUserDoctor,
-                iconColor: Colors.green,
-                title: "In-Person Visit",
-                subtitle: "Full examination",
-                price: "\$80",
-              ),
-              SizedBox(height: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Booking",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Service fee",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-              ServicePriceItem(
-                imageAsset: Assets.imagesHeartRate,
-                iconColor: Colors.purple,
-                title: "ECG Test",
-                subtitle: "Electrocardiogram",
-                price: "\$120",
-              ),
-              SizedBox(height: 12),
-
-              ServicePriceItem(
-                imageAsset: Assets.imagesStethoscope,
-                iconColor: Colors.orange,
-                title: "Cardiac Screening",
-                subtitle: "Comprehensive checkup",
-                price: "\$200",
+                    Text(
+                      "\$1000",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

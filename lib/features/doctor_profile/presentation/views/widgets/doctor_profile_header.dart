@@ -9,10 +9,10 @@ class DoctorProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(top: 30, bottom: 30),
+      padding: const EdgeInsets.only(top: 30, bottom: 10),
       width: double.infinity,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(16.r)),
         gradient: const LinearGradient(
           colors: [Color(0xFF6A80DA), Color(0xFF754EA6)],
           begin: Alignment.topLeft,
@@ -52,6 +52,18 @@ class DoctorProfileHeader extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           const Text(
+            "1992-08-24",
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const Text(
+            "01136547826",
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const Text(
+            "thebestdoctor55@gmail.com",
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const Text(
             "Cardiologist • 12 years experience",
             style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
@@ -65,6 +77,15 @@ class DoctorProfileHeader extends StatelessWidget {
               StatItemForHeader(value: "98%", label: "Success Rate"),
               StatItemForHeader(value: "24/7", label: "Available"),
             ],
+          ),
+          const SizedBox(height: 15),
+          const Text(
+            "License Number : 123-456-789",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ),

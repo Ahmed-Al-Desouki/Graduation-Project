@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 
-class AchievementTile extends StatelessWidget {
+class VerificationDocumentsTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
   final String title;
-  final String description;
   final String image;
-  const AchievementTile({
+  const VerificationDocumentsTile({
     super.key,
+    required this.icon,
+    required this.color,
     required this.title,
-    required this.description,
     required this.image,
   });
 
@@ -21,10 +23,10 @@ class AchievementTile extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.amber.withOpacity(0.15),
+            color: color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(Icons.emoji_events, color: Colors.amber),
+          child: Icon(icon, color: color),
         ),
         const SizedBox(width: 15),
         Expanded(
@@ -33,11 +35,6 @@ class AchievementTile extends StatelessWidget {
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              Text(
-                description,
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-              const SizedBox(height: 4),
               ClipRRect(
                 borderRadius: BorderRadius.circular(8.r),
                 child: SvgPicture.asset(
@@ -45,7 +42,7 @@ class AchievementTile extends StatelessWidget {
                   height: 80.h,
                   width: 80.w,
                   colorFilter: const ColorFilter.mode(
-                    Colors.amber,
+                    Colors.blue,
                     BlendMode.srcIn,
                   ),
                 ),

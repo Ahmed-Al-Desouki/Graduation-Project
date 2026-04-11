@@ -7,6 +7,7 @@ class DoctorProfileDrawer extends StatelessWidget {
 
   final GlobalKey infoKey;
   final GlobalKey aboutKey;
+  final GlobalKey verificationKey;
   final GlobalKey achievementsKey;
   final GlobalKey hoursKey;
   final GlobalKey reviewsKey;
@@ -16,6 +17,7 @@ class DoctorProfileDrawer extends StatelessWidget {
     required this.onScrollToSection,
     required this.infoKey,
     required this.aboutKey,
+    required this.verificationKey,
     required this.achievementsKey,
     required this.hoursKey,
     required this.reviewsKey,
@@ -41,9 +43,14 @@ class DoctorProfileDrawer extends StatelessWidget {
                 ),
                 _item("About Me", aboutKey, icon: Icons.description_outlined),
                 _item(
+                  "Verification Documents",
+                  verificationKey,
+                  icon: Icons.verified_user_outlined,
+                ),
+                _item(
                   "Achievements",
                   achievementsKey,
-                  icon: Icons.emoji_events,
+                  icon: Icons.emoji_events_outlined,
                 ),
                 _item("Working Hours", hoursKey, icon: Icons.schedule),
                 _item(
@@ -78,7 +85,7 @@ class DoctorProfileDrawer extends StatelessWidget {
           ),
           SizedBox(height: 12),
           Text(
-            "Quick Navigation",
+            "Dr. Sarah Johnson",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
