@@ -51,6 +51,10 @@ class SecureStorageHelper {
     return {'role': role};
   }
 
+  static Future<String?> getUserRole1() async {
+    return await _storage.read(key: _userRoleKey);
+  }
+
   static Future<String?> getUserId() async {
     return await _storage.read(key: _userIdKey);
   }

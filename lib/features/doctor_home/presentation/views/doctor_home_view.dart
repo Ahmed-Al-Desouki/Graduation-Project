@@ -41,7 +41,10 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      // Navigate to past appointments screen
+                      AppRouter.router.push(AppRouter.kAppointmentsCenter);
+                    },
                     child: Text(
                       "View All",
                       style: TextStyle(
@@ -149,7 +152,7 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
             ),
             SizedBox(height: 10.h),
             QuickActionCard(
-              title: 'Past Appointments',
+              title: 'Appointment Center',
               subtitle: 'Check your Appointments',
               gradientColor: const Color(0xFF9333EA),
               imageAsset: Assets.imagesSchedule,

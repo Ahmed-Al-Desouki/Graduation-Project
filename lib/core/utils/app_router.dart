@@ -7,7 +7,9 @@ import 'package:graduation_project/features/booking/presentation/manager/appoint
 import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/exam_session_cubit/exam_session_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/views/AppointmentsCenterView.dart';
 import 'package:graduation_project/features/booking/presentation/views/booking_calendar_view.dart';
+import 'package:graduation_project/features/booking/presentation/views/booking_success_view.dart';
 import 'package:graduation_project/features/booking/presentation/views/medical_details_view.dart';
 import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
@@ -85,11 +87,26 @@ abstract class AppRouter {
   static const kMedicalDetails = '/medicalDetails'; // ✅ أضف هذا الثابت
   static const kSearch = '/search';
   static const kPaymentWebView = '/paymentWebView'; // ✅ أضف هذا الثابت
+  static const kAppointmentsCenter = '/appointmentsCenter';
+  static const kBookingSuccess = '/bookingSuccess'; // ✅ شاشة نجاح الحجز
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
       GoRoute(path: kSplash, builder: (context, state) => const SplashBody()),
-
+      GoRoute(
+        path: kBookingSuccess,
+        builder: (context, state) {
+          final bookingData = state.extra as Map<String, dynamic>? ?? {};
+          return BookingSuccessView(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: kAppointmentsCenter,
+        builder: (context, state) {
+          // هنا هننادي الشاشة الجديدة اللي هنعملها
+          return const AppointmentsCenterView();
+        },
+      ),
       // 1. شاشة إعداد الجدول
       GoRoute(
         path: kScheduleSetup,
@@ -514,15 +531,29 @@ abstract class AppRouter {
                 create: (context) => getIt<AppointmentActionCubit>(),
               ),
             ],
-            child: MedicalDetailsView(
+            child:
+            // MedicalDetailsView(
+            //   appointmentId: extra['appointmentId'] ?? '',
+            //   patientId: extra['patientId'] ?? '',
+            //   patientName: extra['patientName'] ?? 'Unknown Patient',
+            //   patientNote: extra['patientNote'],
+            //   // ✅ تمرير الحالة (ضروري جداً للوجيك الـ Read-only)
+            //   initialStatus: extra['status'] ?? 'booked',
+            //   // doctorName: getIt<SessionManager>().userName,
+            //   doctorName: extra['doctorName'], // 🚨 لازم دي تتضاف هنا
+            //   doctorSpecialty: "Specialist",
+            // ),
+            MedicalDetailsView(
               appointmentId: extra['appointmentId'] ?? '',
-              patientId: extra['patientId'] ?? '',
-              patientName: extra['patientName'] ?? 'Unknown Patient',
+              patientId:
+                  extra['patientId']
+                      ?.toString(), // ✅ مفيش Default value هنا عشان يقبل الـ Null
+              patientName: extra['patientName'] ?? 'Patient',
+              doctorName: extra['doctorName'] ?? 'Doctor',
+              initialStatus: extra['status'] ?? 'Pending',
               patientNote: extra['patientNote'],
-              // ✅ تمرير الحالة (ضروري جداً للوجيك الـ Read-only)
-              initialStatus: extra['status'] ?? 'booked',
-              doctorName: getIt<SessionManager>().userName,
-              doctorSpecialty: "Specialist",
+              isReadOnly: extra['isReadOnly'] ?? false,
+              // doctorSpecialty: extra['doctorSpecialty'] ?? 'General',
             ),
           );
         },

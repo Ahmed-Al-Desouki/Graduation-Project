@@ -8,16 +8,19 @@ class CreateAppointmentUseCase {
   CreateAppointmentUseCase(this.repository);
 
   // ✅ تغيير الـ Return Type ليكون Either
-  Future<Either<Failure, String>> call({
+  Future<Either<Failure, Map<String, dynamic>>> call({
     required String slotId,
     required String reason,
+    required String paymentMethod,
     bool grantAccess = false,
   }) async {
-    return await repository.createAppointment(
+    return await repository.bookAndPay(
       BookingEntity(
         timeSlotId: slotId,
         patientNotes: reason,
         grantMedicalHistoryAccess: grantAccess,
+        paymentMethod:
+            paymentMethod, // أو أي طريقة دفع أخرى حسب اختيار المستخدم
       ),
     );
   }

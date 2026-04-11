@@ -85,4 +85,15 @@ class MedicalRemoteDataSourceImpl implements MedicalRemoteDataSource {
     );
     return response as Map<String, dynamic>;
   }
+
+  @override
+  Future<void> grantMedicalAccess(
+    String appointmentId,
+    Map<String, dynamic> body,
+  ) async {
+    await _apiService.post(
+      'appointments/$appointmentId/grant-medical-access',
+      body,
+    );
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
+import 'package:graduation_project/features/booking/presentation/manager/appointments_center_cubit/appointment_center_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/medical_qr/medicalqr_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/medical_history_access_denied.dart';
@@ -55,6 +56,11 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
                     patientId: widget.patientId,
                     appointmentId: widget.appointmentId,
                   ),
+        ),
+        BlocProvider(
+          create:
+              (context) =>
+                  getIt<AppointmentsCenterCubit>()..getPatientAppointments(),
         ),
         BlocProvider(create: (context) => getIt<MedicalqrCubit>()),
       ],

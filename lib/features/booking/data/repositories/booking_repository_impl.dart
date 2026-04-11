@@ -103,12 +103,24 @@ class BookingRepositoryImpl implements IBookingRepository {
 
   @override
   Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
-  getDoctorAppointments(DateTime date, String status) async {
+  getDoctorAppointments(DateTime? date, String? status) async {
     return await _handleRemoteRequest(() async {
       final response = await remoteDataSource.getDoctorAppointments(
-        date.toIso8601String(),
+        date?.toIso8601String(),
         status,
       );
+      // تحويل الـ JSON لموديلات ثم لـ Entities
+      return response
+          .map((json) => AppointmentFullDetailsModel.fromJson(json))
+          .toList();
+    });
+  }
+
+  @override
+  Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
+  getPatientAppointments({String? status}) async {
+    return await _handleRemoteRequest(() async {
+      final response = await remoteDataSource.getPatientAppointments(status);
       // تحويل الـ JSON لموديلات ثم لـ Entities
       return response
           .map((json) => AppointmentFullDetailsModel.fromJson(json))
@@ -291,28 +303,50 @@ class BookingRepositoryImpl implements IBookingRepository {
   }
 
   // --- Helper Method ---
+  // Future<Either<Failure, T>> _handleRemoteRequest<T>(
+  //   Future<T> Function() action,
+  // ) async {
+  //   // if (await networkInfo.isConnected) {
+  //   try {
+  //     final result = await action();
+  //     return Right(result);
+  //   } catch (e) {
+  //     // 💡 هنا التعديل السحري
+  //     if (e is DioException) {
+  //       // بنحاول نسحب الرسالة اللي جوه الـ JSON اللي السيرفر بعته
+  //       final serverMessage =
+  //           e.response?.data?['error'] ?? "Something went wrong";
+  //       return Left(ServerFailure(serverMessage));
+  //     }
+  //     return Left(ServerFailure(e.toString()));
+  //   }
+  //   // } else {
+  //   //   return Left(OfflineFailure("لا يوجد اتصال بالإنترنت حالياً"));
+  //   // }
+  // }
   Future<Either<Failure, T>> _handleRemoteRequest<T>(
     Future<T> Function() action,
   ) async {
-    // if (await networkInfo.isConnected) {
     try {
       final result = await action();
       return Right(result);
     } catch (e) {
-      // 💡 هنا التعديل السحري
       if (e is DioException) {
-        // بنحاول نسحب الرسالة اللي جوه الـ JSON اللي السيرفر بعته
-        final serverMessage =
-            e.response?.data?['error'] ?? "Something went wrong";
-        return Left(ServerFailure(serverMessage));
+        // ✅ تأمين جلب الرسالة من السيرفر
+        String message = "Server Error";
+        if (e.response?.data is Map) {
+          message =
+              e.response?.data['message'] ??
+              e.response?.data['error'] ??
+              message;
+        } else if (e.response?.data is String) {
+          message = e.response?.data!;
+        }
+        return Left(ServerFailure(message));
       }
       return Left(ServerFailure(e.toString()));
     }
-    // } else {
-    //   return Left(OfflineFailure("لا يوجد اتصال بالإنترنت حالياً"));
-    // }
   }
-
   // @override
   // Future<Either<Failure, ScheduleEntity>> getActiveSchedule(
   //   String doctorId,
@@ -359,15 +393,15 @@ class BookingRepositoryImpl implements IBookingRepository {
 
   // داخل BookingRepositoryImpl
   @override
-  Future<Either<Failure, String>> createAppointment(
+  Future<Either<Failure, Map<String, dynamic>>> bookAndPay(
     BookingEntity booking,
   ) async {
     return await _handleRemoteRequest(() async {
-      return await remoteDataSource.createAppointment({
+      return await remoteDataSource.bookWithPayment({
         "timeSlotId": booking.timeSlotId, // ✅ الاسم الصحيح
         "patientNotes": booking.patientNotes,
         "grantMedicalHistoryAccess": booking.grantMedicalHistoryAccess, // ✅
-      });
+      }, paymentMethod: booking.paymentMethod); // ✅ تمرير طريقة الدفع
     });
   }
 

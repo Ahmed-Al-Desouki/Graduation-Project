@@ -43,6 +43,11 @@ class AppointmentFullDetailsEntity {
   final MedicalRecordEntity?
   medicalRecord; // ممكن يرجع null لو لسه السيشن مبدأتش
   final List<PrescriptionEntity>? prescriptions; // لستة الروشتات
+  final String? cancelBy; // سبب الإلغاء لو تم إلغاء الموعد
+  final String? cancellationReason;
+  final bool canViewMedicalHistory; // هل المريض يقدر يشوف تاريخه الطبي؟
+  // final bool canViewPrescriptions; // هل المريض يقدر يشوف روشتاته
+  // final bool canViewLabResults; // هل المريض يقدر يشوف نتائج التحاليل؟
 
   AppointmentFullDetailsEntity({
     required this.appointmentId,
@@ -57,5 +62,10 @@ class AppointmentFullDetailsEntity {
     required this.patientName,
     this.medicalRecord,
     this.prescriptions,
+    this.cancelBy,
+    this.cancellationReason,
+    required this.canViewMedicalHistory,
+    // required this.canViewPrescriptions,
+    // required this.canViewLabResults,
   });
 }

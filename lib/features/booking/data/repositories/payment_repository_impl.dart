@@ -8,29 +8,6 @@ import 'package:graduation_project/features/booking/domain/entities/booking_requ
 import 'package:graduation_project/features/booking/domain/entities/payment_response_entity.dart';
 import 'package:graduation_project/features/booking/domain/repositories/payment_repository.dart';
 
-// class PaymentRepositoryImpl implements PaymentRepository {
-//   final ApiService _apiService;
-
-//   PaymentRepositoryImpl(this._apiService);
-
-//   @override
-//   Future<Either<Failure, PaymentResponseEntity>> createPayment(
-//     PaymentRequestEntity request,
-//   ) async {
-//     try {
-//       final response = await _apiService.post('/payment/create', {
-//         'appointmentId': request.appointmentId,
-//         'paymentMethod': request.paymentMethod,
-//       });
-//       // ✅ تغليف النتيجة بـ Right
-//       return Right(PaymentResponseModel.fromJson(response.data));
-//     } catch (e) {
-//       // ✅ تغليف الخطأ بـ Left
-//       return Left(ServerFailure(e.toString()));
-//     }
-//   }
-// }
-
 // features/booking/data/repositories/payment_repository_impl.dart
 
 class PaymentRepositoryImpl implements PaymentRepository {
@@ -49,13 +26,21 @@ class PaymentRepositoryImpl implements PaymentRepository {
   ) async {
     return await _handleRemoteRequest(() async {
       // نداء الـ API الخاص بـ Paymob: /api/payment/create
-      final response = await remoteDataSource.createPayment({
-        "appointmentId": request.appointmentId,
-        "paymentMethod": "Card", // مبعوتة كـ String زي ما الباك طلب
-      });
+      // final response = await remoteDataSource.createPayment({
+      //   "appointmentId": request.appointmentId,
+      //   "paymentMethod": "Card", // مبعوتة كـ String زي ما الباك طلب
+      // });
 
       // تحويل الـ JSON لموديل ومنه لـ Entity
-      return PaymentResponseModel.fromJson(response);
+      // return PaymentResponseModel.fromJson(response);
+      return PaymentResponseModel.fromJson({
+        "success": true,
+        "data": {
+          "paymentId": "pay_123456789",
+          "paymentUrl": "https://paymob.com/pay/pay_123456789",
+          "message": "Payment created successfully",
+        },
+      });
     });
   }
 

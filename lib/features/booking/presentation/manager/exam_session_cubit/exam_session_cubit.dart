@@ -8,6 +8,7 @@ import 'package:graduation_project/features/booking/domain/use_cases/create_pres
 import 'package:graduation_project/features/booking/domain/use_cases/get_appointment_full_details_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_medical_record_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_prescription_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/open_access_for_medical_history_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/save_medical_record_use_case.dart';
 import 'package:meta/meta.dart';
 
@@ -20,6 +21,7 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
   final CreatePrescriptionUseCase createPrescriptionUseCase;
   final GetPrescriptionUseCase getPrescriptionUseCase;
   final AddPrescriptionItemsUseCase addPrescriptionItemsUseCase;
+  final OpenAccessForMedicalHistoryUseCase openAccessForMedicalHistoryUseCase;
   ExamSessionCubit(
     this.getMedicalRecordUseCase,
     this.saveMedicalRecordUseCase,
@@ -27,6 +29,7 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
     this.getPrescriptionUseCase,
     this.addPrescriptionItemsUseCase,
     this.getAppointmentFullDetailsUseCase,
+    this.openAccessForMedicalHistoryUseCase,
   ) : super(ExamSessionInitial());
 
   Future<void> fetchAppointmentDetails(String appointmentId) async {
@@ -113,5 +116,31 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
       (failure) => emit(ExamSessionFailure(failure.errmessage)),
       (message) => emit(PrescriptionCreatedSuccess(message)),
     );
+  }
+
+  // Future<void> grantMedicalAccess(String appointmentId) async {
+  //   emit(MedicalRecordLoading());
+  //   final result = await openAccessForMedicalHistoryUseCase(appointmentId);
+  //   result.fold(
+  //     (failure) => emit(ExamSessionFailure(failure.errmessage)),
+  //     (message) => emit(MedicalRecordSavedSuccess(message)),
+  //   );
+  // }
+  Future<void> toggleMedicalAccess(
+    String appointmentId,
+    bool shouldGrant,
+  ) async {
+    // ممكن تطلع Loading بسيط أو تسيبها خلف الكواليس
+    final result = await openAccessForMedicalHistoryUseCase(
+      appointmentId,
+      shouldGrant,
+    );
+
+    result.fold((failure) => emit(ExamSessionFailure(failure.errmessage)), (
+      message,
+    ) {
+      // إحنا مش هنغير الستيت لـ Success كاملة عشان الشاشة متقفلش
+      // ممكن نطلع Snack bar بس من الـ UI
+    });
   }
 }

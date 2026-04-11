@@ -29,9 +29,12 @@ abstract class BookingRemoteDataSource {
 
   // --- Appointments ---
   Future<List<Map<String, dynamic>>> getDoctorAppointments(
-    String date,
-    String status,
+    String? date,
+    String? status,
   );
+
+  Future<List<Map<String, dynamic>>> getPatientAppointments(String? status);
+
   Future<void> updateAppointmentStatus(
     String appointmentId,
     String action, {
@@ -54,11 +57,14 @@ abstract class BookingRemoteDataSource {
     Map<String, dynamic>? body,
   );
 
-  Future<String> createAppointment(Map<String, dynamic> body);
+  Future<Map<String, dynamic>> bookWithPayment(
+    Map<String, dynamic> body, {
+    required String paymentMethod,
+  });
 
-  // --- Payment ---
-  // ✅ ميثود إنشاء الدفع (بترجع الـ JSON اللي فيه الـ paymentUrl)
-  Future<Map<String, dynamic>> createPayment(Map<String, dynamic> body);
+  // // --- Payment ---
+  // // ✅ ميثود إنشاء الدفع (بترجع الـ JSON اللي فيه الـ paymentUrl)
+  // Future<Map<String, dynamic>> createPayment(Map<String, dynamic> body);
 
   Future<void> removeWorkingDay(String doctorId, int dayOfWeek);
 

@@ -173,43 +173,72 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
   }
 
   // ميثود حجز المريض (الدفع)
-  Future<void> processPayment(String appointmentId) async {
+  // Future<void> processPayment(String appointmentId) async {
+  //   emit(AppointmentActionLoading());
+
+  //   final result = await createPaymentUseCase(
+  //     appointmentId: appointmentId,
+  //     method: "Card", // الباك مستنيها سترينج كدة
+  //   );
+
+  //   result.fold(
+  //     (failure) => emit(AppointmentActionFailure(failure.errmessage)),
+  //     (paymentResponse) => emit(
+  //       PaymentNavigatedToWebView(
+  //         paymentResponse.paymentUrl,
+  //       ), // ✅ ستيت جديدة تفتح الويب فيو
+  //     ),
+  //   );
+  // }
+
+  // داخل AppointmentActionCubit
+  // Future<void> createBookingAndPay({
+  //   required String slotId,
+  //   required String reason,
+  //   bool grantAccess = true, // ✅ نمرر الاختيار من الـ UI
+  // }) async {
+  //   emit(AppointmentActionLoading());
+
+  //   final bookingResult = await createAppointmentUseCase(
+  //     slotId: slotId,
+  //     reason: reason,
+  //     grantAccess: grantAccess, // ✅ نمرر القيمة اللي المستخدم اختارها
+  //   );
+
+  //   bookingResult.fold(
+  //     (failure) => emit(AppointmentActionFailure(failure.errmessage)),
+  //     (appointmentId) async {
+  //       // بعد ما الـ ID رجع، نطلب الدفع
+  //       processPayment(appointmentId);
+  //     },
+  //   );
+  // }
+
+  // داخل AppointmentActionCubit
+
+  Future<void> bookAndPay({
+    required String slotId,
+    required String reason,
+    required bool grantAccess,
+    String paymentMethod = "Card", // القيمة الافتراضية
+  }) async {
     emit(AppointmentActionLoading());
 
-    final result = await createPaymentUseCase(
-      appointmentId: appointmentId,
-      method: "Card", // الباك مستنيها سترينج كدة
+    final result = await createAppointmentUseCase(
+      slotId: slotId,
+      reason: reason,
+      grantAccess: grantAccess,
+      paymentMethod: paymentMethod,
     );
 
     result.fold(
       (failure) => emit(AppointmentActionFailure(failure.errmessage)),
-      (paymentResponse) => emit(
-        PaymentNavigatedToWebView(
-          paymentResponse.paymentUrl,
-        ), // ✅ ستيت جديدة تفتح الويب فيو
-      ),
-    );
-  }
-
-  // داخل AppointmentActionCubit
-  Future<void> createBookingAndPay({
-    required String slotId,
-    required String reason,
-    bool grantAccess = true, // ✅ نمرر الاختيار من الـ UI
-  }) async {
-    emit(AppointmentActionLoading());
-
-    final bookingResult = await createAppointmentUseCase(
-      slotId: slotId,
-      reason: reason,
-      grantAccess: grantAccess, // ✅ نمرر القيمة اللي المستخدم اختارها
-    );
-
-    bookingResult.fold(
-      (failure) => emit(AppointmentActionFailure(failure.errmessage)),
-      (appointmentId) async {
-        // بعد ما الـ ID رجع، نطلب الدفع
-        processPayment(appointmentId);
+      (data) {
+        // سحب الـ URL من الرد اللي راجع
+        final String paymentUrl = data['paymentUrl'];
+        emit(
+          PaymentNavigatedToWebView(paymentUrl, bookingData: data),
+        ); // نفتح الـ WebView فوراً
       },
     );
   }

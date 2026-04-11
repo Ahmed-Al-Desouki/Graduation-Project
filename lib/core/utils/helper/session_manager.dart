@@ -106,12 +106,14 @@ class SessionManager {
   // ✅ متغير لتخزين الـ ID في الذاكرة (Memory Cache)
   String? _cachedUserId;
   String? _cachedName;
+  String? _cachedRole;
 
   SessionManager(this._authRepository);
 
   // ✅ Getter للحصول على الـ ID فوراً بدون Future
   String get userId => _cachedUserId ?? '';
   String get userName => _cachedName ?? '';
+  String get userRole => _cachedRole ?? '';
 
   Future<bool> _hasInternet() async {
     try {
@@ -134,6 +136,7 @@ class SessionManager {
       // ✅ تحميل الـ ID من الـ Storage للذاكرة بمجرد التأكد من وجود التوكنز
       _cachedUserId = await SecureStorageHelper.getUserId();
       _cachedName = await SecureStorageHelper.getUserName();
+      _cachedRole = await SecureStorageHelper.getUserRole1();
 
       bool isOnline = await _hasInternet();
 
@@ -149,6 +152,8 @@ class SessionManager {
 
       if (isAccessValid) {
         _cachedUserId = await SecureStorageHelper.getUserId();
+        _cachedName = await SecureStorageHelper.getUserName();
+        _cachedRole = await SecureStorageHelper.getUserRole1();
         return SessionStatus.valid;
       }
 
@@ -164,12 +169,17 @@ class SessionManager {
           print("❌ Refresh failed: ${failure.errmessage}");
           await SecureStorageHelper.clearAll();
           _cachedUserId = null; // تفريغ الـ ID عند الفشل
+          _cachedName = null;
+          _cachedRole = null;
           return SessionStatus.invalid;
         },
         (tokenModel) async {
           if (tokenModel is AuthTokenModel) {
             print("✅ Token Refreshed!");
             await _saveNewTokensAndUserData(tokenModel);
+            _cachedRole = await SecureStorageHelper.getUserRole1();
+            _cachedName = await SecureStorageHelper.getUserName();
+            _cachedUserId = await SecureStorageHelper.getUserId();
             return SessionStatus.valid;
           }
           return SessionStatus.error;
@@ -205,9 +215,16 @@ class SessionManager {
     );
   }
 
-  void updateUserDataAfterLogin({required String id, required String name}) {
+  void updateUserDataAfterLogin({
+    required String id,
+    required String name,
+    required String role,
+  }) {
     _cachedUserId = id;
-    _cachedName = name; // ✅ كدة الاسم هيتحفظ في الذاكرة فوراً
-    print("💡 SessionManager: Memory Cache updated - ID: $id, Name: $name");
+    _cachedName = name;
+    _cachedRole = role;
+    print(
+      "💡 SessionManager: Memory Cache updated - ID: $id, Name: $name, Role: $role",
+    );
   }
 }

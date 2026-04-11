@@ -1,152 +1,110 @@
 import 'package:flutter/material.dart';
-import 'package:graduation_project/features/medical_history/domain/models/appointment_model.dart';
+import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
+import 'package:go_router/go_router.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
+import 'package:graduation_project/features/booking/presentation/views/widgets/AppointmentListItem.dart';
+
+// class AppointmentCard extends StatelessWidget {
+//   final AppointmentFullDetailsEntity appointment;
+
+//   const AppointmentCard({super.key, required this.appointment});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDetector(
+//       onTap:
+//           () => context.push(
+//             AppRouter.kMedicalDetails,
+//             extra: {
+//               'appointmentId': appointment.appointmentId,
+//               'patientName': appointment.patientName,
+//               'status': appointment.status,
+//               'patientId': appointment.patientId.toString(),
+//               'isReadOnly': true,
+//             },
+//           ),
+//       child: Container(
+//         margin: const EdgeInsets.only(bottom: 12),
+//         padding: const EdgeInsets.all(16),
+//         decoration: BoxDecoration(
+//           color: Colors.white,
+//           borderRadius: BorderRadius.circular(16),
+//           border: Border.all(color: Colors.grey.shade100),
+//         ),
+//         child: Row(
+//           children: [
+//             CircleAvatar(
+//               backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
+//               child: const Icon(Icons.person, color: Color(0xFF2563EB)),
+//             ),
+//             const SizedBox(width: 12),
+//             Expanded(
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(
+//                     appointment.doctorName,
+//                     style: const TextStyle(fontWeight: FontWeight.bold),
+//                   ),
+//                   const SizedBox(height: 4),
+//                   // ✅ عرض الحالة بشكل ملون تحت الاسم
+//                   _buildStatusText(appointment.status),
+//                 ],
+//               ),
+//             ),
+//             // ✅ إضافة السهم اللي طلبته
+//             const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildStatusText(String status) {
+//     Color color = status.toLowerCase() == 'pending' ? Colors.blue : Colors.red;
+//     if (status.toLowerCase() == 'completed') color = Colors.green;
+//     return Text(
+//       status,
+//       style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+//     );
+//   }
+// }
 
 class AppointmentCard extends StatelessWidget {
-  final AppointmentModel appointment;
+  final AppointmentFullDetailsEntity appointment;
 
   const AppointmentCard({super.key, required this.appointment});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return AppointmentListItem(
+      showCancelButton: false, // الهيستوري دايماً مريض
+      appointment: appointment,
+      isDoctor: false, // الهيستوري دايماً مريض
+      onTap:
+          () => context.push(
+            AppRouter.kMedicalDetails,
+            // extra: {
+            //   'appointmentId': appointment.appointmentId,
+            //   'patientName': appointment.patientName,
+            //   'status': appointment.status,
+            //   'patientId': appointment.patientId.toString(),
+            //   'isReadOnly': true,
+            // },
+            extra: {
+              'appointmentId': appointment.appointmentId,
+              'patientId': appointment.patientId.toString(),
+              'patientName': appointment.patientName,
+              'doctorName':
+                  appointment.doctorName, // 🚨 السطر ده كان ناقص، ضيفه
+              'status': appointment.status,
+              'patientNote':
+                  appointment
+                      .patientNotes, // 🚨 السطر ده كان ناقص عشان الـ Reason يظهر
+              'isReadOnly': true,
+            },
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              Container(width: 6, color: appointment.cardColor),
-
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              image: DecorationImage(
-                                image: NetworkImage(appointment.imagePath),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  appointment.doctorName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: Color(0xFF1F2937),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  appointment.specialty,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: appointment.cardColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          Text(
-                            appointment.date,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Text(
-                        appointment.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      Text(
-                        appointment.description,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7280),
-                          height: 1.4,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Row(
-                        children: [
-                          _buildFooterItem(
-                            Icons.access_time_filled,
-                            appointment.duration,
-                          ),
-                          const SizedBox(width: 16),
-                          _buildFooterItem(
-                            Icons.location_on,
-                            appointment.location,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFooterItem(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey.shade500),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade600,
-          ),
-        ),
-      ],
+      // مش هنحط زرار كانسل بره في الهيستوري عشان الزحمة، كفاية جوه
     );
   }
 }

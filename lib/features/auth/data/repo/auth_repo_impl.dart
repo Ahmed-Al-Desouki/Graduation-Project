@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
@@ -53,7 +55,7 @@ class AuthRepositoryimpl implements AuthRepository {
   }) async {
     try {
       final res = await _authService.googleSignIn(idToken: idToken, role: role);
-
+      log("GOOGLE SIGN IN RESPONSE => $res");
       if (res['success'] == true) {
         final tokens = res['data'] ?? res;
         return Right(AuthTokenModel.fromJson(tokens));

@@ -135,12 +135,23 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
 
   @override
   Future<List<Map<String, dynamic>>> getDoctorAppointments(
-    String date,
-    String status,
+    String? date,
+    String? status,
   ) async {
     final response = await _apiService.get(
       'appointments/doctor-appointments',
       queryParameters: {'date': date, 'status': status},
+    );
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPatientAppointments(
+    String? status,
+  ) async {
+    final response = await _apiService.get(
+      'appointments/my-appointments',
+      queryParameters: {'status': status},
     );
     return List<Map<String, dynamic>>.from(response);
   }
@@ -181,25 +192,44 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     String appointmentId,
     Map<String, dynamic>? body,
   ) async {
-    await _apiService.post('appointments/$appointmentId/patient-cancel', body);
+    await _apiService.post('appointments/$appointmentId/cancel-patient', body);
   }
 
   @override
-  Future<String> createAppointment(Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> bookWithPayment(
+    Map<String, dynamic> body, {
+    required String paymentMethod,
+  }) async {
     // POST /api/appointments/book
-    final response = await _apiService.post('appointments/book', body);
-    return response['appointmentId'].toString();
+    final response = await _apiService.post(
+      'appointments/book-with-payment?paymentMethod=$paymentMethod',
+      body,
+    );
+    return response;
   }
 
   // =========================================================================
   // 5. إدارة الدفع (Payment)
   // =========================================================================
 
-  @override
-  Future<Map<String, dynamic>> createPayment(Map<String, dynamic> body) async {
-    // POST /api/payment/create
-    return await _apiService.post('payment/create', body);
-  }
+  // @override
+  // Future<Map<String, dynamic>> createPayment(Map<String, dynamic> body) async {
+  //   // POST /api/payment/create
+  //   return await _apiService.post('payment/create', body);
+  // }
+  // @override
+  // Future<Map<String, dynamic>> bookWithPayment({
+  //   required String slotId,
+  //   required String reason,
+  //   required bool grantAccess,
+  //   required String paymentMethod, // Card, VodafoneCash, etc.
+  // }) async {
+  //   final response = await _apiService.post(
+  //     'appointments/book-with-payment?paymentMethod=$paymentMethod',
+  //     {"slotId": slotId, "reason": reason, "grantAccess": grantAccess},
+  //   );
+  //   return response; // الـ Map اللي فيها الـ paymentUrl والـ paymentId
+  // }
 
   // داخل class BookingRemoteDataSourceImpl
   @override

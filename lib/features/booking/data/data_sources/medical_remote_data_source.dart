@@ -30,4 +30,9 @@ abstract class MedicalRemoteDataSource {
     String pId,
     String aId,
   );
+  // Future<void> grantMedicalAccess(String appointmentId);
+  Future<void> grantMedicalAccess(
+    String appointmentId,
+    Map<String, dynamic> body,
+  );
 }

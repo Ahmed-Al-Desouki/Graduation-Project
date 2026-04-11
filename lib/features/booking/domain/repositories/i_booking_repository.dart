@@ -48,7 +48,7 @@ abstract class IBookingRepository {
 
   // --- Appointments Control ---
   Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
-  getDoctorAppointments(DateTime date, String status);
+  getDoctorAppointments(DateTime? date, String? status);
   Future<Either<Failure, void>> confirmAppointment(String id);
   Future<Either<Failure, void>> startAppointment(String id);
   Future<Either<Failure, void>> completeAppointment(String id);
@@ -80,7 +80,10 @@ abstract class IBookingRepository {
 
   Future<Either<Failure, ScheduleEntity>> getActiveSchedule(String doctorId);
 
-  Future<Either<Failure, String>> createAppointment(BookingEntity booking);
+  // Future<Either<Failure, String>> createAppointment(BookingEntity booking);
+  Future<Either<Failure, Map<String, dynamic>>> bookAndPay(
+    BookingEntity booking,
+  );
 
   Future<Either<Failure, void>> removeWorkingDay(
     String doctorId,
@@ -89,4 +92,11 @@ abstract class IBookingRepository {
 
   Future<Either<Failure, AppointmentFullDetailsEntity>>
   getAppointmentFullDetails(String appointmentId);
+
+  // Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
+  // getDoctorAppointmentsv2({String? date, String? status});
+
+  // جلب مواعيد المريض
+  Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
+  getPatientAppointments({String? status});
 }

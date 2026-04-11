@@ -36,4 +36,11 @@ abstract class MedicalRepository {
     required String patientId,
     required String appointmentId,
   });
+
+  // Future<Either<Failure, String>> grantMedicalAccess(String appointmentId);
+
+  Future<Either<Failure, String>> grantMedicalAccess(
+    String appointmentId,
+    bool grantAccess,
+  );
 }

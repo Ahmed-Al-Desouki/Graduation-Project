@@ -21,5 +21,7 @@ final class AppointmentActionFailure extends AppointmentActionState {
 
 class PaymentNavigatedToWebView extends AppointmentActionState {
   final String url;
-  PaymentNavigatedToWebView(this.url);
+  final Map<String, dynamic> bookingData;
+
+  PaymentNavigatedToWebView(this.url, {required this.bookingData});
 }

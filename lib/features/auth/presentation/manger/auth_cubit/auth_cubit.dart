@@ -64,6 +64,7 @@ class AuthCubit extends Cubit<AuthState> {
             getIt<SessionManager>().updateUserDataAfterLogin(
               id: uid!,
               name: name!,
+              role: role,
             );
             emit(LoginSuccess(uid: uid!, email: googleUser.email, role: role));
           } catch (e) {
@@ -110,6 +111,7 @@ class AuthCubit extends Cubit<AuthState> {
             getIt<SessionManager>().updateUserDataAfterLogin(
               id: uid!,
               name: name!,
+              role: role,
             );
             emit(LoginSuccess(uid: uid!, email: email, role: role));
           } catch (e) {

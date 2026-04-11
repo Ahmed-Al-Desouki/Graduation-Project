@@ -41,11 +41,14 @@ import 'package:graduation_project/features/booking/data/repositories/medical_re
 import 'package:graduation_project/features/booking/data/repositories/payment_repository_impl.dart';
 import 'package:graduation_project/features/booking/domain/repositories/medical_repository.dart';
 import 'package:graduation_project/features/booking/domain/repositories/payment_repository.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/GetDoctorAppointmentsUseCase.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/GetPatientAppointmentsUseCase.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/add_custom_hours_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/add_day_off_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/add_prescription_items_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/block_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/book_follow_up_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/cancel_by_patient_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_appointment_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_manual_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_payment_use_case.dart';
@@ -55,11 +58,13 @@ import 'package:graduation_project/features/booking/domain/use_cases/get_appoint
 import 'package:graduation_project/features/booking/domain/use_cases/get_doctor_slots_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_medical_record_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_prescription_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/open_access_for_medical_history_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/remove_exception_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/remove_working_day_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/save_medical_record_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/update_appointment_status_use_case.dart';
 import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/manager/appointments_center_cubit/appointment_center_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/exam_session_cubit/exam_session_cubit.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/book_follow_up_use_case.dart';
@@ -141,6 +146,10 @@ Future<void> initBookingInjection() async {
   sl.registerLazySingleton(() => RemoveExceptionUseCase(sl()));
   sl.registerLazySingleton(() => RemoveWorkingDayUseCase(sl()));
   sl.registerLazySingleton(() => GetAppointmentFullDetailsUseCase(sl()));
+  sl.registerLazySingleton(() => GetPatientAppointmentsUseCase(sl()));
+  sl.registerLazySingleton(() => GetDoctorAppointmentsUseCase(sl()));
+  sl.registerLazySingleton(() => CancelByPatientUseCase(sl()));
+  sl.registerLazySingleton(() => OpenAccessForMedicalHistoryUseCase(sl()));
 
   // 4. Cubits
   sl.registerFactory(
@@ -148,11 +157,21 @@ Future<void> initBookingInjection() async {
   );
   sl.registerFactory(() => BookingCalendarCubit(sl()));
   sl.registerFactory(
-    () => ExamSessionCubit(sl(), sl(), sl(), sl(), sl(), sl()),
+    () => ExamSessionCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
   );
 
   // تأكد إن ترتيب الـ sl() هنا مطابق لترتيب الـ parameters في الـ Constructor بتاع الـ Cubit
   sl.registerFactory(
     () => AppointmentActionCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
+  );
+  sl.registerFactory(
+    () => AppointmentsCenterCubit(
+      getDoctorAppointmentsUseCase: sl(),
+      getPatientAppointmentsUseCase: sl(),
+      // cancelByPatientUseCase: sl(),
+      // cancelBlockByDoctorUseCase:
+      //     sl(), // تأكد من إضافة الـ UseCase ده في الأعلى
+      updateStatusUseCase: sl(),
+    ),
   );
 }

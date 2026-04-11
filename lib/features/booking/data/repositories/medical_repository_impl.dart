@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:graduation_project/features/medical_history/domain/models/patient_profile_model.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/repositories/medical_repository.dart';
@@ -13,6 +14,30 @@ class MedicalRepositoryImpl implements MedicalRepository {
   final MedicalRemoteDataSource remoteDataSource;
 
   MedicalRepositoryImpl(this.remoteDataSource);
+
+  Future<Either<Failure, T>> _handleRemoteRequest<T>(
+    Future<T> Function() action,
+  ) async {
+    try {
+      final result = await action();
+      return Right(result);
+    } catch (e) {
+      if (e is DioException) {
+        // ✅ تأمين جلب الرسالة من السيرفر
+        String message = "Server Error";
+        if (e.response?.data is Map) {
+          message =
+              e.response?.data['message'] ??
+              e.response?.data['error'] ??
+              message;
+        } else if (e.response?.data is String) {
+          message = e.response?.data!;
+        }
+        return Left(ServerFailure(message));
+      }
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, MedicalRecordEntity>> getMedicalRecord(
@@ -191,5 +216,36 @@ class MedicalRepositoryImpl implements MedicalRepository {
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
+  }
+
+  // @override
+  // Future<Either<Failure, String>> grantMedicalAccess(
+  //   String appointmentId,
+  // ) async {
+  //   return await _handleRemoteRequest(() async {
+  //     await remoteDataSource.grantMedicalAccess(appointmentId);
+  //     return "Medical history access granted successfully";
+  //   });
+  // }
+
+  @override
+  Future<Either<Failure, String>> grantMedicalAccess(
+    String appointmentId,
+    bool isGranting,
+  ) async {
+    return await _handleRemoteRequest(() async {
+      final body = {
+        "canViewMedicalHistory": isGranting,
+        "canViewPrescriptions": isGranting,
+        "canViewLabResults": isGranting,
+        "revokeAll":
+            !isGranting, // لو isGranting بـ true يبقا الـ revoke بـ false والعكس
+        "isDuringBooking": false,
+      };
+      await remoteDataSource.grantMedicalAccess(appointmentId, body);
+      return isGranting
+          ? "Access granted successfully"
+          : "Access revoked successfully";
+    });
   }
 }

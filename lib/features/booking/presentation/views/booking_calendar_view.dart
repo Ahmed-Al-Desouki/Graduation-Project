@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/features/booking/domain/entities/slot_entity.dart';
 import 'package:intl/intl.dart';
@@ -84,174 +85,342 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
     );
   }
 
-  // ✅ ميثود عرض دايالوج الحجز (تم نقلها هنا لتشغيل الزرار)
-  // void _showBookingDialog(BuildContext context, var slot) {
+  // void _showBookingDialog(BuildContext context, SlotEntity slot) {
   //   final reasonController = TextEditingController();
+  //   bool grantAccess = true;
+
+  //   // 1️⃣ خد نسخة من الكيوبت من الـ context بتاع الشاشة الأساسية قبل ما تفتح الدايالوج
+  //   final appointmentCubit = context.read<AppointmentActionCubit>();
+
   //   showDialog(
   //     context: context,
   //     builder:
-  //         (dialogContext) => AlertDialog(
-  //           shape: RoundedRectangleBorder(
-  //             borderRadius: BorderRadius.circular(20),
-  //           ),
-  //           title: const Text("Confirm Booking"),
-  //           content: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Text(
-  //                 "Doctor: Dr. ${widget.doctorName}",
-  //                 style: const TextStyle(fontWeight: FontWeight.bold),
-  //               ),
-  //               Text("Time: ${slot.startTime}"),
-  //               Text(
-  //                 "Fees: ${widget.consultationFee} EGP",
-  //                 style: const TextStyle(
-  //                   color: Colors.blue,
-  //                   fontWeight: FontWeight.bold,
-  //                 ),
-  //               ),
-  //               const SizedBox(height: 12),
-  //               TextField(
-  //                 controller: reasonController,
-  //                 decoration: InputDecoration(
-  //                   hintText: "Reason for visit",
-  //                   border: OutlineInputBorder(
-  //                     borderRadius: BorderRadius.circular(12),
+  //         (dialogContext) => BlocProvider.value(
+  //           // 2️⃣ "احقن" نسخة الكيوبت عشان الدايالوج يشوفها
+  //           value: appointmentCubit,
+  //           child: StatefulBuilder(
+  //             builder:
+  //                 (context, setDialogState) => AlertDialog(
+  //                   shape: RoundedRectangleBorder(
+  //                     borderRadius: BorderRadius.circular(20),
   //                   ),
+  //                   title: const Text("Confirm Booking"),
+  //                   content: SingleChildScrollView(
+  //                     child: Column(
+  //                       mainAxisSize: MainAxisSize.min,
+  //                       crossAxisAlignment: CrossAxisAlignment.start,
+  //                       children: [
+  //                         Text(
+  //                           "Doctor: Dr. ${widget.doctorName}",
+  //                           style: const TextStyle(
+  //                             fontWeight: FontWeight.bold,
+  //                             fontSize: 16,
+  //                           ),
+  //                         ),
+  //                         const SizedBox(height: 4),
+  //                         Text("Time: ${slot.startTime}"),
+  //                         Text(
+  //                           "Fees: ${widget.consultationFee} EGP",
+  //                           style: const TextStyle(
+  //                             color: Colors.blue,
+  //                             fontWeight: FontWeight.bold,
+  //                           ),
+  //                         ),
+  //                         const Divider(height: 30),
+  //                         const Text(
+  //                           "Reason for visit",
+  //                           style: TextStyle(fontSize: 12, color: Colors.grey),
+  //                         ),
+  //                         const SizedBox(height: 8),
+  //                         TextField(
+  //                           controller: reasonController,
+  //                           maxLines: 2,
+  //                           decoration: InputDecoration(
+  //                             hintText: "Enter your symptoms or reason...",
+  //                             border: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(12),
+  //                             ),
+  //                             filled: true,
+  //                             fillColor: Colors.grey[50],
+  //                           ),
+  //                         ),
+  //                         const SizedBox(height: 20),
+  //                         Container(
+  //                           padding: const EdgeInsets.all(12),
+  //                           decoration: BoxDecoration(
+  //                             color: const Color(0xFF9333EA).withOpacity(0.05),
+  //                             borderRadius: BorderRadius.circular(12),
+  //                             border: Border.all(
+  //                               color: const Color(0xFF9333EA).withOpacity(0.1),
+  //                             ),
+  //                           ),
+  //                           child: Column(
+  //                             children: [
+  //                               Row(
+  //                                 children: [
+  //                                   const Icon(
+  //                                     Icons.history_edu,
+  //                                     color: Color(0xFF9333EA),
+  //                                     size: 20,
+  //                                   ),
+  //                                   const SizedBox(width: 8),
+  //                                   const Expanded(
+  //                                     child: Text(
+  //                                       "Share Medical History",
+  //                                       style: TextStyle(
+  //                                         fontSize: 13,
+  //                                         fontWeight: FontWeight.w600,
+  //                                       ),
+  //                                     ),
+  //                                   ),
+  //                                   Switch(
+  //                                     value: grantAccess,
+  //                                     activeColor: const Color(0xFF9333EA),
+  //                                     onChanged: (value) {
+  //                                       setDialogState(
+  //                                         () => grantAccess = value,
+  //                                       );
+  //                                     },
+  //                                   ),
+  //                                 ],
+  //                               ),
+  //                               const Text(
+  //                                 "Allowing the doctor to see your past records helps in better diagnosis.",
+  //                                 style: TextStyle(
+  //                                   fontSize: 10,
+  //                                   color: Colors.blueGrey,
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                   actions: [
+  //                     TextButton(
+  //                       onPressed: () => Navigator.pop(dialogContext),
+  //                       child: const Text("Cancel"),
+  //                     ),
+  //                     ElevatedButton(
+  //                       style: ElevatedButton.styleFrom(
+  //                         backgroundColor: const Color(0xFF9333EA),
+  //                         shape: RoundedRectangleBorder(
+  //                           borderRadius: BorderRadius.circular(10),
+  //                         ),
+  //                       ),
+  //                       onPressed: () {
+  //                         Navigator.pop(dialogContext);
+  //                         // 3️⃣ دلوقتي هتقدر تنادي الكيوبت بأمان
+  //                         context
+  //                             .read<AppointmentActionCubit>()
+  //                             .createBookingAndPay(
+  //                               slotId: slot.slotId,
+  //                               reason: reasonController.text,
+  //                               grantAccess: grantAccess,
+  //                             );
+  //                       },
+  //                       child: const Text(
+  //                         "Confirm & Pay",
+  //                         style: TextStyle(color: Colors.white),
+  //                       ),
+  //                     ),
+  //                   ],
   //                 ),
-  //               ),
-  //             ],
   //           ),
-  //           actions: [
-  //             TextButton(
-  //               onPressed: () => Navigator.pop(dialogContext),
-  //               child: const Text("Cancel"),
-  //             ),
-  //             ElevatedButton(
-  //               onPressed: () {
-  //                 Navigator.pop(dialogContext);
-  //                 context.read<AppointmentActionCubit>().createBookingAndPay(
-  //                   slotId: slot.slotId,
-  //                   reason: reasonController.text,
-  //                   grantAccess: true,
-  //                 );
-  //               },
-  //               style: ElevatedButton.styleFrom(
-  //                 backgroundColor: Colors.green,
-  //                 foregroundColor: Colors.white,
-  //               ),
-  //               child: const Text("Confirm & Pay"),
-  //             ),
-  //           ],
   //         ),
   //   );
   // }
+
   void _showBookingDialog(BuildContext context, SlotEntity slot) {
     final reasonController = TextEditingController();
     bool grantAccess = true;
+    String selectedPaymentMethod = 'Card'; // القيمة الافتراضية
 
-    // 1️⃣ خد نسخة من الكيوبت من الـ context بتاع الشاشة الأساسية قبل ما تفتح الدايالوج
     final appointmentCubit = context.read<AppointmentActionCubit>();
 
     showDialog(
       context: context,
       builder:
           (dialogContext) => BlocProvider.value(
-            // 2️⃣ "احقن" نسخة الكيوبت عشان الدايالوج يشوفها
             value: appointmentCubit,
             child: StatefulBuilder(
               builder:
                   (context, setDialogState) => AlertDialog(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24.r),
                     ),
-                    title: const Text("Confirm Booking"),
+                    title: Row(
+                      children: [
+                        const Icon(
+                          Icons.verified_outlined,
+                          color: Colors.green,
+                        ),
+                        SizedBox(width: 10.w),
+                        const Text("Confirm Booking"),
+                      ],
+                    ),
                     content: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Doctor: Dr. ${widget.doctorName}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                          // 👨‍⚕️ تفاصيل الدكتور
+                          _buildDialogInfoRow(
+                            Icons.person_outline,
+                            "Doctor",
+                            "Dr. ${widget.doctorName}",
                           ),
-                          const SizedBox(height: 4),
-                          Text("Time: ${slot.startTime}"),
-                          Text(
-                            "Fees: ${widget.consultationFee} EGP",
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          _buildDialogInfoRow(
+                            Icons.access_time,
+                            "Time",
+                            slot.startTime,
                           ),
+                          _buildDialogInfoRow(
+                            Icons.payments_outlined,
+                            "Fees",
+                            "${widget.consultationFee} EGP",
+                            isPrice: true,
+                          ),
+
                           const Divider(height: 30),
+
+                          // 📝 سبب الزيارة
                           const Text(
                             "Reason for visit",
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8.h),
                           TextField(
                             controller: reasonController,
                             maxLines: 2,
                             decoration: InputDecoration(
-                              hintText: "Enter your symptoms or reason...",
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                              hintText: "Enter symptoms...",
                               filled: true,
                               fillColor: Colors.grey[50],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF9333EA).withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: const Color(0xFF9333EA).withOpacity(0.1),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                                borderSide: BorderSide.none,
                               ),
                             ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.history_edu,
-                                      color: Color(0xFF9333EA),
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Expanded(
-                                      child: Text(
-                                        "Share Medical History",
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // 💳 اختيار طريقة الدفع (الجزء الجديد)
+                          const Text(
+                            "Select Payment Method",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          SizedBox(height: 10.h),
+                          Wrap(
+                            spacing: 8.w,
+                            runSpacing: 8.h,
+                            children:
+                                paymentMethods.map((method) {
+                                  final isSelected =
+                                      selectedPaymentMethod == method['id'];
+                                  return InkWell(
+                                    onTap:
+                                        () => setDialogState(
+                                          () =>
+                                              selectedPaymentMethod =
+                                                  method['id'],
+                                        ),
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12.w,
+                                        vertical: 8.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isSelected
+                                                ? const Color(
+                                                  0xFF9333EA,
+                                                ).withOpacity(0.1)
+                                                : Colors.white,
+                                        borderRadius: BorderRadius.circular(
+                                          10.r,
+                                        ),
+                                        border: Border.all(
+                                          color:
+                                              isSelected
+                                                  ? const Color(0xFF9333EA)
+                                                  : Colors.grey.shade300,
                                         ),
                                       ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            method['icon'],
+                                            size: 16.sp,
+                                            color:
+                                                isSelected
+                                                    ? const Color(0xFF9333EA)
+                                                    : Colors.grey,
+                                          ),
+                                          SizedBox(width: 6.w),
+                                          Text(
+                                            method['name'],
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              color:
+                                                  isSelected
+                                                      ? const Color(0xFF9333EA)
+                                                      : Colors.black87,
+                                              fontWeight:
+                                                  isSelected
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    Switch(
-                                      value: grantAccess,
-                                      activeColor: const Color(0xFF9333EA),
-                                      onChanged: (value) {
-                                        setDialogState(
-                                          () => grantAccess = value,
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                  );
+                                }).toList(),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // 🔐 مشاركة الهيستوري
+                          Container(
+                            padding: EdgeInsets.all(12.w),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF9333EA).withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.history_edu,
+                                  color: Color(0xFF9333EA),
+                                  size: 20,
                                 ),
-                                const Text(
-                                  "Allowing the doctor to see your past records helps in better diagnosis.",
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.blueGrey,
+                                SizedBox(width: 10.w),
+                                const Expanded(
+                                  child: Text(
+                                    "Share Medical History",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
+                                ),
+                                Switch(
+                                  value: grantAccess,
+                                  activeColor: const Color(0xFF9333EA),
+                                  onChanged:
+                                      (val) => setDialogState(
+                                        () => grantAccess = val,
+                                      ),
                                 ),
                               ],
                             ),
@@ -268,29 +437,65 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF9333EA),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24.w,
+                            vertical: 12.h,
                           ),
                         ),
                         onPressed: () {
                           Navigator.pop(dialogContext);
-                          // 3️⃣ دلوقتي هتقدر تنادي الكيوبت بأمان
-                          context
-                              .read<AppointmentActionCubit>()
-                              .createBookingAndPay(
-                                slotId: slot.slotId,
-                                reason: reasonController.text,
-                                grantAccess: grantAccess,
-                              );
+                          // 🚀 نداء الميثود الجديدة الموحدة
+                          context.read<AppointmentActionCubit>().bookAndPay(
+                            slotId: slot.slotId,
+                            reason: reasonController.text,
+                            grantAccess: grantAccess,
+                            paymentMethod: selectedPaymentMethod,
+                          );
                         },
                         child: const Text(
                           "Confirm & Pay",
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
                   ),
             ),
           ),
+    );
+  }
+
+  // ويدجت مساعدة للصفوف داخل الدايالوج
+  Widget _buildDialogInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    bool isPrice = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Row(
+        children: [
+          Icon(icon, size: 18.sp, color: Colors.grey),
+          SizedBox(width: 8.w),
+          Text(
+            "$label: ",
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: isPrice ? Colors.blue : Colors.black,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -312,6 +517,23 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
     _activeFollowUpId = widget.originalAppointmentId;
     _activeFollowUpPatientName = widget.followUpPatientName;
   }
+
+  final List<Map<String, dynamic>> paymentMethods = [
+    {'id': 'Card', 'name': 'Credit Card', 'icon': Icons.credit_card},
+    {
+      'id': 'VodafoneCash',
+      'name': 'Vodafone Cash',
+      'icon': Icons.account_balance_wallet,
+    },
+    {
+      'id': 'EtisalatCash',
+      'name': 'Etisalat Cash',
+      'icon': Icons.account_balance_wallet_outlined,
+    },
+    {'id': 'OrangeCash', 'name': 'Orange Cash', 'icon': Icons.wallet},
+    {'id': 'WePay', 'name': 'WE Pay', 'icon': Icons.payments},
+    {'id': 'Valu', 'name': 'Valu', 'icon': Icons.install_mobile},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -339,12 +561,16 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
               );
 
               if (isSuccess == true) {
-                showSnackBar(
-                  context,
-                  "Payment Successful! Your appointment is confirmed.",
-                  Colors.green,
+                // showSnackBar(
+                //   context,
+                //   "Payment Successful! Your appointment is confirmed.",
+                //   Colors.green,
+                // );
+                // _fetchMonthData(_focusedDay);
+                context.push(
+                  AppRouter.kBookingSuccess,
+                  extra: state.bookingData, // البيانات اللي جاية من الباك
                 );
-                _fetchMonthData(_focusedDay);
               } else {
                 showSnackBar(
                   context,
@@ -401,17 +627,75 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                               ),
                             ],
                           ),
+                          // actions: [
+                          //   if (!widget.isPatientView)
+                          //     IconButton(
+                          //       onPressed:
+                          //           () =>
+                          //               context.push(AppRouter.kScheduleSetup),
+                          //       icon: const Icon(
+                          //         Icons.settings,
+                          //         color: Colors.blue,
+                          //         size: 24,
+                          //       ),
+                          //     ),
+                          //   const SizedBox(width: 8),
+                          // ],
+                          // ... جوه الـ SliverAppBar في الـ actions ...
                           actions: [
                             if (!widget.isPatientView)
-                              IconButton(
-                                onPressed:
-                                    () =>
-                                        context.push(AppRouter.kScheduleSetup),
+                              PopupMenuButton<String>(
+                                padding: EdgeInsets.zero,
                                 icon: const Icon(
-                                  Icons.settings,
+                                  Icons
+                                      .more_vert, // التلات نقط اللي اتفقنا عليهم
                                   color: Colors.blue,
                                   size: 24,
                                 ),
+                                onSelected: (value) {
+                                  if (value == 'agenda') {
+                                    context.push(AppRouter.kAppointmentsCenter);
+                                  } else if (value == 'setup') {
+                                    context.push(AppRouter.kScheduleSetup);
+                                  }
+                                },
+                                itemBuilder:
+                                    (context) => [
+                                      const PopupMenuItem(
+                                        value: 'agenda',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.view_agenda_outlined,
+                                              color: Colors.blue,
+                                              size: 20,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              "Agenda View",
+                                              style: TextStyle(fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'setup',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.settings_outlined,
+                                              color: Colors.grey,
+                                              size: 20,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              "Schedule Settings",
+                                              style: TextStyle(fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                               ),
                             const SizedBox(width: 8),
                           ],
@@ -504,12 +788,26 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                         onDetails:
                                             () => context.push(
                                               AppRouter.kMedicalDetails,
+                                              // extra: {
+                                              //   'appointmentId':
+                                              //       slot.appointmentId,
+                                              //   'patientName': slot.patientName,
+                                              //   'status': slot.status,
+                                              //   'patientNote': slot.patientNote,
+                                              // },
                                               extra: {
                                                 'appointmentId':
                                                     slot.appointmentId,
-                                                'patientName': slot.patientName,
+                                                'patientId':
+                                                    null, // 💡 مش معانا بس عادي مش هيضرب خلاص
+                                                'patientName':
+                                                    slot.patientName, // ✅ الاسم من الـ JSON بتاعك
+                                                'doctorName':
+                                                    getIt<SessionManager>()
+                                                        .userName,
                                                 'status': slot.status,
                                                 'patientNote': slot.patientNote,
+                                                'isReadOnly': false,
                                               },
                                             ),
                                         onDelete:
