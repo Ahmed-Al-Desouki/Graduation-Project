@@ -7,11 +7,11 @@ import '../../domain/entities/complete_profile_request_entity.dart';
 import '../../domain/entities/verification_document_entity.dart';
 import '../../domain/entities/achievement_entity.dart';
 import '../../domain/repositories/doctor_profile_repository.dart';
-import '../data_sources/doctor_profile_remote_data_source.dart';
+import '../data_sources/doctor_completion_profile_remote_data_source.dart';
 import '../models/complete_profile_request_model.dart';
 
 class DoctorProfileRepositoryImpl implements DoctorProfileRepository {
-  final DoctorProfileRemoteDataSource remoteDataSource;
+  final DoctorCompletionProfileRemoteDataSource remoteDataSource;
 
   DoctorProfileRepositoryImpl(this.remoteDataSource);
 

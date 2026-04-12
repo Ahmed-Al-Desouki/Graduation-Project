@@ -3,7 +3,7 @@ import 'package:graduation_project/features/doctor_home/data/models/location_mod
 
 import '../models/complete_profile_request_model.dart';
 
-abstract class DoctorProfileRemoteDataSource {
+abstract class DoctorCompletionProfileRemoteDataSource {
   Future<bool> completeProfile(CompleteProfileRequestModel request);
   Future<bool> uploadVerificationDocument({
     required int documentType,

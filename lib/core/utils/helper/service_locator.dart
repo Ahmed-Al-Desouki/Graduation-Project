@@ -13,8 +13,8 @@ import 'package:graduation_project/features/chat/domain/use_cases/get_messages_u
 import 'package:graduation_project/features/chat/domain/use_cases/send_messages_use_case.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_cubit/chat_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
-import 'package:graduation_project/features/doctor_home/data/data_sources/doctor_profile_remote_data_source.dart';
-import 'package:graduation_project/features/doctor_home/data/data_sources/doctor_profile_remote_data_source_impl.dart';
+import 'package:graduation_project/features/doctor_home/data/data_sources/doctor_completion_profile_remote_data_source.dart';
+import 'package:graduation_project/features/doctor_home/data/data_sources/doctor_completion_profile_remote_data_source_impl.dart';
 import 'package:graduation_project/features/doctor_home/data/repositories/doctor_profile_repository_impl.dart';
 import 'package:graduation_project/features/doctor_home/domain/repositories/doctor_profile_repository.dart';
 import 'package:graduation_project/features/doctor_home/domain/use_cases/add_achievement_use_case.dart';
@@ -22,6 +22,10 @@ import 'package:graduation_project/features/doctor_home/domain/use_cases/complet
 import 'package:graduation_project/features/doctor_home/domain/use_cases/update_location_use_case.dart';
 import 'package:graduation_project/features/doctor_home/domain/use_cases/upload_verification_document_use_case.dart';
 import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
+import 'package:graduation_project/features/doctor_profile/data/repositories/doctor_real_profile_repository_impl.dart';
+import 'package:graduation_project/features/doctor_profile/domain/repositories/doctor_real_profile_repository.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_doctor_profile_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
 import 'package:graduation_project/features/home/data/repos/home_repo_impl.dart';
 import 'package:graduation_project/features/home/data/service/home_web_service.dart';
 import 'package:graduation_project/features/home/domain/repos/home_repo.dart';
@@ -182,12 +186,14 @@ Future<void> setupServiceLocator() async {
     ),
   );
 
-  getIt.registerLazySingleton<DoctorProfileRemoteDataSource>(
-    () => DoctorProfileRemoteDataSourceImpl(getIt<ApiService>()),
+  getIt.registerLazySingleton<DoctorCompletionProfileRemoteDataSource>(
+    () => DoctorCompletionProfileRemoteDataSourceImpl(getIt<ApiService>()),
   );
 
   getIt.registerLazySingleton<DoctorProfileRepository>(
-    () => DoctorProfileRepositoryImpl(getIt<DoctorProfileRemoteDataSource>()),
+    () => DoctorProfileRepositoryImpl(
+      getIt<DoctorCompletionProfileRemoteDataSource>(),
+    ),
   );
 
   getIt.registerLazySingleton<CompleteProfileUseCase>(
@@ -214,5 +220,17 @@ Future<void> setupServiceLocator() async {
       getIt<AddAchievementUseCase>(),
       getIt<DoctorProfileRepository>(),
     ),
+  );
+
+  getIt.registerLazySingleton<DoctorRealProfileRepository>(
+    () => DoctorRealProfileRepositoryImpl(getIt()),
+  );
+
+  getIt.registerLazySingleton<GetDoctorProfileUseCase>(
+    () => GetDoctorProfileUseCase(getIt()),
+  );
+
+  getIt.registerFactory<DoctorRealProfileCubit>(
+    () => DoctorRealProfileCubit(getIt()),
   );
 }

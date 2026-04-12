@@ -2,15 +2,15 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/utils/helper/api.dart';
-import 'package:graduation_project/features/doctor_home/data/data_sources/doctor_profile_remote_data_source.dart';
+import 'package:graduation_project/features/doctor_home/data/data_sources/doctor_completion_profile_remote_data_source.dart';
 import 'package:graduation_project/features/doctor_home/data/models/complete_profile_request_model.dart';
 import 'package:graduation_project/features/doctor_home/data/models/location_model.dart';
 
-class DoctorProfileRemoteDataSourceImpl
-    implements DoctorProfileRemoteDataSource {
+class DoctorCompletionProfileRemoteDataSourceImpl
+    implements DoctorCompletionProfileRemoteDataSource {
   final ApiService _apiService;
 
-  DoctorProfileRemoteDataSourceImpl(this._apiService);
+  DoctorCompletionProfileRemoteDataSourceImpl(this._apiService);
 
   @override
   Future<bool> completeProfile(CompleteProfileRequestModel request) async {
