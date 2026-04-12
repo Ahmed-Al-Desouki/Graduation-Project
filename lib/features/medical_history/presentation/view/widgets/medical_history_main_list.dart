@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
 import 'package:graduation_project/features/medical_history/domain/models/patient_profile_model.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/medical_history_header_card.dart';
@@ -102,11 +103,24 @@ class MedicalHistoryMainList extends StatelessWidget {
                   ),
                 ),
 
+                // _wrap(
+                //   appointmentsKey,
+                //   'Appointments',
+                //   6,
+                //   const PastAppointmentsSection(),
+                // ),
                 _wrap(
                   appointmentsKey,
                   'Appointments',
                   6,
-                  const PastAppointmentsSection(),
+                  PastAppointmentsSection(
+                    // 🚀 بنبعت المواعيد اللي جات في الـ Profile فعلاً
+                    appointments:
+                        profile.pastAppointments
+                            .cast<AppointmentFullDetailsEntity>(),
+                    isDoctorView:
+                        isDoctorView, // بنبعت الفلاج ده عشان الكارت يعرف يعرض إيه
+                  ),
                 ),
 
                 _wrap(

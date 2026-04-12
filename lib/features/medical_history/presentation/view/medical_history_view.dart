@@ -58,9 +58,17 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
                   ),
         ),
         BlocProvider(
-          create:
-              (context) =>
-                  getIt<AppointmentsCenterCubit>()..getPatientAppointments(),
+          create: (context)
+          //  =>
+          //     getIt<AppointmentsCenterCubit>()..getPatientAppointments(),
+          {
+            final cubit = getIt<AppointmentsCenterCubit>();
+            // 🚨 الزتونة: لو مريض نادي السيرفر، لو دكتور "استنى" الداتا اللي هتيجي في الـ Profile
+            if (!widget.isDoctorView) {
+              cubit.getPatientAppointments();
+            }
+            return cubit;
+          },
         ),
         BlocProvider(create: (context) => getIt<MedicalqrCubit>()),
       ],

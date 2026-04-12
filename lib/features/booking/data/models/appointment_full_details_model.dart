@@ -180,4 +180,31 @@ class AppointmentFullDetailsModel extends AppointmentFullDetailsEntity {
       //     json['revokeAll'] ?? false, // هل المريض يقدر يلغى جميع المواعيد؟
     );
   }
+
+  // داخل AppointmentFullDetailsModel
+  Map<String, dynamic> toJson() {
+    return {
+      'appointmentId': appointmentId,
+      'appointmentDate': appointmentDate.toIso8601String(),
+      'startTime': startTime,
+      'endTime': endTime,
+      'status': status,
+      'patientNotes': patientNotes,
+      'doctorId': doctorId,
+      'doctorName': doctorName,
+      'patientId': patientId,
+      'patientName': patientName,
+      'medicalRecord':
+          medicalRecord != null
+              ? (medicalRecord as MedicalRecordModel).toJson()
+              : null,
+      'prescriptions':
+          prescriptions
+              ?.map((e) => (e as PrescriptionModel).toJson(appointmentId))
+              .toList(),
+      'cancelledBy': cancelBy,
+      'cancellationReason': cancellationReason,
+      'canViewMedicalHistory': canViewMedicalHistory,
+    };
+  }
 }

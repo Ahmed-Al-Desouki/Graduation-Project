@@ -1,3 +1,4 @@
+import 'package:graduation_project/features/booking/data/models/appointment_full_details_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medication_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/social_history_model.dart';
@@ -21,7 +22,7 @@ class PatientProfileModel {
   final List<String> chronicConditions;
   final List<MedicalFileModel> labTests;
   final List<MedicalFileModel> radiologyFiles;
-  final List<dynamic> pastAppointments;
+  final List<AppointmentFullDetailsModel> pastAppointments;
   final List<dynamic> medicalRecords;
   final List<SurgeryModel> surgeries;
   final List<FamilyHistoryModel> familyHistory;
@@ -100,8 +101,17 @@ class PatientProfileModel {
                   .toList()
               : [],
 
+      // pastAppointments:
+      //     (json['pastAppointments'] is List) ? json['pastAppointments'] : [],
       pastAppointments:
-          (json['pastAppointments'] is List) ? json['pastAppointments'] : [],
+          (json['pastAppointments'] as List?)
+              ?.map(
+                (e) => AppointmentFullDetailsModel.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
+              .toList() ??
+          [],
       medicalRecords:
           (json['medicalRecords'] is List) ? json['medicalRecords'] : [],
 
@@ -166,7 +176,12 @@ class PatientProfileModel {
       'chronicConditions': chronicConditions,
       'labTests': labTests.map((e) => e.toJson()).toList(),
       'radiologyFiles': radiologyFiles.map((e) => e.toJson()).toList(),
-      'pastAppointments': pastAppointments,
+      // 'pastAppointments': pastAppointments,
+      'pastAppointments':
+          pastAppointments.map((e) {
+            if (e is AppointmentFullDetailsModel) return e.toJson();
+            return e; // لو هو أصلاً Map أو نوع تاني
+          }).toList(),
       'medicalRecords': medicalRecords,
       'surgeries': surgeries.map((e) => e.toJson()).toList(),
       'familyHistory': familyHistory.map((e) => e.toJson()).toList(),

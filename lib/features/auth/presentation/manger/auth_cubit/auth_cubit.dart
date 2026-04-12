@@ -61,12 +61,16 @@ class AuthCubit extends Cubit<AuthState> {
 
             final uid = await SecureStorageHelper.getUserId();
             final name = await SecureStorageHelper.getUserName();
+            final roleData = await SecureStorageHelper.getUserRole();
+            final String finalRole = roleData['role'] ?? role.toLowerCase();
             getIt<SessionManager>().updateUserDataAfterLogin(
               id: uid!,
               name: name!,
-              role: role,
+              role: finalRole,
             );
-            emit(LoginSuccess(uid: uid!, email: googleUser.email, role: role));
+            emit(
+              LoginSuccess(uid: uid!, email: googleUser.email, role: finalRole),
+            );
           } catch (e) {
             emit(LoginFailure(errMessage: 'Processing Error: $e'));
           }

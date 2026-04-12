@@ -103,8 +103,11 @@ abstract class AppRouter {
       GoRoute(
         path: kAppointmentsCenter,
         builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
           // هنا هننادي الشاشة الجديدة اللي هنعملها
-          return const AppointmentsCenterView();
+          return AppointmentsCenterView(
+            initialAppointments: extra?['initialAppointments'],
+          );
         },
       ),
       // 1. شاشة إعداد الجدول

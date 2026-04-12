@@ -137,4 +137,15 @@ class AppointmentsCenterCubit extends Cubit<AppointmentsCenterState> {
       ), // بعد الإلغاء، جلب المواعيد مرة تانية لتحديث الواجهة
     );
   }
+
+  // داخل AppointmentsCenterCubit
+  void loadPreFetchedAppointments(List<AppointmentFullDetailsEntity> list) {
+    emit(
+      AppointmentsCenterSuccess(
+        appointments: list,
+        fullAppointments: list,
+        currentStatus: null,
+      ),
+    );
+  }
 }

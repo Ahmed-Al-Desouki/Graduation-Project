@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/features/booking/data/models/appointment_full_details_model.dart';
+import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
 import 'package:graduation_project/features/booking/presentation/manager/appointments_center_cubit/appointment_center_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/views/widgets/AppointmentListItem.dart';
 import '../../../../core/utils/app_router.dart';
@@ -10,7 +11,8 @@ import '../../../../core/utils/helper/service_locator.dart';
 import '../../../../core/utils/helper/session_manager.dart';
 
 class AppointmentsCenterView extends StatefulWidget {
-  const AppointmentsCenterView({super.key});
+  final List<AppointmentFullDetailsEntity>? initialAppointments;
+  const AppointmentsCenterView({super.key, this.initialAppointments});
 
   @override
   State<AppointmentsCenterView> createState() => _AppointmentsCenterViewState();
@@ -21,6 +23,13 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
   bool isSearching = false;
   final TextEditingController searchController = TextEditingController();
   DateTime? manualSelectedDate;
+  late final bool isHistoryMode;
+
+  @override
+  void initState() {
+    super.initState();
+    isHistoryMode = widget.initialAppointments != null;
+  }
 
   @override
   void dispose() {
@@ -43,9 +52,19 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
     return BlocProvider(
       create: (context) {
         final cubit = getIt<AppointmentsCenterCubit>();
-        isDoctor
-            ? cubit.getDoctorAppointments()
-            : cubit.getPatientAppointments();
+        if (isHistoryMode) {
+          // 🛑 لو باعتين داتا (تاريخ مريض)، اعرضها هي بس وماتروحش تنادي مواعيد الدكتور
+          cubit.loadPreFetchedAppointments(widget.initialAppointments!);
+        } else {
+          // isDoctor
+          //     ? cubit.getDoctorAppointments()
+          //     : cubit.getPatientAppointments();
+          final bool isDoctor =
+              getIt<SessionManager>().userRole?.toLowerCase() == 'doctor';
+          isDoctor
+              ? cubit.getDoctorAppointments()
+              : cubit.getPatientAppointments();
+        }
         return cubit;
       },
       child: Builder(
@@ -78,8 +97,10 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                                 .read<AppointmentsCenterCubit>()
                                 .searchAppointments(query),
                       )
-                      : const Text(
-                        "Appointments Agenda",
+                      : Text(
+                        isHistoryMode
+                            ? "Medical History Visits"
+                            : "Appointments Agenda",
                         style: TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
@@ -104,7 +125,7 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                   },
                 ),
                 // ✅ فلتر التاريخ يظهر للدكتور فقط
-                if (isDoctor && manualSelectedDate != null)
+                if (isDoctor && manualSelectedDate != null && !isHistoryMode)
                   IconButton(
                     icon: const Icon(
                       Icons.calendar_today_rounded,
@@ -115,7 +136,10 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                       _refreshData(context, isDoctor);
                     },
                   ),
-                if (isDoctor && !isSearching && manualSelectedDate == null)
+                if (isDoctor &&
+                    !isSearching &&
+                    manualSelectedDate == null &&
+                    !isHistoryMode)
                   IconButton(
                     icon: const Icon(
                       Icons.calendar_month,
@@ -128,37 +152,38 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
             body: Column(
               children: [
                 // 🏷️ Filter Chips
-                Container(
-                  height: 60.h,
-                  padding: EdgeInsets.symmetric(vertical: 10.h),
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    itemCount: roleBasedStatuses.length,
-                    itemBuilder: (context, index) {
-                      final status = roleBasedStatuses[index];
-                      final isSelected = selectedStatus == status;
-                      return Padding(
-                        padding: EdgeInsets.only(right: 8.w),
-                        child: ChoiceChip(
-                          label: Text(status),
-                          selected: isSelected,
-                          onSelected: (val) {
-                            setState(() {
-                              selectedStatus = val ? status : null;
-                              manualSelectedDate = null;
-                            });
-                            _refreshData(context, isDoctor);
-                          },
-                          selectedColor: const Color(0xFF2563EB),
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
+                if (!isHistoryMode)
+                  Container(
+                    height: 60.h,
+                    padding: EdgeInsets.symmetric(vertical: 10.h),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      itemCount: roleBasedStatuses.length,
+                      itemBuilder: (context, index) {
+                        final status = roleBasedStatuses[index];
+                        final isSelected = selectedStatus == status;
+                        return Padding(
+                          padding: EdgeInsets.only(right: 8.w),
+                          child: ChoiceChip(
+                            label: Text(status),
+                            selected: isSelected,
+                            onSelected: (val) {
+                              setState(() {
+                                selectedStatus = val ? status : null;
+                                manualSelectedDate = null;
+                              });
+                              _refreshData(context, isDoctor);
+                            },
+                            selectedColor: const Color(0xFF2563EB),
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black,
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
 
                 // 📝 Appointments List
                 Expanded(
@@ -189,7 +214,12 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                                       as AppointmentFullDetailsModel;
                               return AppointmentListItem(
                                 appointment: item,
-                                isDoctor: isDoctor, // ✅ بنمرر الـ Role للكارت
+                                isDoctor:
+                                    isHistoryMode
+                                        ? false
+                                        : (getIt<SessionManager>().userRole
+                                                ?.toLowerCase() ==
+                                            'doctor'),
                                 onTap:
                                     () => context.push(
                                       AppRouter.kMedicalDetails,
@@ -215,7 +245,7 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                                         'status': item.status,
                                         'patientNote': item.patientNotes,
                                         'isReadOnly':
-                                            false, // 🔓 الدكتور يقدر يعدل
+                                            isHistoryMode, // 🔓 الدكتور يقدر يعدل
                                       },
                                     ),
                                 onCancel:
