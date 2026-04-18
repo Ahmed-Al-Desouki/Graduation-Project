@@ -24,15 +24,49 @@ namespace WelloraHealthCareManagement.API.Controllers
             _logger = logger;
         }
 
-        /// حجز موعد (للمريض)
-        [HttpPost("book")]
+        ///// حجز موعد (للمريض)
+        //[HttpPost("book")]
+        //[Authorize(Roles = "Patient")]
+        //public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentRequest request)
+        //{
+        //    try
+        //    {
+        //        var patientId = GetUserId();
+        //        var response = await _appointmentService.BookAppointmentAsync(patientId, request);
+        //        return Ok(response);
+        //    }
+        //    catch (NotFoundException ex)
+        //    {
+        //        return NotFound(new { error = ex.Message });
+        //    }
+        //    catch (DomainException ex)
+        //    {
+        //        return BadRequest(new { error = ex.Message });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error booking appointment");
+        //        return StatusCode(500, new { error = "An unexpected error occurred" });
+        //    }
+        //}
+        /// <summary>
+        /// حجز موعد مع الدفع (Payment First Flow)
+        /// </summary>
+        [HttpPost("book-with-payment")]
         [Authorize(Roles = "Patient")]
-        public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentRequest request)
+        public async Task<IActionResult> BookAppointmentWithPayment(
+            [FromBody] BookAppointmentRequest request,
+            [FromQuery] PaymentMethod paymentMethod = PaymentMethod.Card)
         {
             try
             {
                 var patientId = GetUserId();
-                var response = await _appointmentService.BookAppointmentAsync(patientId, request);
+
+                var response = await _appointmentService.InitiateBookingWithPaymentAsync(
+                    patientId,
+                    request,
+                    paymentMethod);
+
                 return Ok(response);
             }
             catch (NotFoundException ex)
@@ -45,7 +79,7 @@ namespace WelloraHealthCareManagement.API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error booking appointment");
+                _logger.LogError(ex, "Error in BookAppointmentWithPayment");
                 return StatusCode(500, new { error = "An unexpected error occurred" });
             }
         }
@@ -211,13 +245,75 @@ namespace WelloraHealthCareManagement.API.Controllers
             }
         }
 
+        // Toggle / Update / Revoke All
         [HttpPost("{appointmentId}/grant-medical-access")]
         [Authorize(Roles = "Patient")]
-        public async Task<IActionResult> GrantMedicalAccess(Guid appointmentId)
+        public async Task<IActionResult> ToggleMedicalAccess(
+            Guid appointmentId,
+            [FromBody] ToggleMedicalAccessRequest request)
         {
-            var patientId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            await _appointmentService.GrantMedicalHistoryAccessAsync(patientId, appointmentId);
-            return Ok(new { message = "Medical history access granted successfully" });
+            try
+            {
+                var patientId = GetUserId();
+                await _appointmentService.ToggleMedicalHistoryAccessAsync(
+                    patientId, appointmentId, request);
+
+                return Ok(new
+                {
+                    message = "Medical history access updated successfully",
+                    revokeAll = request.RevokeAll
+                });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling medical access for appointment {AppointmentId}", appointmentId);
+                return StatusCode(500, new { error = "An unexpected error occurred" });
+            }
+        }
+
+        [HttpPost("{appointmentId}/extend-medical-access")]
+        [Authorize(Roles = "Patient")]
+        public async Task<IActionResult> ExtendMedicalAccess(
+            Guid appointmentId,
+            [FromBody] ExtendAccessRequest request)
+        {
+            try
+            {
+                var patientId = GetUserId();
+                await _appointmentService.ExtendMedicalAccessExpiryAsync(
+                    patientId, appointmentId, request);
+
+                return Ok(new { message = "Medical access expiry extended successfully" });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extending medical access for appointment {AppointmentId}", appointmentId);
+                return StatusCode(500, new { error = "An unexpected error occurred" });
+            }
         }
 
         /// تأكيد موعد (للطبيب)

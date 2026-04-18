@@ -140,5 +140,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
             DateTime fromDate,
             DateTime toDate,
             CancellationToken ct = default);
+        Task BulkInsertOrUpdateAsync(List<TimeSlot> slots, CancellationToken ct = default);
+        Task BulkInsertAsync(List<TimeSlot> slots, CancellationToken ct = default);
     }
 }

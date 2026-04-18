@@ -14,6 +14,7 @@ using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 using WelloraHealthCareManagment.Domain.Enums;
+using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 using WelloraHealthCareManagment.Infrastructure.Helpers;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 
@@ -23,6 +24,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
     {
         private readonly IReminderV2Service _reminderService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IReminderRepository _reminderRepository;
         private readonly IPrescriptionRepository _prescriptionRepository;
         private readonly ILogger<PrescriptionReminderService> _logger;
 
@@ -32,12 +34,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             IReminderV2Service reminderService,
             ITimezoneHelper timezoneHelper,
             IServiceProvider serviceProvider,
+            IReminderRepository reminderRepository,
             IPrescriptionRepository prescriptionRepository,
             ILogger<PrescriptionReminderService> logger)
         {
             _reminderService = reminderService;
             _timezoneHelper = timezoneHelper;
             _serviceProvider = serviceProvider;
+            _reminderRepository = reminderRepository;
             _prescriptionRepository = prescriptionRepository;
             _logger = logger;
         }
@@ -93,12 +97,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                             Times = times
                         };
                         dto.RRULE = null;
-                        _logger.LogInformation(
-                            " [SIMPLE] Reminder DTO for {Med} - Every {Int}h",
-                            item.MedicationName, dto.Simple.IntervalHours);
                     }
                     else
                     {
+                        // ✅ FIX: BuildRRuleForPrescription returns null for Once — that's correct (ONCE mode)
                         dto.RRULE = BuildRRuleForPrescription(item, startDateTime, endDate, timeZoneId);
                         dto.Simple = null;
                     }
@@ -181,10 +183,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                         IntervalHours = item.ReminderIntervalHours ?? 8,
                         Times = times
                     };
+                    dto.RRULE = null;
                 }
                 else
                 {
-                    dto.RRULE = BuildRRuleForPrescription(item, startDateTime, inclusiveEndDate, timeZoneId);
+                    // ✅ FIX: BuildRRuleForPrescription returns null for Once — that's correct (ONCE mode)
+                    dto.RRULE = BuildRRuleForPrescription(item, startDateTime, endDate, timeZoneId);
+                    dto.Simple = null;
                 }
 
                 var reminder = await _reminderService.CreateAsync(patientId, dto);
@@ -304,22 +309,25 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
         //    return rrule;
         //}
-        private string BuildRRuleForPrescription(
+        private string? BuildRRuleForPrescription(
             PrescriptionItem item,
             DateTime startDateTime,
             DateTime? endDate,
             string timeZoneId)
         {
-            var parts = new List<string>();
+            if (item.ReminderFrequencyType == RepeatFrequency.Once)
+            {
+                _logger.LogInformation(
+                    "PrescriptionItem {ItemId}: Once mode — returning null RRULE",
+                    item.Id);
+                return null;
+            }
 
-            // أولًا: Frequency
+            var parts = new List<string>();
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId ?? "Africa/Cairo");
+
             switch (item.ReminderFrequencyType)
             {
-                case RepeatFrequency.Once:
-                    parts.Add("FREQ=DAILY");
-                    parts.Add("COUNT=1");
-                    break;
-
                 case RepeatFrequency.Daily:
                     parts.Add("FREQ=DAILY");
                     break;
@@ -344,7 +352,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     throw new ArgumentException($"Unsupported frequency: {item.ReminderFrequencyType}");
             }
 
-            // ثانيًا: أوقات الجرعة
             if (item.ReminderDailyDoseTimes?.Count > 0)
             {
                 var sortedTimes = item.ReminderDailyDoseTimes.OrderBy(t => t).ToList();
@@ -356,33 +363,29 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
                 if (uniqueMinutes.Count == 1)
                     parts.Add($"BYMINUTE={uniqueMinutes[0]}");
-                else if (uniqueMinutes.Count > 1)
+                else
                 {
-                    _logger.LogWarning("Mixed minutes detected - using first minute only");
+                    _logger.LogWarning("Mixed minutes — using first minute only");
                     parts.Add($"BYMINUTE={uniqueMinutes[0]}");
                 }
 
                 parts.Add("BYSECOND=0");
             }
 
-            // الجزء المهم: ما نضيفش UNTIL لو Once
-            bool addUntil = endDate.HasValue && item.ReminderFrequencyType != RepeatFrequency.Once;
-
-            if (addUntil)
+            if (endDate.HasValue)
             {
-                var inclusiveEnd = endDate.Value.Date.AddDays(1).AddTicks(-1);
-                var endUtc = inclusiveEnd.ToUniversalTime();
+                // ✅ FIX: Use Cairo timezone for UNTIL, not server ToUniversalTime()
+                var inclusiveEnd = DateTime.SpecifyKind(
+                    endDate.Value.Date.AddDays(1).AddTicks(-1),
+                    DateTimeKind.Unspecified);
+                var endUtc = TimeZoneInfo.ConvertTimeToUtc(inclusiveEnd, tz);
                 parts.Add($"UNTIL={endUtc:yyyyMMddTHHmmssZ}");
             }
 
             var rrule = string.Join(";", parts);
             _logger.LogDebug("Built RRULE: {RRULE}", rrule);
 
-            // Test parse
-            try
-            {
-                var test = new RecurrencePattern(rrule);
-            }
+            try { var test = new RecurrencePattern(rrule); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to parse generated RRULE: {RRULE}", rrule);
@@ -413,17 +416,19 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 RegexOptions.IgnoreCase);
 
             if (!match.Success)
-                return start.AddDays(7);
+                return start.AddDays(6); // 7 days inclusive (day 1 = start)
 
             var value = int.Parse(match.Groups[1].Value);
             var unit = match.Groups[2].Value.ToLower();
 
+            // ✅ FIX: Subtract 1 because start day counts as day 1
+            // e.g. "7 days" starting April 11 → last day = April 17 (not April 18)
             return unit switch
             {
-                "day" or "days" => start.AddDays(value),
-                "week" or "weeks" => start.AddDays(value * 7),
-                "month" or "months" => start.AddMonths(value),
-                _ => start.AddDays(7)
+                "day" or "days" => start.AddDays(value - 1),
+                "week" or "weeks" => start.AddDays(value * 7 - 1),
+                "month" or "months" => start.AddMonths(value).AddDays(-1),
+                _ => start.AddDays(6)
             };
         }
 
@@ -475,6 +480,133 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 _logger.LogError(ex,
                     "❌ Error cancelling reminders for PrescriptionId={PrescriptionId}",
                     prescriptionId);
+            }
+        }
+        public async Task UpdateReminderForItemAsync(
+            PrescriptionItem updatedItem,
+            Guid prescriptionId,
+            int patientId,
+            CancellationToken ct = default)
+        {
+            _logger.LogInformation(
+                "Updating reminder cache for PrescriptionItem {ItemId} ({Med})",
+                updatedItem.Id, updatedItem.MedicationName);
+
+            try
+            {
+                // ✅ Step 1: جيب الـ reminder المرتبط بالـ item ده
+                var reminder = await _reminderRepository.GetByPrescriptionItemIdAsync(updatedItem.Id);
+
+                if (reminder == null)
+                {
+                    _logger.LogWarning(
+                        "No active reminder found for PrescriptionItem {ItemId} — creating new one",
+                        updatedItem.Id);
+
+                    if (!updatedItem.ReminderFrequencyType.HasValue)
+                    {
+                        _logger.LogInformation(
+                            "PrescriptionItem {ItemId} has no reminder settings after update. Nothing to create.",
+                            updatedItem.Id);
+                        return;
+                    }
+
+                    // لو مفيش reminder، اعمل واحد جديد
+                    await CreateReminderForItemAsync(updatedItem, prescriptionId, patientId, ct);
+                    return;
+                }
+
+                if (!updatedItem.ReminderFrequencyType.HasValue)
+                {
+                    reminder.IsActive = false;
+                    reminder.Status = ReminderEnums.ReminderStatus.Dismissed;
+                    reminder.UpdatedAt = DateTime.UtcNow;
+
+                    await _reminderRepository.UpdateAsync(reminder);
+                    var emptyGenerator = _serviceProvider
+                        .GetRequiredService<PrescriptionReminderOccurrenceGenerator>();
+
+                    await emptyGenerator.GenerateCacheForPrescriptionItemAsync(
+                        updatedItem,
+                        patientId,
+                        reminder.Id,
+                        DateTime.UtcNow,
+                        DateTime.UtcNow);
+
+                    _logger.LogInformation(
+                        "Reminder {ReminderId} deactivated and cache cleared for PrescriptionItem {ItemId}",
+                        reminder.Id,
+                        updatedItem.Id);
+                    return;
+                }
+
+                // ✅ Step 2: حدّث الـ reminder نفسه بالبيانات الجديدة
+                var timeZoneId = reminder.TimeZoneId ?? "Africa/Cairo";
+                var startDate = updatedItem.ReminderStartDate ?? DateTime.UtcNow.Date;
+                var endDate = updatedItem.ReminderEndDate ?? CalculateDefaultEndDate(startDate, updatedItem.Duration ?? "7 days");
+                var firstDose = updatedItem.ReminderFirstDoseTime ?? new TimeSpan(8, 0, 0);
+                var startDateTime = startDate.Date + firstDose;
+
+                var startUtc = _timezoneHelper.ConvertUserTimezoneToUtc(startDateTime, timeZoneId);
+                var endUtc = _timezoneHelper.ConvertUserTimezoneToUtc(
+                    endDate.Date.AddDays(1).AddTicks(-1), timeZoneId);
+
+                reminder.StartDateUtc = startUtc;
+                reminder.EndDateUtc = endUtc;
+                reminder.Title = $"💊 {updatedItem.MedicationName}";
+                reminder.UpdatedAt = DateTime.UtcNow;
+
+                // حدّث الـ RRULE أو الـ Simple mode
+                if (updatedItem.ReminderFrequencyType == RepeatFrequency.EveryXHours)
+                {
+                    reminder.IsSimpleEveryXHours = true;
+                    reminder.FirstDoseTime = firstDose;
+                    reminder.IntervalHours = updatedItem.ReminderIntervalHours ?? 8;
+                    reminder.RRULE = null;
+                }
+                else if (updatedItem.ReminderFrequencyType == RepeatFrequency.Once)
+                {
+                    reminder.IsSimpleEveryXHours = false;
+                    reminder.RRULE = null;
+                    reminder.FirstDoseTime = null;
+                    reminder.IntervalHours = null;
+                }
+                else
+                {
+                    reminder.IsSimpleEveryXHours = false;
+                    reminder.FirstDoseTime = null;
+                    reminder.IntervalHours = null;
+                    reminder.RRULE = BuildRRuleForPrescription(
+                        updatedItem, startDateTime, endDate, timeZoneId);
+                }
+
+                await _reminderRepository.UpdateAsync(reminder);
+
+                _logger.LogInformation(
+                    "Reminder {ReminderId} updated for PrescriptionItem {ItemId}",
+                    reminder.Id, updatedItem.Id);
+
+                // ✅ Step 3: امسح الـ cache القديم وابني جديد
+                var generator = _serviceProvider
+                    .GetRequiredService<PrescriptionReminderOccurrenceGenerator>();
+
+                var cacheFrom = RruleHelper.ClampToTodayUtc(updatedItem.ReminderStartDate);
+                var cacheTo = (updatedItem.ReminderEndDate?.ToUniversalTime()
+                               ?? DateTime.UtcNow.AddDays(90)).AddDays(1);
+
+                await generator.GenerateCacheForPrescriptionItemAsync(
+                    updatedItem, patientId, reminder.Id, cacheFrom, cacheTo);
+
+                _logger.LogInformation(
+                    "✅ Cache rebuilt for PrescriptionItem {ItemId} (Reminder {ReminderId})",
+                    updatedItem.Id, reminder.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "❌ Failed to update reminder for PrescriptionItem {ItemId}",
+                    updatedItem.Id);
+                throw;
             }
         }
     }

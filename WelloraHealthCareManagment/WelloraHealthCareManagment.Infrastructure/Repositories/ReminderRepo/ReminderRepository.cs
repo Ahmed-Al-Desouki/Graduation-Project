@@ -95,7 +95,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         public async Task<IList<ReminderV2>> GetAllExpiredActiveRemindersAsync(DateTime asOfUtc)
         {
             return await _context.ReminderV2s
-                .Where(r => r.EndDateUtc.HasValue && r.EndDateUtc.Value < asOfUtc)
+                .Where(r =>
+                    // CASE 1: Reminder with EndDate that has passed
+                    (r.EndDateUtc.HasValue && r.EndDateUtc.Value < asOfUtc)
+                    ||
+                    // ✅ FIX Issue 5: CASE 2 — ONCE reminders (no RRULE, no Simple)
+                    //    whose StartDate (= only occurrence) has already passed
+                    (!r.IsSimpleEveryXHours
+                     && (r.RRULE == null || r.RRULE == "")
+                     && r.StartDateUtc < asOfUtc)
+                )
                 .ToListAsync();
         }
         public async Task HardDeleteAsync(int reminderId)
@@ -116,6 +125,18 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
 
             _logger.LogInformation(
                 "Hard deleted Reminder {ReminderId} from database", reminderId);
+        }
+        public async Task<ReminderV2?> GetByIdDirectAsync(int reminderId)
+        {
+            return await _context.ReminderV2s
+                .Include(r => r.PrescriptionItem)
+                .FirstOrDefaultAsync(r => r.Id == reminderId);
+        }
+        public async Task<ReminderV2?> GetByPrescriptionItemIdAsync(Guid prescriptionItemId)
+        {
+            return await _context.ReminderV2s
+                .Include(r => r.PrescriptionItem)
+                .FirstOrDefaultAsync(r => r.PrescriptionItemId == prescriptionItemId && r.IsActive);
         }
     }
 }

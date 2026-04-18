@@ -1,5 +1,6 @@
 ﻿// Infrastructure/Repositories/DoctorVerificationRepository.cs
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
@@ -11,10 +12,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
     public class DoctorVerificationRepository : IDoctorVerificationRepository
     {
         private readonly HealthCarePlusContext _context;
+        private readonly ILogger<DoctorVerificationRepository> _logger;
 
-        public DoctorVerificationRepository(HealthCarePlusContext context)
+        public DoctorVerificationRepository(HealthCarePlusContext context,ILogger<DoctorVerificationRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<DoctorVerification> CreateAsync(DoctorVerification verification, CancellationToken ct = default)
@@ -181,12 +184,45 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             return await query.CountAsync(ct);
         }
 
+        //public async Task<Dictionary<VerificationStatus, int>> GetStatusCountsAsync(CancellationToken ct = default)
+        //{
+        //    return await _context.DoctorVerifications
+        //        .GroupBy(dv => dv.Status)
+        //        .Select(g => new { Status = g.Key, Count = g.Count() })
+        //        .ToDictionaryAsync(x => x.Status, x => x.Count, ct);
+        //}
         public async Task<Dictionary<VerificationStatus, int>> GetStatusCountsAsync(CancellationToken ct = default)
         {
-            return await _context.DoctorVerifications
-                .GroupBy(dv => dv.Status)
-                .Select(g => new { Status = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Status, x => x.Count, ct);
+            try
+            {
+                var statusGroups = await _context.DoctorVerifications
+                    .GroupBy(dv => dv.Status)
+                    .Select(g => new { Status = g.Key, Count = g.Count() })
+                    .ToListAsync(ct);
+
+                var dictionary = new Dictionary<VerificationStatus, int>();
+
+                foreach (var item in statusGroups)
+                {
+                    if (dictionary.ContainsKey(item.Status))
+                    {
+                        // لو المفتاح موجود، اجمع العدد
+                        dictionary[item.Status] += item.Count;
+                    }
+                    else
+                    {
+                        // لو المفتاح مش موجود، أضفه
+                        dictionary[item.Status] = item.Count;
+                    }
+                }
+
+                return dictionary;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting verification status counts");
+                return new Dictionary<VerificationStatus, int>();
+            }
         }
         public async Task<bool> ExistsAsync(int doctorId, DoctorDocumentType type)
         {

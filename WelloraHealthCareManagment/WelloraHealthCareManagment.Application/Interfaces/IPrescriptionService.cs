@@ -43,6 +43,11 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             AddPrescriptionItemsRequest request,
             CancellationToken cancellationToken = default);
 
-
+        Task UpdatePrescriptionItemAsync(
+            Guid prescriptionId,
+            Guid itemId,
+            int doctorId,
+            PrescriptionItemRequest request,
+            CancellationToken cancellationToken = default);
     }
 }

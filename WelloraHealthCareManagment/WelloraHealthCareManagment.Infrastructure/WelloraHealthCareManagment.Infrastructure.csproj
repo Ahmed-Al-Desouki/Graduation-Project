@@ -15,6 +15,7 @@
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
     <PackageReference Include="CloudinaryDotNet" Version="1.27.8" />
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
+    <PackageReference Include="EFCore.BulkExtensions" Version="9.0.1" />
     <PackageReference Include="F23.StringSimilarity" Version="7.0.1" />
     <PackageReference Include="FirebaseAdmin" Version="3.4.0" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.21" />

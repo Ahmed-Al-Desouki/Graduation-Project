@@ -16,8 +16,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
 
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.AppointmentId)
-                .IsRequired();
+            builder.Property(p => p.AppointmentId)
+                           .IsRequired(false);
 
             builder.Property(x => x.PatientId)
                 .IsRequired();
@@ -73,10 +73,15 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
                 .IsRequired();
 
             // Relationships
-            builder.HasOne(x => x.Appointment)
-                .WithOne(a => a.Payment)
-                .HasForeignKey<Payment>(x => x.AppointmentId)
-                .OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(p => p.Appointment)
+               .WithOne(a => a.Payment)  
+               .HasForeignKey<Payment>(p => p.AppointmentId)
+               .IsRequired(false)         
+               .OnDelete(DeleteBehavior.Restrict);
+            //builder.HasOne(x => x.Appointment)
+            //    .WithOne(a => a.Payment)
+            //    .HasForeignKey<Payment>(x => x.AppointmentId)
+            //    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Patient)
                 .WithMany()

@@ -17,6 +17,7 @@ using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.UserSessions;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
@@ -27,14 +28,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IPatientRepository _patientRepository;
         private readonly IDoctorRepository _doctorRepository;
         private readonly IMedicalHistoryRepository _medicalHistoryRepository;
-        private readonly IExternalFileRepository _fileRepository;
         private readonly IUserSessionRepository _sessionRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly IRevokedTokenRepository _revokedTokenRepository;
         private readonly ITokenService _tokenService;
-        private readonly ICloudStorageService _cloudStorage;
+        private readonly IFileUploadService _fileUploadService;
         private readonly IAvatarService _avatarService;
         private readonly IMfaService _mfaService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _configuration;
         private readonly IDoctorSearchIndex _searchIndex;
         private readonly ILogger<AuthCoreService> _logger;
@@ -44,14 +45,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IPatientRepository patientRepository,
             IDoctorRepository doctorRepository,
             IMedicalHistoryRepository medicalHistoryRepository,
-            IExternalFileRepository fileRepository,
             IUserSessionRepository sessionRepository,
             IRefreshTokenRepository refreshTokenRepository,
             IRevokedTokenRepository revokedTokenRepository,
             ITokenService tokenService,
-            ICloudStorageService cloudStorage,
+            IFileUploadService fileUploadService,
             IAvatarService avatarService,
             IMfaService mfaService,
+            IUnitOfWork unitOfWork,
             IConfiguration configuration,
             IDoctorSearchIndex searchIndex,
             ILogger<AuthCoreService> logger)
@@ -60,14 +61,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _patientRepository = patientRepository;
             _doctorRepository = doctorRepository;
             _medicalHistoryRepository = medicalHistoryRepository;
-            _fileRepository = fileRepository;
             _sessionRepository = sessionRepository;
             _refreshTokenRepository = refreshTokenRepository;
             _revokedTokenRepository = revokedTokenRepository;
             _tokenService = tokenService;
-            _cloudStorage = cloudStorage;
+            _fileUploadService = fileUploadService;
             _avatarService = avatarService;
             _mfaService = mfaService;
+            _unitOfWork = unitOfWork;
             _configuration = configuration;
             _searchIndex = searchIndex;
             _logger = logger;
@@ -75,18 +76,64 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         #region Register
 
+        //public async Task<(bool Succeeded, string[] Errors)> RegisterAsync(RegisterRequest request)
+        //{
+        //    try
+        //    {
+        //        // 1. Check if user exists
+        //        var existing = await _userRepository.GetByEmailAsync(request.Email);
+        //        if (existing != null)
+        //        {
+        //            return (false, new[] { "Email already registered" });
+        //        }
+
+        //        // 2. Create user
+        //        var user = new ApplicationUser
+        //        {
+        //            UserName = request.Email,
+        //            Email = request.Email,
+        //            FullName = request.FullName,
+        //            Role = request.Role ?? "Patient",
+        //            CreatedAt = DateTime.UtcNow,
+        //            EmailConfirmed = true,
+        //            TwoFactorEnabled = true
+        //        };
+
+        //        var result = await _userRepository.CreateUserAsync(user, request.Password);
+        //        if (!result.Succeeded)
+        //        {
+        //            return (false, result.Errors.Select(e => e.Description).ToArray());
+        //        }
+
+        //        // 3. Add role
+        //        await _userRepository.AddToRoleAsync(user, user.Role);
+
+        //        // 4. Create profile (Patient or Doctor)
+        //        await CreateUserProfileAsync(user);
+
+        //        // 5. Upload profile image
+        //        await UploadProfileImageAsync(user, request.ProfileImageFile);
+
+        //        _logger.LogInformation("User registered successfully: {Email}", request.Email);
+        //        return (true, Array.Empty<string>());
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Registration failed for {Email}", request.Email);
+        //        return (false, new[] { "Server error during registration" });
+        //    }
+        //}
         public async Task<(bool Succeeded, string[] Errors)> RegisterAsync(RegisterRequest request)
         {
+            var existing = await _userRepository.GetByEmailAsync(request.Email);
+            if (existing != null)
+                return (false, new[] { "Email already registered" });
+
+            // ابدأ transaction
+            await using var transaction = await _unitOfWork.BeginTransactionAsync();
+
             try
             {
-                // 1. Check if user exists
-                var existing = await _userRepository.GetByEmailAsync(request.Email);
-                if (existing != null)
-                {
-                    return (false, new[] { "Email already registered" });
-                }
-
-                // 2. Create user
                 var user = new ApplicationUser
                 {
                     UserName = request.Email,
@@ -100,17 +147,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 var result = await _userRepository.CreateUserAsync(user, request.Password);
                 if (!result.Succeeded)
-                {
                     return (false, result.Errors.Select(e => e.Description).ToArray());
-                }
 
-                // 3. Add role
                 await _userRepository.AddToRoleAsync(user, user.Role);
+                await CreateUserProfileAsync(user);  // لو فشل → rollback
 
-                // 4. Create profile (Patient or Doctor)
-                await CreateUserProfileAsync(user);
+                await transaction.CommitAsync();
 
-                // 5. Upload profile image
+                // بعد الـ commit اعمل الـ image upload (مش critical)
                 await UploadProfileImageAsync(user, request.ProfileImageFile);
 
                 _logger.LogInformation("User registered successfully: {Email}", request.Email);
@@ -118,6 +162,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
             catch (Exception ex)
             {
+                await transaction.RollbackAsync();
                 _logger.LogError(ex, "Registration failed for {Email}", request.Email);
                 return (false, new[] { "Server error during registration" });
             }
@@ -171,52 +216,22 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         {
             try
             {
-                ExternalFile? file = null;
-
                 if (profileImageFile != null && profileImageFile.Length > 0)
                 {
-                    // Upload user-provided image
-                    var upload = await _cloudStorage.UploadFileAsync(profileImageFile, "profile_pictures");
-
-                    file = new ExternalFile
-                    {
-                        FileUrl = upload.Url,
-                        PublicId = upload.PublicId,
-                        FileType = upload.FileType,
-                        FileSize = upload.FileSize,
-                        UploadedAt = DateTime.UtcNow,
-                        CategoryValue = "Profile"
-                    };
+                    await _fileUploadService.SaveOrUpdateProfileImageAsync(
+                        profileImageFile,
+                        user.Id,
+                        user.Role,
+                        "Profile");
                 }
                 else
                 {
-                    // Generate avatar
                     var avatarResult = await _avatarService.GenerateAndUploadAvatarAsync(user.FullName);
-
-                    file = new ExternalFile
-                    {
-                        FileUrl = avatarResult.Url,
-                        PublicId = avatarResult.PublicId,
-                        FileType = "image/png",
-                        FileSize = avatarResult.FileSize,
-                        UploadedAt = DateTime.UtcNow,
-                        CategoryValue = "Profile"
-                    };
-                }
-
-                if (file != null)
-                {
-                    // Link file to user
-                    file.PatientID = user.Role == "Patient" ? user.Id : (int?)null;
-                    file.DoctorID = user.Role == "Doctor" ? user.Id : (int?)null;
-                    file.UploadedById = user.Id;
-                    file.UploadedByRole = user.Role;
-
-                    await _fileRepository.CreateAsync(file);
-
-                    // Update user with profile image ID
-                    user.ProfileImageId = file.FileID;
-                    await _userRepository.UpdateUserAsync(user);
+                    await _fileUploadService.SaveOrUpdateProfileImageAsync(
+                        avatarResult,
+                        user.Id,
+                        user.Role,
+                        "Profile");
                 }
             }
             catch (Exception ex)

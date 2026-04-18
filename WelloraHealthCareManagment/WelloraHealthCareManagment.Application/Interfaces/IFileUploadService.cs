@@ -1,5 +1,6 @@
-﻿using HealthCare_.Models.DTOs.CloudinaryDTO;
+using HealthCare_.Models.DTOs.CloudinaryDTO;
 using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
+using Microsoft.AspNetCore.Http;
 
 namespace WelloraHealthCareManagement.Application.Interfaces
 {
@@ -20,5 +21,28 @@ namespace WelloraHealthCareManagement.Application.Interfaces
         Task<bool> DeletePatientFileAsync(int fileId, int patientId);
 
         Task<bool> DeleteDoctorFileAsync(int fileId, int doctorId);
+
+        Task<UploadFileResponse> UpdateProfileImageAsync(
+            UpdateProfileImageRequest request,
+            int userId,
+            string userRole);
+
+        Task<UploadFileResponse> SaveOrUpdateProfileImageAsync(
+            IFormFile file,
+            int userId,
+            string userRole,
+            string source);
+
+        Task<UploadFileResponse> SaveOrUpdateProfileImageAsync(
+            CloudinaryUploadResult uploadResult,
+            int userId,
+            string userRole,
+            string source);
+
+        Task<UploadFileResponse> SaveOrUpdateProfileImageFromUrlAsync(
+            string fileUrl,
+            int userId,
+            string userRole,
+            string source);
     }
 }

@@ -21,5 +21,8 @@ namespace WelloraHealthCareManagment.Domain.Repositories.ReminderRepo
         Task<IList<ReminderV2>> GetAllExpiredActiveRemindersAsync(DateTime asOfUtc);
         Task<List<ReminderV2>> GetByAppointmentIdAsync(Guid appointmentId);
         Task HardDeleteAsync(int reminderId);
+        //Get reminder by Id only(no patientId filter) — used by GenerateForReminderAsync
+        Task<ReminderV2?> GetByIdDirectAsync(int reminderId);
+        Task<ReminderV2?> GetByPrescriptionItemIdAsync(Guid prescriptionItemId);
     }
 }

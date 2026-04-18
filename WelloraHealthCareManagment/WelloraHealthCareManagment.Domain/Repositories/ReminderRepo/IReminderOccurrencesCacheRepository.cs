@@ -24,6 +24,8 @@ namespace WelloraHealthCareManagment.Domain.Repositories.ReminderRepo
         Task DeleteByReminderAndDateRangeAsync(int reminderId, DateTime fromUtc, DateTime toUtc);
         Task DeletePastOccurrencesExcludingPrescriptionsAsync(int patientId, DateTime beforeUtc);
         Task DeleteAllPastOccurrencesAsync(DateTime beforeUtc);
+        Task DeleteFutureNonPrescriptionByPatientAsync(int patientId, DateTime fromUtc, DateTime toUtc);
+
 
     }
 }

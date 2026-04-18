@@ -20,6 +20,7 @@ namespace HealthCare_.Models.V2
         public Guid? PrescriptionId { get; set; }
 
         public ReminderEnums.ReminderType Type { get; set; } = ReminderEnums.ReminderType.Medication;
+        public ReminderEnums.RepeatFrequency Frequency { get; set; }
 
         [StringLength(150)]
         public string Title { get; set; } = "Taking medication";

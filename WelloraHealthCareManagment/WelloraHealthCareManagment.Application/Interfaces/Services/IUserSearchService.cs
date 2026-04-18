@@ -18,5 +18,10 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Services
 
         // Rebuild search index (background job or admin action)
         Task RebuildIndexAsync(CancellationToken ct = default);
+
+        // Get all users (Doctors & Patients) with separate pagination for each section
+        Task<ServiceResult<AllUsersResponse>> GetAllUsersAsync(
+            AllUsersRequest request,
+            CancellationToken ct = default);
     }
 }

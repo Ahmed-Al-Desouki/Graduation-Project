@@ -34,8 +34,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             DateTime fromUtc,
             DateTime toUtc)
         {
+            await _cacheRepository.DeleteByReminderIdAsync(reminderId);
+
             if (!item.ReminderFrequencyType.HasValue)
+            {
+                _logger.LogInformation(
+                    "Reminder frequency removed for PrescriptionItem {ItemId}. Cleared cache for Reminder {ReminderId}.",
+                    item.Id,
+                    reminderId);
                 return;
+            }
 
             _logger.LogInformation(
                 "🔄 Generating cache for PrescriptionItem {ItemId} ({Med}), PatientId={PatientId}, From={From}, To={To}",
@@ -73,13 +81,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
             if (entries.Any())
             {
-                // احذف بس اللي في الـ range الجديد للـ reminder ده (أكثر أمانًا)
-                await _cacheRepository.DeleteByReminderAndDateRangeAsync(reminderId, fromUtc, toUtc);
-
-                _logger.LogInformation(
-                    "🗑️ Deleted old cache for patient {PatientId} range {From} to {To}",
-                    patientId, fromUtc, toUtc);
-
                 await _cacheRepository.BulkInsertAsync(entries);
 
                 _logger.LogInformation(
@@ -94,7 +95,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             }
             else
             {
-                _logger.LogWarning("⚠️ No cache entries to insert for item {ItemId}", item.Id);
+                _logger.LogWarning(
+                    "⚠️ No cache entries to insert for item {ItemId} after clearing old cache",
+                    item.Id);
             }
         }
 
@@ -165,16 +168,17 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         {
             var allResults = new List<DateTime>();
 
-            // Get dose times
             var doseTimes = item.ReminderDailyDoseTimes ?? new List<TimeSpan> { TimeSpan.FromHours(9) };
 
             _logger.LogDebug(
-                "🗓️ Processing {DoseCount} dose times: {Times}",
+                "Processing {DoseCount} dose times: {Times}",
                 doseTimes.Count,
                 string.Join(", ", doseTimes.Select(t => t.ToString(@"hh\:mm"))));
 
-            // Adjust for 00:00 if likely next day
-            if (item.ReminderFirstDoseTime.HasValue)
+            // ✅ FIX: Only adjust dose times for EveryXHours mode (spanning midnight).
+            //    For Once/Daily/Weekly/Monthly, dose times are absolute — no adjustment needed.
+            if (item.ReminderFrequencyType == RepeatFrequency.EveryXHours &&
+                item.ReminderFirstDoseTime.HasValue)
             {
                 var firstDose = item.ReminderFirstDoseTime.Value;
                 doseTimes = doseTimes.Select(t =>
@@ -183,22 +187,21 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     {
                         var adjusted = t + TimeSpan.FromHours(24);
                         _logger.LogDebug(
-                            "📅 Adjusted dose time {Original} to {Adjusted} (next day) since < first dose {First}",
-                            t.ToString(@"hh\:mm"), adjusted.ToString(@"hh\:mm"), firstDose.ToString(@"hh\:mm"));
+                            "Adjusted dose time {Original} → {Adjusted} (next day, EveryXHours mode)",
+                            t.ToString(@"hh\:mm"), adjusted.ToString(@"hh\:mm"));
                         return adjusted;
                     }
                     return t;
                 }).ToList();
             }
 
-            // Generate for EACH dose time separately
             foreach (var doseTime in doseTimes)
             {
                 var occurrences = GenerateOccurrencesForSingleDoseTime(
                     item, startLocal, endLocal, tz, fromLocal, toLocal, doseTime);
 
                 _logger.LogDebug(
-                    "➕ Generated {Count} occurrences for dose time {Time}",
+                    "Generated {Count} occurrences for dose time {Time}",
                     occurrences.Count, doseTime.ToString(@"hh\:mm"));
 
                 allResults.AddRange(occurrences);

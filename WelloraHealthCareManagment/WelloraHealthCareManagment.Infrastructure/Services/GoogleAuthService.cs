@@ -22,9 +22,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IPatientRepository _patientRepository;
         private readonly IDoctorRepository _doctorRepository;
         private readonly IMedicalHistoryRepository _medicalHistoryRepository;
-        private readonly IExternalFileRepository _fileRepository;
         private readonly IAuthCoreService _authCoreService;
-        private readonly ICloudStorageService _cloudStorage;
+        private readonly IFileUploadService _fileUploadService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GoogleAuthService> _logger;
 
@@ -33,9 +32,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IPatientRepository patientRepository,
             IDoctorRepository doctorRepository,
             IMedicalHistoryRepository medicalHistoryRepository,
-            IExternalFileRepository fileRepository,
             IAuthCoreService authCoreService,
-            ICloudStorageService cloudStorage,
+            IFileUploadService fileUploadService,
             IConfiguration configuration,
             ILogger<GoogleAuthService> logger)
         {
@@ -43,9 +41,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _patientRepository = patientRepository;
             _doctorRepository = doctorRepository;
             _medicalHistoryRepository = medicalHistoryRepository;
-            _fileRepository = fileRepository;
             _authCoreService = authCoreService;
-            _cloudStorage = cloudStorage;
+            _fileUploadService = fileUploadService;
             _configuration = configuration;
             _logger = logger;
         }
@@ -304,23 +301,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 _logger.LogInformation("UploadProfilePictureAsync: Uploading profile picture for user {UserId}", user.Id);
 
-                var cloudResult = await _cloudStorage.UploadUrlToCloudinaryAsync(pictureUrl, "profile_pictures");
+                await _fileUploadService.SaveOrUpdateProfileImageFromUrlAsync(
+                    pictureUrl,
+                    user.Id,
+                    role,
+                    "GoogleProfile");
 
-                var profileFile = new ExternalFile
-                {
-                    PatientID = user.Id,
-                    FileUrl = cloudResult.Url,
-                    PublicId = cloudResult.PublicId,
-                    FileType = "image/jpeg",
-                    FileSize = 0,
-                    UploadedAt = DateTime.UtcNow,
-                    UploadedById = user.Id,
-                    UploadedByRole = role,
-                    CategoryType = "Profile",
-                    CategoryValue = "GoogleProfile"
-                };
-
-                await _fileRepository.CreateAsync(profileFile);
                 _logger.LogInformation("UploadProfilePictureAsync: Profile picture uploaded successfully for user {UserId}", user.Id);
             }
             catch (Exception ex)

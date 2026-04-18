@@ -2,6 +2,7 @@
 using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.CurrentMedication.GetCurrentMedications;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.CurrentMedication.GetCurrentMedicationsForShare;
@@ -97,11 +98,23 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
             {
                 AppointmentId = a.Id,
                 AppointmentDate = a.TimeSlot.SlotDate,
-                AppointmentTime = a.TimeSlot.StartTime,
-                DoctorName = a.Doctor?.User?.FullName ?? "Unknown",
-                Specialization = a.Doctor?.Specialization ?? "N/A",
+                StartTime = a.TimeSlot.StartTime,
+                EndTime = a.TimeSlot.EndTime,
+                Status = a.Status,
                 PatientNotes = a.PatientNotes,
                 CompletedAt = a.CompletedAt,
+
+                DoctorId = a.DoctorId,
+                DoctorName = $"Dr. {a.Doctor?.User?.FullName ?? "(Unknown)"}",
+                Specialization = a.Doctor?.Specialization ?? "N/A",
+
+                PatientId = a.PatientId,
+                PatientName = a.Patient?.User?.FullName ?? "Patient (Unknown)",
+
+                CanViewMedicalHistory = false,
+                CanViewPrescriptions = false,
+                CanViewLabResults = false,
+
                 MedicalRecord = a.MedicalRecord == null ? null : new AppointmentMedicalRecordDto
                 {
                     Id = a.MedicalRecord.Id,
@@ -116,21 +129,24 @@ namespace WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries
                     FollowUpDate = a.MedicalRecord.FollowUpDate,
                     FollowUpInstructions = a.MedicalRecord.FollowUpInstructions
                 },
-                Prescriptions = a.Prescriptions.Select(p => new PrescriptionSummaryDto
+
+                Prescriptions = a.Prescriptions.Select(p => new PrescriptionDto
                 {
-                    Medications = p.Items
-                    .GroupBy(i => new { i.MedicationName, i.Dosage })
-                    .Select(g => g.First())
-                    .Select(i => new CurrentMedicationDto
+                    PrescriptionId = p.Id,
+                    PrescriptionNumber = p.PrescriptionNumber,
+                    IssuedAt = p.IssuedAt,
+                    Items = p.Items.Select(i => new PrescriptionItemDto
                     {
                         ItemId = i.Id,
                         MedicationName = i.MedicationName,
                         Dosage = i.Dosage,
                         Frequency = i.Frequency,
-                        Instructions = i.Instructions,
-                        EndDate = i.ReminderEndDate
+                        Duration = i.Duration,
+                        Quantity = i.Quantity,
+                        Instructions = i.Instructions
                     }).ToList()
                 }).ToList()
+
             }).ToList();
 
             // 6. Build response

@@ -19,6 +19,14 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
             _userSearchService = userSearchService;
         }
 
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllUsers([FromQuery] AllUsersRequest request)
+        {
+            var result = await _userSearchService.GetAllUsersAsync(request);
+            return result.IsSuccess
+                ? Ok(result.Data)
+                : BadRequest(new { error = result.Error });
+        }
         [HttpPost("search")]
         public async Task<IActionResult> SearchUsers([FromBody] UserSearchRequest request)
         {
@@ -48,5 +56,6 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
             await _userSearchService.RebuildIndexAsync();
             return Ok(new { message = "Search index rebuilt successfully" });
         }
+
     }
 }

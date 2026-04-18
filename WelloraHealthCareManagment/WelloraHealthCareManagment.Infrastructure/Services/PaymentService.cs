@@ -10,6 +10,7 @@ using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs.Payment;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
@@ -23,8 +24,11 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IDoctorRepository _doctorRepository;
         private readonly IPatientRepository _patientRepository;
         private readonly IPaymobService _paymobService;
+        private readonly ITimeSlotRepository _timeSlotRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _configuration;
+        private readonly IMedicalHistoryAccessRepository _accessRepository;
+        private readonly IAppointmentReminderService _appointmentReminderService;
         private readonly ILogger<PaymentService> _logger;
 
         public PaymentService(
@@ -33,8 +37,11 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IDoctorRepository doctorRepository,
             IPatientRepository patientRepository,
             IPaymobService paymobService,
+            ITimeSlotRepository timeSlotRepository,
             IUnitOfWork unitOfWork,
             IConfiguration configuration,
+            IMedicalHistoryAccessRepository accessRepository,
+            IAppointmentReminderService appointmentReminderService,
             ILogger<PaymentService> logger)
         {
             _paymentRepository = paymentRepository;
@@ -42,8 +49,11 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _doctorRepository = doctorRepository;
             _patientRepository = patientRepository;
             _paymobService = paymobService;
+            _timeSlotRepository = timeSlotRepository;
             _unitOfWork = unitOfWork;
             _configuration = configuration;
+            _accessRepository = accessRepository;
+            _appointmentReminderService = appointmentReminderService;
             _logger = logger;
         }
 
@@ -58,163 +68,259 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 _logger.LogInformation(
                     "Processing Paymob callback for order {OrderId}, Transaction {TransactionId}",
-                    callback.obj.order.id,
-                    callback.obj.id);
+                    callback.obj.order.id, callback.obj.id);
 
                 // 1. Verify HMAC
                 if (string.IsNullOrEmpty(hmacHeader))
                 {
                     _logger.LogWarning("Callback received without HMAC header");
-                    return new ProcessCallbackResult
-                    {
-                        Success = false,
-                        Message = "HMAC header missing"
-                    };
+                    return new ProcessCallbackResult { Success = false, Message = "HMAC header missing" };
                 }
 
                 var isValid = await _paymobService.VerifyCallbackAsync(callback, hmacHeader);
-
                 if (!isValid)
                 {
                     _logger.LogError("HMAC verification failed");
-                    return new ProcessCallbackResult
-                    {
-                        Success = false,
-                        Message = "Invalid HMAC signature"
-                    };
+                    return new ProcessCallbackResult { Success = false, Message = "Invalid HMAC signature" };
                 }
 
-                // 2. Find payment (read-only for verification)
+                // 2. Find payment
                 var orderId = callback.obj.order.id.ToString();
-                var paymentCheck = await _paymentRepository.GetByPaymobOrderIdAsync(
-                    orderId,
-                    cancellationToken);
+                var paymentCheck = await _paymentRepository.GetByPaymobOrderIdAsync(orderId, cancellationToken);
 
                 if (paymentCheck == null)
                 {
                     _logger.LogWarning("Payment not found for order {OrderId}", orderId);
-                    return new ProcessCallbackResult
-                    {
-                        Success = false,
-                        Message = "Payment not found"
-                    };
+                    return new ProcessCallbackResult { Success = false, Message = "Payment not found" };
                 }
 
-                // 3. Serialize callback for debugging
                 var callbackJson = JsonConvert.SerializeObject(callback);
 
-                // 4. Process based on status
+                // 3. Process based on status
                 if (callback.obj.success && !callback.obj.pending)
                 {
-                    return await HandleSuccessfulPaymentAsync(
-                        orderId,
-                        callback,
-                        callbackJson,
-                        cancellationToken);
+                    _logger.LogInformation("→ Success callback → HandleSuccessfulPaymentAsync");
+                    return await HandleSuccessfulPaymentAsync(orderId, callback, callbackJson, cancellationToken);
                 }
                 else if (callback.obj.pending)
                 {
-                    return await HandlePendingPaymentAsync(
-                        paymentCheck.AppointmentId,
-                        cancellationToken);
+                    _logger.LogInformation("→ Payment is still Pending");
+                    // في التدفق الجديد AppointmentId ممكن يكون null، فهنعدل الـ HandlePending
+                    return await HandlePendingPaymentAsync(paymentCheck.Id, cancellationToken); // غيرنا لـ PaymentId
                 }
                 else
                 {
-                    return await HandleFailedPaymentAsync(
-                        orderId,
-                        callback,
-                        callbackJson,
-                        cancellationToken);
+                    _logger.LogWarning("→ Payment Failed");
+                    return await HandleFailedPaymentAsync(orderId, callback, callbackJson, cancellationToken);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing Paymob callback");
-                return new ProcessCallbackResult
-                {
-                    Success = false,
-                    Message = $"Error: {ex.Message}"
-                };
+                return new ProcessCallbackResult { Success = false, Message = $"Error: {ex.Message}" };
             }
         }
 
         private async Task<ProcessCallbackResult> HandleSuccessfulPaymentAsync(
-            string paymobOrderId,
-            PaymobCallbackRequest callback,
-            string callbackJson,
-            CancellationToken cancellationToken)
+                    string paymobOrderId,
+                    PaymobCallbackRequest callback,
+                    string callbackJson,
+                    CancellationToken cancellationToken)
         {
-            //  Get payment WITH TRACKING for update
             var payment = await _paymentRepository.GetByPaymobOrderIdForUpdateAsync(
-                paymobOrderId,
-                cancellationToken);
+                paymobOrderId, cancellationToken);
 
             if (payment == null)
             {
                 _logger.LogError("Payment not found for order {OrderId}", paymobOrderId);
-                return new ProcessCallbackResult
+                return new ProcessCallbackResult { Success = false, Message = "Payment not found" };
+            }
+
+            _logger.LogInformation(
+                "Payment successful for PaymentId: {PaymentId}, TimeSlotId: {TimeSlotId}",
+                payment.Id, payment.TimeSlotId);
+
+            Guid? finalAppointmentId = null;
+            Appointment? reminderAppointment = null;
+            TimeSlot? reminderTimeSlot = null;
+
+            // التدفق القديم: لو فيه AppointmentId بالفعل
+            if (payment.AppointmentId.HasValue && payment.AppointmentId.Value != Guid.Empty)
+            {
+                // MarkAsPaid + Update في التدفق القديم
+                payment.MarkAsPaid(
+                    callback.obj.id.ToString(),
+                    callback.obj.integration_id,
+                    callbackJson);
+
+                await _paymentRepository.UpdateAsync(payment, cancellationToken);
+
+                var appointment = await _appointmentRepository.GetByIdForUpdateAsync(
+                    payment.AppointmentId.Value, cancellationToken);
+
+                if (appointment != null)
                 {
-                    Success = false,
-                    Message = "Payment not found"
-                };
+                    appointment.MarkAsPaid(payment.Id);
+                    await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
+                    finalAppointmentId = appointment.Id;
+                    reminderAppointment = appointment;
+
+                    reminderTimeSlot = await _timeSlotRepository.GetByIdWithDoctorAsync(
+                        appointment.TimeSlotId,
+                        cancellationToken);
+                }
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
-            _logger.LogInformation(
-                "Payment successful for appointment {AppointmentId}",
-                payment.AppointmentId);
-
-            // Update payment
-            payment.MarkAsPaid(
-                callback.obj.id.ToString(),
-                callback.obj.integration_id,
-                callbackJson);
-
-            await _paymentRepository.UpdateAsync(payment, cancellationToken);
-
-            // Update appointment
-            var appointment = await _appointmentRepository.GetByIdForUpdateAsync(
-                payment.AppointmentId,
-                cancellationToken);
-
-            if (appointment != null)
+            // التدفق الجديد: إنشاء Appointment بعد نجاح الدفع
+            // كل العمليات جوا Transaction واحدة atomically
+            else if (payment.TimeSlotId.HasValue)
             {
-                appointment.MarkAsPaid(payment.Id);
-                await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+                try
+                {
+                    // 1. جلب السلوت والتحقق منه
+                    var timeSlot = await _timeSlotRepository.GetByIdWithDoctorAsync(
+                        payment.TimeSlotId.Value, cancellationToken);
+
+                    if (timeSlot == null)
+                        throw new NotFoundException("TimeSlot", payment.TimeSlotId.Value);
+
+                    if (timeSlot.Status != SlotStatus.Available)
+                        throw new DomainException("Time slot is no longer available");
+
+                    // 2. MarkAsPaid جوا الـ Transaction
+                    //    (لو حصل Rollback كل حاجة بترجع معاه)
+                    payment.MarkAsPaid(
+                        callback.obj.id.ToString(),
+                        callback.obj.integration_id,
+                        callbackJson);
+
+                    // 3. إنشاء الموعد
+                    var appointment = Appointment.Create(
+                        timeSlot.Id,
+                        timeSlot.DoctorId,
+                        payment.PatientId,
+                        patientNotes: payment.PatientNotes);
+
+                    appointment.SetConsultationFee(payment.Amount);
+
+                    // 4. ربط الدفع بالموعد
+                    payment.LinkToAppointment(appointment.Id);
+                    appointment.MarkAsPaid(payment.Id);
+
+                    // 5. حجز السلوت
+                    timeSlot.Book();
+
+                    await _appointmentRepository.AddAsync(appointment, cancellationToken);
+                    await _timeSlotRepository.UpdateAsync(timeSlot, cancellationToken);
+                    await _paymentRepository.UpdateAsync(payment, cancellationToken);
+
+                    // ★ CRITICAL: SaveChanges هنا عشان appointment.Id يتولد في الـ DB
+                    //             قبل ما نحاول نربط الـ Grant بيه
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    _logger.LogInformation(
+                        "Appointment {AppointmentId} created after payment. Creating Grant if requested.",
+                        appointment.Id);
+
+                    // 6. Create Medical History Access Grant (بعد ما الـ ID اتولد فعلاً)
+                    if (payment.GrantMedicalHistoryAccess)
+                    {
+                        var expiresAt = timeSlot.SlotDate.Add(timeSlot.EndTime).AddHours(24);
+
+                        var grant = MedicalHistoryAccessGrant.Create(
+                            patientId: payment.PatientId,
+                            doctorId: timeSlot.DoctorId,
+                            appointmentId: appointment.Id,
+                            grantType: GrantType.Appointment,
+                            expiresAt: expiresAt,
+                            canViewMedicalHistory: true,
+                            canViewPrescriptions: true,
+                            canViewLabResults: false);
+
+                        await _accessRepository.AddAsync(grant, cancellationToken);
+
+                        // Audit Log
+                        var log = MedicalHistoryAccessLog.Create(
+                            accessGrantId: grant.Id,
+                            doctorId: timeSlot.DoctorId,
+                            patientId: payment.PatientId,
+                            accessType: "AccessGranted",
+                            resourceAccessed: "Medical access grant created after payment confirmation");
+
+                        await _accessRepository.AddLogAsync(log, cancellationToken);
+
+                        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                        _logger.LogInformation(
+                            "Grant {GrantId} created for appointment {AppointmentId}, expires {ExpiresAt}",
+                            grant.Id, appointment.Id, expiresAt);
+                    }
+
+                    // 7. Commit كل حاجة atomically
+                    await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                    finalAppointmentId = appointment.Id;
+                    reminderAppointment = appointment;
+                    reminderTimeSlot = timeSlot;
+
+                    _logger.LogInformation(
+                        "Appointment {AppointmentId} completed successfully after payment confirmation.",
+                        appointment.Id);
+                }
+                catch (Exception ex)
+                {
+                    await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                    _logger.LogError(ex,
+                        "Failed to complete booking after payment {PaymentId}", payment.Id);
+                    throw;
+                }
             }
-            else
+
+            _logger.LogInformation("Payment {PaymentId} marked as paid successfully", payment.Id);
+
+            if (reminderAppointment != null && reminderTimeSlot != null)
             {
-                _logger.LogWarning(
-                    "Appointment {AppointmentId} not found for payment update",
-                    payment.AppointmentId);
+                try
+                {
+                    await _appointmentReminderService.CreateAppointmentRemindersAsync(
+                        reminderAppointment,
+                        reminderTimeSlot,
+                        reminderAppointment.PatientId,
+                        reminderAppointment.DoctorId,
+                        cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Non-critical: payment succeeded for Appointment {AppointmentId} but reminder creation failed",
+                        reminderAppointment.Id);
+                }
             }
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            _logger.LogInformation(
-                "Payment {PaymentId} marked as paid successfully",
-                payment.Id);
 
             return new ProcessCallbackResult
             {
                 Success = true,
                 Message = "Payment confirmed",
-                AppointmentId = payment.AppointmentId
+                AppointmentId = finalAppointmentId
             };
         }
 
         private async Task<ProcessCallbackResult> HandlePendingPaymentAsync(
-            Guid appointmentId,
+            Guid paymentId,                   
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation(
-                "Payment pending for appointment {AppointmentId}",
-                appointmentId);
+            _logger.LogInformation("Payment pending for PaymentId: {PaymentId}", paymentId);
 
             return new ProcessCallbackResult
             {
                 Success = true,
                 Message = "Payment pending",
-                AppointmentId = appointmentId
+                AppointmentId = null
             };
         }
         private async Task<ProcessCallbackResult> HandleFailedPaymentAsync(
@@ -223,10 +329,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             string callbackJson,
             CancellationToken cancellationToken)
         {
-            //  Get payment WITH TRACKING for update
             var payment = await _paymentRepository.GetByPaymobOrderIdForUpdateAsync(
-                paymobOrderId,
-                cancellationToken);
+                paymobOrderId, cancellationToken);
 
             if (payment == null)
             {
@@ -241,12 +345,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             var reason = callback.obj.source_data?.type ?? "Payment declined by gateway";
 
             _logger.LogWarning(
-                "Payment failed for appointment {AppointmentId}: {Reason}",
-                payment.AppointmentId,
-                reason);
+                "Payment failed for PaymentId: {PaymentId}, TimeSlotId: {TimeSlotId}, Reason: {Reason}",
+                payment.Id, payment.TimeSlotId, reason);
 
             payment.MarkAsFailed(reason, callbackJson);
-
             await _paymentRepository.UpdateAsync(payment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -254,7 +356,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 Success = true,
                 Message = "Payment failure recorded",
-                AppointmentId = payment.AppointmentId
+                AppointmentId = payment.AppointmentId ?? null
             };
         }
 
@@ -264,44 +366,70 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         {
             try
             {
-                // Validate appointment ID
-                if (string.IsNullOrEmpty(merchantOrderId) ||
-                    !Guid.TryParse(merchantOrderId, out var appointmentId))
+                _logger.LogInformation("Payment result redirect received. MerchantOrderId: {MerchantOrderId}, Success: {Success}",
+                    merchantOrderId, success);
+
+                if (string.IsNullOrEmpty(merchantOrderId))
                 {
                     return GetFailureRedirectUrl(null, "Invalid order ID");
                 }
 
-                // Get payment
-                var payment = await _paymentRepository.GetByAppointmentIdAsync(
-                    appointmentId,
-                    CancellationToken.None);
+                // محاولة تحويل merchantOrderId إلى Guid (ده PaymentId في التدفق الجديد)
+                if (!Guid.TryParse(merchantOrderId, out Guid paymentOrAppointmentId))
+                {
+                    return GetFailureRedirectUrl(null, "Invalid order ID format");
+                }
+
+                // أولاً: نبحث عن الـ Payment باستخدام PaymentId (التدفق الجديد)
+                var payment = await _paymentRepository.GetByIdAsync(paymentOrAppointmentId);
+
+                // لو مش لاقيها، نبحث بـ AppointmentId (التدفق القديم)
+                if (payment == null)
+                {
+                    payment = await _paymentRepository.GetByAppointmentIdAsync(paymentOrAppointmentId);
+                }
 
                 if (payment == null)
                 {
-                    return GetFailureRedirectUrl(appointmentId, "Payment not found");
+                    _logger.LogWarning("Payment not found for ID: {Id}", paymentOrAppointmentId);
+                    return GetFailureRedirectUrl(null, "Payment not found");
                 }
 
-                // Check status
+                // التحقق من حالة الدفع
                 if (success && payment.Status == PaymentStatus.Paid)
                 {
-                    return GetSuccessRedirectUrl(appointmentId, payment.Amount);
+                    _logger.LogInformation("Payment successful redirect for PaymentId: {PaymentId}, AppointmentId: {AppointmentId}",
+                        payment.Id, payment.AppointmentId);
+
+                    return GetSuccessRedirectUrl(payment.AppointmentId ?? Guid.Empty, payment.Amount);
                 }
                 else
                 {
-                    return GetFailureRedirectUrl(appointmentId, payment.FailureReason);
+                    _logger.LogWarning("Payment failed or not paid. Status: {Status}", payment.Status);
+                    return GetFailureRedirectUrl(payment.AppointmentId, payment.FailureReason ?? "Payment was not completed");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error handling payment result redirect");
+                _logger.LogError(ex, "Error handling payment result redirect for MerchantOrderId: {MerchantOrderId}", merchantOrderId);
                 return "/payment-error.html";
             }
         }
 
-        private string GetSuccessRedirectUrl(Guid appointmentId, decimal amount)
+        //private string GetSuccessRedirectUrl(Guid appointmentId, decimal amount)
+        //{
+        //    var baseUrl = _configuration["App:BaseUrl"] ?? "https://wellorahealthcare.com";
+        //    return $"{baseUrl}/payment-success.html?appointmentId={appointmentId}&amount={amount}";
+        //}
+        private string GetSuccessRedirectUrl(Guid? appointmentId, decimal amount)
         {
             var baseUrl = _configuration["App:BaseUrl"] ?? "https://wellorahealthcare.com";
-            return $"{baseUrl}/payment-success.html?appointmentId={appointmentId}&amount={amount}";
+            var url = $"{baseUrl}/payment-success.html?amount={amount}";
+
+            if (appointmentId.HasValue && appointmentId.Value != Guid.Empty)
+                url += $"&appointmentId={appointmentId}";
+
+            return url;
         }
 
         private string GetFailureRedirectUrl(Guid? appointmentId, string? reason)
@@ -327,6 +455,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         #region Payment Creation
 
 
+        #region Payment Creation
         public async Task<CreatePaymentResponse> CreatePaymentAsync(
             CreatePaymentRequest request,
             CancellationToken cancellationToken = default)
@@ -334,179 +463,247 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             try
             {
                 _logger.LogInformation(
-                    "Creating payment for appointment {AppointmentId}",
-                    request.AppointmentId);
+                    "Creating payment. AppointmentId: {AppointmentId}, TimeSlotId: {TimeSlotId}, PatientId: {PatientId}",
+                    request.AppointmentId, request.TimeSlotId, request.PatientId);
 
-                //  0. Check if payment already exists for this appointment
-                var existingPayment = await _paymentRepository.GetByAppointmentIdAsync(
-                    request.AppointmentId,
-                    cancellationToken);
-
-                if (existingPayment != null)
+                // ====================== التدفق الجديد: الدفع باستخدام TimeSlotId ======================
+                if (request.TimeSlotId.HasValue && request.TimeSlotId.Value != Guid.Empty)
                 {
-                    _logger.LogWarning(
-                        "Payment already exists for appointment {AppointmentId}, Status: {Status}",
-                        request.AppointmentId, existingPayment.Status);
+                    // 1. التحقق من السلوت وتوفره
+                    var timeSlot = await _timeSlotRepository.GetByIdWithDoctorAsync(
+                        request.TimeSlotId.Value, cancellationToken);
 
-                    //  If payment is pending, return existing payment URL
-                    if (existingPayment.Status == PaymentStatus.Pending &&
-                        !string.IsNullOrEmpty(existingPayment.PaymobOrderId))
+                    if (timeSlot == null)
+                        throw new NotFoundException("TimeSlot", request.TimeSlotId.Value);
+
+                    if (timeSlot.IsExpired())
+                        throw new DomainException("This time slot has already passed and cannot be booked");
+
+                    if (timeSlot.Status != SlotStatus.Available)
+                        throw new DomainException("This time slot is no longer available");
+
+                    if (timeSlot.Doctor == null)
+                        throw new DomainException("Doctor information is missing from time slot");
+
+                    // 2. التحقق من عدم وجود حجز سابق على هذا السلوت
+                    var existingAppointment = await _appointmentRepository
+                        .GetByTimeSlotIdAsync(request.TimeSlotId.Value, cancellationToken);
+
+                    if (existingAppointment != null)
+                        throw new DomainException("This time slot is already booked");
+
+                    // 3. جلب بيانات المريض
+                    var patient = await _patientRepository.GetByIdWithUserAsync(
+                        request.PatientId, cancellationToken);
+
+                    if (patient == null)
+                        throw new NotFoundException("Patient", request.PatientId);
+
+                    if (patient.User == null)
+                        throw new DomainException("Patient account data not found");
+
+                    if (string.IsNullOrEmpty(patient.User.Email))
+                        throw new DomainException("Patient email is required for payment");
+
+                    if (string.IsNullOrEmpty(patient.User.FullName))
+                        throw new DomainException("Patient name is required for payment");
+
+                    // 4. حساب المبلغ
+                    var amount = timeSlot.Doctor?.ConsultationFee ?? 0m;
+                    if (amount <= 0)
+                        throw new DomainException("Consultation fee is not set for this doctor");
+
+                    // 5. إنشاء Payment مرتبط بالسلوت فقط (قبل إنشاء الموعد)
+                    var payment = Payment.CreatePendingForSlot(
+                        timeSlot.Id,
+                        request.PatientId,
+                        timeSlot.DoctorId,
+                        amount,
+                        request.PaymentMethod,
+                        request.PatientNotes,             
+                        request.GrantMedicalHistoryAccess);
+
+                    await _paymentRepository.AddAsync(payment, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    // 6. Parse patient name safely
+                    string firstName;
+                    string lastName;
+                    var nameParts = patient.User.FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (nameParts.Length == 0)
                     {
-                        // Recreate payment URL from existing order
-                        var existingIframeId = GetIframeIdForMethod(existingPayment.Method);
-
-                        // Note: We can't recreate the exact payment_token, but we can redirect to a status page
-                        // OR throw exception to force user to cancel old payment first
-                        throw new DomainException(
-                            $"A pending payment already exists for this appointment. " +
-                            $"Please complete or cancel the existing payment first. " +
-                            $"Payment ID: {existingPayment.Id}");
+                        firstName = "Patient";
+                        lastName = patient.PatientID.ToString();
+                    }
+                    else if (nameParts.Length == 1)
+                    {
+                        firstName = nameParts[0];
+                        lastName = "User";
+                    }
+                    else
+                    {
+                        firstName = nameParts[0];
+                        lastName = string.Join(" ", nameParts.Skip(1));
                     }
 
-                    //  If payment is paid, cannot create new one
-                    if (existingPayment.Status == PaymentStatus.Paid)
+                    // 7. إنشاء الدفع في Paymob (نستخدم Payment.Id كـ merchant_order_id)
+                    var paymobResponse = await _paymobService.CreatePaymentAsync(
+                        payment.Id,                    // Payment ID بدل Appointment ID
+                        amount,
+                        request.PaymentMethod,
+                        patient.User.Email,
+                        patient.User.PhoneNumber ?? "01000000000",
+                        firstName,
+                        lastName,
+                        cancellationToken);
+
+                    if (paymobResponse == null)
+                        throw new DomainException("Failed to create Paymob payment");
+
+                    // 8. تحديث Paymob Order ID
+                    payment.SetPaymobOrderId(paymobResponse.PaymobOrderId);
+                    await _paymentRepository.UpdateAsync(payment, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    _logger.LogInformation(
+                        "Payment created successfully for TimeSlot {TimeSlotId}, PaymentId: {PaymentId}, URL: {Url}",
+                        request.TimeSlotId, payment.Id, paymobResponse.PaymentUrl);
+
+                    return new CreatePaymentResponse
                     {
-                        throw new DomainException("This appointment has already been paid");
+                        PaymentUrl = paymobResponse.PaymentUrl,
+                        PaymentId = payment.Id,
+                        PaymobOrderId = paymobResponse.PaymobOrderId,
+                        Amount = amount
+                    };
+                }
+
+                // ====================== التدفق القديم: لما يكون AppointmentId موجود (للتوافق) ======================
+                else if (request.AppointmentId.HasValue && request.AppointmentId.Value != Guid.Empty)
+                {
+                    // نفس الكود القديم تقريباً (مع بعض التحسينات البسيطة)
+                    var existingPayment = await _paymentRepository.GetByAppointmentIdAsync(
+                        request.AppointmentId.Value, cancellationToken);
+
+                    if (existingPayment != null)
+                    {
+                        if (existingPayment.Status == PaymentStatus.Pending &&
+                            !string.IsNullOrEmpty(existingPayment.PaymobOrderId))
+                        {
+                            throw new DomainException(
+                                $"A pending payment already exists for this appointment. " +
+                                $"Please complete or cancel the existing payment first. " +
+                                $"Payment ID: {existingPayment.Id}");
+                        }
+
+                        if (existingPayment.Status == PaymentStatus.Paid)
+                            throw new DomainException("This appointment has already been paid");
+
+                        if (existingPayment.Status == PaymentStatus.Failed)
+                        {
+                            await _paymentRepository.DeleteAsync(existingPayment, cancellationToken);
+                            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                        }
                     }
 
-                    //  If payment failed, allow creating a new one by returning existing payment
-                    if (existingPayment.Status == PaymentStatus.Failed)
+                    var appointment = await _appointmentRepository.GetByIdAsync(
+                        request.AppointmentId.Value, cancellationToken);
+
+                    if (appointment == null)
+                        throw new NotFoundException("Appointment", request.AppointmentId.Value);
+
+                    if (appointment.IsPaid)
+                        throw new DomainException("Appointment already paid");
+
+                    var doctor = await _doctorRepository.GetByIdWithUserAsync(
+                        appointment.DoctorId, cancellationToken);
+
+                    if (doctor == null)
+                        throw new NotFoundException("Doctor", appointment.DoctorId);
+
+                    var patient = await _patientRepository.GetByIdWithUserAsync(
+                        appointment.PatientId, cancellationToken);
+
+                    if (patient == null)
+                        throw new NotFoundException("Patient", appointment.PatientId);
+
+                    if (patient.User == null || string.IsNullOrEmpty(patient.User.Email) || string.IsNullOrEmpty(patient.User.FullName))
+                        throw new DomainException("Patient billing information is incomplete");
+
+                    // تأكد من السطر دا
+                    var amount = (appointment.ConsultationFee.HasValue ? appointment.ConsultationFee.Value : (doctor.ConsultationFee != 0m ? doctor.ConsultationFee : 0m));
+                    if (amount <= 0)
+                        throw new DomainException("Consultation fee is not set");
+
+                    var payment = Payment.CreatePending(
+                        appointment.Id,
+                        appointment.PatientId,
+                        appointment.DoctorId,
+                        amount,
+                        request.PaymentMethod);
+
+                    await _paymentRepository.AddAsync(payment, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    // Parse name + Paymob call (نفس المنطق)
+                    string firstName;
+                    string lastName;
+                    var nameParts = patient.User.FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (nameParts.Length == 0)
                     {
-                        _logger.LogInformation(
-                            "Previous payment failed, creating new payment attempt for appointment {AppointmentId}",
-                            request.AppointmentId);
-
-                        // Delete failed payment to allow new one
-                        await _paymentRepository.DeleteAsync(existingPayment, cancellationToken);
-                        await _unitOfWork.SaveChangesAsync(cancellationToken);
+                        firstName = "Patient";
+                        lastName = patient.PatientID.ToString();
                     }
-                }
+                    else if (nameParts.Length == 1)
+                    {
+                        firstName = nameParts[0];
+                        lastName = "User";
+                    }
+                    else
+                    {
+                        firstName = nameParts[0];
+                        lastName = string.Join(" ", nameParts.Skip(1));
+                    }
 
-                // 1. Get appointment
-                var appointment = await _appointmentRepository.GetByIdAsync(
-                    request.AppointmentId,
-                    cancellationToken);
+                    var paymobResponse = await _paymobService.CreatePaymentAsync(
+                        appointment.Id,
+                        amount,
+                        request.PaymentMethod,
+                        patient.User.Email,
+                        patient.User.PhoneNumber ?? "01000000000",
+                        firstName,
+                        lastName,
+                        cancellationToken);
 
-                if (appointment == null)
-                    throw new NotFoundException("Appointment", request.AppointmentId);
+                    if (paymobResponse == null)
+                        throw new DomainException("Failed to create Paymob payment");
 
-                if (appointment.IsPaid)
-                    throw new DomainException("Appointment already paid");
+                    payment.SetPaymobOrderId(paymobResponse.PaymobOrderId);
+                    await _paymentRepository.UpdateAsync(payment, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                // 2. Get doctor (for consultation fee)
-                var doctor = await _doctorRepository.GetByIdWithUserAsync(
-                    appointment.DoctorId,
-                    cancellationToken);
-
-                if (doctor == null)
-                    throw new NotFoundException("Doctor", appointment.DoctorId);
-
-                // 3. Get patient (for billing info)
-                var patient = await _patientRepository.GetByIdWithUserAsync(
-                    appointment.PatientId,
-                    cancellationToken);
-
-                if (patient == null)
-                    throw new NotFoundException("Patient", appointment.PatientId);
-
-                // 3.1 Validate User is loaded
-                if (patient.User == null)
-                {
-                    _logger.LogError(
-                        "Patient {PatientId} has no associated User account",
-                        appointment.PatientId);
-                    throw new DomainException("Patient account data not found");
-                }
-
-                // 3.2 Validate required fields
-                if (string.IsNullOrEmpty(patient.User.Email))
-                {
-                    _logger.LogError(
-                        "Patient {PatientId} has no email",
-                        appointment.PatientId);
-                    throw new DomainException("Patient email is required for payment");
-                }
-
-                if (string.IsNullOrEmpty(patient.User.FullName))
-                {
-                    _logger.LogError(
-                        "Patient {PatientId} has no full name",
-                        appointment.PatientId);
-                    throw new DomainException("Patient name is required for payment");
-                }
-
-                // 4. Create payment entity
-                var amount = appointment.ConsultationFee ?? doctor.ConsultationFee;
-
-                var payment = Payment.CreatePending(
-                    appointment.Id,
-                    appointment.PatientId,
-                    appointment.DoctorId,
-                    amount,
-                    request.PaymentMethod);
-
-                await _paymentRepository.AddAsync(payment, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                // 5. Parse patient name safely
-                string firstName;
-                string lastName;
-
-                var nameParts = patient.User.FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-                if (nameParts.Length == 0)
-                {
-                    firstName = "Patient";
-                    lastName = patient.PatientID.ToString();
-                }
-                else if (nameParts.Length == 1)
-                {
-                    firstName = nameParts[0];
-                    lastName = "User";
+                    return new CreatePaymentResponse
+                    {
+                        PaymentUrl = paymobResponse.PaymentUrl,
+                        PaymentId = payment.Id,
+                        PaymobOrderId = paymobResponse.PaymobOrderId,
+                        Amount = amount
+                    };
                 }
                 else
                 {
-                    firstName = nameParts[0];
-                    lastName = string.Join(" ", nameParts.Skip(1));
+                    throw new DomainException("Either TimeSlotId or AppointmentId must be provided");
                 }
-
-                // 6. Create Paymob payment
-                var paymobResponse = await _paymobService.CreatePaymentAsync(
-                    appointment.Id,
-                    amount,
-                    request.PaymentMethod,
-                    patient.User.Email,
-                    patient.User.PhoneNumber ?? "01000000000",
-                    firstName,
-                    lastName,
-                    cancellationToken);
-
-                // 7. Update payment with Paymob order ID
-                payment.SetPaymobOrderId(paymobResponse.PaymobOrderId);
-                await _paymentRepository.UpdateAsync(payment, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                _logger.LogInformation(
-                    "Payment created successfully for appointment {AppointmentId}, Payment URL: {Url}",
-                    appointment.Id, paymobResponse.PaymentUrl);
-
-                // 8. Return response
-                return new CreatePaymentResponse
-                {
-                    PaymentUrl = paymobResponse.PaymentUrl,
-                    PaymentId = payment.Id,
-                    PaymobOrderId = paymobResponse.PaymobOrderId,
-                    Amount = amount
-                };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Error creating payment for appointment {AppointmentId}",
-                    request.AppointmentId);
+                    "Error creating payment for AppointmentId: {AppointmentId}, TimeSlotId: {TimeSlotId}",
+                    request.AppointmentId, request.TimeSlotId);
                 throw;
             }
         }
+        #endregion
 
         //  Helper method
         private string GetIframeIdForMethod(PaymentMethod method)
@@ -706,7 +903,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     notes: request.Notes);
 
                 await _paymentRepository.UpdateAsync(payment, cancellationToken);
-                //await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation(
                     "Refund completed successfully for payment {PaymentId}. " +
@@ -769,7 +966,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             return payments.Select(p => new PaymentHistoryDto
             {
                 PaymentId = p.Id,
-                AppointmentId = p.AppointmentId,
+                AppointmentId = p.AppointmentId.Value,
                 Amount = p.Amount,
                 Status = p.Status,
                 Method = p.Method,

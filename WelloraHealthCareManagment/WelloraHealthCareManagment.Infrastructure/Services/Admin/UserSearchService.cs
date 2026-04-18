@@ -1,5 +1,6 @@
 ﻿// Infrastructure/Services/UserSearchService.cs
 using F23.StringSimilarity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
@@ -230,6 +231,106 @@ public class UserSearchService : IUserSearchService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error rebuilding user search index");
+        }
+    }
+
+    public async Task<ServiceResult<AllUsersResponse>> GetAllUsersAsync(
+        AllUsersRequest request,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            if (request.DoctorsPage < 1) request.DoctorsPage = 1;
+            if (request.DoctorsPageSize < 1 || request.DoctorsPageSize > 50) request.DoctorsPageSize = 10;
+            if (request.PatientsPage < 1) request.PatientsPage = 1;
+            if (request.PatientsPageSize < 1 || request.PatientsPageSize > 50) request.PatientsPageSize = 10;
+
+            var response = new AllUsersResponse();
+
+            // 1. DOCTORS
+            var totalDoctors = await _userRepository.CountDoctorsFilteredAsync(
+                request.SearchTerm, request.OnlyVerifiedDoctors, request.OnlyActive, ct);
+
+            var doctors = await _userRepository.GetDoctorsFilteredAsync(
+                request.SearchTerm, request.OnlyVerifiedDoctors, request.OnlyActive,
+                request.DoctorsPage, request.DoctorsPageSize, ct);
+
+            var doctorUserIds = doctors.Select(u => u.Id).ToList();
+            var doctorStatuses = await _userRepository.GetUserStatusesByUserIdsAsync(doctorUserIds, ct);
+
+            var doctorIds = doctors.Where(u => u.Doctor != null).Select(u => u.Doctor!.DoctorId).ToList();
+            var reviewCounts = await _userRepository.GetDoctorReviewCountsAsync(doctorIds, ct);
+
+            response.Doctors.Data = doctors.Where(u => u.Doctor != null).Select(u =>
+            {
+                var status = doctorStatuses.GetValueOrDefault(u.Id);
+                var reviewCount = u.Doctor != null ? reviewCounts.GetValueOrDefault(u.Doctor.DoctorId, 0) : 0;
+                return new DoctorUserDto
+                {
+                    UserId = u.Id,
+                    DoctorId = u.Doctor?.DoctorId ?? 0,
+                    FullName = u.FullName,
+                    Email = u.Email ?? string.Empty,
+                    PhoneNumber = u.PhoneNumber,
+                    Specialization = u.Doctor?.Specialization ?? string.Empty,
+                    AverageRating = u.Doctor?.AverageRating,
+                    ReviewCount = reviewCount,
+                    IsVerified = u.Doctor?.IsActive ?? false,
+                    IsBlocked = status?.IsBlocked ?? false,
+                    IsSuspended = status?.IsSuspended ?? false,
+                    CreatedAt = u.CreatedAt
+                };
+            }).ToList();
+
+            response.Doctors.TotalCount = totalDoctors;
+            response.Doctors.Page = request.DoctorsPage;
+            response.Doctors.PageSize = request.DoctorsPageSize;
+            response.Doctors.HasNextPage = (request.DoctorsPage * request.DoctorsPageSize) < totalDoctors;
+
+            // 2. PATIENTS
+            var totalPatients = await _userRepository.CountPatientsFilteredAsync(
+                request.SearchTerm, request.OnlyActive, ct);
+
+            var patients = await _userRepository.GetPatientsFilteredAsync(
+                request.SearchTerm, request.OnlyActive,
+                request.PatientsPage, request.PatientsPageSize, ct);
+
+            var patientUserIds = patients.Select(u => u.Id).ToList();
+            var patientStatuses = await _userRepository.GetUserStatusesByUserIdsAsync(patientUserIds, ct);
+
+            response.Patients.Data = patients
+             .Where(u => u.Patient != null)  // ← أضيف السطر ده
+             .Select(u =>
+             {
+                 var status = patientStatuses.GetValueOrDefault(u.Id);
+                 return new PatientUserDto
+                 {
+                     UserId = u.Id,
+                     PatientId = u.Patient!.PatientID,
+                     FullName = u.FullName,
+                     Email = u.Email ?? string.Empty,
+                     PhoneNumber = u.PhoneNumber,
+                     //BloodType = u.Patient.MedicalHistory?.BloodType,
+                     IsBlocked = status?.IsBlocked ?? false,
+                     IsSuspended = status?.IsSuspended ?? false,
+                     CreatedAt = u.CreatedAt
+                 };
+             }).ToList();
+
+            response.Patients.TotalCount = totalPatients;
+            response.Patients.Page = request.PatientsPage;
+            response.Patients.PageSize = request.PatientsPageSize;
+            response.Patients.HasNextPage = (request.PatientsPage * request.PatientsPageSize) < totalPatients;
+
+            // 3. TOTAL
+            response.TotalUsers = totalDoctors + totalPatients;
+
+            return ServiceResult<AllUsersResponse>.Success(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all users");
+            return ServiceResult<AllUsersResponse>.Failure("Failed to get all users");
         }
     }
 }

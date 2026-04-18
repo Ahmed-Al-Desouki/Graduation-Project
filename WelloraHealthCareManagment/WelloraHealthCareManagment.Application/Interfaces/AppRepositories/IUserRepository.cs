@@ -71,5 +71,32 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
         Task<List<int>> GetUserIdsByNameOrEmailAsync(List<string> namesOrEmails, CancellationToken ct = default);
         Task<int> GetDoctorReviewCountAsync(int doctorId, CancellationToken ct = default);
         Task<ApplicationUser?> GetByIdWithDoctorAsync(int userId, CancellationToken ct = default);
+
+        // GetAllUsers methods for GetAllUsersAsync
+        Task<List<ApplicationUser>> GetDoctorsFilteredAsync(
+            string? searchTerm,
+            bool? onlyVerified,
+            bool? onlyActive,
+            int page,
+            int pageSize,
+            CancellationToken ct = default);
+
+        Task<int> CountDoctorsFilteredAsync(
+            string? searchTerm,
+            bool? onlyVerified,
+            bool? onlyActive,
+            CancellationToken ct = default);
+
+        Task<List<ApplicationUser>> GetPatientsFilteredAsync(
+            string? searchTerm,
+            bool? onlyActive,
+            int page,
+            int pageSize,
+            CancellationToken ct = default);
+
+        Task<int> CountPatientsFilteredAsync(
+            string? searchTerm,
+            bool? onlyActive,
+            CancellationToken ct = default);
     }
 }

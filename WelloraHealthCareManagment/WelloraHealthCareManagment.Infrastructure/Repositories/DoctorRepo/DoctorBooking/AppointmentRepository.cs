@@ -64,6 +64,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
                     .ThenInclude(d => d.User)
                 .Include(a => a.Patient)
                     .ThenInclude(p => p.User)
+                    .Include(a => a.MedicalRecord)
+                .Include(a => a.Prescriptions).ThenInclude(p => p.Items)
                 .Where(a => a.PatientId == patientId);
 
             if (status.HasValue)
@@ -88,6 +90,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
                     .ThenInclude(d => d.User)
                 .Include(a => a.Patient)
                     .ThenInclude(p => p.User)
+                    .Include(a => a.MedicalRecord)
+                .Include(a => a.Prescriptions).ThenInclude(p => p.Items)
                 .Where(a => a.DoctorId == doctorId);
 
             if (date.HasValue)
@@ -116,6 +120,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
                     .ThenInclude(d => d.User)
                 .Include(a => a.Patient)
                     .ThenInclude(p => p.User)
+                    .Include(a => a.MedicalRecord)
+                .Include(a => a.Prescriptions).ThenInclude(p => p.Items)
                 .Where(a => a.DoctorId == doctorId
                     && (a.Status == AppointmentStatus.Confirmed
                         || a.Status == AppointmentStatus.Pending)
@@ -158,6 +164,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
                 .AsNoTracking()
                 .Include(a => a.TimeSlot)
                 .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.Patient).ThenInclude(d => d.User)
                 .Include(a => a.MedicalRecord)
                 .Include(a => a.Prescriptions).ThenInclude(p => p.Items)
                 .Where(a => a.PatientId == patientId &&

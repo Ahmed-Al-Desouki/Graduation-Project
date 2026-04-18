@@ -54,13 +54,11 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         /// Create payment for appointment booking
+        /// Create payment for booking (يدعم TimeSlotId أو AppointmentId)
         [HttpPost("create")]
         public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequest request)
         {
-            var result = await _paymentService.CreatePaymentAsync(
-                request,
-                CancellationToken.None);
-
+            var result = await _paymentService.CreatePaymentAsync(request, CancellationToken.None);
             return Ok(result);
         }
 

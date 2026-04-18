@@ -307,7 +307,86 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 throw;
             }
         }
+        public async Task UpdatePrescriptionItemAsync(
+            Guid prescriptionId,
+            Guid itemId,
+            int doctorId,
+            PrescriptionItemRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation(
+                    "Updating PrescriptionItem {ItemId} in Prescription {PrescriptionId}",
+                    itemId, prescriptionId);
 
+                var prescription = await _prescriptionRepository
+                    .GetByIdWithItemsAsync(prescriptionId, cancellationToken)
+                    ?? throw new NotFoundException("Prescription", prescriptionId);
+
+                if (prescription.DoctorId != doctorId)
+                    throw new UnauthorizedAccessException("Not authorized");
+
+                var item = prescription.Items.FirstOrDefault(i => i.Id == itemId)
+                    ?? throw new NotFoundException("PrescriptionItem", itemId);
+
+                // ✅ Step 1: حدّث بيانات الـ item
+                List<TimeSpan>? dailyDoseTimes = null;
+                if (request.ReminderDailyDoseTimes?.Any() == true)
+                {
+                    dailyDoseTimes = request.ReminderDailyDoseTimes
+                        .Select(t => TimeSpan.Parse(t))
+                        .ToList();
+                }
+
+                TimeSpan? firstDoseTime = null;
+                if (!string.IsNullOrWhiteSpace(request.ReminderFirstDoseTime))
+                    firstDoseTime = TimeSpan.Parse(request.ReminderFirstDoseTime);
+
+                // حدّث الحقول على الـ item مباشرةً
+                item.UpdateDetails(
+                    request.MedicationName,
+                    request.Dosage,
+                    request.Frequency,
+                    request.Duration,
+                    request.Quantity,
+                    request.Instructions);
+
+                item.UpdateReminderSettings(
+                    request.ReminderFrequencyType,
+                    request.ReminderWeeklyDays,
+                    dailyDoseTimes,
+                    request.ReminderIntervalHours,
+                    request.ReminderStartDate,
+                    request.ReminderEndDate,
+                    firstDoseTime);
+
+                // ✅ Step 2: Save (داخل transaction)
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
+                _context.PrescriptionItems.Update(item);
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "PrescriptionItem {ItemId} saved successfully", itemId);
+
+                // ✅ Step 3: Always sync reminder/cache after any prescription item update.
+                await _prescriptionReminderService.UpdateReminderForItemAsync(
+                    item,
+                    prescriptionId,
+                    prescription.PatientId,
+                    cancellationToken);
+
+                _logger.LogInformation(
+                    "✅ PrescriptionItem {ItemId} updated with cache rebuild", itemId);
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                _logger.LogError(ex,
+                    "❌ Error updating PrescriptionItem {ItemId}", itemId);
+                throw;
+            }
+        }
         public async Task AddPrescriptionItemsAsync(
             Guid prescriptionId,
             int doctorId,

@@ -33,6 +33,7 @@ public class ExternalFile
     [JsonIgnore]
     [ForeignKey(nameof(MedicalHistoryID))]
     public MedicalHistory? MedicalHistory { get; set; }
+    [JsonIgnore]
     [ForeignKey(nameof(UploadedById))]
     public ApplicationUser? UploadedBy { get; set; }
 }

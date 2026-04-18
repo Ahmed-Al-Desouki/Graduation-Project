@@ -17,5 +17,6 @@ namespace WelloraHealthCareManagment.Application.Interfaces.RemindersInterface
 
         /// Generate occurrences for all active Doctor
         Task GenerateForDoctorAsync(int doctorId);
+        Task GenerateForReminderAsync(int reminderId);
     }
 }

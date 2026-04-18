@@ -105,5 +105,38 @@ namespace WelloraHealthCareManagement.Domain.Entities
             ReminderFirstDoseTime = firstDoseTime;
             UpdatedAt = DateTime.UtcNow;
         }
+        public void UpdateDetails(
+            string medicationName,
+            string dosage,
+            string frequency,
+            string duration,
+            int quantity,
+            string? instructions)
+        {
+            MedicationName = medicationName;
+            Dosage = dosage;
+            Frequency = frequency;
+            Duration = duration;
+            Quantity = quantity;
+            Instructions = instructions;
+        }
+
+        public void UpdateReminderSettings(
+            RepeatFrequency? frequencyType,
+            List<DayOfWeek>? weeklyDays,
+            List<TimeSpan>? dailyDoseTimes,
+            int? intervalHours,
+            DateTime? startDate,
+            DateTime? endDate,
+            TimeSpan? firstDoseTime)
+        {
+            ReminderFrequencyType = frequencyType;
+            ReminderWeeklyDays = weeklyDays;
+            ReminderDailyDoseTimes = dailyDoseTimes;
+            ReminderIntervalHours = intervalHours;
+            ReminderStartDate = startDate;
+            ReminderEndDate = endDate;
+            ReminderFirstDoseTime = firstDoseTime;
+        }
     }
 }

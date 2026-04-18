@@ -130,5 +130,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
                 .Select(g => g.First())
                 .ToList();
         }
+
     }
 }

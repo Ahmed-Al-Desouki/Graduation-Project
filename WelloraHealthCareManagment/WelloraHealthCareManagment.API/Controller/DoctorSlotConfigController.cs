@@ -10,7 +10,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 {
     [ApiController]
     [Route("api/doctors/{doctorId}/slot-config")]
-    [Authorize(Roles = "Doctor,Admin")]
+    //[Authorize(Roles = "Doctor,Admin,Patient")]
     public class DoctorSlotConfigController : ControllerBase
     {
         private readonly IDoctorSlotConfigService _service;

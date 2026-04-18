@@ -1,4 +1,5 @@
 ﻿using Hangfire;
+using HealthCare_.Models.DTOs.V2;
 using HealthCare_.Models.V2;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
@@ -15,17 +16,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
     {
         private readonly IReminderV2Service _reminderService;
         private readonly IReminderRepository _reminderRepository;
+        private readonly IReminderOccurrencesCacheRepository _cacheRepository;
         private readonly ITimezoneHelper _timezoneHelper;
         private readonly ILogger<AppointmentReminderService> _logger;
 
         public AppointmentReminderService(
             IReminderV2Service reminderService,
             IReminderRepository reminderRepository,
+            IReminderOccurrencesCacheRepository cacheRepository,
             ITimezoneHelper timezoneHelper,
             ILogger<AppointmentReminderService> logger)
         {
             _reminderService = reminderService;
             _reminderRepository = reminderRepository;
+            _cacheRepository = cacheRepository;
             _timezoneHelper = timezoneHelper;
             _logger = logger;
         }
@@ -41,95 +45,73 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 var appointmentDateTime = timeSlot.SlotDate.Add(timeSlot.StartTime);
                 var timeZoneId = "Africa/Cairo";
+                var appointmentUtc = _timezoneHelper.ConvertUserTimezoneToUtc(
+                    appointmentDateTime,
+                    timeZoneId);
+                var nowUtc = DateTime.UtcNow;
 
-                // ─── Check if reminders already exist for this appointment ───
-                var existingReminders = await _reminderRepository.GetByAppointmentIdAsync(appointment.Id);  // افترض إن دي دالة جديدة في IReminderRepository (هضيفها أسفله)
+                var existingReminders = await _reminderRepository.GetByAppointmentIdAsync(appointment.Id);
                 if (existingReminders.Any())
                 {
                     _logger.LogWarning(
-                        "Reminders already exist for AppointmentId={AppointmentId}. Skipping creation.",
+                        "Found {Count} existing reminders for AppointmentId={AppointmentId}. Rebuilding them to avoid partial or duplicate state.",
+                        existingReminders.Count,
                         appointment.Id);
-                    return;  // مش هنعمل حاجة جديدة
+
+                    foreach (var existingReminder in existingReminders)
+                    {
+                        await _cacheRepository.DeleteByReminderIdAsync(existingReminder.Id);
+                        await _reminderRepository.HardDeleteAsync(existingReminder.Id);
+                    }
                 }
 
                 _logger.LogInformation(
-                    "Creating appointment reminders: AppointmentId={AppointmentId}, DateTime={DateTime}, Patient={PatientId}, Doctor={DoctorId}",
-                    appointment.Id, appointmentDateTime, patientId, doctorId);
+                    "Creating appointment reminders: AppointmentId={AppointmentId}, DateTimeLocal={DateTimeLocal}, DateTimeUtc={DateTimeUtc}",
+                    appointment.Id, appointmentDateTime, appointmentUtc);
 
-                // Format TimeSpan correctly
                 string formattedTime = FormatTimeSpan(timeSlot.StartTime);
 
-                // ===== PATIENT REMINDERS =====
-                // 1. Patient: 24 hours before
-                if (appointmentDateTime > DateTime.UtcNow.AddDays(1))
+                // PATIENT REMINDERS
+                if (appointmentUtc > nowUtc.AddDays(1))
                 {
-                    await CreateReminderAsync(
-                        patientId,
-                        isDoctor: false,
-                        appointment.Id,
+                    await CreateReminderAsync(patientId, false, appointment.Id,
                         "Appointment Tomorrow",
                         $"Reminder: Your appointment is tomorrow at {formattedTime}",
-                        appointmentDateTime.AddDays(-1),
-                        timeZoneId,
-                        cancellationToken);
-
+                        appointmentDateTime.AddDays(-1), timeZoneId, cancellationToken);
                 }
-                // 2. Patient: 1 hour before
-                if (appointmentDateTime > DateTime.UtcNow.AddHours(1))
+
+                if (appointmentUtc > nowUtc.AddHours(1))
                 {
-                    await CreateReminderAsync(
-                        patientId,
-                        isDoctor: false,
-                        appointment.Id,
+                    await CreateReminderAsync(patientId, false, appointment.Id,
                         "Appointment in 1 Hour",
                         $"Your appointment starts in 1 hour at {formattedTime}",
-                        appointmentDateTime.AddHours(-1),
-                        timeZoneId,
-                        cancellationToken);
+                        appointmentDateTime.AddHours(-1), timeZoneId, cancellationToken);
                 }
-                // 3. Patient: At appointment time
-                await CreateReminderAsync(
-                    patientId,
-                    isDoctor: false,
-                    appointment.Id,
+
+                await CreateReminderAsync(patientId, false, appointment.Id,
                     "Appointment Now",
                     "Your appointment is starting now",
-                    appointmentDateTime,
-                    timeZoneId,
-                    cancellationToken);
+                    appointmentDateTime, timeZoneId, cancellationToken);
 
-                // ===== DOCTOR REMINDERS =====
-                // 4. Doctor: 30 minutes before
-                if (appointmentDateTime > DateTime.UtcNow.AddMinutes(30))
+                // DOCTOR REMINDERS
+                if (appointmentUtc > nowUtc.AddMinutes(30))
                 {
-                    await CreateReminderAsync(
-                        doctorId,
-                        isDoctor: true,
-                        appointment.Id,
+                    await CreateReminderAsync(doctorId, true, appointment.Id,
                         "Upcoming Appointment",
                         "You have an appointment in 30 minutes",
-                        appointmentDateTime.AddMinutes(-30),
-                        timeZoneId,
-                        cancellationToken);
-                }
-                // 5. Doctor: 5 minutes before
-                if (appointmentDateTime > DateTime.UtcNow.AddMinutes(5))
-                {
-                    await CreateReminderAsync(
-                        doctorId,
-                        isDoctor: true,
-                        appointment.Id,
-                        "Appointment Starting Soon",
-                        "Appointment starting in 5 minutes",
-                        appointmentDateTime.AddMinutes(-5),
-                        timeZoneId,
-                        cancellationToken);
+                        appointmentDateTime.AddMinutes(-30), timeZoneId, cancellationToken);
                 }
 
-                BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
-                    j => j.GenerateForPatientAsync(patientId));
-                BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
-                    j => j.GenerateForDoctorAsync(doctorId));
+                if (appointmentUtc > nowUtc.AddMinutes(5))
+                {
+                    await CreateReminderAsync(doctorId, true, appointment.Id,
+                        "Appointment Starting Soon",
+                        "Appointment starting in 5 minutes",
+                        appointmentDateTime.AddMinutes(-5), timeZoneId, cancellationToken);
+                }
+
+                // ✅ FIX: Removed the bulk BackgroundJob.Enqueue calls here
+                //    Each CreateReminderAsync now enqueues its own GenerateForReminderAsync
 
                 _logger.LogInformation(
                     "Successfully created appointment reminders for AppointmentId={AppointmentId}",
@@ -163,7 +145,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 foreach (var reminder in activeReminders)
                 {
-                    // مسح فوري من الـ DB — مش محتاجين grace period للـ appointment reminders
+                    await _cacheRepository.DeleteByReminderIdAsync(reminder.Id);
                     await _reminderRepository.HardDeleteAsync(reminder.Id);
                 }
 
@@ -188,56 +170,92 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             string timeZoneId,
             CancellationToken cancellationToken)
         {
-            if (scheduledDateTime <= DateTime.UtcNow)
+            // ✅ Convert to UTC first for correct comparison
+            var scheduledUtc = _timezoneHelper.ConvertUserTimezoneToUtc(scheduledDateTime, timeZoneId);
+
+            _logger.LogInformation(
+                "CreateReminderAsync: {UserType}={UserId}, Title={Title}, ScheduledLocal={Local}, ScheduledUtc={Utc}, NowUtc={Now}",
+                isDoctor ? "Doctor" : "Patient", userId, title,
+                scheduledDateTime, scheduledUtc, DateTime.UtcNow);
+
+            if (scheduledUtc <= DateTime.UtcNow)
             {
-                _logger.LogWarning("Skipping reminder creation - scheduled time in the past: {ScheduledTime}", scheduledDateTime);
+                _logger.LogWarning(
+                    "Skipping reminder '{Title}' — scheduled UTC {ScheduledUtc} is in the past (now={Now})",
+                    title, scheduledUtc, DateTime.UtcNow);
                 return;
             }
 
-            // نحول الوقت المحلي لـ UTC للحفظ في StartDateUtc
-            var startDateUtc = _timezoneHelper.ConvertUserTimezoneToUtc(scheduledDateTime, timeZoneId);
-
-            var reminder = new ReminderV2
+            // ✅ FIX: Use IReminderV2Service.CreateAsync with Once mode
+            //    Same logic as manual reminders — no RRULE, no Simple
+            //    GenerateForReminderAsync (MODE 0) handles the single occurrence correctly
+            var dto = new CreateReminderV2Dto
             {
-                PatientId = (isDoctor ? null : (int?)userId),
-                DoctorId = isDoctor ? (int?)userId : null,
                 Type = ReminderEnums.ReminderType.Appointment,
                 Title = title,
                 Message = message,
-                StartDateUtc = startDateUtc,
-                EndDateUtc = startDateUtc,
+                StartDate = scheduledDateTime,   // local Cairo time
+                EndDate = scheduledDateTime,
                 TimeZoneId = timeZoneId,
                 AppointmentId = appointmentId,
-                IsActive = true,
-                IsSimpleEveryXHours = false,
-                FirstDoseTime = null,
-                IntervalHours = null,
-                Status = ReminderEnums.ReminderStatus.Active,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                RRULE = null,
+                Simple = null,
+                PrescriptionId = null,
+                PrescriptionItemId = null
             };
 
-            // ─── نستخرج الوقت المحلي للـ DTSTART و BYHOUR/BYMINUTE ───
-            var localDateTime = scheduledDateTime; // ده الوقت المحلي
-            var localDateStr = localDateTime.ToString("yyyyMMdd");
-            var localTimeStr = localDateTime.ToString("HHmmss");
-            var localHour = localDateTime.Hour;
-            var localMinute = localDateTime.Minute;
+            try
+            {
+                if (!isDoctor)
+                {
+                    // Patient reminder — goes through CreateAsync → GenerateForReminderAsync
+                    var reminder = await _reminderService.CreateAsync(userId, dto);
+                    _logger.LogInformation(
+                        "✅ Patient reminder Id={Id} created: Title={Title}, ScheduledUtc={Utc}",
+                        reminder.Id, title, scheduledUtc);
+                }
+                else
+                {
+                    // Doctor reminder — CreateAsync doesn't support doctorId directly
+                    // Create manually but reuse the Once mode pattern
+                    var reminder = new ReminderV2
+                    {
+                        PatientId = null,
+                        DoctorId = userId,
+                        Type = ReminderEnums.ReminderType.Appointment,
+                        Title = title,
+                        Message = message,
+                        StartDateUtc = scheduledUtc,
+                        EndDateUtc = scheduledUtc,
+                        TimeZoneId = timeZoneId,
+                        AppointmentId = appointmentId,
+                        IsActive = true,
+                        IsSimpleEveryXHours = false,
+                        RRULE = null,
+                        FirstDoseTime = null,
+                        IntervalHours = null,
+                        Status = ReminderEnums.ReminderStatus.Active,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
 
-            var baseRRule = $"FREQ=DAILY;COUNT=1;BYHOUR={localHour};BYMINUTE={localMinute}";
+                    await _reminderRepository.AddAsync(reminder);
 
-            // نضيف DTSTART بالوقت المحلي مع TZID
-            reminder.RRULE = $"DTSTART;TZID={timeZoneId}:{localDateStr}T{localTimeStr};{baseRRule}";
+                    BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                        j => j.GenerateForDoctorAsync(userId));
 
-            _logger.LogInformation(
-                "Created appointment RRULE with DTSTART + BYHOUR/BYMINUTE: {RRULE} (Local: {Time})",
-                reminder.RRULE, localDateTime.ToString("HH:mm:ss"));
-
-            await _reminderRepository.AddAsync(reminder);
-
-            _logger.LogInformation(
-                "Created appointment reminder: {UserType}Id={UserId}, AppointmentId={AppointmentId}, Title={Title}",
-                isDoctor ? "Doctor" : "Patient", userId, appointmentId, title);
+                    _logger.LogInformation(
+                        "✅ Doctor reminder Id={Id} created: Title={Title}, ScheduledUtc={Utc}",
+                        reminder.Id, title, scheduledUtc);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "❌ Failed to create reminder '{Title}' for {UserType}={UserId}",
+                    title, isDoctor ? "Doctor" : "Patient", userId);
+                throw;
+            }
         }
 
         // Helper

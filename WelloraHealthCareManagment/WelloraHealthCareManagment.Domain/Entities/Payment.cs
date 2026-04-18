@@ -1,6 +1,4 @@
-﻿// Domain/Entities/Payment.cs
-
-using HealthCare_.Models.DoctorModels;
+﻿using HealthCare_.Models.DoctorModels;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
@@ -9,20 +7,22 @@ namespace WelloraHealthCareManagement.Domain.Entities
 {
     public class Payment : BaseEntity
     {
-        public Guid AppointmentId { get; private set; }
+        public Guid? AppointmentId { get; private set; }
         public int PatientId { get; private set; }
         public int DoctorId { get; private set; }
 
         // Paymob Transaction Details
-        public string PaymobOrderId { get; private set; } = string.Empty; // Paymob order ID
-        public string PaymobTransactionId { get; private set; } = string.Empty; // Transaction ID
-        public int PaymobIntegrationId { get; private set; } // Which payment method used
+        public string PaymobOrderId { get; private set; } = string.Empty;
+        public string PaymobTransactionId { get; private set; } = string.Empty;
+        public int PaymobIntegrationId { get; private set; }
 
         // Payment Details
         public decimal Amount { get; private set; }
         public string Currency { get; private set; } = "EGP";
         public PaymentStatus Status { get; private set; }
         public PaymentMethod Method { get; private set; }
+        public string? PatientNotes { get; private set; }
+
 
         // Timestamps
         public DateTime? PaidAt { get; private set; }
@@ -40,23 +40,30 @@ namespace WelloraHealthCareManagement.Domain.Entities
         // Failure Details
         public string? FailureReason { get; private set; }
 
-        // Callback Data (for debugging)
+        // Callback Data
         public string? PaymobCallbackData { get; private set; }
 
+        // Temporary link for new flow (Payment before Appointment)
+        public Guid? TimeSlotId { get; private set; }
+        public bool GrantMedicalHistoryAccess { get; private set; }
+
         // Navigation Properties
-        public Appointment Appointment { get; private set; } = null!;
+        public Appointment? Appointment { get; private set; }
         public Patient Patient { get; private set; } = null!;
         public Doctor Doctor { get; private set; } = null!;
 
 
         private Payment() { }
 
+        // ==================== Factory for old flow (Appointment already exists) ====================
         public static Payment CreatePending(
-            Guid appointmentId,
+            Guid? appointmentId,
             int patientId,
             int doctorId,
             decimal amount,
-            PaymentMethod method)
+            PaymentMethod method,
+            string? patientNotes = null,
+            bool grantMedicalHistoryAccess = false)
         {
             if (amount <= 0)
                 throw new DomainException("Payment amount must be positive");
@@ -65,12 +72,48 @@ namespace WelloraHealthCareManagement.Domain.Entities
             {
                 Id = Guid.NewGuid(),
                 AppointmentId = appointmentId,
+                TimeSlotId = null,
                 PatientId = patientId,
                 DoctorId = doctorId,
                 Amount = amount,
                 Currency = "EGP",
                 Status = PaymentStatus.Pending,
                 Method = method,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                PatientNotes = patientNotes,
+                GrantMedicalHistoryAccess = grantMedicalHistoryAccess
+            };
+        }
+
+        // ==================== Factory for new flow (Payment before Appointment) ====================
+        public static Payment CreatePendingForSlot(
+       Guid timeSlotId,
+       int patientId,
+       int doctorId,
+       decimal amount,
+       PaymentMethod method,
+       string? patientNotes = null,              
+       bool grantMedicalHistoryAccess = false)  
+        {
+            if (timeSlotId == Guid.Empty)
+                throw new DomainException("TimeSlot ID cannot be empty");
+            if (amount <= 0)
+                throw new DomainException("Payment amount must be positive");
+
+            return new Payment
+            {
+                Id = Guid.NewGuid(),
+                TimeSlotId = timeSlotId,
+                AppointmentId = null,
+                PatientId = patientId,
+                DoctorId = doctorId,
+                Amount = amount,
+                Currency = "EGP",
+                Status = PaymentStatus.Pending,
+                Method = method,
+                PatientNotes = patientNotes,         
+                GrantMedicalHistoryAccess = grantMedicalHistoryAccess, 
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -80,7 +123,6 @@ namespace WelloraHealthCareManagement.Domain.Entities
         {
             if (string.IsNullOrWhiteSpace(orderId))
                 throw new DomainException("Order ID cannot be empty");
-
             PaymobOrderId = orderId;
         }
 
@@ -104,50 +146,27 @@ namespace WelloraHealthCareManagement.Domain.Entities
             PaymobCallbackData = callbackData;
         }
 
-        //public void MarkAsRefunded(
-        //    decimal refundAmount,
-        //    string refundTransactionId,
-        //    RefundReason reason,
-        //    string? notes = null)
-        //{
-        //    if (Status != PaymentStatus.Paid)
-        //        throw new DomainException("Can only refund paid payments");
+        // ربط الدفع بالموعد بعد نجاح الدفع (مهمة جداً)
+        public void LinkToAppointment(Guid appointmentId)
+        {
+            if (AppointmentId.HasValue && AppointmentId.Value != Guid.Empty)
+                throw new DomainException("Payment already linked to an appointment");
 
-        //    if (refundAmount > Amount)
-        //        throw new DomainException("Refund amount cannot exceed payment amount");
+            if (appointmentId == Guid.Empty)
+                throw new DomainException("Appointment ID cannot be empty");
 
-        //    Status = PaymentStatus.Refunded;
-        //    RefundAmount = refundAmount;
-        //    RefundTransactionId = refundTransactionId;
-        //    RefundReason = reason;
-        //    RefundNotes = notes;
-        //    RefundedAt = DateTime.UtcNow;
-        //}
+            AppointmentId = appointmentId;
+        }
 
         public bool CanBeRefunded()
         {
-            // Payment must be in Paid status
-            if (Status != PaymentStatus.Paid)
-                return false;
-
-            // Cannot refund if already refunded
-            if (Status == PaymentStatus.Refunded)
-                return false;
-
-            // Must have a valid Paymob transaction ID
-            if (string.IsNullOrWhiteSpace(PaymobTransactionId))
-                return false;
-
-            // Check if within refund window (e.g., 30 days)
-            if (PaidAt.HasValue &&
-                DateTime.UtcNow > PaidAt.Value.AddDays(30))
-                return false;
-
+            if (Status != PaymentStatus.Paid) return false;
+            if (Status == PaymentStatus.Refunded) return false;
+            if (string.IsNullOrWhiteSpace(PaymobTransactionId)) return false;
+            if (PaidAt.HasValue && DateTime.UtcNow > PaidAt.Value.AddDays(30)) return false;
             return true;
         }
 
-
-        /// استرجاع كامل أو جزئي للمبلغ المدفوع
         public void MarkAsRefunded(
             decimal refundAmount,
             decimal refundPercentage,
@@ -156,26 +175,18 @@ namespace WelloraHealthCareManagement.Domain.Entities
             CancelledBy initiatedBy,
             string? notes = null)
         {
-            // Validation
             if (!CanBeRefunded())
-                throw new InvalidOperationException(
-                    "Payment cannot be refunded in its current state");
+                throw new InvalidOperationException("Payment cannot be refunded in its current state");
 
             if (refundAmount <= 0 || refundAmount > Amount)
-                throw new ArgumentException(
-                    $"Invalid refund amount. Must be between 0 and {Amount}");
+                throw new ArgumentException($"Invalid refund amount. Must be between 0 and {Amount}");
 
             if (refundPercentage < 0 || refundPercentage > 100)
-                throw new ArgumentException(
-                    "Refund percentage must be between 0 and 100");
+                throw new ArgumentException("Refund percentage must be between 0 and 100");
 
             if (string.IsNullOrWhiteSpace(refundTransactionId))
                 throw new ArgumentException("Refund transaction ID is required");
 
-            // RefundReason is now an enum, so no need to check for string.IsNullOrWhiteSpace(reason)
-            // as the enum cannot be null (unless nullable), and the caller must provide a valid value.
-
-            // Update state
             Status = PaymentStatus.Refunded;
             RefundAmount = refundAmount;
             RefundPercentage = refundPercentage;
@@ -186,29 +197,17 @@ namespace WelloraHealthCareManagement.Domain.Entities
             RefundedAt = DateTime.UtcNow;
         }
 
-
-        /// حساب مبلغ الاسترجاع بناءً على النسبة المئوية
-        public static decimal CalculateRefundAmount(
-            decimal paidAmount,
-            decimal refundPercentage)
+        public static decimal CalculateRefundAmount(decimal paidAmount, decimal refundPercentage)
         {
             if (refundPercentage < 0 || refundPercentage > 100)
-                throw new ArgumentException(
-                    "Refund percentage must be between 0 and 100");
-
+                throw new ArgumentException("Refund percentage must be between 0 and 100");
             return Math.Round(paidAmount * (refundPercentage / 100), 2);
         }
 
-
-        /// التحقق من إمكانية الاسترجاع بناءً على توقيت الإلغاء
         public bool IsEligibleForRefund(DateTime appointmentDateTime, int minimumHoursBeforeAppointment = 24)
         {
-            if (!CanBeRefunded())
-                return false;
-
-            // Check if cancellation is at least X hours before appointment
+            if (!CanBeRefunded()) return false;
             var hoursUntilAppointment = (appointmentDateTime - DateTime.UtcNow).TotalHours;
-
             return hoursUntilAppointment >= minimumHoursBeforeAppointment;
         }
     }

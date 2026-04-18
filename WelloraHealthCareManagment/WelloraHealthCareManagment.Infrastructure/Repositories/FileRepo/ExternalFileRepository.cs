@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using WelloraHealthCareManagment.API.Context;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo
@@ -38,6 +39,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo
                 .Where(f => f.DoctorID == doctorId && f.CategoryType == "Doctor")
                 .OrderByDescending(f => f.UploadedAt)
                 .ToListAsync();
+        }
+        public async Task<ExternalFile> GetDoctorURLProfile(int doctorId)
+        {
+            return await _context.ExternalFiles
+                .Where(f => f.DoctorID == doctorId
+                         && f.CategoryType == "Doctor"
+                         && f.CategoryValue == "Profile")
+                .OrderByDescending(f => f.UploadedAt)
+                .FirstOrDefaultAsync();    
         }
 
         public async Task DeleteAsync(ExternalFile file)
@@ -84,6 +94,34 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo
                 .OrderByDescending(f => f.UploadedAt)
                 .ToListAsync();
         }
+
+        public async Task<List<ExternalFile>> GetProfileFilesForUserAsync(int userId, string role)
+        {
+            var normalizedRole = role?.Trim();
+            var profileSources = new[] { "Profile", "GoogleProfile" };
+
+            var query = _context.ExternalFiles
+                .Where(f =>
+                    profileSources.Contains(f.CategoryValue ?? string.Empty) ||
+                    f.CategoryType == "Profile");
+
+            if (string.Equals(normalizedRole, "Doctor", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(f =>
+                    f.DoctorID == userId ||
+                    (f.PatientID == userId && f.DoctorID == null && f.CategoryValue == "GoogleProfile"));
+            }
+            else
+            {
+                query = query.Where(f => f.PatientID == userId);
+            }
+
+            return await query
+                .OrderByDescending(f => f.UploadedAt)
+                .ThenByDescending(f => f.FileID)
+                .ToListAsync();
+        }
+
         public async Task UpdateAsync(ExternalFile file)
         {
             _context.ExternalFiles.Update(file);

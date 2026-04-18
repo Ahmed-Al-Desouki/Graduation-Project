@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
@@ -23,7 +24,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
         public async Task<TimeSlot?> GetByIdWithDoctorAsync(
             Guid slotId, CancellationToken ct = default)
             => await _context.TimeSlots
-                .Include(s => s.Doctor)
+                .Include(s => s.Doctor).ThenInclude(d => d.User)
                 .FirstOrDefaultAsync(s => s.Id == slotId, ct);
 
         public async Task<List<TimeSlot>> GetAvailableSlotsAsync(
@@ -192,6 +193,46 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
             return allInRange
                 .Where(s => days.Contains(s.SlotDate.DayOfWeek))
                 .ToList();
+        }
+        public async Task BulkInsertAsync(List<TimeSlot> slots, CancellationToken ct = default)
+        {
+            if (slots == null || !slots.Any())
+                return;
+
+            var bulkConfig = new BulkConfig
+            {
+                BatchSize = 2000,
+                SetOutputIdentity = false,           // مش محتاجين نرجع Id
+                PreserveInsertOrder = true
+            };
+
+            await _context.BulkInsertAsync(slots, bulkConfig, cancellationToken: ct);
+        }
+        public async Task BulkInsertOrUpdateAsync(List<TimeSlot> slots, CancellationToken ct = default)
+        {
+            if (slots == null || !slots.Any())
+                return;
+
+            var bulkConfig = new BulkConfig
+            {
+                BatchSize = 2000,
+                // نستخدم الأعمدة اللي بتعرف الـ unique index بتاعك
+                PropertiesToIncludeOnCompare = new List<string>
+        {
+            nameof(TimeSlot.DoctorId),
+            nameof(TimeSlot.SlotDate),
+            nameof(TimeSlot.StartTime)
+        },
+                // نحمي الحقول الحساسة من التعديل عند الـ Update (مهم جداً)
+                PropertiesToExcludeOnUpdate = new List<string>
+        {
+            nameof(TimeSlot.Status),
+            nameof(TimeSlot.IsManuallyCreated),
+            nameof(TimeSlot.CreatedAt)
+        }
+            };
+
+            await _context.BulkInsertOrUpdateAsync(slots, bulkConfig, cancellationToken: ct);
         }
     }
 }

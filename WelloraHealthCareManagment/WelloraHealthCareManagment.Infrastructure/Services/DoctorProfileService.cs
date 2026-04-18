@@ -8,6 +8,7 @@ using WelloraHealthCareManagment.Application.DTOs.Reviews.Responses;
 using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
+using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo;
@@ -23,6 +24,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         private readonly IExternalFileRepository _fileRepository;
         private readonly ICloudStorageService _cloudStorage;
         private readonly IReviewRepository _reviewRepository;
+        private readonly IExternalFileRepository _externalFileRepository;
         private readonly ILogger<DoctorProfileService> _logger;
 
         public DoctorProfileService(
@@ -33,6 +35,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             IExternalFileRepository fileRepository,
             ICloudStorageService cloudStorage,
             IReviewRepository reviewRepository,
+            IExternalFileRepository externalFileRepository,
             ILogger<DoctorProfileService> logger)
         {
             _doctorRepository = doctorRepository;
@@ -42,6 +45,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             _fileRepository = fileRepository;
             _cloudStorage = cloudStorage;
             _reviewRepository = reviewRepository;
+            _externalFileRepository = externalFileRepository;
             _logger = logger;
         }
 
@@ -78,6 +82,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     ClinicLatitude = doctor.ClinicLatitude,
                     ClinicLongitude = doctor.ClinicLongitude,
                     HospitalName = doctor.HospitalName,
+                    ProfileImageUrl = doctor.User.ProfileImagePath?.FileUrl,
 
                     VerificationDocuments = verifications.Select(v => new VerificationDocumentResponse
                     {

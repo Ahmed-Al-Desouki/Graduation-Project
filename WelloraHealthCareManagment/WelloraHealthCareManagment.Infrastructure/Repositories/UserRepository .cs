@@ -256,5 +256,159 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .Include(u => u.Doctor)
                 .FirstOrDefaultAsync(u => u.Id == userId, ct);
         }
+        public async Task<List<ApplicationUser>> GetDoctorsFilteredAsync(
+            string? searchTerm,
+            bool? onlyVerified,
+            bool? onlyActive,
+            int page,
+            int pageSize,
+            CancellationToken ct = default)
+        {
+            var query = _context.Users
+                .Include(u => u.Doctor)
+                .Where(u => u.Role == "Doctor" /*&& u.Doctor != null*/)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var s = searchTerm.ToLower();
+                query = query.Where(u =>
+                    u.FullName.ToLower().Contains(s) ||
+                    (u.Email != null && u.Email.ToLower().Contains(s)) ||
+                    u.Doctor!.Specialization.ToLower().Contains(s));
+            }
+
+            if (onlyVerified.HasValue)
+                query = query.Where(u => u.Doctor!.IsActive == onlyVerified.Value);
+
+            if (onlyActive.HasValue)
+            {
+                var inactiveIds = await _context.UserStatuses
+                    .Where(us => us.IsBlocked || us.IsSuspended)
+                    .Select(us => us.UserId)
+                    .ToListAsync(ct);
+
+                query = onlyActive.Value
+                    ? query.Where(u => !inactiveIds.Contains(u.Id))
+                    : query.Where(u => inactiveIds.Contains(u.Id));
+            }
+
+            return await query
+                .OrderByDescending(u => u.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
+        public async Task<int> CountDoctorsFilteredAsync(
+            string? searchTerm,
+            bool? onlyVerified,
+            bool? onlyActive,
+            CancellationToken ct = default)
+        {
+            var query = _context.Users
+                .Include(u => u.Doctor)
+                .Where(u => u.Role == "Doctor" /*&& u.Doctor != null*/)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var s = searchTerm.ToLower();
+                query = query.Where(u =>
+                    u.FullName.ToLower().Contains(s) ||
+                    (u.Email != null && u.Email.ToLower().Contains(s)) ||
+                    u.Doctor!.Specialization.ToLower().Contains(s));
+            }
+
+            if (onlyVerified.HasValue)
+                query = query.Where(u => u.Doctor!.IsActive == onlyVerified.Value);
+
+            if (onlyActive.HasValue)
+            {
+                var inactiveIds = await _context.UserStatuses
+                    .Where(us => us.IsBlocked || us.IsSuspended)
+                    .Select(us => us.UserId)
+                    .ToListAsync(ct);
+
+                query = onlyActive.Value
+                    ? query.Where(u => !inactiveIds.Contains(u.Id))
+                    : query.Where(u => inactiveIds.Contains(u.Id));
+            }
+
+            return await query.CountAsync(ct);
+        }
+
+        public async Task<List<ApplicationUser>> GetPatientsFilteredAsync(
+            string? searchTerm,
+            bool? onlyActive,
+            int page,
+            int pageSize,
+            CancellationToken ct = default)
+        {
+            var query = _context.Users
+                .Include(u => u.Patient)
+                .Where(u => u.Role == "Patient" && u.Patient != null)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var s = searchTerm.ToLower();
+                query = query.Where(u =>
+                    u.FullName.ToLower().Contains(s) ||
+                    (u.Email != null && u.Email.ToLower().Contains(s)));
+            }
+
+            if (onlyActive.HasValue)
+            {
+                var inactiveIds = await _context.UserStatuses
+                    .Where(us => us.IsBlocked || us.IsSuspended)
+                    .Select(us => us.UserId)
+                    .ToListAsync(ct);
+
+                query = onlyActive.Value
+                    ? query.Where(u => !inactiveIds.Contains(u.Id))
+                    : query.Where(u => inactiveIds.Contains(u.Id));
+            }
+
+            return await query
+                .OrderByDescending(u => u.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
+        public async Task<int> CountPatientsFilteredAsync(
+            string? searchTerm,
+            bool? onlyActive,
+            CancellationToken ct = default)
+        {
+            var query = _context.Users
+                .Where(u => u.Role == "Patient" && u.Patient != null)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var s = searchTerm.ToLower();
+                query = query.Where(u =>
+                    u.FullName.ToLower().Contains(s) ||
+                    (u.Email != null && u.Email.ToLower().Contains(s)));
+            }
+
+            if (onlyActive.HasValue)
+            {
+                var inactiveIds = await _context.UserStatuses
+                    .Where(us => us.IsBlocked || us.IsSuspended)
+                    .Select(us => us.UserId)
+                    .ToListAsync(ct);
+
+                query = onlyActive.Value
+                    ? query.Where(u => !inactiveIds.Contains(u.Id))
+                    : query.Where(u => inactiveIds.Contains(u.Id));
+            }
+
+            return await query.CountAsync(ct);
+        }
     }
 }

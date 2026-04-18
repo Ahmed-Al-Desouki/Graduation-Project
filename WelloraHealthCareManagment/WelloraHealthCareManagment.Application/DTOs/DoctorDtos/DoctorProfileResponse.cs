@@ -15,6 +15,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? PhoneNumber { get; set; }
+        public string? ProfileImageUrl { get; set; }
 
         // ─── بيانات Doctor ───
         public DateTime? DateOfBirth { get; set; }
@@ -39,6 +40,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos
 
         // ─── مراجعات المرضي ───
         public List<ReviewResponse> Reviews { get; set; } = new();
+
     }
 
     public class VerificationDocumentResponse

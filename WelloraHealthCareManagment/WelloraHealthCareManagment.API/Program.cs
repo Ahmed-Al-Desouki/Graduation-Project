@@ -154,17 +154,24 @@ internal class Program
 
                 c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
                 {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        {
+                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            {
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
+                c.CustomSchemaIds(type =>
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
+                    return type.FullName?
+                        .Replace("WelloraHealthCareManagment.", "")
+                        .Replace("+", ".")
+                        ?? type.Name;
                 });
             });
 
@@ -226,9 +233,9 @@ internal class Program
                 "0 2 * * *");
 
             RecurringJob.AddOrUpdate<ReminderCleanupJob>(
-                "cleanup-all-expired-reminders-daily",
+                "daily-reminder-cleanup",
                 job => job.CleanupAllExpiredRemindersAsync(),
-                Cron.Hourly(12));
+                "0 2 * * *"); // Cron: every day at 2 AM UTC
 
             RecurringJob.AddOrUpdate<SlotRollingWindowJob>(
                 recurringJobId: "slot-rolling-window",
@@ -243,8 +250,22 @@ internal class Program
             {
                 errorApp.Run(async context =>
                 {
-                    var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-                    await context.Response.WriteAsync(exception?.ToString() ?? "Unknown error");
+                    var exception = context.Features
+                        .Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?
+                        .Error;
+
+                    if (exception != null)
+                    {
+                        Console.WriteLine("🚨 GLOBAL EXCEPTION CAUGHT IN REQUEST:");
+                        Console.WriteLine($"Message: {exception.Message}");
+                        Console.WriteLine($"StackTrace: {exception.StackTrace}");
+                        Console.WriteLine($"Inner Exception: {exception.InnerException?.Message}");
+                        Console.WriteLine($"Source: {exception.Source}");
+                        Console.WriteLine("==================================================");
+                    }
+
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsync("Internal Server Error - check the latest stdout log file");
                 });
             });
 

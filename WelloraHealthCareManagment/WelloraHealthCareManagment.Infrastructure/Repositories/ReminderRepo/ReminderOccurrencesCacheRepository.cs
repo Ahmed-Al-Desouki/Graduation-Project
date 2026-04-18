@@ -97,6 +97,22 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
 
         public async Task BulkInsertAsync(List<ReminderOccurrencesCache> entries)
         {
+            var distinctEntries = entries
+                .GroupBy(e => new
+                {
+                    e.PatientId,
+                    e.DoctorId,
+                    e.ReminderId,
+                    e.DueDateTimeUtc
+                })
+                .Select(g => g.OrderByDescending(x => x.CreatedAt).First())
+                .ToList();
+
+            if (!distinctEntries.Any())
+            {
+                return;
+            }
+
             var dataTable = new DataTable();
             dataTable.Columns.Add("CreatedAt", typeof(DateTime));
             dataTable.Columns.Add("PatientId", typeof(int));
@@ -111,7 +127,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
             dataTable.Columns.Add("Dosage", typeof(string));
             dataTable.Columns.Add("Status", typeof(byte));
 
-            foreach (var e in entries)
+            foreach (var e in distinctEntries)
             {
                 dataTable.Rows.Add(
                     e.CreatedAt,
@@ -133,9 +149,33 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
             if (connection.State != ConnectionState.Open)
                 await connection.OpenAsync();
 
-            using var bulkCopy = new SqlBulkCopy((SqlConnection)connection)
+            await using var transaction = await connection.BeginTransactionAsync();
+
+            await using (var createStageCommand = connection.CreateCommand())
             {
-                DestinationTableName = "ReminderOccurrencesCache",
+                createStageCommand.Transaction = transaction;
+                createStageCommand.CommandText = @"
+                    CREATE TABLE #ReminderOccurrencesCacheStage
+                    (
+                        CreatedAt DATETIME2 NOT NULL,
+                        PatientId INT NULL,
+                        DoctorId INT NULL,
+                        ReminderId INT NOT NULL,
+                        DueDateTimeUtc DATETIME2 NOT NULL,
+                        DueDateTime DATETIME2 NOT NULL,
+                        TimeZoneId NVARCHAR(50) NOT NULL,
+                        Title NVARCHAR(200) NOT NULL,
+                        Message NVARCHAR(500) NULL,
+                        Type INT NOT NULL,
+                        Dosage NVARCHAR(100) NULL,
+                        Status TINYINT NOT NULL
+                    );";
+                await createStageCommand.ExecuteNonQueryAsync();
+            }
+
+            using var bulkCopy = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.Default, (SqlTransaction)transaction)
+            {
+                DestinationTableName = "#ReminderOccurrencesCacheStage",
                 EnableStreaming = true,
                 BatchSize = 1000
             };
@@ -154,6 +194,70 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
             bulkCopy.ColumnMappings.Add("Status", "Status");
 
             await bulkCopy.WriteToServerAsync(dataTable);
+
+            await using (var mergeCommand = connection.CreateCommand())
+            {
+                mergeCommand.Transaction = transaction;
+                mergeCommand.CommandText = @"
+                    INSERT INTO ReminderOccurrencesCache
+                    (
+                        CreatedAt,
+                        PatientId,
+                        DoctorId,
+                        ReminderId,
+                        DueDateTimeUtc,
+                        DueDateTime,
+                        TimeZoneId,
+                        Title,
+                        Message,
+                        Type,
+                        Dosage,
+                        Status
+                    )
+                    SELECT
+                        s.CreatedAt,
+                        s.PatientId,
+                        s.DoctorId,
+                        s.ReminderId,
+                        s.DueDateTimeUtc,
+                        s.DueDateTime,
+                        s.TimeZoneId,
+                        s.Title,
+                        s.Message,
+                        s.Type,
+                        s.Dosage,
+                        s.Status
+                    FROM
+                    (
+                        SELECT DISTINCT
+                            CreatedAt,
+                            PatientId,
+                            DoctorId,
+                            ReminderId,
+                            DueDateTimeUtc,
+                            DueDateTime,
+                            TimeZoneId,
+                            Title,
+                            Message,
+                            Type,
+                            Dosage,
+                            Status
+                        FROM #ReminderOccurrencesCacheStage
+                    ) s
+                    WHERE NOT EXISTS
+                    (
+                        SELECT 1
+                        FROM ReminderOccurrencesCache t WITH (UPDLOCK, HOLDLOCK)
+                        WHERE t.ReminderId = s.ReminderId
+                          AND t.DueDateTimeUtc = s.DueDateTimeUtc
+                          AND ((t.PatientId = s.PatientId) OR (t.PatientId IS NULL AND s.PatientId IS NULL))
+                          AND ((t.DoctorId = s.DoctorId) OR (t.DoctorId IS NULL AND s.DoctorId IS NULL))
+                    );";
+
+                await mergeCommand.ExecuteNonQueryAsync();
+            }
+
+            await transaction.CommitAsync();
         }
 
         public async Task DeleteByReminderIdAsync(int reminderId)
@@ -209,6 +313,26 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
 
             _logger.LogInformation(
                 "Deleted all past cache rows before {BeforeUtc}", beforeUtc);
+        }
+        public async Task DeleteFutureNonPrescriptionByPatientAsync(
+            int patientId,
+            DateTime fromUtc,
+            DateTime toUtc)
+        {
+            await _context.Database.ExecuteSqlRawAsync(
+                @"DELETE FROM ReminderOccurrencesCache
+                  WHERE PatientId = {0}
+                    AND DueDateTimeUtc >= {1}
+                    AND DueDateTimeUtc < {2}
+                    AND ReminderId NOT IN (
+                        SELECT Id FROM ReminderV2s
+                        WHERE PrescriptionItemId IS NOT NULL
+                )",
+                patientId, fromUtc, toUtc);
+
+            _logger.LogInformation(
+                "Deleted all future non-prescription cache for Patient {PatientId} in range [{From}, {To})",
+                patientId, fromUtc, toUtc);
         }
     }
 }

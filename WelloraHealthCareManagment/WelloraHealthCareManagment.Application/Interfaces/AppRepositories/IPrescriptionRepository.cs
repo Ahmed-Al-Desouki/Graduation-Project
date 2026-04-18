@@ -33,5 +33,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
         Task<List<PrescriptionItem>> GetCurrentMedicationsByPatientIdAsync(
             int patientId,
             CancellationToken ct = default);
+
     }
 }

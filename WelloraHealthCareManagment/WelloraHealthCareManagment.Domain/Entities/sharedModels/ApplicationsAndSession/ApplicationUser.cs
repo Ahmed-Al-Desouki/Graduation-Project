@@ -4,6 +4,7 @@ using HealthCare_.Models.sharedModels.Reviews;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 
 namespace HealthCare_.Models.sharedModels.ApplicationsAndSession
@@ -26,6 +27,7 @@ namespace HealthCare_.Models.sharedModels.ApplicationsAndSession
         // ─────────────── Profile Image ───────────────
         public int? ProfileImageId { get; set; }
 
+        [JsonIgnore]
         [ForeignKey(nameof(ProfileImageId))]
         public ExternalFile? ProfileImagePath { get; set; } // لا تُعبأ يدوياً أبداً
 

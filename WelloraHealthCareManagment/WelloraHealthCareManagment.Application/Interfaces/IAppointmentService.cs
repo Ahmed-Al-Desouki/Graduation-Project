@@ -1,5 +1,6 @@
 ﻿using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.DTOs.Payment;
 using WelloraHealthCareManagment.Domain.ValueObjects;
 
 namespace WelloraHealthCareManagement.Application.Interfaces
@@ -30,30 +31,12 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             AppointmentStatus? status = null,
             CancellationToken cancellationToken = default);
 
-        /// إلغاء موعد
-        //Task CancelAppointmentAsync(
-        //    Guid appointmentId,
-        //    int userId,
-        //    string userRole,
-        //    CancelAppointmentRequest request,
-        //    CancellationToken cancellationToken = default);
-
-        //Task CancelByPatientAsync(
-        //    Guid appointmentId,
-        //    int patientId,
-        //    CancelAppointmentRequest request,
-        //    CancellationToken ct = default);
         Task<CancellationResult> CancelByPatientAsync(
             Guid appointmentId,
             int patientId,
             CancelAppointmentRequest request,
             CancellationToken cancellationToken = default);
 
-        //Task CancelAndBlockByDoctorAsync(
-        //    Guid appointmentId,
-        //    int doctorId,
-        //    CancelAppointmentRequest request,
-        //    CancellationToken ct = default);
 
         Task<CancellationResult> CancelAndBlockByDoctorAsync(
             Guid appointmentId,
@@ -89,9 +72,24 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             int doctorId,
             CancellationToken ct = default);
         // اعاده تشغيل access for medical history
-        Task GrantMedicalHistoryAccessAsync(
+        //Task GrantMedicalHistoryAccessAsync(
+        //    int patientId,
+        //    Guid appointmentId,
+        //    CancellationToken ct = default);
+        Task<InitiateBookingPaymentResponse> InitiateBookingWithPaymentAsync(
             int patientId,
-            Guid appointmentId,
+            BookAppointmentRequest request,
+            PaymentMethod paymentMethod,
+            CancellationToken cancellationToken = default);
+        Task ToggleMedicalHistoryAccessAsync(
+            int patientId,
+            Guid? appointmentId,
+            ToggleMedicalAccessRequest request,
             CancellationToken ct = default);
+        Task ExtendMedicalAccessExpiryAsync(
+           int patientId,
+           Guid appointmentId,
+           ExtendAccessRequest request,
+           CancellationToken ct = default);
     }
 }

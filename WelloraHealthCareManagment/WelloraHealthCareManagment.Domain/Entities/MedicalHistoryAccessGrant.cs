@@ -107,7 +107,10 @@ namespace WelloraHealthCareManagement.Domain.Entities
             bool canViewLabResults)
         {
             if (RevokedAt.HasValue)
-                throw new DomainException("Cannot update a revoked grant");
+                throw new DomainException("Cannot update a revoked grant. Please create a new one if needed.");
+
+            if (ExpiresAt.HasValue && ExpiresAt < DateTime.UtcNow)
+                throw new DomainException("Cannot update an expired grant.");
 
             CanViewMedicalHistory = canViewMedicalHistory;
             CanViewPrescriptions = canViewPrescriptions;

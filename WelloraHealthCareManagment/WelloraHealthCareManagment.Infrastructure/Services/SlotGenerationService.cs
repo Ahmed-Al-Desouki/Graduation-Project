@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
@@ -8,6 +9,7 @@ using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Domain.Constants;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
+
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {
@@ -272,133 +274,258 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             return result;
         }
 
+        //private async Task<GenerateSlotsResponse> ProcessSlotsInBatchesAsync(
+        //    int doctorId,
+        //    List<TimeSlot> generatedSlots,
+        //    bool regenerateExisting,
+        //    int batchSize,
+        //    CancellationToken ct)
+        //{
+        //    // ── Deduplication داخلي قوي (احتياطي) ──
+        //    if (generatedSlots.Any())
+        //    {
+        //        var uniqueSlots = new Dictionary<(DateTime Date, TimeSpan StartTime), TimeSlot>();
+
+        //        foreach (var slot in generatedSlots)
+        //        {
+        //            var key = (slot.SlotDate.Date, slot.StartTime);
+        //            if (!uniqueSlots.ContainsKey(key))
+        //                uniqueSlots[key] = slot;
+        //            else
+        //                _logger.LogDebug("Internal duplicate ignored: {Date} {StartTime}", slot.SlotDate.Date, slot.StartTime);
+        //        }
+
+        //        var removed = generatedSlots.Count - uniqueSlots.Count;
+        //        if (removed > 0)
+        //            _logger.LogWarning("Removed {Removed} internal duplicates for doctor {DoctorId}", removed, doctorId);
+
+        //        generatedSlots = uniqueSlots.Values.ToList();
+        //    }
+
+        //    int slotsAdded = 0, slotsSkipped = 0, batchesProcessed = 0;
+
+        //    if (!generatedSlots.Any())
+        //    {
+        //        _logger.LogInformation("No unique slots to generate for doctor {DoctorId}", doctorId);
+        //        return new GenerateSlotsResponse { SlotsGenerated = 0, SlotsSkipped = 0, BatchesProcessed = 0 };
+        //    }
+
+        //    // ── Regenerate: احذف Available و Blocked فقط ──
+        //    if (regenerateExisting)
+        //    {
+        //        var allDates = generatedSlots.Select(s => s.SlotDate.Date).Distinct().ToList();
+        //        var toDelete = (await _timeSlotRepository.GetSlotsForDatesAsync(doctorId, allDates, ct))
+        //            .Where(s => s.Status == SlotStatus.Available || s.Status == SlotStatus.Blocked)
+        //            .ToList();
+
+        //        if (toDelete.Any())
+        //        {
+        //            await _timeSlotRepository.DeleteRangeAsync(toDelete, ct);
+        //            await _unitOfWork.SaveChangesAsync(ct);
+        //            _logger.LogInformation("Deleted {Count} old Available/Blocked slots before regeneration", toDelete.Count);
+        //        }
+        //    }
+
+        //    // ── Batch Processing مع check قوي ضد الداتابيز ──
+        //    var batches = generatedSlots
+        //        .Select((s, i) => new { s, i })
+        //        .GroupBy(x => x.i / (batchSize > 0 ? batchSize : 1000))
+        //        .Select(g => g.Select(x => x.s).ToList())
+        //        .ToList();
+
+        //    _logger.LogInformation("Processing {Total} unique slots in {Batches} batches for doctor {DoctorId}",
+        //        generatedSlots.Count, batches.Count, doctorId);
+
+        //    foreach (var batch in batches)
+        //    {
+        //        var batchDates = batch.Select(s => s.SlotDate.Date).Distinct().ToList();
+
+        //        // جيب كل الـ slots الموجودة فعلاً في الداتابيز لهذه التواريخ
+        //        var existingSlots = await _timeSlotRepository.GetSlotsForDatesAsync(doctorId, batchDates, ct);
+
+        //        // HashSet للـ keys الموجودة (هذا هو الـ gate النهائي ضد duplicate)
+        //        var existingKeys = existingSlots
+        //            .Select(s => (s.SlotDate.Date, s.StartTime))
+        //            .ToHashSet();
+
+        //        var bookedByDate = existingSlots
+        //            .Where(s => s.Status == SlotStatus.Booked)
+        //            .GroupBy(s => s.SlotDate.Date)
+        //            .ToDictionary(g => g.Key, g => g.ToList());
+
+        //        var slotsToInsert = new List<TimeSlot>();
+
+        //        foreach (var slot in batch)
+        //        {
+        //            var key = (slot.SlotDate.Date, slot.StartTime);
+
+        //            // 1. لو موجود فعلاً في الداتابيز (Booked أو Cancelled) → skip
+        //            if (existingKeys.Contains(key))
+        //            {
+        //                slotsSkipped++;
+        //                _logger.LogDebug("Skipped existing slot (preserve Booked/Cancelled): {Date} {StartTime}",
+        //                    slot.SlotDate.Date, slot.StartTime);
+        //                continue;
+        //            }
+
+        //            // 2. check overlap مع Booked (احتياطي)
+        //            var booked = bookedByDate.GetValueOrDefault(slot.SlotDate.Date, new List<TimeSlot>());
+        //            bool hasConflict = booked.Any(o =>
+        //                slot.StartTime < o.EndTime && slot.EndTime > o.StartTime);
+
+        //            if (hasConflict)
+        //            {
+        //                slotsSkipped++;
+        //                _logger.LogDebug("Skipped due to overlap with Booked slot: {Date} {StartTime}",
+        //                    slot.SlotDate.Date, slot.StartTime);
+        //                continue;
+        //            }
+
+        //            slotsToInsert.Add(slot);
+        //            slotsAdded++;
+        //        }
+
+        //        if (slotsToInsert.Any())
+        //        {
+        //            await _timeSlotRepository.BulkInsertAsync(slotsToInsert, ct);
+        //            _logger.LogInformation("Batch {Batch} → Inserted {Count} new slots",
+        //                batchesProcessed + 1, slotsToInsert.Count);
+        //        }
+
+        //        batchesProcessed++;
+        //    }
+
+        //    return new GenerateSlotsResponse
+        //    {
+        //        SlotsGenerated = slotsAdded,
+        //        SlotsSkipped = slotsSkipped,
+        //        GeneratedFrom = generatedSlots.Min(s => s.SlotDate),
+        //        GeneratedTo = generatedSlots.Max(s => s.SlotDate),
+        //        BatchesProcessed = batchesProcessed
+        //    };
+        //}
         private async Task<GenerateSlotsResponse> ProcessSlotsInBatchesAsync(
-            int doctorId,
-            List<TimeSlot> generatedSlots,
-            bool regenerateExisting,
-            int batchSize,
-            CancellationToken ct)
+    int doctorId,
+    List<TimeSlot> generatedSlots,
+    bool regenerateExisting,
+    int batchSize,
+    CancellationToken ct)
         {
+            // Deduplication داخلي قوي
+            if (generatedSlots.Any())
+            {
+                var uniqueSlots = new Dictionary<(DateTime Date, TimeSpan StartTime), TimeSlot>();
+
+                foreach (var slot in generatedSlots)
+                {
+                    var key = (slot.SlotDate.Date, slot.StartTime);
+                    if (!uniqueSlots.ContainsKey(key))
+                        uniqueSlots[key] = slot;
+                    else
+                        _logger.LogDebug("Internal duplicate ignored: {Date} {StartTime}", slot.SlotDate.Date, slot.StartTime);
+                }
+
+                var removed = generatedSlots.Count - uniqueSlots.Count;
+                if (removed > 0)
+                    _logger.LogWarning("Removed {Removed} internal duplicates for doctor {DoctorId}", removed, doctorId);
+
+                generatedSlots = uniqueSlots.Values.ToList();
+            }
+
             int slotsAdded = 0, slotsSkipped = 0, batchesProcessed = 0;
 
             if (!generatedSlots.Any())
             {
-                _logger.LogWarning(
-                    "No slots to generate for doctor {DoctorId}", doctorId);
-
-                return new GenerateSlotsResponse
-                {
-                    SlotsGenerated = 0,
-                    SlotsSkipped = 0,
-                    GeneratedFrom = DateTime.UtcNow.Date,
-                    GeneratedTo = DateTime.UtcNow.Date,
-                    BatchesProcessed = 0,
-                    ProcessingTime = TimeSpan.Zero
-                };
+                _logger.LogInformation("No unique slots to generate for doctor {DoctorId}", doctorId);
+                return new GenerateSlotsResponse { SlotsGenerated = 0, SlotsSkipped = 0, BatchesProcessed = 0 };
             }
 
-            // لو regenerateExisting → امسح كل Available + Blocked الأول
+            // ── RegenerateExisting: نحذف Available slots فقط (ممنوع حذف Booked أو Blocked) ──
             if (regenerateExisting)
             {
-                var allDates = generatedSlots
-                    .Select(s => s.SlotDate.Date)
-                    .Distinct()
-                    .ToList();
+                var allDates = generatedSlots.Select(s => s.SlotDate.Date).Distinct().ToList();
+                var existingSlots = await _timeSlotRepository.GetSlotsForDatesAsync(doctorId, allDates, ct);
 
-                var existingToDelete = await _timeSlotRepository
-                    .GetSlotsForDatesAsync(doctorId, allDates, ct);
-
-                var toDelete = existingToDelete
-                    .Where(s =>
-                        s.Status == SlotStatus.Available ||
-                        s.Status == SlotStatus.Blocked)
+                var toDelete = existingSlots
+                    .Where(s => s.Status == SlotStatus.Available)   // ← فقط Available (ممنوع Booked نهائياً)
                     .ToList();
 
                 if (toDelete.Any())
                 {
                     await _timeSlotRepository.DeleteRangeAsync(toDelete, ct);
                     await _unitOfWork.SaveChangesAsync(ct);
-
-                    _logger.LogInformation(
-                        "Deleted {Count} old slots before regeneration",
-                        toDelete.Count);
+                    _logger.LogInformation("Deleted {Count} Available slots before regeneration (Booked slots preserved)", toDelete.Count);
+                }
+                else
+                {
+                    _logger.LogInformation("No Available slots to delete for regeneration (all Booked slots preserved)");
                 }
             }
 
+            // ── Batch Processing مع overlap prevention قوي ──
             var batches = generatedSlots
-                .Select((slot, i) => new { slot, i })
-                .GroupBy(x => x.i / batchSize)
-                .Select(g => g.Select(x => x.slot).ToList())
+                .Select((s, i) => new { s, i })
+                .GroupBy(x => x.i / (batchSize > 0 ? batchSize : 1000))
+                .Select(g => g.Select(x => x.s).ToList())
                 .ToList();
 
-            _logger.LogInformation(
-                "Processing {Total} slots in {Batches} batches for doctor {DoctorId}",
+            _logger.LogInformation("Processing {Total} unique slots in {Batches} batches for doctor {DoctorId}",
                 generatedSlots.Count, batches.Count, doctorId);
 
             foreach (var batch in batches)
             {
-                try
+                var batchDates = batch.Select(s => s.SlotDate.Date).Distinct().ToList();
+                var existingSlots = await _timeSlotRepository.GetSlotsForDatesAsync(doctorId, batchDates, ct);
+
+                var existingKeys = existingSlots
+                    .Select(s => (s.SlotDate.Date, s.StartTime))
+                    .ToHashSet();
+
+                var bookedByDate = existingSlots
+                    .Where(s => s.Status == SlotStatus.Booked)
+                    .GroupBy(s => s.SlotDate.Date)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                var slotsToInsert = new List<TimeSlot>();
+
+                foreach (var slot in batch)
                 {
-                    var batchDates = batch
-                        .Select(s => s.SlotDate.Date)
-                        .Distinct()
-                        .ToList();
+                    var key = (slot.SlotDate.Date, slot.StartTime);
 
-                    var existingSlots = await _timeSlotRepository
-                        .GetSlotsForDatesAsync(doctorId, batchDates, ct);
-
-                    // Booked فقط للـ conflict check
-                    var bookedByDate = existingSlots
-                        .Where(s => s.Status == SlotStatus.Booked)
-                        .GroupBy(s => s.SlotDate.Date)
-                        .ToDictionary(g => g.Key, g => g.ToList());
-
-                    // لو مش regenerate → نتحقق من الـ existing
-                    var existingKeys = regenerateExisting
-                        ? new HashSet<(DateTime, TimeSpan)>()
-                        : existingSlots
-                            .Select(s => (s.SlotDate.Date, s.StartTime))
-                            .ToHashSet();
-
-                    foreach (var slot in batch)
+                    // 1. لو الـ slot موجود بالفعل في الداتابيز (Booked أو أي status) → skip
+                    if (existingKeys.Contains(key))
                     {
-                        if (!regenerateExisting &&
-                            existingKeys.Contains((slot.SlotDate.Date, slot.StartTime)))
-                        {
-                            slotsSkipped++;
-                            continue;
-                        }
-
-                        var booked = bookedByDate
-                            .GetValueOrDefault(slot.SlotDate.Date, new List<TimeSlot>());
-
-                        bool hasConflict = booked.Any(o =>
-                            slot.StartTime < o.EndTime &&
-                            slot.EndTime > o.StartTime);
-
-                        if (hasConflict)
-                        {
-                            slotsSkipped++;
-                            _logger.LogDebug(
-                                "Skipped {Start}-{End} on {Date} — conflicts with Booked slot",
-                                slot.StartTime, slot.EndTime, slot.SlotDate);
-                        }
-                        else
-                        {
-                            await _timeSlotRepository.AddAsync(slot, ct);
-                            slotsAdded++;
-                        }
+                        slotsSkipped++;
+                        _logger.LogDebug("Skipped existing slot (preserve Booked): {Date} {StartTime}",
+                            slot.SlotDate.Date, slot.StartTime);
+                        continue;
                     }
 
-                    await _unitOfWork.SaveChangesAsync(ct);
-                    batchesProcessed++;
+                    // 2. overlap check مع Booked slots (مهم جداً زي ما قلت)
+                    var booked = bookedByDate.GetValueOrDefault(slot.SlotDate.Date, new List<TimeSlot>());
+                    bool hasConflict = booked.Any(o =>
+                        slot.StartTime < o.EndTime && slot.EndTime > o.StartTime);
+
+                    if (hasConflict)
+                    {
+                        slotsSkipped++;
+                        _logger.LogDebug("Skipped due to overlap with Booked slot: {Date} {StartTime}",
+                            slot.SlotDate.Date, slot.StartTime);
+                        continue;
+                    }
+
+                    slotsToInsert.Add(slot);
+                    slotsAdded++;
                 }
-                catch (Exception ex)
+
+                if (slotsToInsert.Any())
                 {
-                    _logger.LogError(ex,
-                        "Error in batch {Batch}", batchesProcessed + 1);
-                    throw;
+                    await _timeSlotRepository.BulkInsertAsync(slotsToInsert, ct);
+                    _logger.LogInformation("Batch {Batch} → Inserted {Count} new slots",
+                        batchesProcessed + 1, slotsToInsert.Count);
                 }
+
+                batchesProcessed++;
             }
 
             return new GenerateSlotsResponse

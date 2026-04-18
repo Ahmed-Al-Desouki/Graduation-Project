@@ -120,5 +120,61 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
             await _context.MedicalHistoryAccessLogs.AddAsync(log, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
+        public async Task<MedicalHistoryAccessGrant?> GetActiveAppointmentGrantAsync(
+            Guid appointmentId,
+            CancellationToken cancellationToken = default)
+        {
+            var now = DateTime.UtcNow;
+            return await _context.MedicalHistoryAccessGrants
+                .Where(g => g.AppointmentId == appointmentId
+                         && g.RevokedAt == null
+                         && (g.ExpiresAt == null || g.ExpiresAt > now))
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+        public async Task<MedicalHistoryAccessGrant?> GetByIdAsync(
+            Guid grantId,
+            CancellationToken ct = default)
+        {
+            return await _context.MedicalHistoryAccessGrants
+                .FirstOrDefaultAsync(g => g.Id == grantId, ct);
+        }
+
+        public async Task ExtendExpiryAsync(
+            Guid grantId,
+            DateTime newExpiryDate,
+            int patientId,
+            CancellationToken ct = default)
+        {
+            var grant = await GetByIdAsync(grantId, ct);
+            if (grant == null || grant.PatientId != patientId)
+                throw new UnauthorizedAccessException("Grant not found or not owned by patient");
+
+            grant.ExtendExpiry(newExpiryDate);  
+                                              
+        }
+
+        public async Task RevokeGrantAsync(
+            Guid grantId,
+            string reason,
+            int patientId,
+            CancellationToken ct = default)
+        {
+            var grant = await GetByIdAsync(grantId, ct);
+            if (grant == null || grant.PatientId != patientId)
+                throw new UnauthorizedAccessException("Grant not found or not owned by patient");
+
+            grant.Revoke(reason);
+        }
+
+        public async Task<bool> HasActiveGrantForAppointmentAsync(
+            Guid appointmentId,
+            CancellationToken ct = default)
+        {
+            var now = DateTime.UtcNow;
+            return await _context.MedicalHistoryAccessGrants
+                .AnyAsync(g => g.AppointmentId == appointmentId
+                            && g.RevokedAt == null
+                            && (g.ExpiresAt == null || g.ExpiresAt > now), ct);
+        }
     }
 }

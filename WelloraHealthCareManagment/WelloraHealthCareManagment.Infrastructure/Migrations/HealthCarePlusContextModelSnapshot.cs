@@ -858,6 +858,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<TimeSpan?>("FirstDoseTime")
                         .HasColumnType("time");
 
+                    b.Property<int>("Frequency")
+                        .HasColumnType("int");
+
                     b.Property<int?>("IntervalHours")
                         .HasColumnType("int");
 
@@ -1605,7 +1608,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid>("AppointmentId")
+                    b.Property<Guid?>("AppointmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1628,6 +1631,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<bool>("GrantMedicalHistoryAccess")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Method")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -1638,6 +1644,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
+
+                    b.Property<string>("PatientNotes")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PaymobCallbackData")
                         .HasColumnType("nvarchar(max)");
@@ -1683,6 +1692,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<Guid?>("TimeSlotId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1690,7 +1702,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
 
                     b.HasIndex("AppointmentId")
                         .IsUnique()
-                        .HasDatabaseName("UQ_Payment_Appointment");
+                        .HasDatabaseName("UQ_Payment_Appointment")
+                        .HasFilter("[AppointmentId] IS NOT NULL");
 
                     b.HasIndex("CreatedAt")
                         .HasDatabaseName("IX_Payments_CreatedAt");
@@ -2792,8 +2805,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.HasOne("WelloraHealthCareManagement.Domain.Entities.Appointment", "Appointment")
                         .WithOne("Payment")
                         .HasForeignKey("WelloraHealthCareManagement.Domain.Entities.Payment", "AppointmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HealthCare_.Models.DoctorModels.Doctor", "Doctor")
                         .WithMany()

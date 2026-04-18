@@ -24,6 +24,26 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.A
 
         // Prescriptions
         public List<PrescriptionDto> Prescriptions { get; set; } = new();
+        public bool CanViewMedicalHistory { get; set; }
+        public bool CanViewPrescriptions { get; set; }
+        public bool CanViewLabResults { get; set; }
+
+        //Cancel Detail
+        public CancelledBy? CancelledBy { get; set; }
+        public string? CancellationReason { get; set; }
+
+    }
+    public class ToggleMedicalAccessRequest
+    {
+        public bool CanViewMedicalHistory { get; set; } = true;
+        public bool CanViewPrescriptions { get; set; } = true;
+        public bool CanViewLabResults { get; set; } = false;
+        public bool RevokeAll { get; set; } = false;
+        public bool IsDuringBooking { get; set; } = false;
+    }
+    public class ExtendAccessRequest
+    {
+        public DateTime NewExpiryDate { get; set; }
     }
 
     public class AppointmentMedicalRecordDto

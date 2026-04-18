@@ -3,6 +3,7 @@
 
 // Models/DTOs/PatientDTO/MedicalProfileDtos.cs
 
+using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 
 namespace HealthCare_.Models.DTOs.PatientDot.MedicalProfile
@@ -69,13 +70,33 @@ namespace HealthCare_.Models.DTOs.PatientDot.MedicalProfile
     {
         public Guid AppointmentId { get; set; }
         public DateTime AppointmentDate { get; set; }
-        public TimeSpan AppointmentTime { get; set; }
-        public string DoctorName { get; set; } = string.Empty;
-        public string Specialization { get; set; } = string.Empty;
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+        public AppointmentStatus Status { get; set; }
         public string? PatientNotes { get; set; }
         public DateTime? CompletedAt { get; set; }
+
+        // Doctor Info
+        public int DoctorId { get; set; }
+        public string DoctorName { get; set; } = string.Empty;
+        public string Specialization { get; set; } = string.Empty;
+
+        // Patient Info
+        public int PatientId { get; set; }
+        public string PatientName { get; set; } = string.Empty;
+
+        // Access Grants
+        public bool CanViewMedicalHistory { get; set; }
+        public bool CanViewPrescriptions { get; set; }
+        public bool CanViewLabResults { get; set; }
+
+        // Medical Record
         public AppointmentMedicalRecordDto? MedicalRecord { get; set; }
-        public List<PrescriptionSummaryDto> Prescriptions { get; set; } = new();
+
+        // Prescriptions — نفس structure بتاعة AppointmentDetailsDto
+        public List<PrescriptionDto> Prescriptions { get; set; } = new();
+        public CancelledBy? CancelledBy { get; internal set; }
+        public string? CancellationReason { get; internal set; }
     }
 
     public class PrescriptionSummaryDto

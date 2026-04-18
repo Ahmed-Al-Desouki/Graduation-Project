@@ -21,5 +21,10 @@ namespace WelloraHealthCareManagement.Application.Interfaces
 
         Task CreateReminderForItemAsync(PrescriptionItem item,
             Guid prescriptionId, int patientId, CancellationToken ct = default);
+        Task UpdateReminderForItemAsync(
+           PrescriptionItem updatedItem,
+           Guid prescriptionId,
+           int patientId,
+           CancellationToken ct = default);
     }
 }
