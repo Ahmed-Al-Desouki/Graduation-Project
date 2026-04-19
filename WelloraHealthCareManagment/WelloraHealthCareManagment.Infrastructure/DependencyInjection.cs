@@ -48,6 +48,8 @@ namespace WelloraHealthCareManagement.Infrastructure
             // ====================== CONFIGURATION ======================
             services.Configure<CloudinarySettings>(
                 configuration.GetSection("Cloudinary"));
+            services.Configure<LocationLookupOptions>(
+                configuration.GetSection("LocationLookup"));
 
             services.AddHttpContextAccessor();
             services.Configure<FirebaseSettings>(configuration.GetSection("Firebase"));
@@ -130,6 +132,16 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<ICloudStorageService, CloudinaryService>();
             services.AddScoped<IAvatarService, AvatarService>();
             services.AddScoped<IFileUploadService, FileUploadService>();
+            services.AddHttpClient<ILocationLookupService, OpenStreetMapLocationLookupService>((serviceProvider, client) =>
+            {
+                var options = serviceProvider
+                    .GetRequiredService<Microsoft.Extensions.Options.IOptions<LocationLookupOptions>>()
+                    .Value;
+
+                client.BaseAddress = new Uri(options.BaseUrl);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+                client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+            });
 
             // Appointments & Slots
             services.AddScoped<IAppointmentService, AppointmentService>();
@@ -153,6 +165,7 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IDoctorSearchService, DoctorSearchService>();
             services.AddSingleton<IDoctorSearchIndex, DoctorSearchIndex>();
             services.AddScoped<IDoctorProfileService, DoctorProfileService>();
+            services.AddScoped<IPatientProfileService, PatientProfileService>();
             services.AddScoped<IReviewService, ReviewService>();
 
             // Payment

@@ -2249,6 +2249,17 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<double?>("CurrentLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CurrentLongitude")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("IsProfileCompleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnUpdate()
                         .HasColumnType("datetime2");
@@ -3038,7 +3049,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HealthCare_.Models.sharedModels.ApplicationsAndSession.ApplicationUser", "User")
-                        .WithOne()
+                        .WithOne("UserStatus")
                         .HasForeignKey("WelloraHealthCareManagment.Domain.Entities.UserManagement.UserStatus", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -3096,6 +3107,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("UserStatus");
                 });
 
             modelBuilder.Entity("WelloraHealthCareManagement.Domain.Entities.Appointment", b =>

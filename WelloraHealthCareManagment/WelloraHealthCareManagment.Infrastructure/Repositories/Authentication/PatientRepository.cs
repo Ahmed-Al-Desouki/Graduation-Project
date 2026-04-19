@@ -26,6 +26,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication
         {
             return await _context.Patients
                 .Include(p => p.User)
+                .ThenInclude(u => u.ProfileImagePath)
+                .Include(p => p.MedicalHistory)
                 .FirstOrDefaultAsync(p => p.PatientID == patientId, cancellationToken);
         }
 

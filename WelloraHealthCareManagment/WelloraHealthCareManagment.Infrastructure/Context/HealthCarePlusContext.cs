@@ -215,6 +215,9 @@ namespace WelloraHealthCareManagment.API.Context
             {
                 entity.HasKey(p => p.PatientID);
                 entity.Property(p => p.PatientID).ValueGeneratedNever();
+                entity.Property(p => p.CurrentLatitude).HasColumnType("float");
+                entity.Property(p => p.CurrentLongitude).HasColumnType("float");
+                entity.Property(p => p.IsProfileCompleted).HasDefaultValue(false);
                 entity.Property(p => p.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(p => p.UpdatedAt).ValueGeneratedOnUpdate();
 

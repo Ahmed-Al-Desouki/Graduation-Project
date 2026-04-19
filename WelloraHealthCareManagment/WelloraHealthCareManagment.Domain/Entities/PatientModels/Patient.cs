@@ -13,13 +13,14 @@ namespace WelloraHealthCareManagment.Domain.Entities.PatientModels
         [Required]
         public int PatientID { get; set; }
 
+        public double? CurrentLatitude { get; set; }
+        public double? CurrentLongitude { get; set; }
+        public bool IsProfileCompleted { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
         public ApplicationUser User { get; set; } = null!;
         public ICollection<ExternalFile> Files { get; set; } = new List<ExternalFile>();
         public MedicalHistory MedicalHistory { get; set; } = null!;
-        //public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
-        //public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
         public ICollection<MedicationsIntake> MedicationsIntakes { get; set; } = new List<MedicationsIntake>();
         public ICollection<ReminderV2> Reminders { get; set; } = new List<ReminderV2>();
         public ICollection<PatientSelfMedication> SelfMedications { get; set; }
