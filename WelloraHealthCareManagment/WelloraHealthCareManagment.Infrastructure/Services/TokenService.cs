@@ -31,6 +31,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IRevokedTokenRepository _revokedTokenRepository;
         private readonly IUserSessionRepository _sessionRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IUserStatusRepository _userStatusRepository;
 
         public TokenService(
             IConfiguration configuration,
@@ -38,7 +39,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IRefreshTokenRepository refreshTokenRepository,
             IRevokedTokenRepository revokedTokenRepository,
             IUserSessionRepository sessionRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IUserStatusRepository userStatusRepository)
         {
             _configuration = configuration;
             _logger = logger;
@@ -46,6 +48,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _revokedTokenRepository = revokedTokenRepository;
             _sessionRepository = sessionRepository;
             _userRepository = userRepository;
+            _userStatusRepository = userStatusRepository;
 
             // Load and validate configuration
             _jwtKey = configuration["Jwt:Key"]
@@ -348,6 +351,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     return RefreshTokenResponse.Failed("User not found");
                 }
 
+                var accessRestrictionError = await GetAccessRestrictionErrorAsync(user.Id);
+                if (!string.IsNullOrEmpty(accessRestrictionError))
+                {
+                    return RefreshTokenResponse.Failed(accessRestrictionError);
+                }
+
                 // 6. Generate new tokens
                 var (newAccessToken, newJti, _) = await GenerateJwtTokenAsync(user);
                 var newRefreshRaw = GenerateRandomToken();
@@ -388,6 +397,34 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 _logger.LogError(ex, "Token refresh failed");
                 return RefreshTokenResponse.Failed("Invalid token");
             }
+        }
+
+        private async Task<string?> GetAccessRestrictionErrorAsync(int userId)
+        {
+            var userStatus = await _userStatusRepository.GetEffectiveByUserIdAsync(userId);
+            if (userStatus == null)
+                return null;
+
+            if (userStatus.IsBlocked)
+            {
+                return string.IsNullOrWhiteSpace(userStatus.BlockReason)
+                    ? "Your account has been blocked. Please contact support."
+                    : $"Your account has been blocked. Reason: {userStatus.BlockReason}";
+            }
+
+            if (userStatus.IsSuspended)
+            {
+                var endDateText = userStatus.SuspensionEndDate.HasValue
+                    ? $" until {userStatus.SuspensionEndDate.Value:yyyy-MM-dd HH:mm} UTC"
+                    : string.Empty;
+                var reasonText = string.IsNullOrWhiteSpace(userStatus.SuspensionReason)
+                    ? string.Empty
+                    : $" Reason: {userStatus.SuspensionReason}";
+
+                return $"Your account is suspended{endDateText}.{reasonText}".Trim();
+            }
+
+            return null;
         }
     }
 }

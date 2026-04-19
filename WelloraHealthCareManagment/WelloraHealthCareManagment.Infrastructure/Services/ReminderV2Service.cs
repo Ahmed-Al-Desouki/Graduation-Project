@@ -838,18 +838,25 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
             var newDueLocal = _timezoneHelper.ConvertUtcToUserTimezone(newDueUtc, reminder.TimeZoneId);
 
-            var newLog = new ReminderOccurrenceLog
-            {
-                ReminderId = reminderId,
-                PatientId = patientId,
-                DueDateTimeUtc = newDueUtc,
-                DueDateTime = newDueLocal,
-                Status = ReminderEnums.OccurrenceStatus.Pending,
-                IsSnoozeFromOriginal = true,
-                OriginalDueDateTime = originalDueUtc,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _logRepository.AddAsync(newLog);
+            var newLog = await _logRepository.GetByReminderAndDueDateAsync(reminderId, newDueUtc)
+                ?? new ReminderOccurrenceLog
+                {
+                    ReminderId = reminderId,
+                    PatientId = patientId,
+                    DueDateTimeUtc = newDueUtc,
+                    DueDateTime = newDueLocal,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+            newLog.Status = ReminderEnums.OccurrenceStatus.Pending;
+            newLog.IsSnoozeFromOriginal = true;
+            newLog.OriginalDueDateTime = originalDueUtc;
+            newLog.DueDateTime = newDueLocal;
+
+            if (newLog.Id == 0)
+                await _logRepository.AddAsync(newLog);
+            else
+                await _logRepository.UpdateAsync(newLog);
 
             await _cacheRepository.UpdateStatusAsync(reminderId, originalDueUtc, OccurrenceStatus.Snoozed);
 

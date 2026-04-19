@@ -11,6 +11,7 @@ using System.Text;
 using WelloraHealthCareManagement.Application;
 using WelloraHealthCareManagement.Infrastructure;
 using WelloraHealthCareManagement.Infrastructure.Data.Interceptors;
+using WelloraHealthCareManagment.API.Middleware;
 using WelloraHealthCareManagment.API.Context;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs;
@@ -207,40 +208,36 @@ internal class Program
             });
 
             app.UseAuthentication();
+            app.UseMiddleware<AccountStatusMiddleware>();
             app.UseAuthorization();
             // ====================== HANGFIRE CONFIG ======================
             app.UseHangfireDashboard("/hangfire");
             var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
 
-            recurringJobManager.AddOrUpdate<ReminderOccurrenceGenerator>(
-             "generate-reminder-occurrences",
-             job => job.GenerateForAllPatientsAsync(),
-             Cron.Daily(2));
-
-            recurringJobManager.AddOrUpdate<ReminderJobOrchestrator>(
-             "ReminderJobOrchestrator-RunDailyGenerationAsync",
-             job => job.RunDailyGenerationAsync(),
-             Cron.Daily(3));
-
             recurringJobManager.AddOrUpdate<ReminderJobOrchestrator>(
              "ReminderJobOrchestrator-CacheHealthCheckAsync",
              job => job.CacheHealthCheckAsync(),
-             Cron.Daily(3));
+             "0 */6 * * *");
+
+            recurringJobManager.AddOrUpdate<ReminderOccurrenceGenerator>(
+             "generate-reminder-occurrences",
+             job => job.GenerateForAllPatientsAsync(),
+             "15 2 * * *");
 
             RecurringJob.AddOrUpdate<IReminderOccurrenceGenerator>(
                 "generate-doctor-cache",
                 j => j.GenerateForAllDoctorsAsync(),
-                "0 2 * * *");
+                "45 2 * * *");
 
             RecurringJob.AddOrUpdate<ReminderCleanupJob>(
                 "daily-reminder-cleanup",
                 job => job.CleanupAllExpiredRemindersAsync(),
-                "0 2 * * *"); // Cron: every day at 2 AM UTC
+                "30 1 * * *"); // Cron: every day at 1:30 AM UTC
 
             RecurringJob.AddOrUpdate<SlotRollingWindowJob>(
                 recurringJobId: "slot-rolling-window",
                 methodCall: job => job.ExecuteAsync(CancellationToken.None),
-                cronExpression: Cron.Daily(hour: 2),
+                cronExpression: "15 3 * * *",
                 options: new RecurringJobOptions
                 {
                     TimeZone = TimeZoneInfo.Utc

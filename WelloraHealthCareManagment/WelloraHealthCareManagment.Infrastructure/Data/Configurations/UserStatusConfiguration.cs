@@ -17,7 +17,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
 
             // One-to-one with ApplicationUser
             builder.HasOne(us => us.User)
-                   .WithOne()
+                   .WithOne(u => u.UserStatus)
                    .HasForeignKey<UserStatus>(us => us.UserId)
                    .OnDelete(DeleteBehavior.Cascade)
                    .IsRequired();

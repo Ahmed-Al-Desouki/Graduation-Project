@@ -35,6 +35,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
                 .ToListAsync();
         }
 
+        public async Task<List<ReminderOccurrencesCache>> GetByDoctorAndDateRangeAsync(
+            int doctorId,
+            DateTime fromUtcInclusive,
+            DateTime toUtcExclusive)
+        {
+            return await _context.ReminderOccurrencesCache
+                .AsNoTracking()
+                .Where(x => x.DoctorId == doctorId
+                         && x.DueDateTimeUtc >= fromUtcInclusive
+                         && x.DueDateTimeUtc < toUtcExclusive)
+                .OrderBy(x => x.DueDateTimeUtc)
+                .ToListAsync();
+        }
+
         public async Task<ReminderOccurrencesCache?> GetByReminderAndDueDateAsync(
             int reminderId,
             DateTime dueDateTimeUtc)

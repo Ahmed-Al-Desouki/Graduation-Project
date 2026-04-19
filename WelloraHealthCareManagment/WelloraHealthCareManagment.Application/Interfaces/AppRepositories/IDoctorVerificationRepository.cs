@@ -61,6 +61,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
         Task<int> GetTotalReviewsCountAsync(CancellationToken ct = default);
         Task<int> CountApprovedThisMonthAsync(DateTime startOfMonth, CancellationToken ct = default);
         Task<int> CountRejectedThisMonthAsync(DateTime startOfMonth, CancellationToken ct = default);
+        Task<int> CountApprovedBetweenAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default);
 
         // For Recent Activity
         Task<List<DoctorVerificationDto>> GetRecentPendingVerificationsAsync(int count = 5, CancellationToken ct = default);

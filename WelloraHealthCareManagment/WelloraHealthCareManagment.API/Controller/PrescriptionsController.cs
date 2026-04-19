@@ -118,6 +118,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Add item to prescription (Doctor only)
         [HttpPost("{prescriptionId}/items/bulk")]
+        [Authorize(Roles = "Doctor")]
         public async Task<IActionResult> AddPrescriptionItems(
             Guid prescriptionId,
             [FromBody] AddPrescriptionItemsRequest request)
@@ -141,6 +142,38 @@ namespace WelloraHealthCareManagement.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding prescription item");
+                return StatusCode(500, new { error = "An error occurred" });
+            }
+        }
+
+        /// Update existing prescription item (Doctor only)
+        [HttpPut("{prescriptionId}/items/{itemId}")]
+        [Authorize(Roles = "Doctor")]
+        public async Task<IActionResult> UpdatePrescriptionItem(
+            Guid prescriptionId,
+            Guid itemId,
+            [FromBody] PrescriptionItemRequest request)
+        {
+            try
+            {
+                var doctorId = GetCurrentDoctorId();
+
+                await _prescriptionService.UpdatePrescriptionItemAsync(
+                    prescriptionId,
+                    itemId,
+                    doctorId,
+                    request,
+                    CancellationToken.None);
+
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating prescription item {ItemId}", itemId);
                 return StatusCode(500, new { error = "An error occurred" });
             }
         }

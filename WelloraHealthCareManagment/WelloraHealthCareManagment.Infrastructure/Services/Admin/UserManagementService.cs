@@ -293,6 +293,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             try
             {
                 var userStatus = await _userStatusRepository.GetByUserIdAsync(userId, ct);
+                if (userStatus != null &&
+                    userStatus.IsSuspended &&
+                    userStatus.SuspensionEndDate.HasValue &&
+                    userStatus.SuspensionEndDate.Value <= DateTime.UtcNow)
+                {
+                    userStatus = await _userStatusRepository.GetEffectiveByUserIdAsync(userId, ct);
+                }
 
                 if (userStatus == null)
                 {
@@ -333,6 +340,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             try
             {
                 var userStatus = await _userStatusRepository.GetByUserIdAsync(userId, ct);
+                if (userStatus != null &&
+                    userStatus.IsSuspended &&
+                    userStatus.SuspensionEndDate.HasValue &&
+                    userStatus.SuspensionEndDate.Value <= DateTime.UtcNow)
+                {
+                    userStatus = await _userStatusRepository.GetEffectiveByUserIdAsync(userId, ct);
+                }
 
                 if (userStatus == null)
                     return ServiceResult<string>.Success("Active");

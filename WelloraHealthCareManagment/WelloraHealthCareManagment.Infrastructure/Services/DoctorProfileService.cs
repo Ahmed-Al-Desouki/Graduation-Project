@@ -74,7 +74,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     Specialization = doctor.Specialization,
                     YearsOfExperience = doctor.YearsOfExperience,
                     ConsultationFee = doctor.ConsultationFee,
-                    Description = doctor.Description,
+                    Bio = doctor.Bio,
                     AverageRating = doctor.AverageRating,
                     IsActive = doctor.IsActive,
                     IsProfileCompleted = doctor.IsProfileCompleted,
@@ -145,7 +145,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     Specialization = doctor.Specialization,
                     YearsOfExperience = doctor.YearsOfExperience,
                     ConsultationFee = doctor.ConsultationFee,
-                    Description = doctor.Description,
+                    Bio = doctor.Bio,
                     AverageRating = doctor.AverageRating,
                     ReviewCount = reviews.Count,
                     IsActive = doctor.IsActive,
@@ -216,6 +216,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 doctor.Specialization = request.Specialization;
                 doctor.YearsOfExperience = request.YearsOfExperience;
                 doctor.SetConsultationFee(request.ConsultationFee); // private setter
+                doctor.Bio = request.Bio;
                 doctor.IsProfileCompleted = true;
                 doctor.UpdatedAt = DateTime.UtcNow;
 
@@ -281,8 +282,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 if (request.ConsultationFee.HasValue)
                 { doctor.SetConsultationFee(request.ConsultationFee.Value); doctorChanged = true; }
 
-                if (!string.IsNullOrWhiteSpace(request.Description))
-                { doctor.Description = request.Description; doctorChanged = true; }
+                if (!string.IsNullOrWhiteSpace(request.Bio))
+                { doctor.Bio = request.Bio; doctorChanged = true; }
 
                 if (!string.IsNullOrWhiteSpace(request.NationalId))
                 { doctor.NationalId = request.NationalId; doctorChanged = true; }
@@ -314,6 +315,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 var doctor = await _doctorRepository.GetByIdAsync(doctorId);
                 if (doctor == null)
                     return ServiceResult.Failure("Doctor not found");
+
+                var latitudeProvided = request.ClinicLatitude.HasValue;
+                var longitudeProvided = request.ClinicLongitude.HasValue;
+
+                if (latitudeProvided != longitudeProvided)
+                    return ServiceResult.Failure("Clinic latitude and longitude must be provided together.");
 
                 if (!string.IsNullOrWhiteSpace(request.ClinicAddress))
                     doctor.ClinicAddress = request.ClinicAddress;

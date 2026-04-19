@@ -87,8 +87,19 @@ public class AdminDashboardService : IAdminDashboardService
             var suspendedUsers = await _userStatusRepository.CountSuspendedUsersAsync(ct);
             var activeUsers = await _userStatusRepository.CountActiveUsersAsync(ct);
 
-            var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-            var newUsersThisMonth = await _userStatusRepository.GetNewUsersThisMonthAsync(startOfMonth, ct);
+            var now = DateTime.UtcNow;
+            var startOfCurrentMonth = new DateTime(now.Year, now.Month, 1);
+            var startOfNextMonth = startOfCurrentMonth.AddMonths(1);
+            var startOfPreviousMonth = startOfCurrentMonth.AddMonths(-1);
+
+            var newUsersThisMonth = await _userStatusRepository.GetNewUsersCountAsync(
+                startOfCurrentMonth,
+                startOfNextMonth,
+                ct);
+            var newUsersLastMonth = await _userStatusRepository.GetNewUsersCountAsync(
+                startOfPreviousMonth,
+                startOfCurrentMonth,
+                ct);
 
             var stats = new UserStatisticsDto
             {
@@ -98,7 +109,9 @@ public class AdminDashboardService : IAdminDashboardService
                 BlockedUsers = blockedUsers,
                 SuspendedUsers = suspendedUsers,
                 ActiveUsers = activeUsers,
-                NewUsersThisMonth = newUsersThisMonth
+                NewUsersThisMonth = newUsersThisMonth,
+                NewUsersLastMonth = newUsersLastMonth,
+                NewUsersPercentageChange = CalculatePercentageChange(newUsersThisMonth, newUsersLastMonth)
             };
 
             return ServiceResult<UserStatisticsDto>.Success(stats);
@@ -123,6 +136,18 @@ public class AdminDashboardService : IAdminDashboardService
 
             var averageRating = await _verificationRepository.GetAverageDoctorRatingAsync(ct) ?? 0;
             var totalReviews = await _verificationRepository.GetTotalReviewsCountAsync(ct);
+            var now = DateTime.UtcNow;
+            var startOfCurrentMonth = new DateTime(now.Year, now.Month, 1);
+            var startOfNextMonth = startOfCurrentMonth.AddMonths(1);
+            var startOfPreviousMonth = startOfCurrentMonth.AddMonths(-1);
+            var verifiedDoctorsThisMonth = await _verificationRepository.CountApprovedBetweenAsync(
+                startOfCurrentMonth,
+                startOfNextMonth,
+                ct);
+            var verifiedDoctorsLastMonth = await _verificationRepository.CountApprovedBetweenAsync(
+                startOfPreviousMonth,
+                startOfCurrentMonth,
+                ct);
 
             var stats = new DoctorStatisticsDto
             {
@@ -131,7 +156,12 @@ public class AdminDashboardService : IAdminDashboardService
                 PendingVerification = pendingVerification,
                 RejectedDoctors = rejectedDoctors,
                 AverageRating = Math.Round(averageRating, 2),
-                TotalReviews = totalReviews
+                TotalReviews = totalReviews,
+                VerifiedDoctorsThisMonth = verifiedDoctorsThisMonth,
+                VerifiedDoctorsLastMonth = verifiedDoctorsLastMonth,
+                VerifiedDoctorsPercentageChange = CalculatePercentageChange(
+                    verifiedDoctorsThisMonth,
+                    verifiedDoctorsLastMonth)
             };
 
             return ServiceResult<DoctorStatisticsDto>.Success(stats);
@@ -232,5 +262,16 @@ public class AdminDashboardService : IAdminDashboardService
             _logger.LogError(ex, "Error getting recent activity");
             return ServiceResult<RecentActivityDto>.Failure("Failed to get recent activity");
         }
+    }
+
+    private static double CalculatePercentageChange(int currentValue, int previousValue)
+    {
+        if (previousValue == 0)
+            return currentValue == 0 ? 0 : 100;
+
+        var difference = currentValue - previousValue;
+        var percentageChange = (double)difference / previousValue * 100;
+
+        return Math.Round(percentageChange, 2);
     }
 }

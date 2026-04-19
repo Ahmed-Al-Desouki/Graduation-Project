@@ -66,6 +66,33 @@ namespace WelloraHealthCareManagement.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("nearby")]
+        public async Task<IActionResult> SearchNearby(
+            [FromQuery] double patientLatitude,
+            [FromQuery] double patientLongitude,
+            [FromQuery] string? query = null,
+            [FromQuery] string? specialization = null,
+            [FromQuery] double? radiusKm = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            CancellationToken ct = default)
+        {
+            var result = await _searchService.SearchNearbyAsync(
+                patientLatitude,
+                patientLongitude,
+                query,
+                specialization,
+                radiusKm,
+                page,
+                pageSize,
+                ct);
+
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.ErrorMessage });
+
+            return Ok(result);
+        }
+
 
         // إعادة بناء الـ index (للـ admin بس)
         [HttpPost("rebuild-index")]

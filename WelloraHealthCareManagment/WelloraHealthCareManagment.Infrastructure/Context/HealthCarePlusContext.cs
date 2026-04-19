@@ -247,7 +247,7 @@ namespace WelloraHealthCareManagment.API.Context
                 entity.Property(d => d.YearsOfExperience).HasDefaultValue(0);
                 entity.Property(d => d.ConsultationFee).HasColumnType("decimal(18,2)");
                 entity.Property(d => d.AverageRating).HasColumnType("float").HasDefaultValue(0);
-                entity.Property(d => d.Description).HasMaxLength(500);
+                entity.Property(d => d.Bio).HasMaxLength(1000);
                 entity.Property(d => d.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
 
 
@@ -685,6 +685,32 @@ namespace WelloraHealthCareManagment.API.Context
                     v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : (DateTime?)null,
                     v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : (DateTime?)null
                 );
+
+            modelBuilder.Entity<ReminderOccurrencesCache>(entity =>
+            {
+                entity.HasIndex(x => new { x.PatientId, x.DueDateTimeUtc })
+                    .HasDatabaseName("IX_ReminderOccurrencesCache_Patient_DueUtc");
+
+                entity.HasIndex(x => new { x.DoctorId, x.DueDateTimeUtc })
+                    .HasDatabaseName("IX_ReminderOccurrencesCache_Doctor_DueUtc");
+
+                entity.HasIndex(x => new { x.PatientId, x.ReminderId, x.DueDateTimeUtc })
+                    .IsUnique()
+                    .HasFilter("[PatientId] IS NOT NULL AND [DoctorId] IS NULL")
+                    .HasDatabaseName("UX_ReminderOccurrencesCache_Patient_Reminder_DueUtc");
+
+                entity.HasIndex(x => new { x.DoctorId, x.ReminderId, x.DueDateTimeUtc })
+                    .IsUnique()
+                    .HasFilter("[DoctorId] IS NOT NULL AND [PatientId] IS NULL")
+                    .HasDatabaseName("UX_ReminderOccurrencesCache_Doctor_Reminder_DueUtc");
+            });
+
+            modelBuilder.Entity<ReminderOccurrenceLog>(entity =>
+            {
+                entity.HasIndex(x => new { x.PatientId, x.ReminderId, x.DueDateTimeUtc })
+                    .IsUnique()
+                    .HasDatabaseName("UX_ReminderOccurrenceLogs_Reminder_Patient_DueUtc");
+            });
         }
         public override int SaveChanges()
         {

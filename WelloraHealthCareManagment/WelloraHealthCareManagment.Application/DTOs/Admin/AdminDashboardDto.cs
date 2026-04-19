@@ -24,6 +24,8 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public int SuspendedUsers { get; set; }
         public int ActiveUsers { get; set; }
         public int NewUsersThisMonth { get; set; }
+        public int NewUsersLastMonth { get; set; }
+        public double NewUsersPercentageChange { get; set; }
     }
 
     public class DoctorStatisticsDto
@@ -34,6 +36,9 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public int RejectedDoctors { get; set; }
         public double AverageRating { get; set; }
         public int TotalReviews { get; set; }
+        public int VerifiedDoctorsThisMonth { get; set; }
+        public int VerifiedDoctorsLastMonth { get; set; }
+        public double VerifiedDoctorsPercentageChange { get; set; }
     }
 
     public class RecentActivityDto

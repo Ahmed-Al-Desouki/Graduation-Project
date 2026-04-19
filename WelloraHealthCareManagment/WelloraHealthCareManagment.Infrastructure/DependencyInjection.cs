@@ -177,7 +177,6 @@ namespace WelloraHealthCareManagement.Infrastructure
             // ====================== BACKGROUND JOBS ======================
             services.AddTransient<SlotRollingWindowJob>();
             services.AddTransient<ReminderJobOrchestrator>();
-            services.AddHostedService<ReminderCacheHealthCheckService>();
             services.AddHostedService<RevokedTokensCleanupBackgroundService>();
 
             // ====================== DOMAIN FACTORIES ======================

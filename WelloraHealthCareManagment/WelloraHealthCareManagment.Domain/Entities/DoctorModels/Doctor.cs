@@ -20,8 +20,8 @@ namespace HealthCare_.Models.DoctorModels
         [Range(0, 5)]
         public double AverageRating { get; set; }
 
-        [StringLength(500)]
-        public string? Description { get; set; } = "Doctor Description";
+        [StringLength(1000)]
+        public string? Bio { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }

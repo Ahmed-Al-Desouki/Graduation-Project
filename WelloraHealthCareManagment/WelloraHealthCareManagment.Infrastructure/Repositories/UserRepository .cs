@@ -112,7 +112,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 if (isBlocked.HasValue)
                     statusQuery = statusQuery.Where(us => us.IsBlocked == isBlocked.Value);
                 if (isSuspended.HasValue)
-                    statusQuery = statusQuery.Where(us => us.IsSuspended == isSuspended.Value);
+                {
+                    statusQuery = isSuspended.Value
+                        ? statusQuery.Where(us => us.IsSuspended &&
+                            (!us.SuspensionEndDate.HasValue || us.SuspensionEndDate.Value > DateTime.UtcNow))
+                        : statusQuery.Where(us => !us.IsSuspended ||
+                            (us.SuspensionEndDate.HasValue && us.SuspensionEndDate.Value <= DateTime.UtcNow));
+                }
 
                 var filteredIds = await statusQuery.Select(us => us.UserId).ToListAsync(ct);
                 query = query.Where(u => filteredIds.Contains(u.Id));
@@ -182,7 +188,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             {
                 var statusQuery = _context.UserStatuses.AsQueryable();
                 if (isBlocked.HasValue) statusQuery = statusQuery.Where(us => us.IsBlocked == isBlocked.Value);
-                if (isSuspended.HasValue) statusQuery = statusQuery.Where(us => us.IsSuspended == isSuspended.Value);
+                if (isSuspended.HasValue)
+                {
+                    statusQuery = isSuspended.Value
+                        ? statusQuery.Where(us => us.IsSuspended &&
+                            (!us.SuspensionEndDate.HasValue || us.SuspensionEndDate.Value > DateTime.UtcNow))
+                        : statusQuery.Where(us => !us.IsSuspended ||
+                            (us.SuspensionEndDate.HasValue && us.SuspensionEndDate.Value <= DateTime.UtcNow));
+                }
 
                 var filteredIds = await statusQuery.Select(us => us.UserId).ToListAsync(ct);
                 query = query.Where(u => filteredIds.Contains(u.Id));
@@ -284,7 +297,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             if (onlyActive.HasValue)
             {
                 var inactiveIds = await _context.UserStatuses
-                    .Where(us => us.IsBlocked || us.IsSuspended)
+                    .Where(us => us.IsBlocked ||
+                        (us.IsSuspended &&
+                         (!us.SuspensionEndDate.HasValue || us.SuspensionEndDate.Value > DateTime.UtcNow)))
                     .Select(us => us.UserId)
                     .ToListAsync(ct);
 
@@ -327,7 +342,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             if (onlyActive.HasValue)
             {
                 var inactiveIds = await _context.UserStatuses
-                    .Where(us => us.IsBlocked || us.IsSuspended)
+                    .Where(us => us.IsBlocked ||
+                        (us.IsSuspended &&
+                         (!us.SuspensionEndDate.HasValue || us.SuspensionEndDate.Value > DateTime.UtcNow)))
                     .Select(us => us.UserId)
                     .ToListAsync(ct);
 
@@ -362,7 +379,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             if (onlyActive.HasValue)
             {
                 var inactiveIds = await _context.UserStatuses
-                    .Where(us => us.IsBlocked || us.IsSuspended)
+                    .Where(us => us.IsBlocked ||
+                        (us.IsSuspended &&
+                         (!us.SuspensionEndDate.HasValue || us.SuspensionEndDate.Value > DateTime.UtcNow)))
                     .Select(us => us.UserId)
                     .ToListAsync(ct);
 
@@ -399,7 +418,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             if (onlyActive.HasValue)
             {
                 var inactiveIds = await _context.UserStatuses
-                    .Where(us => us.IsBlocked || us.IsSuspended)
+                    .Where(us => us.IsBlocked ||
+                        (us.IsSuspended &&
+                         (!us.SuspensionEndDate.HasValue || us.SuspensionEndDate.Value > DateTime.UtcNow)))
                     .Select(us => us.UserId)
                     .ToListAsync(ct);
 

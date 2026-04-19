@@ -7,6 +7,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
     public interface IUserStatusRepository
     {
         Task<UserStatus?> GetByUserIdAsync(int userId, CancellationToken ct = default);
+        Task<UserStatus?> GetEffectiveByUserIdAsync(int userId, CancellationToken ct = default);
         Task<UserStatus> CreateAsync(UserStatus userStatus, CancellationToken ct = default);
         Task UpdateAsync(UserStatus userStatus, CancellationToken ct = default);
         Task<bool> ExistsAsync(int userId, CancellationToken ct = default);
@@ -32,6 +33,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
         Task<int> GetTotalPatientsCountAsync(CancellationToken ct = default);
         Task<int> CountActiveUsersAsync(CancellationToken ct = default);
         Task<int> GetNewUsersThisMonthAsync(DateTime startOfMonth, CancellationToken ct = default);
+        Task<int> GetNewUsersCountAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default);
         Task<List<ApplicationUser>> GetAllUsersWithDoctorAsync(CancellationToken ct = default);
         Task<Dictionary<int, UserStatus>> GetUserStatusesByUserIdsAsync(
         List<int> userIds, CancellationToken ct = default);

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
+using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
@@ -22,6 +23,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IPatientRepository _patientRepository;
         private readonly IDoctorRepository _doctorRepository;
         private readonly IMedicalHistoryRepository _medicalHistoryRepository;
+        private readonly IUserStatusRepository _userStatusRepository;
         private readonly IAuthCoreService _authCoreService;
         private readonly IFileUploadService _fileUploadService;
         private readonly IConfiguration _configuration;
@@ -32,6 +34,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IPatientRepository patientRepository,
             IDoctorRepository doctorRepository,
             IMedicalHistoryRepository medicalHistoryRepository,
+            IUserStatusRepository userStatusRepository,
             IAuthCoreService authCoreService,
             IFileUploadService fileUploadService,
             IConfiguration configuration,
@@ -41,6 +44,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _patientRepository = patientRepository;
             _doctorRepository = doctorRepository;
             _medicalHistoryRepository = medicalHistoryRepository;
+            _userStatusRepository = userStatusRepository;
             _authCoreService = authCoreService;
             _fileUploadService = fileUploadService;
             _configuration = configuration;
@@ -196,6 +200,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                     // Create Profile
                     await CreateUserProfileAsync(user, requestedRole);
+                    await EnsureUserStatusExistsAsync(user.Id);
 
                     // Upload Profile Picture
                     if (!string.IsNullOrEmpty(payload.Picture))
@@ -314,6 +319,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 _logger.LogWarning(ex, "UploadProfilePictureAsync: Failed to upload profile picture for user {UserId}", user.Id);
                 // Not throwing - profile picture upload is not critical
             }
+        }
+
+        private async Task EnsureUserStatusExistsAsync(int userId)
+        {
+            if (await _userStatusRepository.ExistsAsync(userId))
+                return;
+
+            await _userStatusRepository.CreateAsync(new UserStatus
+            {
+                UserId = userId,
+                IsBlocked = false,
+                IsSuspended = false,
+                CreatedAt = DateTime.UtcNow
+            });
         }
 
         #endregion

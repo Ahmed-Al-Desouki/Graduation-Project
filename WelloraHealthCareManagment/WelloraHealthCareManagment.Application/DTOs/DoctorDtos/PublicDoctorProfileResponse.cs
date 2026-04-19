@@ -15,7 +15,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos
         public string Specialization { get; set; } = string.Empty;
         public int YearsOfExperience { get; set; }
         public decimal ConsultationFee { get; set; }
-        public string? Description { get; set; }
+        public string? Bio { get; set; }
         public double AverageRating { get; set; }
         public int ReviewCount { get; set; }
         public bool IsActive { get; set; }

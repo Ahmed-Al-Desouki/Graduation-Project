@@ -19,6 +19,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
             _logger = logger;
         }
 
+        [DisableConcurrentExecution(timeoutInSeconds: 1800)]
         public async Task RunDailyGenerationAsync()
         {
             _logger.LogInformation("Daily Reminder Orchestration started");
@@ -49,11 +50,11 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
             }
         }
 
+        [DisableConcurrentExecution(timeoutInSeconds: 1800)]
         public async Task<bool> CacheHealthCheckAsync()
         {
             try
             {
-                // scope واحد بس — بيحل مشكلة الـ scopeين المنفصلين
                 await using var scope = _serviceProvider.CreateAsyncScope();
 
                 var cacheRepo = scope.ServiceProvider
@@ -63,30 +64,83 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
                     .GetRequiredService<IReminderRepository>();
 
                 var activePatientIds = await reminderRepo.GetAllActivePatientIdsAsync();
+                var activeDoctorIds = await reminderRepo.GetAllActiveDoctorIdsAsync();
 
-                if (!activePatientIds.Any())
+                if (!activePatientIds.Any() && !activeDoctorIds.Any())
                 {
-                    _logger.LogInformation("No active patients — cache is healthy");
+                    _logger.LogInformation("No active reminders found — cache is healthy");
                     return true;
                 }
 
-                var samplePatientId = activePatientIds.First();
                 var todayUtc = DateTime.UtcNow.Date;
-                var nextMonthUtc = todayUtc.AddDays(30);
+                var horizonUtc = todayUtc.AddDays(30);
+                var missingPatients = new List<int>();
+                var missingDoctors = new List<int>();
 
-                var hasData = await cacheRepo.GetByPatientAndDateRangeAsync(
-                    samplePatientId, todayUtc, nextMonthUtc);
-
-                if (!hasData.Any())
+                foreach (var patientId in activePatientIds.Take(200))
                 {
-                    _logger.LogWarning(
-                        "Cache is empty for sample patient {PatientId}",
-                        samplePatientId);
-                    return false;
+                    var activeReminders = await reminderRepo.GetActiveByPatientIdAsync(patientId);
+                    if (!activeReminders.Any())
+                        continue;
+
+                    var hasData = await cacheRepo.GetByPatientAndDateRangeAsync(
+                        patientId,
+                        todayUtc,
+                        horizonUtc);
+
+                    if (!hasData.Any())
+                    {
+                        missingPatients.Add(patientId);
+
+                        BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                            j => j.GenerateForPatientAsync(patientId));
+
+                        foreach (var prescriptionReminder in activeReminders.Where(r => r.PrescriptionItemId.HasValue))
+                        {
+                            BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                                j => j.GenerateForReminderAsync(prescriptionReminder.Id));
+                        }
+                    }
                 }
 
-                _logger.LogInformation("Cache health check passed");
-                return true;
+                foreach (var doctorId in activeDoctorIds.Take(200))
+                {
+                    var activeReminders = await reminderRepo.GetActiveByDoctorIdAsync(doctorId);
+                    if (!activeReminders.Any())
+                        continue;
+
+                    var hasData = await cacheRepo.GetByDoctorAndDateRangeAsync(
+                        doctorId,
+                        todayUtc,
+                        horizonUtc);
+
+                    if (!hasData.Any())
+                    {
+                        missingDoctors.Add(doctorId);
+                    }
+                }
+
+                foreach (var doctorId in missingDoctors)
+                {
+                    BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
+                        j => j.GenerateForDoctorAsync(doctorId));
+                }
+
+                var healthy = !missingPatients.Any() && !missingDoctors.Any();
+
+                if (healthy)
+                {
+                    _logger.LogInformation("Cache health check passed");
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "Cache health check enqueued rebuilds for {PatientCount} patients and {DoctorCount} doctors",
+                        missingPatients.Count,
+                        missingDoctors.Count);
+                }
+
+                return healthy;
             }
             catch (Exception ex)
             {

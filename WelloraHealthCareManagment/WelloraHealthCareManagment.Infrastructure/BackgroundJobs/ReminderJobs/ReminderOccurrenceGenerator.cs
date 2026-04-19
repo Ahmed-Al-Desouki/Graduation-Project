@@ -34,6 +34,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
             _logger = logger;
         }
 
+        [DisableConcurrentExecution(timeoutInSeconds: 1800)]
         public async Task GenerateForAllPatientsAsync()
         {
             await using var scope = _serviceProvider.CreateAsyncScope();
@@ -56,6 +57,7 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
             }
         }
 
+        [DisableConcurrentExecution(timeoutInSeconds: 1800)]
         public async Task GenerateForAllDoctorsAsync()  
         {
             await using var scope = _serviceProvider.CreateAsyncScope();

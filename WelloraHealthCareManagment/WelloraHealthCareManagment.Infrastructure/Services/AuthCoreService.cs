@@ -12,6 +12,7 @@ using WelloraHealthCareManagment.Application.DTOs.AuthModels.Login_register.LogI
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.Interfaces.Search;
+using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
@@ -35,6 +36,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IFileUploadService _fileUploadService;
         private readonly IAvatarService _avatarService;
         private readonly IMfaService _mfaService;
+        private readonly IUserStatusRepository _userStatusRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _configuration;
         private readonly IDoctorSearchIndex _searchIndex;
@@ -52,6 +54,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IFileUploadService fileUploadService,
             IAvatarService avatarService,
             IMfaService mfaService,
+            IUserStatusRepository userStatusRepository,
             IUnitOfWork unitOfWork,
             IConfiguration configuration,
             IDoctorSearchIndex searchIndex,
@@ -68,6 +71,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _fileUploadService = fileUploadService;
             _avatarService = avatarService;
             _mfaService = mfaService;
+            _userStatusRepository = userStatusRepository;
             _unitOfWork = unitOfWork;
             _configuration = configuration;
             _searchIndex = searchIndex;
@@ -151,6 +155,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 await _userRepository.AddToRoleAsync(user, user.Role);
                 await CreateUserProfileAsync(user);  // لو فشل → rollback
+                await EnsureUserStatusExistsAsync(user.Id);
 
                 await transaction.CommitAsync();
 
@@ -267,6 +272,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     return LoginResponse.Failed("Invalid password");
                 }
 
+                var accessRestriction = await ValidateUserAccessAsync(user);
+                if (accessRestriction != null)
+                    return accessRestriction;
+
                 // 3. Check MFA
                 if (string.IsNullOrEmpty(request.OtpCode))
                 {
@@ -318,6 +327,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             try
             {
+                var accessRestriction = await ValidateUserAccessAsync(user);
+                if (accessRestriction != null)
+                    return (null!, null!, accessRestriction.Error);
+
                 // Generate tokens and create session
                 var result = await CreateLoginSessionAsync(user, deviceInfo, ipAddress);
 
@@ -477,6 +490,55 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 _logger.LogError(ex, "Failed to create login session for user {UserId}", user.Id);
                 return LoginResponse.Failed("Server error");
             }
+        }
+
+        private async Task EnsureUserStatusExistsAsync(int userId)
+        {
+            if (await _userStatusRepository.ExistsAsync(userId))
+                return;
+
+            await _userStatusRepository.CreateAsync(new UserStatus
+            {
+                UserId = userId,
+                IsBlocked = false,
+                IsSuspended = false,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        private async Task<LoginResponse?> ValidateUserAccessAsync(ApplicationUser user)
+        {
+            await EnsureUserStatusExistsAsync(user.Id);
+
+            var userStatus = await _userStatusRepository.GetEffectiveByUserIdAsync(user.Id);
+            if (userStatus == null)
+                return null;
+
+            if (userStatus.IsBlocked)
+            {
+                var message = string.IsNullOrWhiteSpace(userStatus.BlockReason)
+                    ? "Your account has been blocked. Please contact support."
+                    : $"Your account has been blocked. Reason: {userStatus.BlockReason}";
+
+                return LoginResponse.AccessDenied(message, "Blocked");
+            }
+
+            if (userStatus.IsSuspended)
+            {
+                var endDateText = userStatus.SuspensionEndDate.HasValue
+                    ? $" until {userStatus.SuspensionEndDate.Value:yyyy-MM-dd HH:mm} UTC"
+                    : string.Empty;
+                var reasonText = string.IsNullOrWhiteSpace(userStatus.SuspensionReason)
+                    ? string.Empty
+                    : $" Reason: {userStatus.SuspensionReason}";
+
+                return LoginResponse.AccessDenied(
+                    $"Your account is suspended{endDateText}.{reasonText}".Trim(),
+                    "Suspended",
+                    userStatus.SuspensionEndDate);
+            }
+
+            return null;
         }
 
         #endregion

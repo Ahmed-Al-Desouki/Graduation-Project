@@ -29,5 +29,8 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos
 
         [Required, StringLength(20)]
         public string NationalId { get; set; } = string.Empty;
+
+        [Required, StringLength(1000)]
+        public string Bio { get; set; } = string.Empty;
     }
 }

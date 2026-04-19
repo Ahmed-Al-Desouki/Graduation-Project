@@ -6,6 +6,8 @@ namespace WelloraHealthCareManagment.Application.DTOs.AuthModels.Login_register.
         public string? AccessToken { get; set; }
         public string? RefreshToken { get; set; }
         public string? Error { get; set; }
+        public string? RestrictionType { get; set; }
+        public DateTime? SuspensionEndDate { get; set; }
         public bool RequiresMfa { get; set; }
         public string? MfaToken { get; set; }
 
@@ -33,6 +35,19 @@ namespace WelloraHealthCareManagment.Application.DTOs.AuthModels.Login_register.
             return new LoginResponse
             {
                 Error = error
+            };
+        }
+
+        public static LoginResponse AccessDenied(
+            string error,
+            string restrictionType,
+            DateTime? suspensionEndDate = null)
+        {
+            return new LoginResponse
+            {
+                Error = error,
+                RestrictionType = restrictionType,
+                SuspensionEndDate = suspensionEndDate
             };
         }
     }

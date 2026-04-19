@@ -16,6 +16,16 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Search
             int pageSize = 10,
             CancellationToken ct = default);
 
+        Task<NearbyDoctorSearchResponse> SearchNearbyAsync(
+            double patientLatitude,
+            double patientLongitude,
+            string? query = null,
+            string? specialization = null,
+            double? radiusKm = null,
+            int page = 1,
+            int pageSize = 10,
+            CancellationToken ct = default);
+
         Task RebuildIndexAsync(CancellationToken ct = default);
         Task<SpecializationListResponse> GetAllSpecializationsAsync(CancellationToken ct = default);
 

@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
+using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 
 namespace HealthCare_.Models.sharedModels.ApplicationsAndSession
 {
@@ -50,6 +51,7 @@ namespace HealthCare_.Models.sharedModels.ApplicationsAndSession
         // ─────────────── Navigation Properties ───────────────
         public Doctor? Doctor { get; set; }
         public Patient? Patient { get; set; }
+        public UserStatus? UserStatus { get; set; }
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }

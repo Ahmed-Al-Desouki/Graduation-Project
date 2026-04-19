@@ -26,8 +26,8 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos
         [Range(0, 10000)]
         public decimal? ConsultationFee { get; set; }
 
-        [StringLength(500)]
-        public string? Description { get; set; }
+        [StringLength(1000)]
+        public string? Bio { get; set; }
 
         [StringLength(20)]
         public string? NationalId { get; set; }

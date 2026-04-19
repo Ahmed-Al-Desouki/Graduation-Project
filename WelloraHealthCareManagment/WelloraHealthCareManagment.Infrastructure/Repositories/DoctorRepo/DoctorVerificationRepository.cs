@@ -266,6 +266,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                                   dv.ReviewedAt.Value >= startOfMonth, ct);
         }
 
+        public async Task<int> CountApprovedBetweenAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default)
+        {
+            return await _context.DoctorVerifications
+                .CountAsync(dv => dv.Status == VerificationStatus.Approved &&
+                                  dv.ReviewedAt.HasValue &&
+                                  dv.ReviewedAt.Value >= startDate &&
+                                  dv.ReviewedAt.Value < endDate, ct);
+        }
+
         public async Task<List<DoctorVerificationDto>> GetRecentPendingVerificationsAsync(int count = 5, CancellationToken ct = default)
         {
             return await _context.DoctorVerifications

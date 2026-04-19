@@ -17,6 +17,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories.Sear
             CancellationToken ct = default);
 
         Task<List<Doctor>> GetAllActiveAsync(CancellationToken ct = default);
+        Task<List<Doctor>> GetAllActiveWithLocationAsync(CancellationToken ct = default);
 
         Task<int> CountByNamesAsync(
             List<string> names,

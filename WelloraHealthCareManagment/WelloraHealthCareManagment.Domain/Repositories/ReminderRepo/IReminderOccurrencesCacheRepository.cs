@@ -9,6 +9,10 @@ namespace WelloraHealthCareManagment.Domain.Repositories.ReminderRepo
             int patientId,
             DateTime fromUtcInclusive,
             DateTime toUtcExclusive);
+        Task<List<ReminderOccurrencesCache>> GetByDoctorAndDateRangeAsync(
+            int doctorId,
+            DateTime fromUtcInclusive,
+            DateTime toUtcExclusive);
 
         Task<ReminderOccurrencesCache?> GetByReminderAndDueDateAsync(
             int reminderId,

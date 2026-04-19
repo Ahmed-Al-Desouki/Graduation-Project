@@ -78,7 +78,13 @@ namespace WelloraHealthCareManagement.API.Controllers.Authintecation
             // Handle error
             if (!string.IsNullOrEmpty(result.Error))
             {
-                return BadRequest(new { success = false, error = result.Error });
+                return BadRequest(new
+                {
+                    success = false,
+                    error = result.Error,
+                    restrictionType = result.RestrictionType,
+                    suspensionEndDate = result.SuspensionEndDate
+                });
             }
 
             // Success

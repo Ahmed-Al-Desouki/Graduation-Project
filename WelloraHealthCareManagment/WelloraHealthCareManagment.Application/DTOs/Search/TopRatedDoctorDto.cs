@@ -15,7 +15,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.Search
         public double AverageRating { get; set; }
         public int TotalReviews { get; set; }
         public int YearsOfExperience { get; set; }
-        public string? Description { get; set; }
+        public string? Bio { get; set; }
         public string? ProfileImageUrl { get; set; }
     }
 

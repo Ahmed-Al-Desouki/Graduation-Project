@@ -54,6 +54,18 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Search
                 .ToListAsync(ct);
         }
 
+        public async Task<List<Doctor>> GetAllActiveWithLocationAsync(CancellationToken ct = default)
+        {
+            return await _context.Doctors
+                .AsNoTracking()
+                .Include(d => d.User)
+                .Include(d => d.Files)
+                .Where(d => d.IsActive
+                    && d.ClinicLatitude.HasValue
+                    && d.ClinicLongitude.HasValue)
+                .ToListAsync(ct);
+        }
+
         public async Task<int> CountByNamesAsync(
             List<string> names,
             string? specialization = null,

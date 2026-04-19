@@ -27,6 +27,29 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .FirstOrDefaultAsync(us => us.UserId == userId, ct);
         }
 
+        public async Task<UserStatus?> GetEffectiveByUserIdAsync(int userId, CancellationToken ct = default)
+        {
+            var status = await GetByUserIdAsync(userId, ct);
+            if (status == null)
+                return null;
+
+            if (status.IsSuspended &&
+                status.SuspensionEndDate.HasValue &&
+                status.SuspensionEndDate.Value <= DateTime.UtcNow)
+            {
+                status.IsSuspended = false;
+                status.SuspendedAt = null;
+                status.SuspensionEndDate = null;
+                status.SuspendedByAdminId = null;
+                status.SuspensionReason = null;
+                status.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync(ct);
+            }
+
+            return status;
+        }
+
         public async Task<UserStatus> CreateAsync(UserStatus userStatus, CancellationToken ct = default)
         {
             await _context.UserStatuses.AddAsync(userStatus, ct);
@@ -47,39 +70,23 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
 
         public async Task<bool> IsBlockedAsync(int userId, CancellationToken ct = default)
         {
-            return await _context.UserStatuses
-                .Where(us => us.UserId == userId)
-                .Select(us => us.IsBlocked)
-                .FirstOrDefaultAsync(ct);
+            var status = await GetEffectiveByUserIdAsync(userId, ct);
+            return status?.IsBlocked ?? false;
         }
 
         public async Task<bool> IsSuspendedAsync(int userId, CancellationToken ct = default)
         {
-            var status = await _context.UserStatuses
-                .Where(us => us.UserId == userId)
-                .Select(us => new { us.IsSuspended, us.SuspensionEndDate })
-                .FirstOrDefaultAsync(ct);
-
-            if (status == null) return false;
-
-            if (status.IsSuspended && status.SuspensionEndDate.HasValue)
-                return status.SuspensionEndDate.Value > DateTime.UtcNow;
-
-            return status.IsSuspended;
+            var status = await GetEffectiveByUserIdAsync(userId, ct);
+            return status?.IsSuspended ?? false;
         }
 
         public async Task<bool> IsActiveAsync(int userId, CancellationToken ct = default)
         {
-            var status = await GetByUserIdAsync(userId, ct);
+            var status = await GetEffectiveByUserIdAsync(userId, ct);
             if (status == null) return true;
 
             if (status.IsBlocked) return false;
-            if (status.IsSuspended)
-            {
-                if (status.SuspensionEndDate.HasValue && status.SuspensionEndDate.Value <= DateTime.UtcNow)
-                    return true;
-                return false;
-            }
+            if (status.IsSuspended) return false;
             return true;
         }
 
@@ -177,6 +184,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         {
             return await _context.Users
                 .CountAsync(u => u.CreatedAt >= startOfMonth, ct);
+        }
+
+        public async Task<int> GetNewUsersCountAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default)
+        {
+            return await _context.Users
+                .CountAsync(u => u.CreatedAt >= startDate && u.CreatedAt < endDate, ct);
         }
 
         public async Task<List<ApplicationUser>> GetAllUsersWithDoctorAsync(CancellationToken ct = default)

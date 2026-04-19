@@ -78,6 +78,7 @@ public class ReminderCleanupJob
     //        "Cleanup finished: {SoftCount} soft-deleted, {HardCount} hard-deleted",
     //        softDeleted, hardDeleted);
     //}
+    [Hangfire.DisableConcurrentExecution(timeoutInSeconds: 1800)]
     public async Task CleanupAllExpiredRemindersAsync()
     {
         var now = DateTime.UtcNow;
