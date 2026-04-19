@@ -535,13 +535,6 @@ namespace WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs
                 return;
             }
 
-            if (reminder.PrescriptionItemId.HasValue)
-            {
-                _logger.LogDebug(
-                    "GenerateForReminderAsync: Skipping Prescription Reminder {ReminderId}", reminderId);
-                return;
-            }
-
             // ✅ Step 1: Delete ALL existing cache for this specific reminder
             await cacheRepo.DeleteByReminderIdAsync(reminderId);
             _logger.LogInformation(
