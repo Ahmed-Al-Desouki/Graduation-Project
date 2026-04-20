@@ -7,6 +7,21 @@ using WelloraHealthCareManagment.Domain.Enums;
 
 namespace WelloraHealthCareManagment.Application.DTOs.Admin
 {
+    public class DoctorVerificationDoctorDto
+    {
+        public int DoctorId { get; set; }
+        public string DoctorName { get; set; } = string.Empty;
+        public string DoctorEmail { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
+        public string Specialization { get; set; } = string.Empty;
+        public string? ClinicLocation { get; set; }
+        public int YearsOfExperience { get; set; }
+        public DoctorVerificationRequestStatus RequestStatus { get; set; }
+        public bool IsReadyForReview { get; set; }
+        public List<DoctorDocumentType> MissingRequiredDocuments { get; set; } = new();
+        public List<DoctorVerificationDto> Verifications { get; set; } = new();
+    }
+
     public class DoctorVerificationDto
     {
         public int VerificationId { get; set; }
@@ -27,20 +42,18 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
 
     public class ApproveDoctorVerificationRequest
     {
-        public int VerificationId { get; set; }
         public string? AdminNotes { get; set; }
     }
 
     public class RejectDoctorVerificationRequest
     {
-        public int VerificationId { get; set; }
         public string RejectionReason { get; set; } = string.Empty;
         public string? AdminNotes { get; set; }
     }
 
     public class DoctorVerificationListResponse
     {
-        public List<DoctorVerificationDto> Verifications { get; set; } = new();
+        public List<DoctorVerificationDoctorDto> Doctors { get; set; } = new();
         public int TotalCount { get; set; }
         public int PendingCount { get; set; }
         public int Page { get; set; }

@@ -1,158 +1,397 @@
-# Wellora HealthCare Management API
+# Wellora HealthCare Management
 
-`WelloraHealthCareManagment` is a multi-project ASP.NET Core Web API for a healthcare platform that supports patient onboarding, doctor onboarding and verification, doctor search, slot scheduling, appointment booking with payment, medical-profile sharing, prescriptions, reminders, notifications, reviews, and admin operations.
+Wellora is an ASP.NET Core Web API healthcare platform that supports patient onboarding, doctor onboarding and verification, doctor search, time-slot scheduling, appointment booking, payments, medical profile sharing, prescriptions, reminders, notifications, reviews, and admin operations.
 
-## Project Overview
+This README is written to satisfy the GitHub repository submission requirements and to help a user with no prior knowledge install, configure, build, and run the project.
 
-Main business capabilities:
+## Repository Structure
 
-- patient and doctor registration
-- JWT-based authentication with OTP-assisted login
-- doctor profile completion and verification workflow
-- doctor discovery by search, specialty, top rating, and nearby location
-- slot configuration and future slot generation
-- appointment booking with Paymob integration
-- medical profile and health-history management
-- prescriptions and reminder generation
-- reviews, notifications, and support tickets
-- admin dashboard, moderation, audit logging, and user management
+The required submission structure should be:
 
-## Tech Stack
+```text
+/src   -> Source code
+/exe   -> Executable files (if applicable)
+README.md
+```
 
-- .NET 9
-- ASP.NET Core Web API
-- Entity Framework Core 9
-- SQL Server
-- ASP.NET Core Identity
-- JWT Bearer authentication
-- Hangfire
-- Swagger
-- MailKit
-- Firebase Admin
-- Cloudinary
-- Paymob
-
-## Architecture Summary
-
-The solution is organized as a layered Onion-style monolith:
-
-- `WelloraHealthCareManagment.API`
-  HTTP endpoints, middleware, startup pipeline, Swagger, auth pipeline
-- `WelloraHealthCareManagment.Application`
-  DTOs, interfaces, and use-case style handlers
-- `WelloraHealthCareManagment.Domain`
-  entities, enums, value objects, and domain rules
-- `WelloraHealthCareManagment.Infrastructure`
-  EF Core context, repositories, services, background jobs, and external integrations
-
-In practice, the implementation is a hybrid rather than a perfectly pure Onion Architecture. Business workflows live mainly in infrastructure services, and some boundaries are looser than the folder structure suggests.
-
-## Folder Structure
+Suggested final submission mapping for this project:
 
 ```text
 WelloraHealthCareManagment/
-|-- WelloraHealthCareManagment.API/
-|   |-- Controller/
-|   |-- Middleware/
-|   |-- Program.cs
-|   |-- appsettings.json
-|-- WelloraHealthCareManagment.Application/
-|   |-- DTOs/
-|   |-- Interfaces/
-|   |-- UseCases/
-|-- WelloraHealthCareManagment.Domain/
-|   |-- Entities/
-|   |-- Enums/
-|   |-- Constants/
-|-- WelloraHealthCareManagment.Infrastructure/
-|   |-- Context/
-|   |-- Repositories/
-|   |-- Services/
-|   |-- BackgroundJobs/
-|   |-- Migrations/
-|-- docs/
-|   |-- Wellora-System-Documentation.md
-|   |-- Beginner-Run-Guide.md
-|   |-- Presentation-Prompt.md
+|-- src/
+|   |-- WelloraHealthCareManagment.API/
+|   |-- WelloraHealthCareManagment.Application/
+|   |-- WelloraHealthCareManagment.Domain/
+|   |-- WelloraHealthCareManagment.Infrastructure/
+|-- exe/
+|   |-- optional published output or packaged deployment files
+|-- README.md
 ```
 
-## Setup Instructions
+Current source projects in this repository:
 
-### Prerequisites
+- `WelloraHealthCareManagment.API`
+- `WelloraHealthCareManagment.Application`
+- `WelloraHealthCareManagment.Domain`
+- `WelloraHealthCareManagment.Infrastructure`
 
-- Visual Studio Community 2022
+## Project Overview
+
+Main system capabilities:
+
+- patient registration and onboarding
+- doctor registration, profile completion, and verification
+- JWT authentication and MFA/OTP support
+- doctor search by specialty, rating, and location
+- doctor slot configuration and slot generation
+- appointment booking and payment processing
+- medical profile and history sharing
+- prescription and medical-record management
+- reminder scheduling and notifications
+- reviews and support tickets
+- admin dashboard, moderation, and user management
+
+## Tech Stack
+
+- Backend: ASP.NET Core Web API
+- Language: C#
+- .NET SDK: .NET 9
+- ORM: Entity Framework Core 9
+- Database: SQL Server
+- Authentication: ASP.NET Core Identity + JWT Bearer
+- Background Jobs: Hangfire
+- API Documentation: Swagger / OpenAPI
+- Email: SMTP / MailKit-style integration
+- File Storage: Cloudinary
+- Notifications: Firebase
+- Payment Gateway: Paymob
+
+## Architecture Summary
+
+The project follows an Onion-style layered architecture with these main layers:
+
+- `WelloraHealthCareManagment.API`
+  Presentation layer, controllers, middleware, Swagger, startup pipeline
+- `WelloraHealthCareManagment.Application`
+  DTOs, interfaces, use cases, and application contracts
+- `WelloraHealthCareManagment.Domain`
+  entities, enums, and domain exceptions
+- `WelloraHealthCareManagment.Infrastructure`
+  EF Core context, repositories, services, external integrations, background jobs
+
+## Source Code Compilation
+
+This repository provides full source code and setup instructions.
+
+### Prerequisites and Dependencies
+
+#### Programming Languages and Versions
+
+- C# 12 or compatible with .NET 9
+- .NET SDK 9.x
+
+#### Frameworks and Libraries
+
+- ASP.NET Core
+- Entity Framework Core
+- ASP.NET Core Identity
+- JWT Bearer Authentication
+- Hangfire
+- Swagger / Swashbuckle
+- Firebase Admin SDK
+- Cloudinary SDK
+- Paymob integration code
+
+#### Required Software and Tools
+
+- Visual Studio 2022 Community or later with ASP.NET and .NET desktop workloads
 - .NET 9 SDK
-- SQL Server Express or SQL Server Developer
 - Git
+- SQL Server Express, SQL Server Developer, or another SQL Server instance
+- Optional: SQL Server Management Studio
+- Optional: Postman for API testing
 
-### Clone the Repository
+#### System Requirements
+
+Minimum recommended:
+
+- OS: Windows 10/11
+- RAM: 8 GB minimum, 16 GB recommended
+- Storage: at least 5 GB free
+- Internet connection for restoring NuGet packages and using external services
+
+#### External Services
+
+The project uses or can use:
+
+- SQL Server
+- Cloudinary
+- SMTP email provider
+- Firebase
+- Google OAuth
+- Paymob
+
+If you do not have all external integrations available, you can still run the API locally after replacing unsupported services with test or placeholder values where applicable.
+
+## Installation Steps
+
+### 1. Clone the Repository
 
 ```powershell
-git clone <repository-url>
-cd "WelloraHealthCareManagment"
+git clone <your-repository-url>
+cd WelloraHealthCareManagment
 ```
 
-### Open the Solution
+### 2. Open the Solution
 
-Open:
+Open this solution in Visual Studio:
 
 ```text
 WelloraHealthCareManagment.API\WelloraHealthCareManagment.API.sln
 ```
 
-### Restore Packages
+### 3. Restore Dependencies
+
+Using CLI:
 
 ```powershell
-cd ".\WelloraHealthCareManagment.API"
+cd .\WelloraHealthCareManagment.API
 dotnet restore
 ```
 
-### Configure `appsettings.json`
+Or in Visual Studio:
 
-Review at minimum:
+1. Open the solution.
+2. Wait for NuGet restore to complete automatically.
+3. If restore does not start, right-click the solution and choose `Restore NuGet Packages`.
 
-- `ConnectionStrings`
-- `Jwt`
-- `JwtShare`
-- `EmailSettings`
-- `Cloudinary`
-- `Google`
-- `Firebase`
-- `Paymob`
+### 4. Configure the Environment
 
-Important:
+The API reads configuration from:
 
-- the current repository snapshot contains real-looking secrets in `appsettings.json`
-- replace and rotate them before any real deployment or shared usage
+- `appsettings.json`
+- `appsettings.Development.json`
+- `appsettings.Local.json`
+- `appsettings.{Environment}.Local.json`
+- environment variables
 
-### Update the Database
+Recommended approach:
+
+1. Keep the shared defaults in `appsettings.json`
+2. Put machine-specific secrets in `appsettings.Local.json`
+3. Do not commit local secret files to Git
+
+A clean template file is included here:
+
+- `WelloraHealthCareManagment.API/appsettings.Template.json`
+
+Create a local override file:
+
+```powershell
+Copy-Item ".\WelloraHealthCareManagment.API\appsettings.Template.json" ".\WelloraHealthCareManagment.API\appsettings.Local.json"
+```
+
+Then edit `appsettings.Local.json` with your real values.
+
+## Environment Setup and Configuration
+
+You must configure the following sections before running the project successfully:
+
+### ConnectionStrings
+
+Set a valid SQL Server connection string:
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=.;Database=HealthCareDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;"
+}
+```
+
+### Jwt
+
+Set values for:
+
+- `Jwt:Key`
+- `Jwt:Issuer`
+- `Jwt:Audience`
+- `Jwt:ExpireMinutes`
+- `Jwt:RefreshTokenHmacKey`
+- `Jwt:RefreshTokenAesKey`
+
+### JwtShare
+
+Set values for:
+
+- `JwtShare:Issuer`
+- `JwtShare:Audience`
+- `JwtShare:ShareKey`
+- `JwtShare:ShareExpireMinutes`
+
+### EmailSettings
+
+Set:
+
+- `SmtpServer`
+- `SmtpPort`
+- `SenderName`
+- `SenderEmail`
+- `Username`
+- `Password`
+
+### Cloudinary
+
+Set:
+
+- `CloudName`
+- `ApiKey`
+- `ApiSecret`
+
+### Google
+
+Set:
+
+- `ClientId`
+- `ClientSecret`
+
+### Firebase / FCM
+
+Set:
+
+- `Firebase:ServiceAccountPath`
+- `FCM:ProjectId`
+- `FCM:ServiceAccountPath`
+
+### Paymob
+
+Set:
+
+- `Paymob:ApiKey`
+- `Paymob:HmacSecret`
+- `Paymob:IntegrationId:Card`
+- `Paymob:IframeId:Card`
+
+### Important Security Note
+
+The current repository snapshot contains real-looking secrets inside `WelloraHealthCareManagment.API/appsettings.json`.
+
+Before any demo, deployment, or public submission, you should:
+
+1. rotate all exposed secrets
+2. move secrets into `appsettings.Local.json` or environment variables
+3. avoid committing secret values again
+
+## Database Setup
+
+### Option 1: Use Existing EF Core Migrations
 
 From the repository root:
 
 ```powershell
-dotnet ef database update --project ".\WelloraHealthCareManagment.Infrastructure\WelloraHealthCareManagment.Infrastructure.csproj" --startup-project ".\WelloraHealthCareManagment.API\WelloraHealthCareManagment.API.csproj"
+dotnet ef database update `
+  --project ".\WelloraHealthCareManagment.Infrastructure\WelloraHealthCareManagment.Infrastructure.csproj" `
+  --startup-project ".\WelloraHealthCareManagment.API\WelloraHealthCareManagment.API.csproj"
+```
+
+### Option 2: Use Visual Studio Package Manager Console
+
+Set:
+
+- Startup Project = `WelloraHealthCareManagment.API`
+- Default Project = `WelloraHealthCareManagment.Infrastructure`
+
+Then run:
+
+```powershell
+Update-Database
+```
+
+## Compilation Steps
+
+From the solution directory:
+
+```powershell
+cd .\WelloraHealthCareManagment.API
+dotnet build .\WelloraHealthCareManagment.API.csproj
+```
+
+Or from the repository root:
+
+```powershell
+dotnet build ".\WelloraHealthCareManagment.API\WelloraHealthCareManagment.API.csproj"
 ```
 
 ## Run Instructions
 
-### Visual Studio
+### Run with Visual Studio
 
-1. Set `WelloraHealthCareManagment.API` as the startup project.
-2. Run the project.
-3. Open Swagger at:
+1. Open `WelloraHealthCareManagment.API.sln`
+2. Set `WelloraHealthCareManagment.API` as the startup project
+3. Press `F5` or `Ctrl+F5`
+4. Open Swagger in the browser
 
-- [http://localhost:5291/swagger](http://localhost:5291/swagger)
+Typical local address:
 
-### CLI
+```text
+http://localhost:5291/swagger
+```
+
+### Run with CLI
 
 ```powershell
-cd ".\WelloraHealthCareManagment.API"
+cd .\WelloraHealthCareManagment.API
 dotnet run
 ```
 
-Default launch settings currently use:
+### Publish Executable Output
 
-- `http://localhost:5291`
+If you want to provide a pre-built executable version for submission:
+
+```powershell
+dotnet publish ".\WelloraHealthCareManagment.API\WelloraHealthCareManagment.API.csproj" -c Release -o ".\exe\WelloraAPI"
+```
+
+This command creates deployable output in:
+
+```text
+.\exe\WelloraAPI
+```
+
+## Pre-built Executable Setup
+
+At the moment, source code setup is the primary delivery option.
+
+If your team wants to provide executables too, use the publish step above and include the generated files inside:
+
+```text
+/exe
+```
+
+### Download and Installation Instructions
+
+1. Download the repository or release package
+2. Open the `/exe/WelloraAPI` folder
+3. Make sure the required configuration file exists beside the executable
+
+### Run Instructions
+
+If published as framework-dependent:
+
+```powershell
+dotnet WelloraHealthCareManagment.API.dll
+```
+
+If published as self-contained executable:
+
+```powershell
+.\WelloraHealthCareManagment.API.exe
+```
+
+### Required Prerequisites for Executable Mode
+
+- SQL Server access
+- valid configuration values
+- external service credentials if related features are used
+- .NET runtime if the publish mode is framework-dependent
 
 ## API Endpoints Overview
 
@@ -162,12 +401,14 @@ Default launch settings currently use:
 - `POST /api/Auth/login`
 - `POST /api/Auth/logout`
 - `POST /api/Auth/refresh-token`
-- `GET /api/Auth/token-status-v2`
+- `POST /api/Mfa/enable`
+- `POST /api/Mfa/verify`
+- `POST /api/Mfa/resend`
 - `POST /api/google-signin-auth/google-login`
 - `POST /api/password/forgot-password`
 - `POST /api/password/reset-password`
 
-### Profile and Discovery
+### Patient and Doctor Features
 
 - `GET /api/patient/profile`
 - `PATCH /api/patient/profile/onboarding`
@@ -176,33 +417,36 @@ Default launch settings currently use:
 - `GET /api/doctors/search`
 - `GET /api/doctors/search/nearby`
 
-### Scheduling and Booking
+### Scheduling and Appointments
 
 - `GET /api/doctors/{doctorId}/slot-config`
-- `GET /api/timeslots/available`
+- `GET /api/doctors/{doctorId}/time-slots/available`
+- `GET /api/doctors/{doctorId}/time-slots/range`
+- `POST /api/doctors/{doctorId}/time-slots/manual`
 - `POST /api/appointments/book-with-payment`
 - `POST /api/payment/create`
-- `POST /api/payment/paymob-callback`
+- `POST /api/payment/refund`
 
-### Clinical Features
+### Medical Features
 
 - `GET /api/medical-profile`
 - `PUT /api/medical-profile`
 - `POST /api/prescriptions`
+- `GET /api/prescriptions/{id}`
 - `POST /api/appointments/{appointmentId}/medical-record`
-- `GET /api/reminders-v2/today`
 
 ### Admin
 
 - `GET /api/admin/dashboard/overview`
 - `GET /api/admin/users`
-- `GET /api/admin/verifications`
+- `POST /api/admin/users/block`
+- `POST /api/admin/users/suspend`
 - `GET /api/admin/reviews`
 - `GET /api/admin/tickets`
 
 ## Example Requests
 
-### Register
+### Register Patient
 
 ```json
 {
@@ -240,7 +484,7 @@ Default launch settings currently use:
 }
 ```
 
-### Create Payment for Booking
+### Create Booking Payment
 
 ```json
 {
@@ -252,23 +496,31 @@ Default launch settings currently use:
 }
 ```
 
-## Security Note
+## Common Tools and Platforms for Web Application Deployment
 
-The current codebase contains several security issues that should be fixed before production use:
+Possible deployment and delivery options:
 
-- plaintext secrets in configuration
-- unauthenticated payment endpoints
-- slot-configuration write endpoints without active authorization
-- some record and prescription read paths without strict ownership validation
-- anonymous medical-history share paths using raw IDs
+- Docker
+- GitHub Actions
+- GitLab CI
+- Vercel or Netlify for a separate frontend if your team has one
+- IIS or Azure App Service for hosting the ASP.NET Core backend
 
-See the detailed write-up in [docs/Wellora-System-Documentation.md](./docs/Wellora-System-Documentation.md).
+Recommended future additions:
 
-## Known Operational Note
+- `Dockerfile`
+- `docker-compose.yml`
+- GitHub Actions CI workflow
+- release pipeline for publish artifacts into `/exe`
 
-In the analyzed environment, `dotnet build` failed during restore with local SDK resolver errors (`MSB4276`). If you hit the same issue, repair or reinstall the .NET 9 SDK and retry.
+## Known Issues
+
+- In this environment, `dotnet build` stops during restore and prints `Build FAILED` with `0 Warning(s)` and `0 Error(s)`, which indicates a local SDK/restore issue rather than a surfaced code compile error.
+- Some external features require valid third-party credentials and will not work with placeholder values.
 
 ## Documentation
+
+Additional project documentation:
 
 - [Full system documentation](./docs/Wellora-System-Documentation.md)
 - [Beginner run guide](./docs/Beginner-Run-Guide.md)
@@ -276,13 +528,12 @@ In the analyzed environment, `dotnet build` failed during restore with local SDK
 
 ## Contribution Guide
 
-1. Create a feature branch.
-2. Keep controller changes thin and move logic into services.
-3. Add or update DTOs, services, and repositories in the correct layer.
-4. Run migrations only when schema changes are required.
-5. Test authentication, booking, payment, and reminder flows after changes.
-6. Avoid committing secrets into `appsettings.json`.
+1. Create a feature branch before editing.
+2. Keep controllers thin and move logic into application or infrastructure services as appropriate.
+3. Do not commit secrets.
+4. Update DTOs, interfaces, and migrations only when needed.
+5. Test authentication, payment, appointment, and reminder flows after changes.
 
 ## License
 
-No license file was found in the analyzed repository snapshot. Add one before public distribution if needed.
+No license file is currently included in the repository. Add one before public distribution if required by your course or team policy.

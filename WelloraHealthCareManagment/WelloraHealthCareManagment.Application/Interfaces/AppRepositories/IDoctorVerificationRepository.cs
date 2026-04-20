@@ -1,4 +1,5 @@
 ﻿// Application/Interfaces/AppRepositories/IDoctorVerificationRepository.cs
+using HealthCare_.Models.DoctorModels;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
 using WelloraHealthCareManagment.Domain.Enums;
@@ -34,7 +35,13 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
             int pageSize = 10,
             CancellationToken ct = default);
 
+        Task<List<Doctor>> GetPendingDoctorsWithVerificationsAsync(
+            int page = 1,
+            int pageSize = 10,
+            CancellationToken ct = default);
+
         Task<int> CountPendingVerificationsAsync(CancellationToken ct = default);
+        Task<int> CountPendingDoctorsAsync(CancellationToken ct = default);
 
         // All verifications with filtering
         Task<List<DoctorVerification>> GetAllAsync(
@@ -45,7 +52,21 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
             int pageSize = 10,
             CancellationToken ct = default);
 
+        Task<List<Doctor>> GetDoctorsWithVerificationsAsync(
+            VerificationStatus? status = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            int page = 1,
+            int pageSize = 10,
+            CancellationToken ct = default);
+
         Task<int> CountAllAsync(
+            VerificationStatus? status = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            CancellationToken ct = default);
+
+        Task<int> CountDoctorsAsync(
             VerificationStatus? status = null,
             DateTime? fromDate = null,
             DateTime? toDate = null,

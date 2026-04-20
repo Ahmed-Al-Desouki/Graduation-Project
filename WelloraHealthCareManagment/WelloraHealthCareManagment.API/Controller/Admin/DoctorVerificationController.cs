@@ -70,40 +70,46 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
         }
 
         /// <summary>
-        /// Approve a doctor verification
+        /// Approve a doctor verification request
         /// </summary>
-        [HttpPost("approve")]
-        public async Task<IActionResult> ApproveDoctor([FromBody] ApproveDoctorVerificationRequest request, CancellationToken ct = default)
+        [HttpPost("{doctorId}/approve")]
+        public async Task<IActionResult> ApproveDoctor(
+            int doctorId,
+            [FromBody] ApproveDoctorVerificationRequest request,
+            CancellationToken ct = default)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0"); // Get admin id from token
 
-            var result = await _verificationService.ApproveDoctorAsync(request, adminId,
+            var result = await _verificationService.ApproveDoctorAsync(doctorId, request, adminId,
                 HttpContext.Connection.RemoteIpAddress?.ToString(), ct);
 
             return result.IsSuccess
-                ? Ok(new { message = "Doctor verification approved successfully" })
+                ? Ok(new { message = "Doctor verification request approved successfully" })
                 : BadRequest(new { error = result.Error });
         }
 
         /// <summary>
-        /// Reject a doctor verification with reason
+        /// Reject a doctor verification request with reason
         /// </summary>
-        [HttpPost("reject")]
-        public async Task<IActionResult> RejectDoctor([FromBody] RejectDoctorVerificationRequest request, CancellationToken ct = default)
+        [HttpPost("{doctorId}/reject")]
+        public async Task<IActionResult> RejectDoctor(
+            int doctorId,
+            [FromBody] RejectDoctorVerificationRequest request,
+            CancellationToken ct = default)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
 
-            var result = await _verificationService.RejectDoctorAsync(request, adminId,
+            var result = await _verificationService.RejectDoctorAsync(doctorId, request, adminId,
                 HttpContext.Connection.RemoteIpAddress?.ToString(), ct);
 
             return result.IsSuccess
-                ? Ok(new { message = "Doctor verification rejected successfully" })
+                ? Ok(new { message = "Doctor verification request rejected successfully" })
                 : BadRequest(new { error = result.Error });
         }
 

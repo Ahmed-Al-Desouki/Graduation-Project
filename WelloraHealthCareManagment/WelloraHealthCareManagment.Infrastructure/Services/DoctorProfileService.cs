@@ -62,6 +62,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 var verifications = await _verificationRepository.GetByDoctorIdAsync(doctorId);
                 var achievements = await _achievementRepository.GetByDoctorIdAsync(doctorId);
                 var reviews = await _reviewRepository.GetByDoctorIdAsync(doctorId);
+                var verificationRequestStatus = DoctorVerificationPolicy.DetermineRequestStatus(verifications);
+                var missingRequiredDocuments = DoctorVerificationPolicy.GetMissingRequiredDocuments(verifications);
 
                 var response = new DoctorProfileResponse
                 {
@@ -78,6 +80,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     AverageRating = doctor.AverageRating,
                     IsActive = doctor.IsActive,
                     IsProfileCompleted = doctor.IsProfileCompleted,
+                    VerificationRequestStatus = verificationRequestStatus,
+                    MissingRequiredVerificationDocuments = missingRequiredDocuments.ToList(),
                     ClinicAddress = doctor.ClinicAddress,
                     ClinicLatitude = doctor.ClinicLatitude,
                     ClinicLongitude = doctor.ClinicLongitude,
@@ -355,6 +359,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         {
             try
             {
+                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
+                if (doctor == null)
+                    return ServiceResult.Failure("Doctor not found");
+
                 // منع التكرار — كل نوع مرة واحدة بس
                 var exists = await _verificationRepository.ExistsAsync(doctorId, request.DocumentType);
                 if (exists)
@@ -392,6 +400,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 };
 
                 await _verificationRepository.CreateAsync(verification);
+                await UpdateDoctorActivationAsync(doctor, doctorId);
 
                 _logger.LogInformation(
                     "AddVerificationDocumentAsync: Document {Type} added for doctor {DoctorId}",
@@ -448,6 +457,11 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 verification.UpdatedAt = DateTime.UtcNow;
 
                 await _verificationRepository.UpdateAsync(verification);
+                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
+                if (doctor != null)
+                {
+                    await UpdateDoctorActivationAsync(doctor, doctorId);
+                }
 
                 _logger.LogInformation(
                     "ReplaceVerificationDocumentAsync: Document replaced for doctor {DoctorId}", doctorId);
@@ -623,6 +637,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 _logger.LogError(ex, "DeleteAchievementAsync failed for doctor {DoctorId}", doctorId);
                 return ServiceResult.Failure("Server error while deleting achievement");
             }
+        }
+
+        private async Task UpdateDoctorActivationAsync(HealthCare_.Models.DoctorModels.Doctor doctor, int doctorId)
+        {
+            var currentVerifications = await _verificationRepository.GetByDoctorIdAsync(doctorId);
+            doctor.IsActive = DoctorVerificationPolicy.IsDoctorEligibleForActivation(currentVerifications);
+            doctor.UpdatedAt = DateTime.UtcNow;
+            await _doctorRepository.UpdateAsync(doctor);
         }
     }
 }

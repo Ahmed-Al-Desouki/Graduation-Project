@@ -29,6 +29,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Services
 
         // Admin: Approve doctor
         Task<ServiceResult> ApproveDoctorAsync(
+            int doctorId,
             ApproveDoctorVerificationRequest request,
             int adminId,
             string? ipAddress = null,
@@ -36,6 +37,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Services
 
         // Admin: Reject doctor (permanent)
         Task<ServiceResult> RejectDoctorAsync(
+            int doctorId,
             RejectDoctorVerificationRequest request,
             int adminId,
             string? ipAddress = null,

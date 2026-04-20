@@ -27,6 +27,8 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos
         public double AverageRating { get; set; }
         public bool IsActive { get; set; }
         public bool IsProfileCompleted { get; set; }
+        public DoctorVerificationRequestStatus VerificationRequestStatus { get; set; }
+        public List<DoctorDocumentType> MissingRequiredVerificationDocuments { get; set; } = new();
 
         // ─── الموقع ───
         public string? ClinicAddress { get; set; }
