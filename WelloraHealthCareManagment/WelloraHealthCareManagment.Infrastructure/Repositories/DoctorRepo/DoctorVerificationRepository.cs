@@ -1,7 +1,7 @@
 ﻿// Infrastructure/Repositories/DoctorVerificationRepository.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
@@ -299,3 +299,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         }
     }
 }
+

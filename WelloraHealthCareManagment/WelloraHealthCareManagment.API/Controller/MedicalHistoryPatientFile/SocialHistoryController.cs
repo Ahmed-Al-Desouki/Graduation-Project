@@ -2,6 +2,8 @@
 using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.SocialHistories.Commands.UpsertSocialHistory;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.SocialHistories.GetSocialHistory;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.SocialHistories.GetSocialHistoryForShare;
@@ -18,17 +20,20 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
         private readonly GetSocialHistoryForShareQueryHandler _getSocialHistoryForShareHandler;
         private readonly UpsertSocialHistoryCommandHandler _upsertSocialHistoryHandler;
         private readonly SoftDeleteSocialHistoryCommandHandler _softDeleteSocialHistoryHandler;
+        private readonly IShareTokenService _shareTokenService;
 
         public SocialHistoryController(
             GetSocialHistoryQueryHandler getSocialHistoryHandler,
             GetSocialHistoryForShareQueryHandler getSocialHistoryForShareHandler,
             UpsertSocialHistoryCommandHandler upsertSocialHistoryHandler,
-            SoftDeleteSocialHistoryCommandHandler softDeleteSocialHistoryHandler)
+            SoftDeleteSocialHistoryCommandHandler softDeleteSocialHistoryHandler,
+            IShareTokenService shareTokenService)
         {
             _getSocialHistoryHandler = getSocialHistoryHandler;
             _getSocialHistoryForShareHandler = getSocialHistoryForShareHandler;
             _upsertSocialHistoryHandler = upsertSocialHistoryHandler;
             _softDeleteSocialHistoryHandler = softDeleteSocialHistoryHandler;
+            _shareTokenService = shareTokenService;
         }
 
          
@@ -56,13 +61,23 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
         /// Get social history for sharing (no auth check)         
         [HttpGet("patient/{patientId}/share")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetSocialHistoryForShare(int patientId)
+        public async Task<IActionResult> GetSocialHistoryForShare(int patientId, [FromQuery] string token)
         {
             try
             {
+                var sharedPatientId = _shareTokenService.ValidateAndGetPatientId(token);
+                if (sharedPatientId != patientId)
+                {
+                    return Unauthorized(new { message = "Share token does not match this patient." });
+                }
+
                 var query = new GetSocialHistoryForShareQuery(patientId);
                 var result = await _getSocialHistoryForShareHandler.HandleAsync(query);
                 return Ok(result);
+            }
+            catch (SecurityTokenException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (Exception ex)
             {

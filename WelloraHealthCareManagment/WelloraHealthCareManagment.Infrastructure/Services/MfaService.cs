@@ -108,6 +108,28 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
         }
 
+        public async Task<(bool Succeeded, string Error)> ResendOtpAsync(int userId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    return (false, "User not found");
+                }
+
+                var sent = await GenerateAndSendOtpAsync(user);
+                return sent
+                    ? (true, string.Empty)
+                    : (false, "Failed to send OTP");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resending OTP for user {UserId}", userId);
+                return (false, "An error occurred while resending OTP");
+            }
+        }
+
         public async Task<(bool Succeeded, string Message, string Error)> EnableMfaAsync(int userId)
         {
             try

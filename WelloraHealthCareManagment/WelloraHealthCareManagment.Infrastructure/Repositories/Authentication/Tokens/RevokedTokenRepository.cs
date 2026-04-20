@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Domain.Repositories;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens
@@ -65,3 +65,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.
 
     }
 }
+

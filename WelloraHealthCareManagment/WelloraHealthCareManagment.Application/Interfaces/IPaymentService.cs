@@ -20,20 +20,28 @@ namespace WelloraHealthCareManagement.Application.Interfaces
         // Payment Creation
         Task<CreatePaymentResponse> CreatePaymentAsync(
             CreatePaymentRequest request,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
 
         // Refund
         Task<RefundPaymentResponse> RefundPaymentAsync(
             RefundPaymentRequest request,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
 
         // Queries
         Task<Payment?> GetPaymentByAppointmentIdAsync(
             Guid appointmentId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
 
         Task<List<PaymentHistoryDto>> GetPatientPaymentHistoryAsync(
             int patientId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
     }
 }

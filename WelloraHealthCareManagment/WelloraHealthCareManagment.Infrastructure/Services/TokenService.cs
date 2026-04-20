@@ -280,6 +280,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
         }
 
+        public Task<bool> IsAccessTokenRevokedAsync(string jti)
+        {
+            if (string.IsNullOrWhiteSpace(jti))
+                return Task.FromResult(false);
+
+            return _revokedTokenRepository.IsTokenRevokedAsync(jti);
+        }
+
         public async Task<RefreshTokenResponse> RefreshTokenAsync(
             RefreshRequest request,
             string? deviceInfo = null,

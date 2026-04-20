@@ -5,11 +5,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using WelloraHealthCareManagement.Infrastructure.Services;
 using WelloraHealthCareManagment.Application.DTOs.AuthModels.Login_register.Tokens;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Domain.Repositories;
-using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 
 namespace WelloraHealthCareManagement.API.Controllers.Authintecation
 {
@@ -21,20 +19,17 @@ namespace WelloraHealthCareManagement.API.Controllers.Authintecation
         private readonly ITokenService _tokenService;
         private readonly ILogger<AuthController> _logger;
         private readonly IDeviceService _deviceService;
-        private readonly IRevokedTokenRepository _revokedTokenRepository;
 
         public AuthController(
             IAuthCoreService authService,
             ITokenService tokenService,
             IDeviceService deviceService,
-            IRevokedTokenRepository revokedTokenRepository,
             ILogger<AuthController> logger)
         {
             _authService = authService;
             _tokenService = tokenService;
             _logger = logger;
             _deviceService = deviceService;
-            _revokedTokenRepository = revokedTokenRepository;
         }
 
         [HttpPost("register")]
@@ -296,7 +291,7 @@ namespace WelloraHealthCareManagement.API.Controllers.Authintecation
 
                     if (result.Valid && !string.IsNullOrEmpty(jti))
                     {
-                        var isRevoked = await _revokedTokenRepository.IsTokenRevokedAsync(jti);
+                        var isRevoked = await _tokenService.IsAccessTokenRevokedAsync(jti);
                         result.Valid = !isRevoked;
                         result.Revoked = isRevoked;
                     }

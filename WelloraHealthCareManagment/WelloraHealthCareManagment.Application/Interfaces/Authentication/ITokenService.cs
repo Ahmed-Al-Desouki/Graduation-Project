@@ -47,6 +47,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Authentication
 
         /// Extract Jti from JWT Token
         string? GetJtiFromToken(string token);
+        Task<bool> IsAccessTokenRevokedAsync(string jti);
         Task<RefreshTokenResponse> RefreshTokenAsync(
             RefreshRequest request,
             string? deviceInfo = null,

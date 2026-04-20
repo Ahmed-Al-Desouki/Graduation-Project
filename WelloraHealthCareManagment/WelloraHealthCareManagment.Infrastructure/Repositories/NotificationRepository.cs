@@ -1,6 +1,6 @@
 ﻿// Infrastructure/Repositories/NotificationRepository.cs
 using Microsoft.EntityFrameworkCore;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Domain.Entities.Notifications;
 using WelloraHealthCareManagment.Domain.Enums;

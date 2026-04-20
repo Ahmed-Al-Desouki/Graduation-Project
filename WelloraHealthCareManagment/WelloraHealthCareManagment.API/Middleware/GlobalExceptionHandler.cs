@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using WelloraHealthCareManagement.Domain.Exceptions;
 
 namespace HealthCare_.Middleware
 {
@@ -9,16 +10,12 @@ namespace HealthCare_.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<GlobalExceptionMiddleware> _logger;
-        private readonly IHostEnvironment _env;
-
         public GlobalExceptionMiddleware(
             RequestDelegate next,
-            ILogger<GlobalExceptionMiddleware> logger,
-            IHostEnvironment env)
+            ILogger<GlobalExceptionMiddleware> logger)
         {
             _next = next;
             _logger = logger;
-            _env = env;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -53,10 +50,12 @@ namespace HealthCare_.Middleware
                         => 403,
 
                     // Not Found
+                    NotFoundException or
                     KeyNotFoundException
                         => 404,
 
                     // Bad Request
+                    DomainException or
                     ArgumentException or
                     ArgumentNullException or
                     ArgumentOutOfRangeException or
@@ -103,6 +102,8 @@ namespace HealthCare_.Middleware
                 FluentValidation.ValidationException => "Validation failed. Please check your input.",
                 UnauthorizedAccessException when ex.Message.Contains("claim") => "Authentication required.",
                 UnauthorizedAccessException => ex.Message, // "History does not belong..."
+                NotFoundException => ex.Message,
+                DomainException => ex.Message,
                 KeyNotFoundException => ex.Message ?? "The requested resource was not found.",
                 ArgumentException or ArgumentNullException => ex.Message,
                 InvalidOperationException => ex.Message,

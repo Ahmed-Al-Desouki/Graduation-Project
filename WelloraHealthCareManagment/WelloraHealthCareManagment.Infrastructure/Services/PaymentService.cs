@@ -458,13 +458,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         #region Payment Creation
         public async Task<CreatePaymentResponse> CreatePaymentAsync(
             CreatePaymentRequest request,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default)
         {
             try
             {
+                var effectivePatientId = GetEffectivePatientId(
+                    request.PatientId,
+                    requesterUserId,
+                    requesterRole);
+
                 _logger.LogInformation(
                     "Creating payment. AppointmentId: {AppointmentId}, TimeSlotId: {TimeSlotId}, PatientId: {PatientId}",
-                    request.AppointmentId, request.TimeSlotId, request.PatientId);
+                    request.AppointmentId, request.TimeSlotId, effectivePatientId);
 
                 // ====================== التدفق الجديد: الدفع باستخدام TimeSlotId ======================
                 if (request.TimeSlotId.HasValue && request.TimeSlotId.Value != Guid.Empty)
@@ -494,10 +501,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                     // 3. جلب بيانات المريض
                     var patient = await _patientRepository.GetByIdWithUserAsync(
-                        request.PatientId, cancellationToken);
+                        effectivePatientId, cancellationToken);
 
                     if (patient == null)
-                        throw new NotFoundException("Patient", request.PatientId);
+                        throw new NotFoundException("Patient", effectivePatientId);
 
                     if (patient.User == null)
                         throw new DomainException("Patient account data not found");
@@ -516,7 +523,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     // 5. إنشاء Payment مرتبط بالسلوت فقط (قبل إنشاء الموعد)
                     var payment = Payment.CreatePendingForSlot(
                         timeSlot.Id,
-                        request.PatientId,
+                        effectivePatientId,
                         timeSlot.DoctorId,
                         amount,
                         request.PaymentMethod,
@@ -614,6 +621,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                     if (appointment.IsPaid)
                         throw new DomainException("Appointment already paid");
+
+                    EnsurePaymentAccess(
+                        appointment.PatientId,
+                        appointment.DoctorId,
+                        requesterUserId,
+                        requesterRole);
 
                     var doctor = await _doctorRepository.GetByIdWithUserAsync(
                         appointment.DoctorId, cancellationToken);
@@ -719,6 +732,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public async Task<RefundPaymentResponse> RefundPaymentAsync(
             RefundPaymentRequest request,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default)
         {
             try
@@ -741,6 +756,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     _logger.LogWarning("Payment {PaymentId} not found", request.PaymentId);
                     throw new NotFoundException("Payment", request.PaymentId);
                 }
+
+                EnsurePaymentAccess(
+                    payment.PatientId,
+                    payment.DoctorId,
+                    requesterUserId,
+                    requesterRole);
 
                 
                 // 2. VALIDATE REFUND ELIGIBILITY
@@ -948,17 +969,38 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public async Task<Payment?> GetPaymentByAppointmentIdAsync(
             Guid appointmentId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default)
         {
-            return await _paymentRepository.GetByAppointmentIdAsync(
+            var payment = await _paymentRepository.GetByAppointmentIdAsync(
                 appointmentId,
                 cancellationToken);
+
+            if (payment != null)
+            {
+                EnsurePaymentAccess(
+                    payment.PatientId,
+                    payment.DoctorId,
+                    requesterUserId,
+                    requesterRole);
+            }
+
+            return payment;
         }
 
         public async Task<List<PaymentHistoryDto>> GetPatientPaymentHistoryAsync(
-     int patientId,
-     CancellationToken cancellationToken = default)
+            int patientId,
+            int requesterUserId,
+            string requesterRole,
+            CancellationToken cancellationToken = default)
         {
+            if (!string.Equals(requesterRole, "Admin", StringComparison.OrdinalIgnoreCase) &&
+                patientId != requesterUserId)
+            {
+                throw new UnauthorizedAccessException("You can only access your own payment history.");
+            }
+
             var payments = await _paymentRepository.GetPatientPaymentsAsync(
                 patientId,
                 cancellationToken);
@@ -975,6 +1017,52 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 // بنستخدم بس FullName — مش محتاجين كل Doctor object
                 DoctorName = p.Doctor?.User?.FullName ?? "Unknown"
             }).ToList();
+        }
+
+        private int GetEffectivePatientId(int requestedPatientId, int requesterUserId, string requesterRole)
+        {
+            if (string.Equals(requesterRole, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return requestedPatientId;
+            }
+
+            if (string.Equals(requesterRole, "Patient", StringComparison.OrdinalIgnoreCase))
+            {
+                if (requestedPatientId != 0 && requestedPatientId != requesterUserId)
+                {
+                    throw new UnauthorizedAccessException("You can only create payments for your own account.");
+                }
+
+                return requesterUserId;
+            }
+
+            throw new UnauthorizedAccessException("Only patients or administrators can create payments.");
+        }
+
+        private static void EnsurePaymentAccess(
+            int patientId,
+            int doctorId,
+            int requesterUserId,
+            string requesterRole)
+        {
+            if (string.Equals(requesterRole, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (string.Equals(requesterRole, "Patient", StringComparison.OrdinalIgnoreCase) &&
+                patientId == requesterUserId)
+            {
+                return;
+            }
+
+            if (string.Equals(requesterRole, "Doctor", StringComparison.OrdinalIgnoreCase) &&
+                doctorId == requesterUserId)
+            {
+                return;
+            }
+
+            throw new UnauthorizedAccessException("You are not allowed to access this payment.");
         }
 
         #endregion

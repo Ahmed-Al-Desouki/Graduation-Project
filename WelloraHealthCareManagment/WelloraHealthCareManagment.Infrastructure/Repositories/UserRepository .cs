@@ -3,7 +3,7 @@ using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 
@@ -433,3 +433,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         }
     }
 }
+

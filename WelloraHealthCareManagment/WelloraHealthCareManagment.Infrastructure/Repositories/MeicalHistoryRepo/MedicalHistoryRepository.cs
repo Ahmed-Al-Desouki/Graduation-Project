@@ -1,6 +1,6 @@
 ﻿using HealthCare_.Models.PatientModels.MedicalHistoryModels;
 using Microsoft.EntityFrameworkCore;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 

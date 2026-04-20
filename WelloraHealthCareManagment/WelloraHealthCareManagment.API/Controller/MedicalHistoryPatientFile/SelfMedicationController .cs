@@ -1,6 +1,8 @@
 ﻿using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.SelfMedication.Commands.SoftDeleteSelfMedication;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.SelfMedication.Commands.UpsertSelfMedication;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.SelfMedication.GetSelfMedications;
@@ -17,17 +19,20 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
         private readonly GetSelfMedicationsForShareQueryHandler _getSelfMedicationsForShareHandler;
         private readonly UpsertSelfMedicationCommandHandler _upsertSelfMedicationHandler;
         private readonly SoftDeleteSelfMedicationCommandHandler _softDeleteSelfMedicationHandler;
+        private readonly IShareTokenService _shareTokenService;
 
         public SelfMedicationController(
             GetSelfMedicationsQueryHandler getSelfMedicationsHandler,
             GetSelfMedicationsForShareQueryHandler getSelfMedicationsForShareHandler,
             UpsertSelfMedicationCommandHandler upsertSelfMedicationHandler,
-            SoftDeleteSelfMedicationCommandHandler softDeleteSelfMedicationHandler)
+            SoftDeleteSelfMedicationCommandHandler softDeleteSelfMedicationHandler,
+            IShareTokenService shareTokenService)
         {
             _getSelfMedicationsHandler = getSelfMedicationsHandler;
             _getSelfMedicationsForShareHandler = getSelfMedicationsForShareHandler;
             _upsertSelfMedicationHandler = upsertSelfMedicationHandler;
             _softDeleteSelfMedicationHandler = softDeleteSelfMedicationHandler;
+            _shareTokenService = shareTokenService;
         }
 
          
@@ -55,13 +60,23 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
         /// Get self medications for sharing (no auth check)
         [HttpGet("patient/{patientId}/share")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetSelfMedicationsForShare(int patientId)
+        public async Task<IActionResult> GetSelfMedicationsForShare(int patientId, [FromQuery] string token)
         {
             try
             {
+                var sharedPatientId = _shareTokenService.ValidateAndGetPatientId(token);
+                if (sharedPatientId != patientId)
+                {
+                    return Unauthorized(new { message = "Share token does not match this patient." });
+                }
+
                 var query = new GetSelfMedicationsForShareQuery(patientId);
                 var result = await _getSelfMedicationsForShareHandler.HandleAsync(query);
                 return Ok(result);
+            }
+            catch (SecurityTokenException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (Exception ex)
             {

@@ -17,5 +17,8 @@ namespace WelloraHealthCareManagment.Application.Interfaces
 
         /// Validate token and return patient ID
         int ValidateAndGetPatientId(string token);
+
+        /// Validate token and return medical history ID
+        int ValidateAndGetMedicalHistoryId(string token);
     }
 }

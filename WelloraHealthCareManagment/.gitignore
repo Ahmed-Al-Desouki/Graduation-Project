@@ -9,3 +9,5 @@ obj/
 firebase-service-account.json
 *.json.key
 secrets.json
+appsettings.Local.json
+appsettings.*.Local.json

@@ -1,11 +1,9 @@
-﻿// Presentation/Controllers/Admin/AdminUserManagementController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
 
-namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
+namespace WelloraHealthCareManagment.API.Controller.Admin
 {
     [ApiController]
     [Route("api/admin/users")]
@@ -23,10 +21,11 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
         public async Task<IActionResult> BlockUser([FromBody] BlockUserRequest request)
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
 
             var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
-
             var result = await _userManagementService.BlockUserAsync(
                 request,
                 adminId,
@@ -41,10 +40,11 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
         public async Task<IActionResult> UnblockUser([FromBody] UnblockUserRequest request)
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
 
             var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
-
             var result = await _userManagementService.UnblockUserAsync(
                 request,
                 adminId,
@@ -59,10 +59,11 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
         public async Task<IActionResult> SuspendUser([FromBody] SuspendUserRequest request)
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
 
             var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
-
             var result = await _userManagementService.SuspendUserAsync(
                 request,
                 adminId,
@@ -77,10 +78,11 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
         public async Task<IActionResult> UnsuspendUser([FromBody] UnsuspendUserRequest request)
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
 
             var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
-
             var result = await _userManagementService.UnsuspendUserAsync(
                 request,
                 adminId,

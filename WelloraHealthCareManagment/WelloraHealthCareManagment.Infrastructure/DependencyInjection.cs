@@ -75,7 +75,6 @@ namespace WelloraHealthCareManagement.Infrastructure
 
             // Doctor
             services.AddScoped<IDoctorRepository, DoctorRepository>();
-            services.AddScoped<IDoctorVerificationRepository, DoctorVerificationRepository>();
             services.AddScoped<IDoctorAchievementRepository, DoctorAchievementRepository>();
             services.AddScoped<IDoctorSearchRepository, DoctorSearchRepository>();
             services.AddScoped<IDoctorVerificationRepository, DoctorVerificationRepository>();
@@ -125,6 +124,7 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IAuthCoreService, AuthCoreService>();
             services.AddScoped<IDeviceService, DeviceService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IUserActivityService, UserActivityService>();
             services.AddScoped<IShareTokenService, ShareTokenService>();
             services.AddScoped<IRevokedTokenCleanupService, RevokedTokenCleanupService>();
 
@@ -181,11 +181,13 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IUserManagementService, UserManagementService>();
             services.AddScoped<IUserSearchService, UserSearchService>();
 
+            services.AddScoped<IMfaService, MfaService>();
+
+
 
             //NOTIFICATION
             services.AddSingleton<IFirebaseNotificationService, FirebaseNotificationService>();
             services.AddScoped<INotificationService, NotificationService>();
-            services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
 
             // ====================== BACKGROUND JOBS ======================
             services.AddTransient<SlotRollingWindowJob>();

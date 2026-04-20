@@ -381,10 +381,17 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 // 4. Add Jti to revoked tokens
                 if (!string.IsNullOrEmpty(request.Jti))
                 {
+                    var accessTokenLifetimeMinutes = 1440;
+                    if (!int.TryParse(_configuration["Jwt:ExpireMinutes"], out accessTokenLifetimeMinutes) ||
+                        accessTokenLifetimeMinutes <= 0)
+                    {
+                        accessTokenLifetimeMinutes = 1440;
+                    }
+
                     var revokedToken = new RevokedToken
                     {
                         Jti = request.Jti,
-                        Expires = DateTime.UtcNow.AddMinutes(15), // Access token lifetime
+                        Expires = DateTime.UtcNow.AddMinutes(accessTokenLifetimeMinutes),
                         RevokedAt = DateTime.UtcNow,
                         UserId = request.UserId
                     };

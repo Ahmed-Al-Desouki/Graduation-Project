@@ -16,6 +16,8 @@ namespace WelloraHealthCareManagement.Application.Interfaces
         /// الحصول على تفاصيل موعد
         Task<AppointmentDetailsDto?> GetAppointmentDetailsAsync(
             Guid appointmentId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
 
         /// جلب مواعيد المريض
@@ -47,16 +49,19 @@ namespace WelloraHealthCareManagement.Application.Interfaces
         /// تأكيد موعد
         Task ConfirmAppointmentAsync(
             Guid appointmentId,
+            int doctorId,
             CancellationToken cancellationToken = default);
 
         /// بدء موعد
         Task StartAppointmentAsync(
             Guid appointmentId,
+            int doctorId,
             CancellationToken cancellationToken = default);
 
         /// إكمال موعد
         Task CompleteAppointmentAsync(
             Guid appointmentId,
+            int doctorId,
             CancellationToken cancellationToken = default);
 
         //دي لاختيار حجز للمريض للمتابعه فيه:حجز موجود فعليا

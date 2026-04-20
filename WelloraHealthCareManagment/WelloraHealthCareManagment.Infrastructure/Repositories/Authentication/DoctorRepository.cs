@@ -1,6 +1,6 @@
 ﻿using HealthCare_.Models.DoctorModels;
 using Microsoft.EntityFrameworkCore;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.Authentication
 

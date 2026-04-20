@@ -1,6 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using WelloraHealthCareManagement.Application.Services;
-using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.CurrentMedication.GetCurrentMedications;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.CurrentMedication.GetCurrentMedicationsForShare;
@@ -97,7 +95,6 @@ namespace WelloraHealthCareManagement.Application
             services.AddScoped<GetUpcomingRemindersQueryHandler>();
 
             // Application Services
-            services.AddScoped<IMfaService, MfaService>();
 
 
             return services;

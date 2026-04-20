@@ -1,7 +1,7 @@
 ﻿// Infrastructure/Repositories/UserStatusRepository.cs
 using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.EntityFrameworkCore;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 
@@ -212,3 +212,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         }
     }
 }
+

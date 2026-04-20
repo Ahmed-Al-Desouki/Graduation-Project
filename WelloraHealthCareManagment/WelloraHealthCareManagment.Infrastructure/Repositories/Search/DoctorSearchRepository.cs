@@ -1,7 +1,7 @@
 ﻿using CloudinaryDotNet;
 using HealthCare_.Models.DoctorModels;
 using Microsoft.EntityFrameworkCore;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories.Search;
 using WelloraHealthCareManagment.Domain.Constants;
 using WelloraHealthCareManagment.Domain.Entities.Search;
@@ -200,3 +200,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.Search
         }
     }
 }
+

@@ -2,6 +2,8 @@
 using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.FamilyHistory.Commands.SoftDeleteFamilyHistory;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.FamilyHistory.Commands.UpsertFamilyHistory;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.FamilyHistory.GetFamilyHistory;
@@ -18,17 +20,20 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
         private readonly GetFamilyHistoryForShareQueryHandler _getFamilyHistoryForShareHandler;
         private readonly UpsertFamilyHistoryCommandHandler _upsertFamilyHistoryHandler;
         private readonly SoftDeleteFamilyHistoryCommandHandler _softDeleteFamilyHistoryHandler;
+        private readonly IShareTokenService _shareTokenService;
 
         public FamilyHistoryController(
             GetFamilyHistoryQueryHandler getFamilyHistoryHandler,
             GetFamilyHistoryForShareQueryHandler getFamilyHistoryForShareHandler,
             UpsertFamilyHistoryCommandHandler upsertFamilyHistoryHandler,
-            SoftDeleteFamilyHistoryCommandHandler softDeleteFamilyHistoryHandler)
+            SoftDeleteFamilyHistoryCommandHandler softDeleteFamilyHistoryHandler,
+            IShareTokenService shareTokenService)
         {
             _getFamilyHistoryHandler = getFamilyHistoryHandler;
             _getFamilyHistoryForShareHandler = getFamilyHistoryForShareHandler;
             _upsertFamilyHistoryHandler = upsertFamilyHistoryHandler;
             _softDeleteFamilyHistoryHandler = softDeleteFamilyHistoryHandler;
+            _shareTokenService = shareTokenService;
         }
 
         /// Get family history for current user
@@ -53,14 +58,24 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
 
         /// Get family history for sharing (no auth check)
         [HttpGet("{medicalHistoryId}/share")]
-        [AllowAnonymous] 
-        public async Task<IActionResult> GetFamilyHistoryForShare(int medicalHistoryId)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetFamilyHistoryForShare(int medicalHistoryId, [FromQuery] string token)
         {
             try
             {
+                var sharedMedicalHistoryId = _shareTokenService.ValidateAndGetMedicalHistoryId(token);
+                if (sharedMedicalHistoryId != medicalHistoryId)
+                {
+                    return Unauthorized(new { message = "Share token does not match this medical history." });
+                }
+
                 var query = new GetFamilyHistoryForShareQuery(medicalHistoryId);
                 var result = await _getFamilyHistoryForShareHandler.HandleAsync(query);
                 return Ok(result);
+            }
+            catch (SecurityTokenException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (Exception ex)
             {

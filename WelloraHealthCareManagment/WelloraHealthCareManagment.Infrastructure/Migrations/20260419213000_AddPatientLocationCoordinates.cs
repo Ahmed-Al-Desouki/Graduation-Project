@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore.Infrastructure;
+﻿using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 
 #nullable disable
 
@@ -37,3 +37,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
         }
     }
 }
+

@@ -201,7 +201,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 };
 
                 var paymentResult = await _paymentService.CreatePaymentAsync(
-                    createPaymentRequest, cancellationToken);
+                    createPaymentRequest,
+                    patientId,
+                    "Patient",
+                    cancellationToken);
 
                 _logger.LogInformation(
                     "Payment {PaymentId} initiated for slot {TimeSlotId}. Awaiting Paymob confirmation.",
@@ -411,6 +414,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public async Task<AppointmentDetailsDto?> GetAppointmentDetailsAsync(
             Guid appointmentId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default)
         {
             var appointment = await _appointmentRepository
@@ -418,6 +423,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             if (appointment == null)
                 return null;
+
+            EnsureCanAccessAppointment(appointment, requesterUserId, requesterRole);
 
             var activeGrant = await _accessRepository
                 .GetActiveAppointmentGrantAsync(appointmentId, cancellationToken);
@@ -602,6 +609,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public async Task ConfirmAppointmentAsync(
             Guid appointmentId,
+            int doctorId,
             CancellationToken cancellationToken = default)
         {
             var appointment = await _appointmentRepository
@@ -609,6 +617,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             if (appointment == null)
                 throw new NotFoundException("Appointment", appointmentId);
+
+            if (appointment.DoctorId != doctorId)
+                throw new UnauthorizedAccessException("This appointment does not belong to you.");
 
             appointment.Confirm();
 
@@ -624,6 +635,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public async Task StartAppointmentAsync(
             Guid appointmentId,
+            int doctorId,
             CancellationToken cancellationToken = default)
         {
             var appointment = await _appointmentRepository
@@ -631,6 +643,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             if (appointment == null)
                 throw new NotFoundException("Appointment", appointmentId);
+
+            if (appointment.DoctorId != doctorId)
+                throw new UnauthorizedAccessException("This appointment does not belong to you.");
 
             appointment.Start();
 
@@ -646,6 +661,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public async Task CompleteAppointmentAsync(
             Guid appointmentId,
+            int doctorId,
             CancellationToken cancellationToken = default)
         {
             try
@@ -657,6 +673,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 if (appointment == null)
                     throw new NotFoundException("Appointment", appointmentId);
+
+                if (appointment.DoctorId != doctorId)
+                    throw new UnauthorizedAccessException("This appointment does not belong to you.");
 
                 appointment.Complete();
 
@@ -1085,7 +1104,11 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         };
 
                         var refundResponse = await _paymentService
-                            .RefundPaymentAsync(refundRequest, cancellationToken);
+                            .RefundPaymentAsync(
+                                refundRequest,
+                                cancelledBy == CancelledBy.Patient ? appointment.PatientId : appointment.DoctorId,
+                                cancelledBy == CancelledBy.Patient ? "Patient" : "Doctor",
+                                cancellationToken);
 
                         if (!refundResponse.Success)
                         {
@@ -1284,6 +1307,25 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 resourceAccessed: description);
 
             await _accessRepository.AddLogAsync(log, ct);
+        }
+
+        private static void EnsureCanAccessAppointment(
+            Appointment appointment,
+            int requesterUserId,
+            string requesterRole)
+        {
+            if (string.Equals(requesterRole, "Admin", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (string.Equals(requesterRole, "Doctor", StringComparison.OrdinalIgnoreCase)
+                && appointment.DoctorId == requesterUserId)
+                return;
+
+            if (string.Equals(requesterRole, "Patient", StringComparison.OrdinalIgnoreCase)
+                && appointment.PatientId == requesterUserId)
+                return;
+
+            throw new UnauthorizedAccessException("You are not allowed to access this appointment.");
         }
     }
 }

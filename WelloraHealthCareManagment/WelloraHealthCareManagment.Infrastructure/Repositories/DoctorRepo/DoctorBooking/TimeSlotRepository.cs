@@ -4,7 +4,7 @@ using System;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Infrastructure.Data;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking
 {

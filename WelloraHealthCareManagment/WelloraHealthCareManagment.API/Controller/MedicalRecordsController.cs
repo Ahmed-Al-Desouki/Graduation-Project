@@ -92,7 +92,10 @@ namespace WelloraHealthCareManagement.API.Controllers
         {
             try
             {
-                var record = await _medicalRecordService.GetMedicalRecordAsync(appointmentId);
+                var record = await _medicalRecordService.GetMedicalRecordAsync(
+                    appointmentId,
+                    GetCurrentUserId(),
+                    GetCurrentUserRole());
 
                 if (record == null)
                     return NotFound(new { error = "Medical record not found" });
@@ -106,10 +109,29 @@ namespace WelloraHealthCareManagement.API.Controllers
             }
         }
 
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst("UserID")?.Value
+                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (int.TryParse(userIdClaim, out int userId))
+                return userId;
+
+            throw new UnauthorizedAccessException("User ID not found in token");
+        }
+
+        private string GetCurrentUserRole()
+        {
+            return User.FindFirst("Role")?.Value
+                ?? User.FindFirst(ClaimTypes.Role)?.Value
+                ?? string.Empty;
+        }
+
         private int GetCurrentDoctorId()
         {
-            // TODO: Extract from JWT claims
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst("UserID")?.Value
+                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             if (int.TryParse(userIdClaim, out int doctorId))
                 return doctorId;
 

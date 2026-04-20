@@ -1,7 +1,7 @@
 ﻿using HealthCare_.Models.V2;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
@@ -140,3 +140,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         }
     }
 }
+

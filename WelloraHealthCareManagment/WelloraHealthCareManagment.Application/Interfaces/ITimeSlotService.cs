@@ -23,16 +23,22 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             DateTime slotDate,
             TimeSpan startTime,
             TimeSpan endTime,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
 
         /// حذف خانة (إذا لم تكن محجوزة)
         Task DeleteSlotAsync(
             Guid slotId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
 
         /// حظر خانة (جعلها غير متاحة)
         Task BlockSlotAsync(
             Guid slotId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
         // بترجع ال slots كلها ولاكن مجتمعه تحت اليوم الخاصه بيها 
         Task<GetDoctorTimeSlotsResponse> GetDoctorTimeSlotsInRangeAsync(
@@ -40,6 +46,8 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             DateTime startDate,
             DateTime endDate,
             string? statusFilter = null,
+            int requesterUserId = 0,
+            string requesterRole = "",
             CancellationToken cancellationToken = default);
     }
 }

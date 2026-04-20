@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
 
@@ -59,3 +59,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo
         }
     }
 }
+

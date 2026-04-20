@@ -60,7 +60,10 @@ namespace WelloraHealthCareManagement.API.Controllers
         {
             try
             {
-                var prescription = await _prescriptionService.GetPrescriptionAsync(id);
+                var prescription = await _prescriptionService.GetPrescriptionAsync(
+                    id,
+                    GetCurrentUserId(),
+                    GetCurrentUserRole());
 
                 if (prescription == null)
                     return NotFound(new { error = "Prescription not found" });
@@ -82,7 +85,9 @@ namespace WelloraHealthCareManagement.API.Controllers
             try
             {
                 var prescriptions = await _prescriptionService.GetAppointmentPrescriptionsAsync(
-                    appointmentId);
+                    appointmentId,
+                    GetCurrentUserId(),
+                    GetCurrentUserRole());
 
                 return Ok(prescriptions);
             }
@@ -180,15 +185,38 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         private int GetCurrentDoctorId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.Parse(userIdClaim!);
+            var userIdClaim = User.FindFirst("UserID")?.Value
+                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (int.TryParse(userIdClaim, out int doctorId))
+                return doctorId;
 
             throw new UnauthorizedAccessException("Doctor ID not found in token");
         }
 
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst("UserID")?.Value
+                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (int.TryParse(userIdClaim, out int userId))
+                return userId;
+
+            throw new UnauthorizedAccessException("User ID not found in token");
+        }
+
+        private string GetCurrentUserRole()
+        {
+            return User.FindFirst("Role")?.Value
+                ?? User.FindFirst(ClaimTypes.Role)?.Value
+                ?? string.Empty;
+        }
+
         private int GetCurrentPatientId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst("UserID")?.Value
+                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             if (int.TryParse(userIdClaim, out int patientId))
                 return patientId;
 

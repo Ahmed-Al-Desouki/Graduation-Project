@@ -87,7 +87,10 @@ namespace WelloraHealthCareManagement.API.Controllers
         [HttpGet("{appointmentId}")]
         public async Task<IActionResult> GetAppointmentDetails(Guid appointmentId)
         {
-            var appointment = await _appointmentService.GetAppointmentDetailsAsync(appointmentId);
+            var appointment = await _appointmentService.GetAppointmentDetailsAsync(
+                appointmentId,
+                GetUserId(),
+                GetUserRole());
 
             if (appointment == null)
                 return NotFound(new { error = "Appointment not found" });
@@ -323,7 +326,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         {
             try
             {
-                await _appointmentService.ConfirmAppointmentAsync(appointmentId);
+                await _appointmentService.ConfirmAppointmentAsync(appointmentId, GetUserId());
                 return Ok(new { message = "Appointment confirmed" });
             }
             catch (NotFoundException ex)
@@ -348,7 +351,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         {
             try
             {
-                await _appointmentService.StartAppointmentAsync(appointmentId);
+                await _appointmentService.StartAppointmentAsync(appointmentId, GetUserId());
                 return Ok(new { message = "Appointment started" });
             }
             catch (NotFoundException ex)
@@ -373,7 +376,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         {
             try
             {
-                await _appointmentService.CompleteAppointmentAsync(appointmentId);
+                await _appointmentService.CompleteAppointmentAsync(appointmentId, GetUserId());
                 return Ok(new { message = "Appointment completed" });
             }
             catch (NotFoundException ex)

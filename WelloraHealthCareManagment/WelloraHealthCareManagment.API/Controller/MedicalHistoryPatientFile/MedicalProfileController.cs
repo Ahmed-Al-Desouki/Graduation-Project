@@ -66,6 +66,7 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
 
         /// Update medical profile for current user
         [HttpPut]
+        [Authorize(Roles = "Patient")]
         public async Task<IActionResult> UpdateMedicalProfile(
             [FromBody] UpdateMedicalProfileCommand command)
         {

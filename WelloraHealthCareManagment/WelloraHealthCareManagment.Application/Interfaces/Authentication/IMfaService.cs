@@ -10,6 +10,9 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Authentication
         // Verify OTP code provided by user
         Task<(bool Succeeded, string Error)> VerifyOtpAsync(int userId, string otpCode);
 
+        // Resend OTP using user ID
+        Task<(bool Succeeded, string Error)> ResendOtpAsync(int userId);
+
         // Enable MFA for a user
         Task<(bool Succeeded, string Message, string Error)> EnableMfaAsync(int userId);
 

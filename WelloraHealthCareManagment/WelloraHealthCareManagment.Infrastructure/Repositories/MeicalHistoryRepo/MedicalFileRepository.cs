@@ -1,6 +1,6 @@
 ﻿// Infrastructure/Repositories/MedicalFileRepository.cs
 using Microsoft.EntityFrameworkCore;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.MeicalHistoryRepo

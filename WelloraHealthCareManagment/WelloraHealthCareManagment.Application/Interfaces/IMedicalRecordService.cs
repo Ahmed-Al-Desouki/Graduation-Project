@@ -28,6 +28,8 @@ namespace WelloraHealthCareManagement.Application.Interfaces
         /// Get medical record for appointment
         Task<AppointmentMedicalRecordDto?> GetMedicalRecordAsync(
             Guid appointmentId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
     }
 

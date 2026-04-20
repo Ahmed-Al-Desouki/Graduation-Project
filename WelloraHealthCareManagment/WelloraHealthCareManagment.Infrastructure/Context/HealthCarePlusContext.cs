@@ -24,7 +24,7 @@ using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Data.Configurations;
 
 
-namespace WelloraHealthCareManagment.API.Context
+namespace WelloraHealthCareManagment.Infrastructure.Context
 {
     public class HealthCarePlusContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>
     {
@@ -742,3 +742,4 @@ namespace WelloraHealthCareManagment.API.Context
 
     }
 }
+

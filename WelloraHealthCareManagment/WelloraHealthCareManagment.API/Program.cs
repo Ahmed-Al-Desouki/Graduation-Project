@@ -1,8 +1,8 @@
 ﻿using Hangfire;
+using HealthCare_.Middleware;
 using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +12,7 @@ using WelloraHealthCareManagement.Application;
 using WelloraHealthCareManagement.Infrastructure;
 using WelloraHealthCareManagement.Infrastructure.Data.Interceptors;
 using WelloraHealthCareManagment.API.Middleware;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs;
@@ -32,6 +32,8 @@ internal class Program
             // ====================== CONFIGURATION ======================
             builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                                  .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+                                 .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+                                 .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.Local.json", optional: true, reloadOnChange: true)
                                  .AddEnvironmentVariables();
 
             // ====================== LOGGING ======================
@@ -196,6 +198,7 @@ internal class Program
             app.UseSwagger();
             app.UseSwaggerUI();
 
+            app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseHttpsRedirection();
 
             app.UseRouting();
@@ -209,6 +212,7 @@ internal class Program
 
             app.UseAuthentication();
             app.UseMiddleware<AccountStatusMiddleware>();
+            app.UseMiddleware<UpdateLastActivityMiddleware>();
             app.UseAuthorization();
             // ====================== HANGFIRE CONFIG ======================
             app.UseHangfireDashboard("/hangfire");
@@ -243,29 +247,6 @@ internal class Program
                     TimeZone = TimeZoneInfo.Utc
                 });
 
-            app.UseExceptionHandler(errorApp =>
-            {
-                errorApp.Run(async context =>
-                {
-                    var exception = context.Features
-                        .Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?
-                        .Error;
-
-                    if (exception != null)
-                    {
-                        Console.WriteLine("🚨 GLOBAL EXCEPTION CAUGHT IN REQUEST:");
-                        Console.WriteLine($"Message: {exception.Message}");
-                        Console.WriteLine($"StackTrace: {exception.StackTrace}");
-                        Console.WriteLine($"Inner Exception: {exception.InnerException?.Message}");
-                        Console.WriteLine($"Source: {exception.Source}");
-                        Console.WriteLine("==================================================");
-                    }
-
-                    context.Response.StatusCode = 500;
-                    await context.Response.WriteAsync("Internal Server Error - check the latest stdout log file");
-                });
-            });
-
             app.Use(async (context, next) =>
             {
                 context.Request.EnableBuffering();
@@ -285,3 +266,4 @@ internal class Program
         }
     }
 }
+

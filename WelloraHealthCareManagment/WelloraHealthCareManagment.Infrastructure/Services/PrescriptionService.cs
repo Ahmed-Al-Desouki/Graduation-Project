@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Exceptions;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Prescriptions;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
@@ -200,6 +200,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public async Task<PrescriptionResponse?> GetPrescriptionAsync(
             Guid prescriptionId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default)
         {
             var prescription = await _prescriptionRepository.GetByIdWithItemsAsync(
@@ -208,13 +210,31 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             if (prescription == null)
                 return null;
 
+            EnsureCanAccessPrescription(
+                prescription.PatientId,
+                prescription.DoctorId,
+                requesterUserId,
+                requesterRole);
+
             return MapToResponse(prescription);
         }
 
         public async Task<List<PrescriptionResponse>> GetAppointmentPrescriptionsAsync(
             Guid appointmentId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default)
         {
+            var appointment = await _appointmentRepository.GetByIdAsync(
+                appointmentId, cancellationToken)
+                ?? throw new NotFoundException("Appointment", appointmentId);
+
+            EnsureCanAccessPrescription(
+                appointment.PatientId,
+                appointment.DoctorId,
+                requesterUserId,
+                requesterRole);
+
             var prescriptions = await _prescriptionRepository.GetByAppointmentIdAsync(
                 appointmentId, cancellationToken);
 
@@ -511,5 +531,26 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 }).ToList()
             };
         }
+
+        private static void EnsureCanAccessPrescription(
+            int patientId,
+            int doctorId,
+            int requesterUserId,
+            string requesterRole)
+        {
+            if (string.Equals(requesterRole, "Admin", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (string.Equals(requesterRole, "Doctor", StringComparison.OrdinalIgnoreCase)
+                && doctorId == requesterUserId)
+                return;
+
+            if (string.Equals(requesterRole, "Patient", StringComparison.OrdinalIgnoreCase)
+                && patientId == requesterUserId)
+                return;
+
+            throw new UnauthorizedAccessException("You are not allowed to access this prescription.");
+        }
     }
 }
+

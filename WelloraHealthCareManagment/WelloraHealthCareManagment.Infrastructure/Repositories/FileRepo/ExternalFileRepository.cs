@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo
 {
@@ -129,3 +129,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo
         }
     }
 }
+

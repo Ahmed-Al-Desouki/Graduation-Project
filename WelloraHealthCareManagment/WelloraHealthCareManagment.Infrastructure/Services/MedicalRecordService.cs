@@ -172,6 +172,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public async Task<AppointmentMedicalRecordDto?> GetMedicalRecordAsync(
             Guid appointmentId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default)
         {
             var record = await _medicalRecordRepository.GetByAppointmentIdAsync(
@@ -179,6 +181,19 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             if (record == null)
                 return null;
+
+            var appointment = await _appointmentRepository.GetByIdAsync(
+                appointmentId, cancellationToken);
+
+            if (appointment == null)
+                throw new NotFoundException("Appointment", appointmentId);
+
+            if (!string.Equals(requesterRole, "Admin", StringComparison.OrdinalIgnoreCase)
+                && !(string.Equals(requesterRole, "Doctor", StringComparison.OrdinalIgnoreCase) && appointment.DoctorId == requesterUserId)
+                && !(string.Equals(requesterRole, "Patient", StringComparison.OrdinalIgnoreCase) && appointment.PatientId == requesterUserId))
+            {
+                throw new UnauthorizedAccessException("You are not allowed to view this medical record.");
+            }
 
             return new AppointmentMedicalRecordDto
             {

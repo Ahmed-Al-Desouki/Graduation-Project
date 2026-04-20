@@ -15,12 +15,16 @@ namespace WelloraHealthCareManagement.Application.Interfaces
         /// Get prescription by ID
         Task<PrescriptionResponse?> GetPrescriptionAsync(
             Guid prescriptionId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
 
     
         /// Get all prescriptions for appointment
         Task<List<PrescriptionResponse>> GetAppointmentPrescriptionsAsync(
             Guid appointmentId,
+            int requesterUserId,
+            string requesterRole,
             CancellationToken cancellationToken = default);
 
     

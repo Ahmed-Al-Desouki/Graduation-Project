@@ -1,8 +1,8 @@
 ﻿// API/Controllers/PaymentController.cs
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using System.Text;
+using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagment.Application.DTOs.Payment;
 
@@ -56,18 +56,26 @@ namespace WelloraHealthCareManagement.API.Controllers
         /// Create payment for appointment booking
         /// Create payment for booking (يدعم TimeSlotId أو AppointmentId)
         [HttpPost("create")]
+        [Authorize(Roles = "Patient,Admin")]
         public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequest request)
         {
-            var result = await _paymentService.CreatePaymentAsync(request, CancellationToken.None);
+            var result = await _paymentService.CreatePaymentAsync(
+                request,
+                GetUserId(),
+                GetUserRole(),
+                CancellationToken.None);
             return Ok(result);
         }
 
         /// Refund a payment
         [HttpPost("refund")]
+        [Authorize(Roles = "Patient,Doctor,Admin")]
         public async Task<IActionResult> RefundPayment([FromBody] RefundPaymentRequest request)
         {
             var result = await _paymentService.RefundPaymentAsync(
                 request,
+                GetUserId(),
+                GetUserRole(),
                 CancellationToken.None);
 
             if (result.Success)
@@ -78,10 +86,13 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Get payment details by appointment ID
         [HttpGet("appointment/{appointmentId:guid}")]
+        [Authorize(Roles = "Patient,Doctor,Admin")]
         public async Task<IActionResult> GetPaymentByAppointment(Guid appointmentId)
         {
             var payment = await _paymentService.GetPaymentByAppointmentIdAsync(
                 appointmentId,
+                GetUserId(),
+                GetUserRole(),
                 CancellationToken.None);
 
             if (payment == null)
@@ -92,10 +103,13 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Get payment history for patient
         [HttpGet("patient/{patientId:int}/history")]
+        [Authorize(Roles = "Patient,Admin")]
         public async Task<IActionResult> GetPatientPaymentHistory(int patientId)
         {
             var payments = await _paymentService.GetPatientPaymentHistoryAsync(
                 patientId,
+                GetUserId(),
+                GetUserRole(),
                 CancellationToken.None);
 
             return Ok(payments);
@@ -103,6 +117,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// GET: api/payment/test-config
         [HttpGet("test-config")]
+        [Authorize(Roles = "Admin")]
         public IActionResult TestConfiguration()
         {
             var apiKey = _configuration["Paymob:ApiKey"];
@@ -119,6 +134,19 @@ namespace WelloraHealthCareManagement.API.Controllers
                 CardIntegrationId = cardIntegrationId,
                 CardIframeId = cardIframeId
             });
+        }
+
+        private int GetUserId()
+        {
+            var claim = User.FindFirst("UserID") ?? User.FindFirst(ClaimTypes.NameIdentifier);
+            return int.TryParse(claim?.Value, out var userId) ? userId : 0;
+        }
+
+        private string GetUserRole()
+        {
+            return User.FindFirst("Role")?.Value
+                ?? User.FindFirst(ClaimTypes.Role)?.Value
+                ?? string.Empty;
         }
 
     }

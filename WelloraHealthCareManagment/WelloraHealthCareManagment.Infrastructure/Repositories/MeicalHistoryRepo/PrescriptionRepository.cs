@@ -1,7 +1,7 @@
 ﻿//// Infrastructure/Repositories/PrescriptionRepository.cs
 //using HealthCare_.Models.PatientModels.Prescriptions;
 //using Microsoft.EntityFrameworkCore;
-//using WelloraHealthCareManagment.API.Context;
+//using WelloraHealthCareManagment.Infrastructure.Context;
 //using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 
 //namespace WelloraHealthCareManagment.Infrastructure.Repositories.MeicalHistoryRepo

@@ -1,9 +1,7 @@
 ﻿using global::WelloraHealthCareManagement.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 
 namespace WelloraHealthCareManagment.API.Controller.Authintecation
@@ -15,18 +13,15 @@ namespace WelloraHealthCareManagment.API.Controller.Authintecation
     {
         private readonly IMfaService _mfaService;
         private readonly ITokenService _tokenService;
-        private readonly IUserRepository _userRepository;
         private readonly ILogger<MfaController> _logger;
 
         public MfaController(
             IMfaService mfaService,
             ITokenService tokenService,
-            IUserRepository userRepository,
             ILogger<MfaController> logger)
         {
             _mfaService = mfaService;
             _tokenService = tokenService;
-            _userRepository = userRepository;
             _logger = logger;
         }
 
@@ -77,17 +72,10 @@ namespace WelloraHealthCareManagment.API.Controller.Authintecation
                 return Unauthorized(new { success = false, error = "Invalid token" });
             }
 
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null)
+            var (succeeded, error) = await _mfaService.ResendOtpAsync(userId);
+            if (!succeeded)
             {
-                return NotFound(new { success = false, error = "User not found" });
-            }
-
-            var sent = await _mfaService.GenerateAndSendOtpAsync(user);
-
-            if (!sent)
-            {
-                return StatusCode(500, new { success = false, error = "Failed to send OTP" });
+                return BadRequest(new { success = false, error });
             }
 
             return Ok(new { success = true, message = "OTP sent again" });

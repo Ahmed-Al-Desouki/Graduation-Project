@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.GenerateMedicalShareToken;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.GetMedicalProfileFromShareToken;
 
@@ -24,13 +25,16 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
 
         /// Generate share token (only authenticated patient can generate)
         [HttpPost("generate")]
-        [Authorize]
+        [Authorize(Roles = "Patient")]
         public IActionResult GenerateShareToken(
-            [FromQuery] int patientId,
             [FromQuery] int medicalHistoryId)
         {
             try
             {
+                var patientId = int.Parse(
+                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                    ?? throw new UnauthorizedAccessException("User identifier claim is missing."));
+
                 var query = new GenerateShareTokenQuery(patientId, medicalHistoryId);
                 var token = _generateShareTokenHandler.HandleAsync(query);
 
@@ -39,6 +43,10 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
                     shareToken = token,
                     message = "Share token generated successfully."
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (Exception ex)
             {

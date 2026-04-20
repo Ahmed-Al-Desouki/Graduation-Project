@@ -82,6 +82,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
         public int ValidateAndGetPatientId(string token)
         {
+            var principal = ValidateToken(token);
+
+            return int.Parse(principal.FindFirst("PatientID")!.Value);
+        }
+
+        public int ValidateAndGetMedicalHistoryId(string token)
+        {
+            var principal = ValidateToken(token);
+
+            return int.Parse(principal.FindFirst("MedicalHistoryID")!.Value);
+        }
+
+        private ClaimsPrincipal ValidateToken(string token)
+        {
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_configuration["JwtShare:ShareKey"]!));
 
@@ -98,16 +112,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 ClockSkew = TimeSpan.Zero
             };
 
-            // Validate Token
-            var principal = tokenHandler.ValidateToken(
-                token, validationParameters, out _);
-
-            // جيب الـ PatientID من الـ Token
-            var patientId = int.Parse(principal.FindFirst("PatientID")!.Value);
-
-            return patientId;
+            return tokenHandler.ValidateToken(token, validationParameters, out _);
         }
-
 
     }
 }

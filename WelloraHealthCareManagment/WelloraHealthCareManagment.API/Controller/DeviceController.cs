@@ -2,11 +2,7 @@
 using HealthCare_.Models.DTOs.AuthModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WelloraHealthCareManagment.Application.Common;
-using WelloraHealthCareManagment.Application.DTOs.AuthModels;
-using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
-using WelloraHealthCareManagment.Application.Interfaces.Services;
-using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
+using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 
 namespace WelloraHealthCareManagment.Presentation.Controllers
 {
@@ -15,11 +11,11 @@ namespace WelloraHealthCareManagment.Presentation.Controllers
     [Authorize]
     public class DeviceController : ControllerBase
     {
-        private readonly IUserDeviceRepository _userDeviceRepository;
+        private readonly IDeviceService _deviceService;
 
-        public DeviceController(IUserDeviceRepository userDeviceRepository)
+        public DeviceController(IDeviceService deviceService)
         {
-            _userDeviceRepository = userDeviceRepository;
+            _deviceService = deviceService;
         }
 
         /// <summary>
@@ -35,11 +31,9 @@ namespace WelloraHealthCareManagment.Presentation.Controllers
 
             try
             {
-                // Remove old token if exists
-                await _userDeviceRepository.RemoveDeviceAsync(userId, request.FcmToken);
-
-                // Add new token
-                await _userDeviceRepository.AddDeviceAsync(userId, request.FcmToken);
+                var success = await _deviceService.RegisterDeviceAsync(userId, request.FcmToken);
+                if (!success)
+                    return BadRequest("Failed to register device");
 
                 return Ok(new { message = "Device registered successfully" });
             }
@@ -56,8 +50,10 @@ namespace WelloraHealthCareManagment.Presentation.Controllers
         public async Task<IActionResult> GetMyDevicesTest()
         {
             var userId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
-            var tokens = await _userDeviceRepository.GetAllActiveDeviceTokensAsync(userId);
-            return Ok(tokens);
+            var currentDeviceInfo = Request.Headers["User-Agent"].ToString();
+            var currentIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var devices = await _deviceService.GetActiveDevicesAsync(userId, currentDeviceInfo, currentIp);
+            return Ok(devices);
         }
     }
 }

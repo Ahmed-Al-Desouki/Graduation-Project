@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using System.IO;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 
 namespace WelloraHealthCareManagment.Infrastructure.Context
 {
@@ -25,3 +25,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Context
         }
     }
 }
+

@@ -3,7 +3,7 @@
 using Microsoft.EntityFrameworkCore;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories

@@ -1,6 +1,8 @@
 ﻿using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.Surgery.Commands.SoftDeleteSurgery;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.Surgery.Commands.UpsertSurgery;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.Surgery.GetSurgeries;
@@ -17,17 +19,20 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
         private readonly GetSurgeriesForShareQueryHandler _getSurgeriesForShareHandler;
         private readonly UpsertSurgeryCommandHandler _upsertSurgeryHandler;
         private readonly SoftDeleteSurgeryCommandHandler _softDeleteSurgeryHandler;
+        private readonly IShareTokenService _shareTokenService;
 
         public SurgeryController(
             GetSurgeriesQueryHandler getSurgeriesHandler,
             GetSurgeriesForShareQueryHandler getSurgeriesForShareHandler,
             UpsertSurgeryCommandHandler upsertSurgeryHandler,
-            SoftDeleteSurgeryCommandHandler softDeleteSurgeryHandler)
+            SoftDeleteSurgeryCommandHandler softDeleteSurgeryHandler,
+            IShareTokenService shareTokenService)
         {
             _getSurgeriesHandler = getSurgeriesHandler;
             _getSurgeriesForShareHandler = getSurgeriesForShareHandler;
             _upsertSurgeryHandler = upsertSurgeryHandler;
             _softDeleteSurgeryHandler = softDeleteSurgeryHandler;
+            _shareTokenService = shareTokenService;
         }
 
          
@@ -55,13 +60,23 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
         /// Get surgeries for sharing (no auth check)        
         [HttpGet("patient/{patientId}/share")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetSurgeriesForShare(int patientId)
+        public async Task<IActionResult> GetSurgeriesForShare(int patientId, [FromQuery] string token)
         {
             try
             {
+                var sharedPatientId = _shareTokenService.ValidateAndGetPatientId(token);
+                if (sharedPatientId != patientId)
+                {
+                    return Unauthorized(new { message = "Share token does not match this patient." });
+                }
+
                 var query = new GetSurgeriesForShareQuery(patientId);
                 var result = await _getSurgeriesForShareHandler.HandleAsync(query);
                 return Ok(result);
+            }
+            catch (SecurityTokenException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (Exception ex)
             {

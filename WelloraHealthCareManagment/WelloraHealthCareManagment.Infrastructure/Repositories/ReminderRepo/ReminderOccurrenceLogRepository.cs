@@ -1,6 +1,6 @@
 ﻿using HealthCare_.Models.V2;
 using Microsoft.EntityFrameworkCore;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
@@ -51,3 +51,4 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
         }
     }
 }
+

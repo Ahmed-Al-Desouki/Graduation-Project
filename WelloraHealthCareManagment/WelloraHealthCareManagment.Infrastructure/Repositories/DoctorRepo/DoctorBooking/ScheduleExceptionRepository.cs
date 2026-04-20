@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Infrastructure.Data;
-using WelloraHealthCareManagment.API.Context;
+using WelloraHealthCareManagment.Infrastructure.Context;
 
 namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking
 {
