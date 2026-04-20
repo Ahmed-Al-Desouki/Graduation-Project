@@ -13,6 +13,8 @@ import 'package:graduation_project/features/doctor_home/presentation/manager/doc
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_layout.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_profile_completion_view.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/profile_completion_loading_view.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/views/all_achievements_view.dart';
 import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medical_file_model.dart';
@@ -80,6 +82,7 @@ abstract class AppRouter {
   static const kSearch = '/search';
   static const kDoctorProfileCompletion = '/doctor/profile-completion';
   static const kProfileCompletionLoading = '/doctor/profile-completion/loading';
+  static const kAllAchievements = '/doctor/profile/all-achievements';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -191,8 +194,7 @@ abstract class AppRouter {
         path: kHomeDoctor,
         builder:
             (context, state) => BlocProvider(
-              create:
-                  (_) => getIt<DoctorProfileCubit>(),
+              create: (_) => getIt<DoctorProfileCubit>(),
               child: const DoctorHomeLayout(),
             ),
       ),
@@ -418,6 +420,28 @@ abstract class AppRouter {
               child: const ProfileCompletionLoadingView(),
             ),
       ),
+
+      // في app_router.dart
+      GoRoute(
+        path: kAllAchievements,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final cubit = extra['cubit'] as DoctorRealProfileCubit;
+
+          return BlocProvider.value(
+            value: cubit,
+            child: const AllAchievementsView(),
+          );
+        },
+      ),
+      // GoRoute(
+      //   path: kAllAchievements,
+      //   builder: (context, state) {
+      //     final achievements =
+      //         state.extra as List<AchievementProfileEntity>? ?? [];
+      //     return AllAchievementsView(achievements: achievements);
+      //   },
+      // ),
     ],
   );
 }

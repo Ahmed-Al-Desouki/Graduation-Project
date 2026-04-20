@@ -192,11 +192,20 @@ class _DoctorProfileCompletionViewBodyState
 
     // ✅ 5. Update Location
     await cubit.updateLocation(
-      clinicAddress: _addressController.text,
+      clinicAddress: _selectedLocation ?? 
+      (_addressController.text.isNotEmpty ? _addressController.text : null),
       latitude: _selectedLatitude,
       longitude: _selectedLongitude,
-      hospitalName: _clinicNameController.text,
+      hospitalName: _clinicNameController.text.isNotEmpty 
+      ? _clinicNameController.text 
+      : null,
     );
+    // await cubit.updateLocation(
+    //   clinicAddress: _addressController.text,
+    //   latitude: _selectedLatitude,
+    //   longitude: _selectedLongitude,
+    //   hospitalName: _clinicNameController.text,
+    // );
 
     // ✅ 6. Navigate to Loading Screen
     if (mounted) {

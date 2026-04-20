@@ -8,6 +8,7 @@ class DoctorProfileModel extends DoctorProfileEntity {
     required super.fullName,
     required super.email,
     super.phoneNumber,
+    super.profileImageUrl,
     super.dateOfBirth,
     super.nationalId,
     required super.specialization,
@@ -31,6 +32,7 @@ class DoctorProfileModel extends DoctorProfileEntity {
       fullName: json['fullName'],
       email: json['email'],
       phoneNumber: json['phoneNumber'],
+      profileImageUrl: json['profileImageUrl'],
       dateOfBirth:
           json['dateOfBirth'] != null
               ? DateTime.parse(json['dateOfBirth'])

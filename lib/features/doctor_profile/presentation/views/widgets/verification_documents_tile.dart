@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 
 class VerificationDocumentsTile extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String title;
-  final String image;
+  final String? fileUrl;
+
   const VerificationDocumentsTile({
     super.key,
     required this.icon,
     required this.color,
     required this.title,
-    required this.image,
+    this.fileUrl,
   });
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -34,19 +32,22 @@ class VerificationDocumentsTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.r),
-                child: SvgPicture.asset(
-                  image,
-                  height: 80.h,
-                  width: 80.w,
-                  colorFilter: const ColorFilter.mode(
-                    Colors.blue,
-                    BlendMode.srcIn,
+              // ✅ لو في صورة، اعرضها
+              if (fileUrl != null) ...[
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    fileUrl!,
+                    height: 150,
+                    width: 200,
+                    fit: BoxFit.scaleDown,
+                    errorBuilder:
+                        (_, _, _) =>
+                            const Icon(Icons.broken_image, color: Colors.grey),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

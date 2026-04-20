@@ -4,6 +4,8 @@ import 'package:graduation_project/core/utils/app_images.dart';
 
 class DoctorProfileDrawer extends StatelessWidget {
   final Function(GlobalKey) onScrollToSection;
+  final String doctorName;
+  final String? profileImageUrl;
 
   final GlobalKey infoKey;
   final GlobalKey aboutKey;
@@ -22,6 +24,8 @@ class DoctorProfileDrawer extends StatelessWidget {
     required this.hoursKey,
     required this.reviewsKey,
     required this.servicesKey,
+    required this.doctorName,
+    this.profileImageUrl,
   });
 
   @override
@@ -78,14 +82,14 @@ class DoctorProfileDrawer extends StatelessWidget {
       color: const Color(0xfffaf0ff),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           CircleAvatar(
             radius: 22,
-            backgroundImage: NetworkImage("https://i.pravatar.cc/300"),
+            backgroundImage: NetworkImage(profileImageUrl!),
           ),
           SizedBox(height: 12),
           Text(
-            "Dr. Sarah Johnson",
+            doctorName,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,

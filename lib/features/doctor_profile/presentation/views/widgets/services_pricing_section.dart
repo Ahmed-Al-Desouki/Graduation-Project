@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/views/edit_services_sheet.dart';
 
 class ServicesPricingSection extends StatelessWidget {
-  const ServicesPricingSection({super.key});
+  final double consultationFee;
+  const ServicesPricingSection({super.key, required this.consultationFee});
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +22,33 @@ class ServicesPricingSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Services & Pricing",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Services & Pricing",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      _showEditServicesSheet(context, consultationFee);
+                    },
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, color: Color(0xFF2563EB), size: 17),
+                        SizedBox(width: 5),
+                        Text(
+                          "Edit",
+                          style: TextStyle(
+                            color: Color(0xFF2563EB),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 20),
 
@@ -71,7 +99,7 @@ class ServicesPricingSection extends StatelessWidget {
                     ),
 
                     Text(
-                      "\$1000",
+                      '\$${consultationFee.toStringAsFixed(0)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -83,6 +111,17 @@ class ServicesPricingSection extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showEditServicesSheet(BuildContext context, double consultationFee) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => BlocProvider.value(
+        value: context.read<DoctorRealProfileCubit>(),
+        child: EditServicesSheet(currentFee: consultationFee),
       ),
     );
   }

@@ -22,9 +22,18 @@ import 'package:graduation_project/features/doctor_home/domain/use_cases/complet
 import 'package:graduation_project/features/doctor_home/domain/use_cases/update_location_use_case.dart';
 import 'package:graduation_project/features/doctor_home/domain/use_cases/upload_verification_document_use_case.dart';
 import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
+import 'package:graduation_project/features/doctor_profile/data/data_sources/doctor_profile_remote_data_source.dart';
+import 'package:graduation_project/features/doctor_profile/data/data_sources/doctor_profile_remote_data_source_impl.dart';
 import 'package:graduation_project/features/doctor_profile/data/repositories/doctor_real_profile_repository_impl.dart';
 import 'package:graduation_project/features/doctor_profile/domain/repositories/doctor_real_profile_repository.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/delete_achievement_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_doctor_profile_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_doctor_slot_config_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/replace_verification_document_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_achievement_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_basic_info_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_profile_image_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_real_location_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
 import 'package:graduation_project/features/home/data/repos/home_repo_impl.dart';
 import 'package:graduation_project/features/home/data/service/home_web_service.dart';
@@ -222,15 +231,59 @@ Future<void> setupServiceLocator() async {
     ),
   );
 
+  getIt.registerLazySingleton<DoctorProfileRemoteDataSource>(
+    () => DoctorProfileRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+
   getIt.registerLazySingleton<DoctorRealProfileRepository>(
-    () => DoctorRealProfileRepositoryImpl(getIt()),
+    () =>
+        DoctorRealProfileRepositoryImpl(getIt<DoctorProfileRemoteDataSource>()),
   );
 
   getIt.registerLazySingleton<GetDoctorProfileUseCase>(
-    () => GetDoctorProfileUseCase(getIt()),
+    () => GetDoctorProfileUseCase(getIt<DoctorRealProfileRepository>()),
+  );
+
+  getIt.registerLazySingleton<UpdateBasicInfoUseCase>(
+    () => UpdateBasicInfoUseCase(getIt<DoctorRealProfileRepository>()),
+  );
+
+  getIt.registerLazySingleton<UpdateRealLocationUseCase>(
+    () => UpdateRealLocationUseCase(getIt<DoctorRealProfileRepository>()),
+  );
+
+  getIt.registerLazySingleton<ReplaceVerificationDocumentUseCase>(
+    () => ReplaceVerificationDocumentUseCase(
+      getIt<DoctorRealProfileRepository>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<UpdateAchievementUseCase>(
+    () => UpdateAchievementUseCase(getIt<DoctorRealProfileRepository>()),
+  );
+
+  getIt.registerLazySingleton<DeleteAchievementUseCase>(
+    () => DeleteAchievementUseCase(getIt<DoctorRealProfileRepository>()),
+  );
+
+  getIt.registerLazySingleton<UpdateProfileImageUseCase>(
+    () => UpdateProfileImageUseCase(getIt<DoctorRealProfileRepository>()),
+  );
+
+  getIt.registerLazySingleton<GetDoctorSlotConfigUseCase>(
+    () => GetDoctorSlotConfigUseCase(getIt<DoctorRealProfileRepository>()),
   );
 
   getIt.registerFactory<DoctorRealProfileCubit>(
-    () => DoctorRealProfileCubit(getIt()),
+    () => DoctorRealProfileCubit(
+      getIt<GetDoctorProfileUseCase>(),
+      getIt<UpdateBasicInfoUseCase>(),
+      getIt<UpdateRealLocationUseCase>(),
+      getIt<ReplaceVerificationDocumentUseCase>(),
+      getIt<UpdateAchievementUseCase>(),
+      getIt<DeleteAchievementUseCase>(),
+      getIt<UpdateProfileImageUseCase>(),
+      getIt<GetDoctorSlotConfigUseCase>(),
+    ),
   );
 }
