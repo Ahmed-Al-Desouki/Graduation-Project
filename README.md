@@ -1,100 +1,100 @@
-# Beginner-Friendly Guide: How to Run Wellora HealthCare Management
+# Wellora HealthCare Management
 
-This guide assumes you are starting from zero on a Windows machine and you have never run an ASP.NET Core project before.
+Wellora is an ASP.NET Core Web API healthcare platform that supports patient onboarding, doctor onboarding and verification, doctor search, time-slot scheduling, appointment booking, payments, medical profile sharing, prescriptions, reminders, notifications, reviews, and admin operations.
 
-## 1. What You Are Going to Run
+This README is written to satisfy the GitHub repository submission requirements and to help a user with no prior knowledge install, configure, build, and run the project.
 
-This repository contains a multi-project ASP.NET Core Web API solution:
+## Repository Structure
+
+The required submission structure should be:
+
+```text
+/src   -> Source code
+/exe   -> Executable files (if applicable)
+README.md
+```
+
+Suggested final submission mapping for this project:
+
+```text
+WelloraHealthCareManagment/
+|-- src/
+|   |-- WelloraHealthCareManagment.API/
+|   |-- WelloraHealthCareManagment.Application/
+|   |-- WelloraHealthCareManagment.Domain/
+|   |-- WelloraHealthCareManagment.Infrastructure/
+|-- exe/
+|   |-- optional published output or packaged deployment files
+|-- README.md
+```
+
+Current source projects in this repository:
 
 - `WelloraHealthCareManagment.API`
 - `WelloraHealthCareManagment.Application`
 - `WelloraHealthCareManagment.Domain`
 - `WelloraHealthCareManagment.Infrastructure`
 
-The API depends on:
+## Project Overview
 
-- .NET 9 SDK
-- SQL Server
-- NuGet packages
-- several external services such as email, Cloudinary, Paymob, Google, and Firebase
+Main system capabilities:
 
-For local learning, the most important pieces are:
+- patient registration and onboarding
+- doctor registration, profile completion, and verification
+- JWT authentication and MFA/OTP support
+- doctor search by specialty, rating, and location
+- doctor slot configuration and slot generation
+- appointment booking and payment processing
+- medical profile and history sharing
+- prescription and medical-record management
+- reminder scheduling and notifications
+- reviews and support tickets
+- admin dashboard, moderation, and user management
 
-- .NET 9 SDK
-- Visual Studio Community 2022
-- SQL Server Developer or Express
-- Git
+## Tech Stack
 
-## 2. Install the Required Software
+- Backend: ASP.NET Core Web API
+- Language: C#
+- .NET SDK: .NET 9
+- ORM: Entity Framework Core 9
+- Database: SQL Server
+- Authentication: ASP.NET Core Identity + JWT Bearer
+- Background Jobs: Hangfire
+- API Documentation: Swagger / OpenAPI
+- Email: SMTP / MailKit-style integration
+- File Storage: Cloudinary
+- Notifications: Firebase
+- Payment Gateway: Paymob
 
-### Step 1: Install Git
+## Architecture Summary
 
-1. Open [https://git-scm.com/download/win](https://git-scm.com/download/win).
-2. Download Git for Windows.
-3. Run the installer.
-4. Keep the default options unless you know you need something different.
-5. After installation, open PowerShell and run:
+The project follows an Onion-style layered architecture with these main layers:
 
-```powershell
-git --version
-```
+- `WelloraHealthCareManagment.API`
+  Presentation layer, controllers, middleware, Swagger, startup pipeline
+- `WelloraHealthCareManagment.Application`
+  DTOs, interfaces, use cases, and application contracts
+- `WelloraHealthCareManagment.Domain`
+  entities, enums, and domain exceptions
+- `WelloraHealthCareManagment.Infrastructure`
+  EF Core context, repositories, services, external integrations, background jobs
 
-If you see a version number, Git is installed correctly.
+## Source Code Compilation
 
-### Step 2: Install Visual Studio Community 2022
+This repository provides full source code and setup instructions.
 
-1. Open [https://visualstudio.microsoft.com/vs/community/](https://visualstudio.microsoft.com/vs/community/).
-2. Download Visual Studio Community.
-3. Run the installer.
-4. In the workload list, select:
-   - `ASP.NET and web development`
-   - `.NET desktop development`
-5. In the individual components section, make sure a recent `.NET 9 SDK` is included.
-6. Click `Install`.
+### Prerequisites and Dependencies
 
-### Step 3: Install .NET 9 SDK
+#### Programming Languages and Versions
 
-If Visual Studio did not install it, install it manually:
+- C# 12 or compatible with .NET 9
+- .NET SDK 9.x
 
-1. Open [https://dotnet.microsoft.com/en-us/download/dotnet/9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0).
-2. Download the latest `.NET 9 SDK` for Windows x64.
-3. Run the installer.
-4. Restart your terminal.
-5. Verify installation:
+#### Frameworks and Libraries
 
-```powershell
-dotnet --info
-```
-
-You should see an SDK version starting with `9.0`.
-
-### Step 4: Install SQL Server
-
-Choose one:
-
-- `SQL Server Developer Edition` if you want the full local database engine
-- `SQL Server Express` if you want a lighter version
-
-Download:
-
-- SQL Server: [https://www.microsoft.com/en-us/sql-server/sql-server-downloads](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
-- Optional management tool: SQL Server Management Studio (SSMS) at [https://aka.ms/ssmsfullsetup](https://aka.ms/ssmsfullsetup)
-
-Recommended for beginners:
-
-- install SQL Server Express
-- install SSMS so you can inspect the database visually
-
-During SQL Server setup:
-
-- choose either `Windows Authentication` or `Mixed Mode`
-- remember your server name
-- make sure the SQL Server service is running after installation
-
-## 3. Get the Source Code
-
-Open PowerShell and run:
-
-```powershell
-cd "C:\Users\pc\Desktop\Graduation Project\Onion Architecture"
-git clone <your-repository-url>
+- ASP.NET Core
+- Entity Framework Core
+- ASP.NET Core Identity
+- JWT Bearer Authentication
+- Hangfire
+- Swagger / Swashbuckle
