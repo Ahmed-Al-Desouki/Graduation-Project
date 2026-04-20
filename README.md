@@ -1,59 +1,100 @@
-# Graduation-Project
-# HealthCarePlus - A Journey to Smart Healthcare
+# Beginner-Friendly Guide: How to Run Wellora HealthCare Management
 
-## 📖 The Story: From Idea to Reality
-Imagine stepping into a virtual clinic that feels like home! 🌿 It all began with a dream of an app that unites every aspect of healthcare in one place. We sketched the first lines: a patient needing an appointment, a doctor managing their schedule, and a system orchestrating it all seamlessly. From this vision, **HealthCarePlus** was born - an app connecting patients with doctors, managing appointments, tracking prescriptions, and securely storing medical records. 🚀
+This guide assumes you are starting from zero on a Windows machine and you have never run an ASP.NET Core project before.
 
-### 🎬 Scene 1: The Design
-- **The Patient**: Books an appointment with a specialist through a simple interface.
-- **The Doctor**: Manages their weekly schedule and uploads certificates with ease.
-- **The System**: Ensures all data is stored in a secure SQL Server database.
+## 1. What You Are Going to Run
 
-### 🎬 Scene 2: The Features
-- Appointment management with smart reminders.
-- Local storage of documents (like licenses and records).
-- Medication intake tracking and prescription issuance.
+This repository contains a multi-project ASP.NET Core Web API solution:
 
-### 🎬 The Final Scene: The Future
-We’re working to evolve the app into a comprehensive tool linking hospitals and pharmacies, with an even more interactive user interface. Join us on this journey!
+- `WelloraHealthCareManagment.API`
+- `WelloraHealthCareManagment.Application`
+- `WelloraHealthCareManagment.Domain`
+- `WelloraHealthCareManagment.Infrastructure`
 
----
+The API depends on:
 
-## 🛠️ How to Get Started ?
+- .NET 9 SDK
+- SQL Server
+- NuGet packages
+- several external services such as email, Cloudinary, Paymob, Google, and Firebase
 
-### Step 1: Cloning the Project
-To begin, you need to copy our repository to your machine. Here’s how to do it simply:
-1. Open **Git Bash** or **Terminal** on your computer.
-2. Navigate to the folder where you want the project (e.g., `cd C:\Projects`).
-3. Use the following command to clone the repo:
-git clone https://github.com/YourUsername/HealthCarePlus.git
-text- Replace `https://github.com/YourUsername/HealthCarePlus.git` with the actual repository link.
-4. Press Enter, and you’ll find the `HealthCarePlus` folder created with all the code!
+For local learning, the most important pieces are:
 
-### Step 2: Creating a New Branch
-To develop in an organized way, create a branch for yourself to work on without affecting the main code:
-1. Navigate to the project folder using:
-cd HealthCarePlus
-text2. Check the current branches with:
-git branch
-text(The main branch, like `main` or `master`, will be marked with a `*`).
-3. Create a new branch with your name or task (e.g., `feature/your-name`):
-git branch feature/your-name
-text4. Switch to the new branch:
-git checkout feature/your-name
-text- Or use the direct command: `git checkout -b feature/your-name` to create and switch in one step!
-5. Verify you’re on the right branch with `git branch` (the new branch will be marked with a `*`).
+- .NET 9 SDK
+- Visual Studio Community 2022
+- SQL Server Developer or Express
+- Git
 
-### Step 3: Starting Development
-- Open the project in **Visual Studio** or any code editor.
-- Start editing the code in your new branch (e.g., `Models.cs` or `Controllers`).
-- Save your changes with:
-git add .
-git commit -m "Description of the changes you made (e.g., Added a new feature)"
-text- Push your changes to GitHub:
-git push origin feature/your-name
+## 2. Install the Required Software
 
-- **Practice**: Test commands in a safe environment before pushing.
+### Step 1: Install Git
 
-Join us and help build an app that changes lives! 🚑✨
+1. Open [https://git-scm.com/download/win](https://git-scm.com/download/win).
+2. Download Git for Windows.
+3. Run the installer.
+4. Keep the default options unless you know you need something different.
+5. After installation, open PowerShell and run:
 
+```powershell
+git --version
+```
+
+If you see a version number, Git is installed correctly.
+
+### Step 2: Install Visual Studio Community 2022
+
+1. Open [https://visualstudio.microsoft.com/vs/community/](https://visualstudio.microsoft.com/vs/community/).
+2. Download Visual Studio Community.
+3. Run the installer.
+4. In the workload list, select:
+   - `ASP.NET and web development`
+   - `.NET desktop development`
+5. In the individual components section, make sure a recent `.NET 9 SDK` is included.
+6. Click `Install`.
+
+### Step 3: Install .NET 9 SDK
+
+If Visual Studio did not install it, install it manually:
+
+1. Open [https://dotnet.microsoft.com/en-us/download/dotnet/9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0).
+2. Download the latest `.NET 9 SDK` for Windows x64.
+3. Run the installer.
+4. Restart your terminal.
+5. Verify installation:
+
+```powershell
+dotnet --info
+```
+
+You should see an SDK version starting with `9.0`.
+
+### Step 4: Install SQL Server
+
+Choose one:
+
+- `SQL Server Developer Edition` if you want the full local database engine
+- `SQL Server Express` if you want a lighter version
+
+Download:
+
+- SQL Server: [https://www.microsoft.com/en-us/sql-server/sql-server-downloads](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
+- Optional management tool: SQL Server Management Studio (SSMS) at [https://aka.ms/ssmsfullsetup](https://aka.ms/ssmsfullsetup)
+
+Recommended for beginners:
+
+- install SQL Server Express
+- install SSMS so you can inspect the database visually
+
+During SQL Server setup:
+
+- choose either `Windows Authentication` or `Mixed Mode`
+- remember your server name
+- make sure the SQL Server service is running after installation
+
+## 3. Get the Source Code
+
+Open PowerShell and run:
+
+```powershell
+cd "C:\Users\pc\Desktop\Graduation Project\Onion Architecture"
+git clone <your-repository-url>
