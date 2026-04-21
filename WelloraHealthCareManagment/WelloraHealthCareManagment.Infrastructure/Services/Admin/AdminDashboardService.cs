@@ -5,6 +5,7 @@ using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories;
 
@@ -129,10 +130,9 @@ public class AdminDashboardService : IAdminDashboardService
         {
             var totalDoctors = await _userStatusRepository.GetTotalDoctorsCountAsync(ct);
             var verifiedDoctors = await _verificationRepository.CountVerifiedDoctorsAsync(ct);
-            var pendingVerification = await _verificationRepository.CountPendingVerificationsAsync(ct);
-
-            var statusCounts = await _verificationRepository.GetStatusCountsAsync(ct);
-            var rejectedDoctors = statusCounts.GetValueOrDefault(VerificationStatus.Rejected, 0);
+            var pendingVerification = await _verificationRepository.CountPendingDoctorsAsync(ct);
+            var doctors = await _verificationRepository.GetAllDoctorsWithVerificationsAsync(ct);
+            var rejectedDoctors = doctors.Count(d => DoctorVerificationPolicy.DetermineRequestStatus(d.Verifications) == DoctorVerificationRequestStatus.Rejected);
 
             var averageRating = await _verificationRepository.GetAverageDoctorRatingAsync(ct) ?? 0;
             var totalReviews = await _verificationRepository.GetTotalReviewsCountAsync(ct);
@@ -211,15 +211,20 @@ public class AdminDashboardService : IAdminDashboardService
     {
         try
         {
-            var statusCounts = await _verificationRepository.GetStatusCountsAsync(ct);
+            var doctors = await _verificationRepository.GetAllDoctorsWithVerificationsAsync(ct);
+            var statusCounts = doctors
+                .Select(d => DoctorVerificationPolicy.DetermineRequestStatus(d.Verifications))
+                .GroupBy(status => status)
+                .ToDictionary(group => group.Key, group => group.Count());
             var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
             var stats = new VerificationStatisticsDto
             {
-                TotalVerifications = statusCounts.Values.Sum(),
-                PendingVerifications = statusCounts.GetValueOrDefault(VerificationStatus.Pending, 0),
-                ApprovedVerifications = statusCounts.GetValueOrDefault(VerificationStatus.Approved, 0),
-                RejectedVerifications = statusCounts.GetValueOrDefault(VerificationStatus.Rejected, 0),
-                VerificationsByStatus = statusCounts,
+                TotalDoctors = doctors.Count,
+                PendingDoctors = statusCounts.GetValueOrDefault(DoctorVerificationRequestStatus.Pending, 0),
+                ApprovedDoctors = statusCounts.GetValueOrDefault(DoctorVerificationRequestStatus.Approved, 0),
+                RejectedDoctors = statusCounts.GetValueOrDefault(DoctorVerificationRequestStatus.Rejected, 0),
+                IncompleteDoctors = statusCounts.GetValueOrDefault(DoctorVerificationRequestStatus.Incomplete, 0),
+                DoctorsByStatus = statusCounts,
                 ApprovedThisMonth = await _verificationRepository.CountApprovedThisMonthAsync(startOfMonth, ct),
                 RejectedThisMonth = await _verificationRepository.CountRejectedThisMonthAsync(startOfMonth, ct)
             };

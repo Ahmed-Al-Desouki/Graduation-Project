@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
+using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Prescriptions;
 
 namespace WelloraHealthCareManagement.API.Controllers
@@ -25,7 +26,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Create prescription for appointment (Doctor only)
         [HttpPost]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> CreatePrescription(
             [FromBody] CreatePrescriptionRequest request)
         {
@@ -123,7 +124,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Add item to prescription (Doctor only)
         [HttpPost("{prescriptionId}/items/bulk")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> AddPrescriptionItems(
             Guid prescriptionId,
             [FromBody] AddPrescriptionItemsRequest request)
@@ -153,7 +154,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Update existing prescription item (Doctor only)
         [HttpPut("{prescriptionId}/items/{itemId}")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> UpdatePrescriptionItem(
             Guid prescriptionId,
             Guid itemId,

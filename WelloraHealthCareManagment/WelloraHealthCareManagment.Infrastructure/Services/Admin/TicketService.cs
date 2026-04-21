@@ -66,6 +66,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 };
 
                 await _ticketMessageRepository.CreateAsync(initialMessage, ct);
+                await _notificationService.NotifyAdminsAsync(
+                    title: "New Support Ticket",
+                    message: $"User #{userId} created a new support ticket: {request.Title}",
+                    type: NotificationType.TicketCreated,
+                    relatedEntityType: "Ticket",
+                    data: new Dictionary<string, string> { ["ticketId"] = created.Id.ToString() },
+                    ct: ct);
 
                 // Reload with relations
                 var ticketDetails = await _ticketRepository.GetByIdWithMessagesAsync(created.Id, ct);
@@ -121,6 +128,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     ticket.UpdatedAt = DateTime.UtcNow;
                     await _ticketRepository.UpdateAsync(ticket, ct);
                 }
+
+                await _notificationService.NotifyAdminsAsync(
+                    title: "Ticket Updated",
+                    message: $"User #{userId} sent a new message on ticket {request.TicketId}.",
+                    type: NotificationType.TicketCreated,
+                    relatedEntityType: "Ticket",
+                    data: new Dictionary<string, string> { ["ticketId"] = request.TicketId.ToString() },
+                    ct: ct);
 
                 var dto = _mapper.Map<TicketMessageDto>(created);
 

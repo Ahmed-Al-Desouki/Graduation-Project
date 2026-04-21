@@ -28,6 +28,12 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos
         public bool IsActive { get; set; }
         public bool IsProfileCompleted { get; set; }
         public DoctorVerificationRequestStatus VerificationRequestStatus { get; set; }
+        public string? VerificationAdminNotes { get; set; }
+        public string? VerificationRejectionReason { get; set; }
+        public int? VerificationReviewedByAdminId { get; set; }
+        public string? VerificationReviewedByAdminName { get; set; }
+        public DateTime? VerificationReviewedAt { get; set; }
+        public DateTime? VerificationSubmittedAt { get; set; }
         public List<DoctorDocumentType> MissingRequiredVerificationDocuments { get; set; } = new();
 
         // ─── الموقع ───
@@ -49,10 +55,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos
     {
         public int VerificationId { get; set; }
         public DoctorDocumentType DocumentType { get; set; }
-        public VerificationStatus Status { get; set; }
         public string? FileUrl { get; set; }
-        public string? AdminNotes { get; set; }
-        public DateTime SubmittedAt { get; set; }
     }
 
     public class AchievementResponse

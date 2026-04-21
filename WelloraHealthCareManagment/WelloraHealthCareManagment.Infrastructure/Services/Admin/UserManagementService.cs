@@ -262,6 +262,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 userStatus.UpdatedAt = DateTime.UtcNow;
 
                 await _userStatusRepository.UpdateAsync(userStatus, ct);
+                await _notificationService.SendAccountUnsuspendedNotificationAsync(request.UserId, ct);
 
                 // Log action
                 await _auditService.LogActionAsync(

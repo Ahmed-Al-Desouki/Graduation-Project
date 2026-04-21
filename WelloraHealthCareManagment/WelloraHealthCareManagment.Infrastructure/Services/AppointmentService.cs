@@ -6,9 +6,12 @@ using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagement.Domain.Factories;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 using WelloraHealthCareManagment.Application.DTOs.Payment;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.ValueObjects;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
@@ -25,6 +28,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IPaymentRepository _paymentRepository;
         private readonly IPaymentService _paymentService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<AppointmentService> _logger;
 
         public AppointmentService(
@@ -36,6 +40,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IPaymentRepository paymentRepository,
             IPaymentService paymentService,
             IUnitOfWork unitOfWork,
+            INotificationService notificationService,
             ILogger<AppointmentService> logger)
         {
             _appointmentRepository = appointmentRepository;
@@ -46,6 +51,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _paymentRepository = paymentRepository;
             _paymentService = paymentService;
             _unitOfWork = unitOfWork;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -131,6 +137,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 // 7. Create Reminders AFTER commit — non-critical
                 await TryCreateRemindersAsync(
                     appointment, timeSlot, patientId, timeSlot.DoctorId, cancellationToken);
+                await SendAppointmentBookedNotificationsAsync(
+                    appointment.Id,
+                    patientId,
+                    timeSlot.DoctorId,
+                    timeSlot,
+                    cancellationToken);
 
                 _logger.LogInformation(
                     "Appointment {AppointmentId} booked successfully by Patient {PatientId}",
@@ -327,6 +339,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 // 7. ✅ Create Reminders AFTER commit — non-critical
                 await TryCreateRemindersAsync(
                     appointment, timeSlot, payment.PatientId, timeSlot.DoctorId, cancellationToken);
+                await SendAppointmentBookedNotificationsAsync(
+                    appointment.Id,
+                    payment.PatientId,
+                    timeSlot.DoctorId,
+                    timeSlot,
+                    cancellationToken);
 
                 _logger.LogInformation(
                     "Booking completed: Appointment {AppointmentId}, Payment {PaymentId}",
@@ -693,6 +711,19 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
+                await _notificationService.NotifyAsync(new NotificationDispatchRequest
+                {
+                    UserId = appointment.PatientId,
+                    Title = "Appointment Completed",
+                    Message = "Your appointment is completed. Share your feedback and review your doctor.",
+                    Type = NotificationType.ReviewRequested,
+                    RelatedEntityType = "Appointment",
+                    Data = new Dictionary<string, string>
+                    {
+                        ["appointmentId"] = appointment.Id.ToString(),
+                        ["doctorId"] = appointment.DoctorId.ToString()
+                    }
+                }, cancellationToken);
 
                 _logger.LogInformation("Appointment {AppointmentId} completed", appointmentId);
             }
@@ -1182,6 +1213,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     "Refund: {RefundProcessed}, Amount: {RefundAmount}",
                     appointment.Id, cancelledBy, refundProcessed, refundAmount);
 
+                await SendAppointmentCancellationNotificationsAsync(
+                    appointment,
+                    cancelledBy,
+                    reason,
+                    refundAmount,
+                    cancellationToken);
+
                 var message = refundProcessed
                     ? $"Appointment cancelled successfully. " +
                       $"{refundPercentage}% refund ({refundAmount:F2} EGP) " +
@@ -1272,6 +1310,93 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     "— booking still succeeded",
                     appointment.Id);
             }
+        }
+
+        private async Task SendAppointmentBookedNotificationsAsync(
+            Guid appointmentId,
+            int patientId,
+            int doctorId,
+            TimeSlot timeSlot,
+            CancellationToken cancellationToken)
+        {
+            var appointmentDateTime = timeSlot.SlotDate.Add(timeSlot.StartTime);
+            var formattedDate = appointmentDateTime.ToString("yyyy-MM-dd HH:mm");
+
+            await _notificationService.NotifyManyAsync(new[]
+            {
+                new NotificationDispatchRequest
+                {
+                    UserId = patientId,
+                    Title = "Appointment Booked",
+                    Message = $"Your appointment has been booked for {formattedDate}.",
+                    Type = NotificationType.AppointmentBooked,
+                    RelatedEntityType = "Appointment",
+                    Data = new Dictionary<string, string> { ["appointmentId"] = appointmentId.ToString() }
+                },
+                new NotificationDispatchRequest
+                {
+                    UserId = doctorId,
+                    Title = "New Appointment",
+                    Message = $"A patient booked an appointment for {formattedDate}.",
+                    Type = NotificationType.AppointmentBooked,
+                    RelatedEntityType = "Appointment",
+                    Data = new Dictionary<string, string> { ["appointmentId"] = appointmentId.ToString() }
+                }
+            }, cancellationToken);
+        }
+
+        private async Task SendAppointmentCancellationNotificationsAsync(
+            Appointment appointment,
+            CancelledBy cancelledBy,
+            string? reason,
+            decimal? refundAmount,
+            CancellationToken cancellationToken)
+        {
+            var patientType = cancelledBy == CancelledBy.Patient
+                ? NotificationType.AppointmentCancelledByPatient
+                : NotificationType.AppointmentCancelledByDoctor;
+
+            var doctorType = cancelledBy == CancelledBy.Patient
+                ? NotificationType.AppointmentCancelledByPatient
+                : NotificationType.AppointmentCancelledByDoctor;
+
+            var actorLabel = cancelledBy == CancelledBy.Patient ? "patient" : "doctor";
+            var refundSuffix = refundAmount.HasValue ? $" Refund amount: {refundAmount:F2} EGP." : string.Empty;
+            var reasonSuffix = string.IsNullOrWhiteSpace(reason) ? string.Empty : $" Reason: {reason}.";
+
+            await _notificationService.NotifyManyAsync(new[]
+            {
+                new NotificationDispatchRequest
+                {
+                    UserId = appointment.PatientId,
+                    Title = "Appointment Cancelled",
+                    Message = cancelledBy == CancelledBy.Patient
+                        ? $"Your appointment has been cancelled successfully.{reasonSuffix}{refundSuffix}"
+                        : $"Your doctor cancelled the appointment.{reasonSuffix}{refundSuffix}",
+                    Type = patientType,
+                    RelatedEntityType = "Appointment",
+                    Data = new Dictionary<string, string>
+                    {
+                        ["appointmentId"] = appointment.Id.ToString(),
+                        ["cancelledBy"] = actorLabel
+                    }
+                },
+                new NotificationDispatchRequest
+                {
+                    UserId = appointment.DoctorId,
+                    Title = "Appointment Cancelled",
+                    Message = cancelledBy == CancelledBy.Patient
+                        ? $"A patient cancelled the appointment.{reasonSuffix}"
+                        : $"You cancelled the appointment successfully.{reasonSuffix}",
+                    Type = doctorType,
+                    RelatedEntityType = "Appointment",
+                    Data = new Dictionary<string, string>
+                    {
+                        ["appointmentId"] = appointment.Id.ToString(),
+                        ["cancelledBy"] = actorLabel
+                    }
+                }
+            }, cancellationToken);
         }
 
         // ════════════════════════════════════════════════════════════════════

@@ -60,6 +60,8 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
             int pageSize = 10,
             CancellationToken ct = default);
 
+        Task<List<Doctor>> GetAllDoctorsWithVerificationsAsync(CancellationToken ct = default);
+
         Task<int> CountAllAsync(
             VerificationStatus? status = null,
             DateTime? fromDate = null,

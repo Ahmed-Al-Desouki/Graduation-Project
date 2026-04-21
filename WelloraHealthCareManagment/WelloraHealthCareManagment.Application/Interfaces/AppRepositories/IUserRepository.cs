@@ -71,6 +71,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
         Task<List<int>> GetUserIdsByNameOrEmailAsync(List<string> namesOrEmails, CancellationToken ct = default);
         Task<int> GetDoctorReviewCountAsync(int doctorId, CancellationToken ct = default);
         Task<ApplicationUser?> GetByIdWithDoctorAsync(int userId, CancellationToken ct = default);
+        Task<List<int>> GetUserIdsByRoleAsync(string role, CancellationToken ct = default);
 
         // GetAllUsers methods for GetAllUsersAsync
         Task<List<ApplicationUser>> GetDoctorsFilteredAsync(

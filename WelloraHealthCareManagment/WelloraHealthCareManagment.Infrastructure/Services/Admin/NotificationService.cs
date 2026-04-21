@@ -2,6 +2,7 @@
 using AutoMapper;
 using HealthCare_.Models.DoctorModels;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
@@ -35,6 +36,82 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             _firebaseService = firebaseService;
             _mapper = mapper;
             _logger = logger;
+        }
+
+        public async Task NotifyAsync(NotificationDispatchRequest request, CancellationToken ct = default)
+        {
+            var createResult = await CreateNotificationAsync(new CreateNotificationRequest
+            {
+                UserId = request.UserId,
+                Title = request.Title,
+                Message = request.Message,
+                Type = request.Type,
+                RelatedEntityType = request.RelatedEntityType,
+                RelatedEntityId = request.RelatedEntityId
+            }, ct);
+
+            if (!createResult.IsSuccess)
+            {
+                _logger.LogWarning(
+                    "Failed to persist notification for user {UserId} and type {Type}",
+                    request.UserId,
+                    request.Type);
+            }
+
+            var data = BuildPushPayload(request);
+            await SendPushNotificationAsync(request.UserId, request.Title, request.Message, data, ct);
+        }
+
+        public async Task NotifyManyAsync(IEnumerable<NotificationDispatchRequest> requests, CancellationToken ct = default)
+        {
+            var materializedRequests = requests
+                .Where(r => r.UserId > 0)
+                .GroupBy(r => new
+                {
+                    r.UserId,
+                    r.Title,
+                    r.Message,
+                    r.Type,
+                    r.RelatedEntityType,
+                    r.RelatedEntityId
+                })
+                .Select(g => g.First())
+                .ToList();
+
+            foreach (var request in materializedRequests)
+            {
+                await NotifyAsync(request, ct);
+            }
+        }
+
+        public async Task NotifyAdminsAsync(
+            string title,
+            string message,
+            NotificationType type,
+            string? relatedEntityType = null,
+            int? relatedEntityId = null,
+            Dictionary<string, string>? data = null,
+            CancellationToken ct = default)
+        {
+            var adminIds = await _userRepository.GetUserIdsByRoleAsync("Admin", ct);
+            if (!adminIds.Any())
+            {
+                _logger.LogInformation("No admin users found for notification type {Type}", type);
+                return;
+            }
+
+            var requests = adminIds.Select(adminId => new NotificationDispatchRequest
+            {
+                UserId = adminId,
+                Title = title,
+                Message = message,
+                Type = type,
+                RelatedEntityType = relatedEntityType,
+                RelatedEntityId = relatedEntityId,
+                Data = data == null ? null : new Dictionary<string, string>(data)
+            });
+
+            await NotifyManyAsync(requests, ct);
         }
 
         public async Task<ServiceResult<NotificationDto>> CreateNotificationAsync(
@@ -106,24 +183,16 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             int doctorId,
             CancellationToken ct = default)
         {
-            var request = new CreateNotificationRequest
+            await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = doctorId,
                 Title = "Verification Approved",
                 Message = "Congratulations! Your doctor verification has been approved. You can now access all doctor features.",
                 Type = NotificationType.DoctorApproved,
                 RelatedEntityType = "Doctor",
-                RelatedEntityId = doctorId
-            };
-
-            await CreateNotificationAsync(request, ct);
-
-            await SendPushNotificationAsync(
-            userId: doctorId,
-            title: "Verification Approved",
-            body: "Congratulations! Your doctor verification has been approved. You can now access all doctor features.",
-            ct: ct);
-
+                RelatedEntityId = doctorId,
+                Data = new Dictionary<string, string> { ["doctorId"] = doctorId.ToString() }
+            }, ct);
         }
 
         public async Task SendDoctorRejectedNotificationAsync(
@@ -131,23 +200,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             string rejectionReason,
             CancellationToken ct = default)
         {
-            var request = new CreateNotificationRequest
+            await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = doctorId,
                 Title = "Verification Rejected",
                 Message = $"Your doctor verification has been rejected. Reason: {rejectionReason}",
                 Type = NotificationType.DoctorRejected,
                 RelatedEntityType = "Doctor",
-                RelatedEntityId = doctorId
-            };
-
-            await CreateNotificationAsync(request, ct);
-
-            await SendPushNotificationAsync(
-            userId: doctorId,
-            title: "Verification Rejected",
-            body: $"Your doctor verification has been rejected. Reason: {rejectionReason}",
-            ct: ct);
+                RelatedEntityId = doctorId,
+                Data = new Dictionary<string, string>
+                {
+                    ["doctorId"] = doctorId.ToString(),
+                    ["reason"] = rejectionReason
+                }
+            }, ct);
         }
 
         public async Task SendAccountBlockedNotificationAsync(
@@ -155,21 +221,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             string reason,
             CancellationToken ct = default)
         {
-            var request = new CreateNotificationRequest
+            await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = userId,
                 Title = "Account Blocked",
                 Message = $"Your account has been blocked. Reason: {reason}. Please contact support for more information.",
-                Type = NotificationType.AccountBlocked
-            };
-
-            await CreateNotificationAsync(request, ct);
-
-            await SendPushNotificationAsync(
-            userId: userId,
-            title: "Account Blocked",
-            body: $"Your account has been blocked. Reason: {reason}. Please contact support for more information.",
-            ct: ct);
+                Type = NotificationType.AccountBlocked,
+                Data = new Dictionary<string, string> { ["reason"] = reason }
+            }, ct);
         }
 
         public async Task SendAccountSuspendedNotificationAsync(
@@ -178,42 +237,44 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             string reason,
             CancellationToken ct = default)
         {
-            var request = new CreateNotificationRequest
+            await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = userId,
                 Title = "Account Suspended",
                 Message = $"Your account has been suspended until {suspensionEnd:yyyy-MM-dd}. Reason: {reason}",
-                Type = NotificationType.AccountSuspended
-            };
+                Type = NotificationType.AccountSuspended,
+                Data = new Dictionary<string, string>
+                {
+                    ["suspensionEnd"] = suspensionEnd.ToString("O"),
+                    ["reason"] = reason
+                }
+            }, ct);
+        }
 
-            await CreateNotificationAsync(request, ct);
-            
-            await SendPushNotificationAsync(
-            userId: userId,
-            title: "Account Suspended",
-            body: $"Your account has been suspended until {suspensionEnd:yyyy-MM-dd}. Reason: {reason}.",
-            ct: ct);
+        public async Task SendAccountUnsuspendedNotificationAsync(
+            int userId,
+            CancellationToken ct = default)
+        {
+            await NotifyAsync(new NotificationDispatchRequest
+            {
+                UserId = userId,
+                Title = "Account Restored",
+                Message = "Your account suspension has ended and your access has been restored.",
+                Type = NotificationType.AccountUnsuspended
+            }, ct);
         }
 
         public async Task SendAccountUnblockedNotificationAsync(
             int userId,
             CancellationToken ct = default)
         {
-            var request = new CreateNotificationRequest
+            await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = userId,
                 Title = "Account Unblocked",
                 Message = "Your account has been unblocked. You can now access all features.",
                 Type = NotificationType.AccountUnblocked
-            };
-
-            await CreateNotificationAsync(request, ct);
-
-            await SendPushNotificationAsync(
-            userId: userId,
-            title: "Account Unblocked",
-            body: "Your account has been unblocked. You can now access all features.",
-            ct: ct);
+            }, ct);
         }
 
         public async Task SendTicketResponseNotificationAsync(
@@ -221,23 +282,15 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             Guid ticketId,
             CancellationToken ct = default)
         {
-            var request = new CreateNotificationRequest
+            await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = userId,
                 Title = "New Ticket Response",
                 Message = "An admin has responded to your support ticket.",
                 Type = NotificationType.TicketResponse,
                 RelatedEntityType = "Ticket",
-                RelatedEntityId = null // Guid stored separately
-            };
-
-            await CreateNotificationAsync(request, ct);
-
-            await SendPushNotificationAsync(
-                userId: userId,
-                title: "New Ticket Response",
-                body: "An admin has responded to your support ticket.",
-                ct: ct);
+                Data = new Dictionary<string, string> { ["ticketId"] = ticketId.ToString() }
+            }, ct);
         }
 
         public async Task SendTicketClosedNotificationAsync(
@@ -245,22 +298,15 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             Guid ticketId,
             CancellationToken ct = default)
         {
-            var request = new CreateNotificationRequest
+            await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = userId,
                 Title = "Ticket Closed",
                 Message = "Your support ticket has been closed. If you need further assistance, feel free to create a new ticket.",
                 Type = NotificationType.TicketClosed,
-                RelatedEntityType = "Ticket"
-            };
-
-            await CreateNotificationAsync(request, ct);
-
-            await SendPushNotificationAsync(
-                userId: userId,
-                title: "Ticket Closed",
-                body: "Your support ticket has been closed. If you need further assistance, feel free to create a new ticket.",
-                ct: ct);
+                RelatedEntityType = "Ticket",
+                Data = new Dictionary<string, string> { ["ticketId"] = ticketId.ToString() }
+            }, ct);
         }
 
         public async Task SendReviewDeletedNotificationAsync(
@@ -269,21 +315,18 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             string reason,
             CancellationToken ct = default)
         {
-            var request = new CreateNotificationRequest
+            await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = userId,
                 Title = "Review Removed",
                 Message = $"Your review for Dr. {doctorName} has been removed. Reason: {reason}",
-                Type = NotificationType.ReviewDeleted
-            };
-
-            await CreateNotificationAsync(request, ct);
-
-            await SendPushNotificationAsync(
-                userId: userId,
-                title: "Review Removed",
-                body: $"Your review for Dr. {doctorName} has been removed. Reason: {reason}.",
-                ct: ct);
+                Type = NotificationType.ReviewDeleted,
+                Data = new Dictionary<string, string>
+                {
+                    ["doctorName"] = doctorName,
+                    ["reason"] = reason
+                }
+            }, ct);
         }
 
         public async Task<ServiceResult<NotificationListResponse>> GetUserNotificationsAsync(
@@ -417,6 +460,27 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 _logger.LogError(ex, "Failed to send push notification to user {UserId}", userId);
             }
+        }
+
+        private static string? BuildPushPayload(NotificationDispatchRequest request)
+        {
+            var payload = request.Data == null
+                ? new Dictionary<string, string>()
+                : new Dictionary<string, string>(request.Data);
+
+            payload["type"] = request.Type.ToString();
+
+            if (!string.IsNullOrWhiteSpace(request.RelatedEntityType))
+            {
+                payload["relatedEntityType"] = request.RelatedEntityType;
+            }
+
+            if (request.RelatedEntityId.HasValue)
+            {
+                payload["relatedEntityId"] = request.RelatedEntityId.Value.ToString();
+            }
+
+            return payload.Count == 0 ? null : JsonSerializer.Serialize(payload);
         }
 
         public async Task SendPushToTokenAsync(

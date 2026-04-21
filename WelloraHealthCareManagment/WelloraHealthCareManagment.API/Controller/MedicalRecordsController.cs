@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
+using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Application.DTOs;
 
 namespace WelloraHealthCareManagement.API.Controllers
@@ -25,7 +26,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Create medical record for appointment (Doctor only)
         [HttpPost]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> CreateMedicalRecord(
             Guid appointmentId,
             [FromBody] CreateMedicalRecordRequest request)
@@ -58,7 +59,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Update medical record (Doctor only)
         [HttpPut]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> UpdateMedicalRecord(
             Guid appointmentId,
             [FromBody] UpdateMedicalRecordRequest request)

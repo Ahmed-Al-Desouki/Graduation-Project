@@ -8,10 +8,13 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication.Tokens;
+using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
 using WelloraHealthCareManagment.Domain.Repositories;
+using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.UserSessions;
 
@@ -32,6 +35,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IUserSessionRepository _sessionRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUserStatusRepository _userStatusRepository;
+        private readonly IDoctorRepository _doctorRepository;
+        private readonly IDoctorVerificationRepository _doctorVerificationRepository;
 
         public TokenService(
             IConfiguration configuration,
@@ -40,7 +45,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IRevokedTokenRepository revokedTokenRepository,
             IUserSessionRepository sessionRepository,
             IUserRepository userRepository,
-            IUserStatusRepository userStatusRepository)
+            IUserStatusRepository userStatusRepository,
+            IDoctorRepository doctorRepository,
+            IDoctorVerificationRepository doctorVerificationRepository)
         {
             _configuration = configuration;
             _logger = logger;
@@ -49,6 +56,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _sessionRepository = sessionRepository;
             _userRepository = userRepository;
             _userStatusRepository = userStatusRepository;
+            _doctorRepository = doctorRepository;
+            _doctorVerificationRepository = doctorVerificationRepository;
 
             // Load and validate configuration
             _jwtKey = configuration["Jwt:Key"]
@@ -88,6 +97,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email!),
                 new Claim(JwtRegisteredClaimNames.Jti, jti)
             };
+            claims.AddRange(await BuildDoctorClaimsAsync(user));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -105,6 +115,26 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _logger.LogInformation("Generated JWT for user {UserId}, JTI: {Jti}", user.Id, jti);
 
             return await Task.FromResult((tokenString, jti, expires));
+        }
+
+        private async Task<IEnumerable<Claim>> BuildDoctorClaimsAsync(ApplicationUser user)
+        {
+            if (!user.Role.Equals("Doctor", StringComparison.OrdinalIgnoreCase))
+                return Array.Empty<Claim>();
+
+            var doctor = await _doctorRepository.GetByIdAsync(user.Id);
+            var verifications = await _doctorVerificationRepository.GetByDoctorIdAsync(user.Id);
+            var requestStatus = DoctorVerificationPolicy.DetermineRequestStatus(verifications);
+            var accessLevel = doctor?.IsActive == true
+                ? DoctorAuthorizationConstants.FullAccessLevel
+                : DoctorAuthorizationConstants.OnboardingAccessLevel;
+
+            return new Claim[]
+            {
+                new Claim(DoctorAuthorizationConstants.DoctorAccessLevelClaimType, accessLevel),
+                new Claim(DoctorAuthorizationConstants.DoctorVerificationStatusClaimType, requestStatus.ToString()),
+                new Claim(DoctorAuthorizationConstants.DoctorIsActiveClaimType, (doctor?.IsActive == true).ToString().ToLowerInvariant())
+            };
         }
 
         public async Task<(string MfaToken, string Jti, DateTime Expires)> GenerateMfaTokenAsync(

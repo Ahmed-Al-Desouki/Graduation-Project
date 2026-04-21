@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
+using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Application.DTOs.Payment;
 
 namespace WelloraHealthCareManagement.API.Controllers
@@ -69,7 +70,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Refund a payment
         [HttpPost("refund")]
-        [Authorize(Roles = "Patient,Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.PatientAdminOrApprovedDoctorPolicy)]
         public async Task<IActionResult> RefundPayment([FromBody] RefundPaymentRequest request)
         {
             var result = await _paymentService.RefundPaymentAsync(
@@ -86,7 +87,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// Get payment details by appointment ID
         [HttpGet("appointment/{appointmentId:guid}")]
-        [Authorize(Roles = "Patient,Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.PatientAdminOrApprovedDoctorPolicy)]
         public async Task<IActionResult> GetPaymentByAppointment(Guid appointmentId)
         {
             var payment = await _paymentService.GetPaymentByAppointmentIdAsync(

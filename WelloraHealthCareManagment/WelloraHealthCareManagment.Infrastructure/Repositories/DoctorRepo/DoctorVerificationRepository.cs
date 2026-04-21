@@ -57,6 +57,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         {
             return await _context.DoctorVerifications
                 .Include(dv => dv.File)
+                .Include(dv => dv.ReviewedByAdmin)
                 .Where(dv => dv.DoctorId == doctorId)
                 .OrderByDescending(dv => dv.SubmittedAt)
                 .AsNoTracking()
@@ -153,17 +154,34 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             CancellationToken ct = default)
         {
             return await _context.Doctors
-                .Where(d => d.Verifications.Any(v => v.Status == VerificationStatus.Pending))
+                .Where(d =>
+                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License) &&
+                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate) &&
+                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId) &&
+                    (
+                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License && v.Status == VerificationStatus.Pending) ||
+                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate && v.Status == VerificationStatus.Pending) ||
+                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId && v.Status == VerificationStatus.Pending)
+                    ) &&
+                    !d.Verifications.Any(v =>
+                        (v.DocumentType == DoctorDocumentType.License ||
+                         v.DocumentType == DoctorDocumentType.GraduationCertificate ||
+                         v.DocumentType == DoctorDocumentType.NationalId) &&
+                        v.Status == VerificationStatus.Rejected))
                 .OrderBy(d => d.Verifications
-                    .Where(v => v.Status == VerificationStatus.Pending)
+                    .Where(v =>
+                        (v.DocumentType == DoctorDocumentType.License ||
+                         v.DocumentType == DoctorDocumentType.GraduationCertificate ||
+                         v.DocumentType == DoctorDocumentType.NationalId) &&
+                        v.Status == VerificationStatus.Pending)
                     .Min(v => v.SubmittedAt))
                 .ThenBy(d => d.DoctorId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Include(d => d.User)
-                .Include(d => d.Verifications.Where(v => v.Status == VerificationStatus.Pending))
+                .Include(d => d.Verifications)
                     .ThenInclude(v => v.File)
-                .Include(d => d.Verifications.Where(v => v.Status == VerificationStatus.Pending))
+                .Include(d => d.Verifications)
                     .ThenInclude(v => v.ReviewedByAdmin)
                 .AsSplitQuery()
                 .AsNoTracking()
@@ -173,7 +191,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         public async Task<int> CountPendingDoctorsAsync(CancellationToken ct = default)
         {
             return await _context.Doctors
-                .CountAsync(d => d.Verifications.Any(v => v.Status == VerificationStatus.Pending), ct);
+                .CountAsync(d =>
+                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License) &&
+                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate) &&
+                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId) &&
+                    (
+                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License && v.Status == VerificationStatus.Pending) ||
+                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate && v.Status == VerificationStatus.Pending) ||
+                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId && v.Status == VerificationStatus.Pending)
+                    ) &&
+                    !d.Verifications.Any(v =>
+                        (v.DocumentType == DoctorDocumentType.License ||
+                         v.DocumentType == DoctorDocumentType.GraduationCertificate ||
+                         v.DocumentType == DoctorDocumentType.NationalId) &&
+                        v.Status == VerificationStatus.Rejected), ct);
         }
 
         public async Task<List<DoctorVerification>> GetAllAsync(
@@ -262,6 +293,19 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                     (!status.HasValue || dv.Status == status.Value) &&
                     (!fromDate.HasValue || dv.SubmittedAt >= fromDate.Value) &&
                     (!toDate.HasValue || dv.SubmittedAt <= toDate.Value)))
+                    .ThenInclude(v => v.ReviewedByAdmin)
+                .AsSplitQuery()
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
+        public async Task<List<Doctor>> GetAllDoctorsWithVerificationsAsync(CancellationToken ct = default)
+        {
+            return await _context.Doctors
+                .Include(d => d.User)
+                .Include(d => d.Verifications)
+                    .ThenInclude(v => v.File)
+                .Include(d => d.Verifications)
                     .ThenInclude(v => v.ReviewedByAdmin)
                 .AsSplitQuery()
                 .AsNoTracking()

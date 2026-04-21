@@ -57,16 +57,16 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
         }
 
         /// <summary>
-        /// Get single verification details by ID
+        /// Get doctor verification request details by doctor ID
         /// </summary>
-        [HttpGet("{verificationId}")]
-        public async Task<IActionResult> GetVerificationDetails(int verificationId, CancellationToken ct = default)
+        [HttpGet("{doctorId:int}")]
+        public async Task<IActionResult> GetDoctorVerificationDetails(int doctorId, CancellationToken ct = default)
         {
-            var result = await _verificationService.GetVerificationDetailsAsync(verificationId, ct);
+            var result = await _verificationService.GetDoctorVerificationDetailsAsync(doctorId, ct);
 
             return result.IsSuccess
                 ? Ok(result.Data)
-                : NotFound(new { error = result.Error ?? "Verification not found" });
+                : NotFound(new { error = result.Error ?? "Doctor verification request not found" });
         }
 
         /// <summary>

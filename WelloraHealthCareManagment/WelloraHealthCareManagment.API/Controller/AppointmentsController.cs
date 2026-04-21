@@ -4,6 +4,7 @@ using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
+using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 
 namespace WelloraHealthCareManagement.API.Controllers
@@ -114,7 +115,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// جلب مواعيد الطبيب
         [HttpGet("doctor-appointments")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> GetDoctorAppointments(
             [FromQuery] DateTime? date = null,
             [FromQuery] AppointmentStatus? status = null)
@@ -128,7 +129,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         [HttpPost("{originalAppointmentId}/follow-up/existing")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> BookFollowUpExisting(
             Guid originalAppointmentId,
             [FromBody] BookFollowUpExistingRequest request)
@@ -156,7 +157,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         [HttpPost("{originalAppointmentId}/follow-up/new")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> CreateAndBookFollowUp(
             Guid originalAppointmentId,
             [FromBody] BookFollowUpNewRequest request)
@@ -217,7 +218,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         [HttpPost("{appointmentId}/doctor-cancel-block")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> CancelAppointmentByDoctor(
         Guid appointmentId,
         [FromBody] CancelAppointmentRequest request)
@@ -321,7 +322,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// تأكيد موعد (للطبيب)
         [HttpPatch("{appointmentId}/confirm")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> ConfirmAppointment(Guid appointmentId)
         {
             try
@@ -346,7 +347,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// بدء موعد (للطبيب)
         [HttpPatch("{appointmentId}/start")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> StartAppointment(Guid appointmentId)
         {
             try
@@ -371,7 +372,7 @@ namespace WelloraHealthCareManagement.API.Controllers
 
         /// إكمال موعد (للطبيب)
         [HttpPatch("{appointmentId}/complete")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> CompleteAppointment(Guid appointmentId)
         {
             try

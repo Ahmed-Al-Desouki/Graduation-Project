@@ -8,9 +8,12 @@ using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.DTOs.Payment;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
@@ -29,6 +32,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IConfiguration _configuration;
         private readonly IMedicalHistoryAccessRepository _accessRepository;
         private readonly IAppointmentReminderService _appointmentReminderService;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<PaymentService> _logger;
 
         public PaymentService(
@@ -42,6 +46,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IConfiguration configuration,
             IMedicalHistoryAccessRepository accessRepository,
             IAppointmentReminderService appointmentReminderService,
+            INotificationService notificationService,
             ILogger<PaymentService> logger)
         {
             _paymentRepository = paymentRepository;
@@ -54,6 +59,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _configuration = configuration;
             _accessRepository = accessRepository;
             _appointmentReminderService = appointmentReminderService;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -302,6 +308,28 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 }
             }
 
+            await _notificationService.NotifyManyAsync(new[]
+            {
+                new NotificationDispatchRequest
+                {
+                    UserId = payment.PatientId,
+                    Title = "Payment Confirmed",
+                    Message = $"Your payment of {payment.Amount:F2} EGP has been confirmed.",
+                    Type = NotificationType.PaymentSucceeded,
+                    RelatedEntityType = "Payment",
+                    Data = new Dictionary<string, string> { ["paymentId"] = payment.Id.ToString() }
+                },
+                new NotificationDispatchRequest
+                {
+                    UserId = payment.DoctorId,
+                    Title = "Appointment Payment Received",
+                    Message = $"A patient's payment of {payment.Amount:F2} EGP has been confirmed for an appointment.",
+                    Type = NotificationType.PaymentSucceeded,
+                    RelatedEntityType = "Payment",
+                    Data = new Dictionary<string, string> { ["paymentId"] = payment.Id.ToString() }
+                }
+            }, cancellationToken);
+
             return new ProcessCallbackResult
             {
                 Success = true,
@@ -315,6 +343,19 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             CancellationToken cancellationToken)
         {
             _logger.LogInformation("Payment pending for PaymentId: {PaymentId}", paymentId);
+            var payment = await _paymentRepository.GetByIdAsync(paymentId, cancellationToken);
+            if (payment != null)
+            {
+                await _notificationService.NotifyAsync(new NotificationDispatchRequest
+                {
+                    UserId = payment.PatientId,
+                    Title = "Payment Pending",
+                    Message = $"Your payment of {payment.Amount:F2} EGP is still pending confirmation.",
+                    Type = NotificationType.PaymentPending,
+                    RelatedEntityType = "Payment",
+                    Data = new Dictionary<string, string> { ["paymentId"] = payment.Id.ToString() }
+                }, cancellationToken);
+            }
 
             return new ProcessCallbackResult
             {
@@ -351,6 +392,19 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             payment.MarkAsFailed(reason, callbackJson);
             await _paymentRepository.UpdateAsync(payment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _notificationService.NotifyAsync(new NotificationDispatchRequest
+            {
+                UserId = payment.PatientId,
+                Title = "Payment Failed",
+                Message = $"Your payment could not be completed. Reason: {reason}.",
+                Type = NotificationType.PaymentFailed,
+                RelatedEntityType = "Payment",
+                Data = new Dictionary<string, string>
+                {
+                    ["paymentId"] = payment.Id.ToString(),
+                    ["reason"] = reason
+                }
+            }, cancellationToken);
 
             return new ProcessCallbackResult
             {
@@ -925,6 +979,27 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 await _paymentRepository.UpdateAsync(payment, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _notificationService.NotifyManyAsync(new[]
+                {
+                    new NotificationDispatchRequest
+                    {
+                        UserId = payment.PatientId,
+                        Title = "Refund Processed",
+                        Message = $"A refund of {request.Amount:F2} EGP has been processed for your payment.",
+                        Type = NotificationType.RefundProcessed,
+                        RelatedEntityType = "Payment",
+                        Data = new Dictionary<string, string> { ["paymentId"] = payment.Id.ToString() }
+                    },
+                    new NotificationDispatchRequest
+                    {
+                        UserId = payment.DoctorId,
+                        Title = "Appointment Refund Processed",
+                        Message = $"A refund of {request.Amount:F2} EGP was processed for an appointment payment.",
+                        Type = NotificationType.RefundProcessed,
+                        RelatedEntityType = "Payment",
+                        Data = new Dictionary<string, string> { ["paymentId"] = payment.Id.ToString() }
+                    }
+                }, cancellationToken);
 
                 _logger.LogInformation(
                     "Refund completed successfully for payment {PaymentId}. " +

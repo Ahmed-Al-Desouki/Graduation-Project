@@ -269,6 +269,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .Include(u => u.Doctor)
                 .FirstOrDefaultAsync(u => u.Id == userId, ct);
         }
+
+        public async Task<List<int>> GetUserIdsByRoleAsync(string role, CancellationToken ct = default)
+        {
+            return await _context.Users
+                .Where(u => u.Role == role)
+                .Select(u => u.Id)
+                .ToListAsync(ct);
+        }
+
         public async Task<List<ApplicationUser>> GetDoctorsFilteredAsync(
             string? searchTerm,
             bool? onlyVerified,

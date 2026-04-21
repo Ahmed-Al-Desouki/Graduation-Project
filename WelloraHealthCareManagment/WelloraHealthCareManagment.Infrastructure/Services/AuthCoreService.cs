@@ -8,12 +8,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.DTOs.AuthModels.Login_register.LogIn;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.Interfaces.Search;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
@@ -40,6 +43,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _configuration;
         private readonly IDoctorSearchIndex _searchIndex;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<AuthCoreService> _logger;
 
         public AuthCoreService(
@@ -58,6 +62,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IUnitOfWork unitOfWork,
             IConfiguration configuration,
             IDoctorSearchIndex searchIndex,
+            INotificationService notificationService,
             ILogger<AuthCoreService> logger)
         {
             _userRepository = userRepository;
@@ -75,6 +80,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _unitOfWork = unitOfWork;
             _configuration = configuration;
             _searchIndex = searchIndex;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -161,6 +167,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 // بعد الـ commit اعمل الـ image upload (مش critical)
                 await UploadProfileImageAsync(user, request.ProfileImageFile);
+                await SendRegistrationNotificationsAsync(user);
 
                 _logger.LogInformation("User registered successfully: {Email}", request.Email);
                 return (true, Array.Empty<string>());
@@ -208,7 +215,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     Specialization = "General",
                     YearsOfExperience = 0,
                     //ConsultationFee = 0,
-                    IsActive = true,
+                    IsActive = false,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -546,6 +553,37 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
 
             return null;
+        }
+
+        private async Task SendRegistrationNotificationsAsync(ApplicationUser user)
+        {
+            await _notificationService.NotifyAsync(new NotificationDispatchRequest
+            {
+                UserId = user.Id,
+                Title = "Welcome to Wellora",
+                Message = user.Role.Equals("Doctor", StringComparison.OrdinalIgnoreCase)
+                    ? "Your account has been created. Complete your profile and submit your verification documents to start receiving patients."
+                    : "Your account has been created successfully. You can now book doctors, manage appointments, and receive updates.",
+                Type = NotificationType.Welcome,
+                RelatedEntityType = "User",
+                RelatedEntityId = user.Id,
+                Data = new Dictionary<string, string> { ["role"] = user.Role }
+            });
+
+            if (user.Role.Equals("Doctor", StringComparison.OrdinalIgnoreCase))
+            {
+                await _notificationService.NotifyAdminsAsync(
+                    title: "New Doctor Registered",
+                    message: $"{user.FullName} has registered as a doctor and may submit verification documents soon.",
+                    type: NotificationType.DoctorRegistrationSubmitted,
+                    relatedEntityType: "Doctor",
+                    relatedEntityId: user.Id,
+                    data: new Dictionary<string, string>
+                    {
+                        ["doctorId"] = user.Id.ToString(),
+                        ["doctorName"] = user.FullName
+                    });
+            }
         }
 
         #endregion

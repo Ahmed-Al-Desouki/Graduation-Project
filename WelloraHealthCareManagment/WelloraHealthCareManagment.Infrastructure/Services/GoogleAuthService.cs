@@ -283,7 +283,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                             Specialization = "General",
                             YearsOfExperience = 0,
                             //ConsultationFee = 0,
-                            IsActive = true,
+                            IsActive = false,
                             CreatedAt = DateTime.UtcNow
                         };
 

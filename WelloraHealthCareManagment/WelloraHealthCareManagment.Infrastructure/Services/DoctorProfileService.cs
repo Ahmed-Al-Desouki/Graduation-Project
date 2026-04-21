@@ -7,6 +7,7 @@ using WelloraHealthCareManagment.Application.DTOs.DoctorDtos;
 using WelloraHealthCareManagment.Application.DTOs.Reviews.Responses;
 using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Enums;
@@ -25,6 +26,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         private readonly ICloudStorageService _cloudStorage;
         private readonly IReviewRepository _reviewRepository;
         private readonly IExternalFileRepository _externalFileRepository;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<DoctorProfileService> _logger;
 
         public DoctorProfileService(
@@ -36,6 +38,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             ICloudStorageService cloudStorage,
             IReviewRepository reviewRepository,
             IExternalFileRepository externalFileRepository,
+            INotificationService notificationService,
             ILogger<DoctorProfileService> logger)
         {
             _doctorRepository = doctorRepository;
@@ -46,6 +49,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             _cloudStorage = cloudStorage;
             _reviewRepository = reviewRepository;
             _externalFileRepository = externalFileRepository;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -64,6 +68,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 var reviews = await _reviewRepository.GetByDoctorIdAsync(doctorId);
                 var verificationRequestStatus = DoctorVerificationPolicy.DetermineRequestStatus(verifications);
                 var missingRequiredDocuments = DoctorVerificationPolicy.GetMissingRequiredDocuments(verifications);
+                var latestReviewSnapshot = verifications
+                    .Where(v => v.ReviewedAt.HasValue || !string.IsNullOrWhiteSpace(v.AdminNotes) || !string.IsNullOrWhiteSpace(v.RejectionReason))
+                    .OrderByDescending(v => v.ReviewedAt ?? DateTime.MinValue)
+                    .ThenByDescending(v => v.UpdatedAt ?? DateTime.MinValue)
+                    .ThenByDescending(v => v.VerificationId)
+                    .FirstOrDefault();
+                var verificationSubmittedAt = verifications.Count == 0
+                    ? (DateTime?)null
+                    : verifications.Max(v => v.SubmittedAt);
 
                 var response = new DoctorProfileResponse
                 {
@@ -81,6 +94,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     IsActive = doctor.IsActive,
                     IsProfileCompleted = doctor.IsProfileCompleted,
                     VerificationRequestStatus = verificationRequestStatus,
+                    VerificationAdminNotes = latestReviewSnapshot?.AdminNotes,
+                    VerificationRejectionReason = latestReviewSnapshot?.RejectionReason,
+                    VerificationReviewedByAdminId = latestReviewSnapshot?.ReviewedByAdminId,
+                    VerificationReviewedByAdminName = latestReviewSnapshot?.ReviewedByAdmin?.FullName ?? (latestReviewSnapshot?.ReviewedByAdminId.HasValue == true ? "Admin" : null),
+                    VerificationReviewedAt = latestReviewSnapshot?.ReviewedAt,
+                    VerificationSubmittedAt = verificationSubmittedAt,
                     MissingRequiredVerificationDocuments = missingRequiredDocuments.ToList(),
                     ClinicAddress = doctor.ClinicAddress,
                     ClinicLatitude = doctor.ClinicLatitude,
@@ -88,15 +107,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     HospitalName = doctor.HospitalName,
                     ProfileImageUrl = doctor.User.ProfileImagePath?.FileUrl,
 
-                    VerificationDocuments = verifications.Select(v => new VerificationDocumentResponse
-                    {
-                        VerificationId = v.VerificationId,
-                        DocumentType = v.DocumentType,
-                        Status = v.Status,
-                        FileUrl = v.File?.FileUrl,
-                        AdminNotes = v.AdminNotes,
-                        SubmittedAt = v.SubmittedAt
-                    }).ToList(),
+                    VerificationDocuments = verifications
+                        .Where(v => v.DocumentType != DoctorDocumentType.Other || v.Status == VerificationStatus.Approved)
+                        .Select(v => new VerificationDocumentResponse
+                        {
+                            VerificationId = v.VerificationId,
+                            DocumentType = v.DocumentType,
+                            FileUrl = v.File?.FileUrl
+                        }).ToList(),
 
                     Achievements = achievements.Select(a => new AchievementResponse
                     {
@@ -225,6 +243,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 doctor.UpdatedAt = DateTime.UtcNow;
 
                 await _doctorRepository.UpdateAsync(doctor);
+                await _notificationService.NotifyAsync(new Application.DTOs.Admin.NotificationDispatchRequest
+                {
+                    UserId = doctorId,
+                    Title = "Profile Completed",
+                    Message = "Your doctor profile is now complete. The next step is submitting verification documents for admin review.",
+                    Type = NotificationType.DoctorProfileCompleted,
+                    RelatedEntityType = "Doctor",
+                    RelatedEntityId = doctorId
+                });
 
                 _logger.LogInformation("CompleteDoctorProfileAsync: Profile completed for doctor {DoctorId}", doctorId);
                 return ServiceResult.Success();
@@ -363,6 +390,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 if (doctor == null)
                     return ServiceResult.Failure("Doctor not found");
 
+                var existingVerifications = await _verificationRepository.GetByDoctorIdAsync(doctorId);
+                var missingRequiredDocuments = DoctorVerificationPolicy.GetMissingRequiredDocuments(existingVerifications);
+
+                if (request.DocumentType == DoctorDocumentType.Other && missingRequiredDocuments.Count > 0)
+                    return ServiceResult.Failure("You must upload all required verification documents before submitting optional documents.");
+
                 // منع التكرار — كل نوع مرة واحدة بس
                 var exists = await _verificationRepository.ExistsAsync(doctorId, request.DocumentType);
                 if (exists)
@@ -401,6 +434,28 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
                 await _verificationRepository.CreateAsync(verification);
                 await UpdateDoctorActivationAsync(doctor, doctorId);
+                await _notificationService.NotifyAsync(new Application.DTOs.Admin.NotificationDispatchRequest
+                {
+                    UserId = doctorId,
+                    Title = "Verification Document Submitted",
+                    Message = $"Your {request.DocumentType} document has been submitted and is waiting for admin review.",
+                    Type = NotificationType.DoctorVerificationSubmitted,
+                    RelatedEntityType = "DoctorVerification",
+                    RelatedEntityId = verification.VerificationId,
+                    Data = new Dictionary<string, string> { ["documentType"] = request.DocumentType.ToString() }
+                });
+                await _notificationService.NotifyAdminsAsync(
+                    title: "Doctor Verification Submitted",
+                    message: $"Doctor #{doctorId} submitted a {request.DocumentType} verification document for review.",
+                    type: NotificationType.DoctorVerificationSubmitted,
+                    relatedEntityType: "DoctorVerification",
+                    relatedEntityId: verification.VerificationId,
+                    data: new Dictionary<string, string>
+                    {
+                        ["doctorId"] = doctorId.ToString(),
+                        ["verificationId"] = verification.VerificationId.ToString(),
+                        ["documentType"] = request.DocumentType.ToString()
+                    });
 
                 _logger.LogInformation(
                     "AddVerificationDocumentAsync: Document {Type} added for doctor {DoctorId}",
@@ -462,6 +517,28 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 {
                     await UpdateDoctorActivationAsync(doctor, doctorId);
                 }
+                await _notificationService.NotifyAsync(new Application.DTOs.Admin.NotificationDispatchRequest
+                {
+                    UserId = doctorId,
+                    Title = "Verification Document Re-Submitted",
+                    Message = $"Your {verification.DocumentType} document has been re-submitted and is waiting for admin review.",
+                    Type = NotificationType.DoctorVerificationSubmitted,
+                    RelatedEntityType = "DoctorVerification",
+                    RelatedEntityId = verification.VerificationId,
+                    Data = new Dictionary<string, string> { ["documentType"] = verification.DocumentType.ToString() }
+                });
+                await _notificationService.NotifyAdminsAsync(
+                    title: "Doctor Verification Re-Submitted",
+                    message: $"Doctor #{doctorId} replaced a {verification.DocumentType} document and it is ready for review again.",
+                    type: NotificationType.DoctorVerificationSubmitted,
+                    relatedEntityType: "DoctorVerification",
+                    relatedEntityId: verification.VerificationId,
+                    data: new Dictionary<string, string>
+                    {
+                        ["doctorId"] = doctorId.ToString(),
+                        ["verificationId"] = verification.VerificationId.ToString(),
+                        ["documentType"] = verification.DocumentType.ToString()
+                    });
 
                 _logger.LogInformation(
                     "ReplaceVerificationDocumentAsync: Document replaced for doctor {DoctorId}", doctorId);

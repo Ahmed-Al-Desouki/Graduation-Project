@@ -46,7 +46,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 var doctors = await _verificationRepository.GetPendingDoctorsWithVerificationsAsync(page, pageSize, ct);
                 var totalCount = await _verificationRepository.CountPendingDoctorsAsync(ct);
-                var pendingCount = await _verificationRepository.CountPendingVerificationsAsync(ct);
+                var pendingCount = totalCount;
 
                 var response = new DoctorVerificationListResponse
                 {
@@ -82,7 +82,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 var totalCount = await _verificationRepository.CountDoctorsAsync(
                     status, fromDate, toDate, ct);
 
-                var pendingCount = await _verificationRepository.CountPendingVerificationsAsync(ct);
+                var pendingCount = await _verificationRepository.CountPendingDoctorsAsync(ct);
 
                 var response = new DoctorVerificationListResponse
                 {
@@ -102,23 +102,28 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             }
         }
 
-        public async Task<ServiceResult<DoctorVerificationDto>> GetVerificationDetailsAsync(
-            int verificationId,
+        public async Task<ServiceResult<DoctorVerificationDoctorDto>> GetDoctorVerificationDetailsAsync(
+            int doctorId,
             CancellationToken ct = default)
         {
             try
             {
-                var verification = await _verificationRepository.GetByIdWithDoctorAsync(verificationId, ct);
-                if (verification == null)
-                    return ServiceResult<DoctorVerificationDto>.Failure("Verification not found");
+                var doctor = await _doctorRepository.GetByIdWithUserAsync(doctorId, ct);
+                if (doctor == null)
+                    return ServiceResult<DoctorVerificationDoctorDto>.Failure("Doctor not found");
 
-                var dto = _mapper.Map<DoctorVerificationDto>(verification);
-                return ServiceResult<DoctorVerificationDto>.Success(dto);
+                var verifications = await _verificationRepository.GetByDoctorIdAsync(doctorId, ct);
+                if (verifications.Count == 0)
+                    return ServiceResult<DoctorVerificationDoctorDto>.Failure("Doctor verification request not found");
+
+                doctor.Verifications = verifications;
+                var dto = MapDoctorVerificationGroup(doctor);
+                return ServiceResult<DoctorVerificationDoctorDto>.Success(dto);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting verification details {VerificationId}", verificationId);
-                return ServiceResult<DoctorVerificationDto>.Failure("Failed to get verification details");
+                _logger.LogError(ex, "Error getting verification request details for doctor {DoctorId}", doctorId);
+                return ServiceResult<DoctorVerificationDoctorDto>.Failure("Failed to get verification details");
             }
         }
 
@@ -298,15 +303,22 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
         {
             try
             {
-                var statusCounts = await _verificationRepository.GetStatusCountsAsync(ct);
+                var doctors = await _verificationRepository.GetAllDoctorsWithVerificationsAsync(ct);
+                var statusCounts = doctors
+                    .Select(d => DoctorVerificationPolicy.DetermineRequestStatus(d.Verifications))
+                    .GroupBy(status => status)
+                    .ToDictionary(group => group.Key, group => group.Count());
 
                 var stats = new VerificationStatisticsDto
                 {
-                    TotalVerifications = statusCounts.Values.Sum(),
-                    PendingVerifications = statusCounts.GetValueOrDefault(VerificationStatus.Pending, 0),
-                    ApprovedVerifications = statusCounts.GetValueOrDefault(VerificationStatus.Approved, 0),
-                    RejectedVerifications = statusCounts.GetValueOrDefault(VerificationStatus.Rejected, 0),
-                    VerificationsByStatus = statusCounts
+                    TotalDoctors = doctors.Count,
+                    PendingDoctors = statusCounts.GetValueOrDefault(DoctorVerificationRequestStatus.Pending, 0),
+                    ApprovedDoctors = statusCounts.GetValueOrDefault(DoctorVerificationRequestStatus.Approved, 0),
+                    RejectedDoctors = statusCounts.GetValueOrDefault(DoctorVerificationRequestStatus.Rejected, 0),
+                    IncompleteDoctors = statusCounts.GetValueOrDefault(DoctorVerificationRequestStatus.Incomplete, 0),
+                    DoctorsByStatus = statusCounts,
+                    ApprovedThisMonth = await _verificationRepository.CountApprovedThisMonthAsync(new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1), ct),
+                    RejectedThisMonth = await _verificationRepository.CountRejectedThisMonthAsync(new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1), ct)
                 };
 
                 return ServiceResult<VerificationStatisticsDto>.Success(stats);
@@ -321,25 +333,54 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
         private List<DoctorVerificationDoctorDto> MapDoctorVerificationGroups(IEnumerable<Doctor> doctors)
         {
             return doctors
-                .Select(doctor => new DoctorVerificationDoctorDto
-                {
-                    DoctorId = doctor.DoctorId,
-                    DoctorName = doctor.User?.FullName ?? string.Empty,
-                    DoctorEmail = doctor.User?.Email ?? string.Empty,
-                    PhoneNumber = doctor.User?.PhoneNumber,
-                    Specialization = doctor.Specialization,
-                    ClinicLocation = doctor.ClinicAddress,
-                    YearsOfExperience = doctor.YearsOfExperience,
-                    RequestStatus = DoctorVerificationPolicy.DetermineRequestStatus(doctor.Verifications),
-                    IsReadyForReview = DoctorVerificationPolicy.GetMissingRequiredDocuments(doctor.Verifications).Count == 0,
-                    MissingRequiredDocuments = DoctorVerificationPolicy.GetMissingRequiredDocuments(doctor.Verifications).ToList(),
-                    Verifications = doctor.Verifications
-                        .OrderByDescending(v => v.SubmittedAt)
-                        .ThenByDescending(v => v.VerificationId)
-                        .Select(v => _mapper.Map<DoctorVerificationDto>(v))
-                        .ToList()
-                })
+                .Select(MapDoctorVerificationGroup)
                 .ToList();
+        }
+
+        private DoctorVerificationDoctorDto MapDoctorVerificationGroup(Doctor doctor)
+        {
+            var requestStatus = DoctorVerificationPolicy.DetermineRequestStatus(doctor.Verifications);
+            var missingRequiredDocuments = DoctorVerificationPolicy.GetMissingRequiredDocuments(doctor.Verifications);
+            var latestReviewSnapshot = doctor.Verifications
+                .Where(v => v.ReviewedAt.HasValue || !string.IsNullOrWhiteSpace(v.AdminNotes) || !string.IsNullOrWhiteSpace(v.RejectionReason))
+                .OrderByDescending(v => v.ReviewedAt ?? DateTime.MinValue)
+                .ThenByDescending(v => v.UpdatedAt ?? DateTime.MinValue)
+                .ThenByDescending(v => v.VerificationId)
+                .FirstOrDefault();
+
+            var requestSubmittedAt = doctor.Verifications.Count == 0
+                ? (DateTime?)null
+                : doctor.Verifications.Max(v => v.SubmittedAt);
+
+            return new DoctorVerificationDoctorDto
+            {
+                DoctorId = doctor.DoctorId,
+                DoctorName = doctor.User?.FullName ?? string.Empty,
+                DoctorEmail = doctor.User?.Email ?? string.Empty,
+                PhoneNumber = doctor.User?.PhoneNumber,
+                Specialization = doctor.Specialization,
+                ClinicLocation = doctor.ClinicAddress,
+                YearsOfExperience = doctor.YearsOfExperience,
+                RequestStatus = requestStatus,
+                IsReadyForReview = missingRequiredDocuments.Count == 0,
+                AdminNotes = latestReviewSnapshot?.AdminNotes,
+                RejectionReason = latestReviewSnapshot?.RejectionReason,
+                ReviewedByAdminId = latestReviewSnapshot?.ReviewedByAdminId,
+                ReviewedByAdminName = latestReviewSnapshot?.ReviewedByAdmin?.FullName ?? (latestReviewSnapshot?.ReviewedByAdminId.HasValue == true ? "Admin" : null),
+                ReviewedAt = latestReviewSnapshot?.ReviewedAt,
+                SubmittedAt = requestSubmittedAt,
+                MissingRequiredDocuments = missingRequiredDocuments.ToList(),
+                Verifications = doctor.Verifications
+                    .OrderByDescending(v => v.SubmittedAt)
+                    .ThenByDescending(v => v.VerificationId)
+                    .Select(v => new DoctorVerificationFileDto
+                    {
+                        VerificationId = v.VerificationId,
+                        DocumentType = v.DocumentType,
+                        FileUrl = v.File?.FileUrl
+                    })
+                    .ToList()
+            };
         }
     }
 }

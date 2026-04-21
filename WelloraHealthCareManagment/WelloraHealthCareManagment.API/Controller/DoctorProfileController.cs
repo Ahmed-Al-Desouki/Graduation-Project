@@ -1,6 +1,7 @@
 ﻿namespace WelloraHealthCareManagment.API.Controller
 {
     using global::WelloraHealthCareManagment.Application.DTOs.DoctorDtos;
+    using global::WelloraHealthCareManagment.Application.Common.Security;
     using global::WelloraHealthCareManagment.Application.Interfaces;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@
     {
         [ApiController]
         [Route("api/doctor/profile")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.DoctorOnboardingAccessPolicy)]
         public class DoctorProfileController : ControllerBase
         {
             private readonly IDoctorProfileService _profileService;

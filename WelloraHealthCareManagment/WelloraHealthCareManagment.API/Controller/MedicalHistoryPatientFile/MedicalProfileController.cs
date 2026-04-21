@@ -3,6 +3,7 @@ using HealthCare_.Models.DTOs.PatientDot.MedicalProfile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.CurrentMedication.GetCurrentMedications;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.DoctorAccess;
 using WelloraHealthCareManagment.Application.UseCases.MedicalHistory.Queries.MedicalProfile.Commands.UpdateMedicalProfile;
@@ -86,7 +87,7 @@ namespace WelloraHealthCareManagment.API.Controller.MedicalHistoryPatientFile
         }
 
         [HttpGet("doctor-view/{patientId}")]
-        [Authorize(Roles = "Doctor")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
         public async Task<IActionResult> GetPatientMedicalProfileForDoctor(
             int patientId,
             [FromQuery] Guid appointmentId)

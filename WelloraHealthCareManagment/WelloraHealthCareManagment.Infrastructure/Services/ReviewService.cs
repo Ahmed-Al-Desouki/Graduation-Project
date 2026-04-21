@@ -5,6 +5,8 @@ using WelloraHealthCareManagment.Application.DTOs.Reviews.Requests;
 using WelloraHealthCareManagment.Application.DTOs.Reviews.Responses;
 using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 
@@ -15,17 +17,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         private readonly IReviewRepository _reviewRepository;
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IDoctorRepository _doctorRepository;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<ReviewService> _logger;
 
         public ReviewService(
             IReviewRepository reviewRepository,
             IAppointmentRepository appointmentRepository,
             IDoctorRepository doctorRepository,
+            INotificationService notificationService,
             ILogger<ReviewService> logger)
         {
             _reviewRepository = reviewRepository;
             _appointmentRepository = appointmentRepository;
             _doctorRepository = doctorRepository;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -67,6 +72,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
                 // 4. تحديث AverageRating في جدول Doctor
                 await UpdateDoctorAverageRatingAsync(request.DoctorId);
+                await NotifyDoctorAboutReviewAsync(
+                    request.DoctorId,
+                    patientId,
+                    review.ReviewID,
+                    "New Review",
+                    $"Patient #{patientId} added a new review to your profile.",
+                    NotificationType.ReviewCreated);
 
                 _logger.LogInformation(
                     "AddReviewAsync: Patient {PatientId} reviewed Doctor {DoctorId}",
@@ -107,6 +119,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
                 // تحديث AverageRating
                 await UpdateDoctorAverageRatingAsync(review.TargetID);
+                await NotifyDoctorAboutReviewAsync(
+                    review.TargetID,
+                    patientId,
+                    review.ReviewID,
+                    "Review Updated",
+                    $"Patient #{patientId} updated a review on your profile.",
+                    NotificationType.ReviewUpdated);
 
                 _logger.LogInformation(
                     "UpdateReviewAsync: Review {ReviewId} updated by patient {PatientId}",
@@ -136,6 +155,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
                 // تحديث AverageRating بعد الحذف
                 await UpdateDoctorAverageRatingAsync(doctorId);
+                await NotifyDoctorAboutReviewAsync(
+                    doctorId,
+                    patientId,
+                    review.ReviewID,
+                    "Review Deleted",
+                    $"Patient #{patientId} deleted a review from your profile.",
+                    NotificationType.ReviewDeletedByPatient);
 
                 _logger.LogInformation(
                     "DeleteReviewAsync: Review {ReviewId} deleted by patient {PatientId}",
@@ -207,6 +233,31 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 ReviewDate = review.ReviewDate,
                 IsVerified = review.IsVerified
             };
+        }
+
+        private async Task NotifyDoctorAboutReviewAsync(
+            int doctorId,
+            int patientId,
+            int reviewId,
+            string title,
+            string message,
+            NotificationType type)
+        {
+            await _notificationService.NotifyAsync(new Application.DTOs.Admin.NotificationDispatchRequest
+            {
+                UserId = doctorId,
+                Title = title,
+                Message = message,
+                Type = type,
+                RelatedEntityType = "Review",
+                RelatedEntityId = reviewId,
+                Data = new Dictionary<string, string>
+                {
+                    ["reviewId"] = reviewId.ToString(),
+                    ["doctorId"] = doctorId.ToString(),
+                    ["patientId"] = patientId.ToString()
+                }
+            });
         }
     }
 }

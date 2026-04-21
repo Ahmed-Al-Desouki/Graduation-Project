@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
+using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.TimeSlots;
 
 namespace WelloraHealthCareManagement.API.Controllers
@@ -33,7 +34,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         [HttpPost("manual")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> CreateManualSlot(
             int doctorId,
             [FromBody] CreateManualSlotRequest request)
@@ -58,7 +59,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         [HttpDelete("{slotId}")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> DeleteSlot(Guid slotId)
         {
             try
@@ -74,7 +75,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         [HttpGet("range")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> GetTimeSlotsInRange(
             int doctorId,
             [FromQuery] DateTime startDate,
@@ -107,7 +108,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         [HttpPatch("{slotId}/block")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> BlockSlot(Guid slotId)
         {
             try

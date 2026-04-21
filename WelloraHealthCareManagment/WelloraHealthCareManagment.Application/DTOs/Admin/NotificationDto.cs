@@ -31,6 +31,17 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public int? RelatedEntityId { get; set; }
     }
 
+    public class NotificationDispatchRequest
+    {
+        public int UserId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public NotificationType Type { get; set; }
+        public string? RelatedEntityType { get; set; }
+        public int? RelatedEntityId { get; set; }
+        public Dictionary<string, string>? Data { get; set; }
+    }
+
     public class NotificationListResponse
     {
         public List<NotificationDto> Notifications { get; set; } = new();

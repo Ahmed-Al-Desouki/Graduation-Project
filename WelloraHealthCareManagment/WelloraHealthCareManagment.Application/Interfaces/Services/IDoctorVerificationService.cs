@@ -22,9 +22,9 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Services
             int pageSize = 10,
             CancellationToken ct = default);
 
-        // Admin: Get verification details
-        Task<ServiceResult<DoctorVerificationDto>> GetVerificationDetailsAsync(
-            int verificationId,
+        // Admin: Get doctor verification request details
+        Task<ServiceResult<DoctorVerificationDoctorDto>> GetDoctorVerificationDetailsAsync(
+            int doctorId,
             CancellationToken ct = default);
 
         // Admin: Approve doctor

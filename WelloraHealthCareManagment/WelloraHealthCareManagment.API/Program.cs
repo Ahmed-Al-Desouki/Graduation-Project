@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 using WelloraHealthCareManagement.Application;
 using WelloraHealthCareManagement.Infrastructure;
 using WelloraHealthCareManagement.Infrastructure.Data.Interceptors;
 using WelloraHealthCareManagment.API.Middleware;
+using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs;
@@ -126,6 +128,36 @@ internal class Program
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+                options.AddPolicy(
+                    DoctorAuthorizationConstants.DoctorOnboardingAccessPolicy,
+                    policy => policy.RequireRole("Doctor"));
+                options.AddPolicy(
+                    DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.IsInRole("Doctor") &&
+                        string.Equals(
+                            context.User.FindFirst(DoctorAuthorizationConstants.DoctorAccessLevelClaimType)?.Value,
+                            DoctorAuthorizationConstants.FullAccessLevel,
+                            StringComparison.OrdinalIgnoreCase)));
+                options.AddPolicy(
+                    DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.IsInRole("Admin") ||
+                        (context.User.IsInRole("Doctor") &&
+                         string.Equals(
+                             context.User.FindFirst(DoctorAuthorizationConstants.DoctorAccessLevelClaimType)?.Value,
+                             DoctorAuthorizationConstants.FullAccessLevel,
+                             StringComparison.OrdinalIgnoreCase))));
+                options.AddPolicy(
+                    DoctorAuthorizationConstants.PatientAdminOrApprovedDoctorPolicy,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.IsInRole("Patient") ||
+                        context.User.IsInRole("Admin") ||
+                        (context.User.IsInRole("Doctor") &&
+                         string.Equals(
+                             context.User.FindFirst(DoctorAuthorizationConstants.DoctorAccessLevelClaimType)?.Value,
+                             DoctorAuthorizationConstants.FullAccessLevel,
+                             StringComparison.OrdinalIgnoreCase))));
             });
 
             // ====================== CONTROLLERS & SWAGGER ======================

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Exceptions;
+using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Schedules;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.SlotConfig;
 using WelloraHealthCareManagment.Application.Interfaces;
@@ -44,7 +45,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         /// PUT api/doctors/5/slot-config/days/Monday
         /// إضافة أو تعديل يوم (upsert)
         [HttpPut("days/{day}")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> SetDayConfig(
             int doctorId,
             DayOfWeek day,
@@ -72,7 +73,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         /// DELETE api/doctors/5/slot-config/days/Monday
         /// إلغاء يوم + block كل slots المستقبلية ليه
         [HttpDelete("days/{day}")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> RemoveDay(
             int doctorId,
             DayOfWeek day,
@@ -103,7 +104,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         /// POST api/doctors/5/slot-config/generate
         /// توليد slots يدوياً لفترة معينة
         [HttpPost("generate")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> GenerateSlots(
             int doctorId,
             [FromBody] GenerateSlotsByConfigRequest request,
@@ -131,7 +132,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         /// POST api/doctors/5/slot-config/exceptions/day-off
         /// إضافة يوم إجازة
         [HttpPost("exceptions/day-off")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> AddDayOff(
             int doctorId,
             [FromBody] CreateDayOffRequest request,
@@ -157,7 +158,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         /// POST api/doctors/5/slot-config/exceptions/custom-hours
         /// إضافة ساعات مخصصة ليوم معين
         [HttpPost("exceptions/custom-hours")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> AddCustomHours(
             int doctorId,
             [FromBody] CreateCustomHoursRequest request,
@@ -183,7 +184,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         /// DELETE api/doctors/5/slot-config/exceptions/2025-06-15
         /// حذف exception + إعادة توليد slots اليوم ده
         [HttpDelete("exceptions/{date}")]
-        [Authorize(Roles = "Doctor,Admin")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
         public async Task<IActionResult> RemoveException(
             int doctorId,
             DateTime date,

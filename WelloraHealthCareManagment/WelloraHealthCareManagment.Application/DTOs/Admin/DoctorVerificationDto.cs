@@ -18,8 +18,21 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public int YearsOfExperience { get; set; }
         public DoctorVerificationRequestStatus RequestStatus { get; set; }
         public bool IsReadyForReview { get; set; }
+        public string? AdminNotes { get; set; }
+        public string? RejectionReason { get; set; }
+        public int? ReviewedByAdminId { get; set; }
+        public string? ReviewedByAdminName { get; set; }
+        public DateTime? ReviewedAt { get; set; }
+        public DateTime? SubmittedAt { get; set; }
         public List<DoctorDocumentType> MissingRequiredDocuments { get; set; } = new();
-        public List<DoctorVerificationDto> Verifications { get; set; } = new();
+        public List<DoctorVerificationFileDto> Verifications { get; set; } = new();
+    }
+
+    public class DoctorVerificationFileDto
+    {
+        public int VerificationId { get; set; }
+        public DoctorDocumentType DocumentType { get; set; }
+        public string? FileUrl { get; set; }
     }
 
     public class DoctorVerificationDto
@@ -63,11 +76,12 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
 
     public class VerificationStatisticsDto
     {
-        public int TotalVerifications { get; set; }
-        public int PendingVerifications { get; set; }
-        public int ApprovedVerifications { get; set; }
-        public int RejectedVerifications { get; set; }
-        public Dictionary<VerificationStatus, int> VerificationsByStatus { get; set; } = new();
+        public int TotalDoctors { get; set; }
+        public int PendingDoctors { get; set; }
+        public int ApprovedDoctors { get; set; }
+        public int RejectedDoctors { get; set; }
+        public int IncompleteDoctors { get; set; }
+        public Dictionary<DoctorVerificationRequestStatus, int> DoctorsByStatus { get; set; } = new();
         public int ApprovedThisMonth { get; set; }
         public int RejectedThisMonth { get; set; }
     }

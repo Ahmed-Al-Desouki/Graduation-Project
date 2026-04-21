@@ -3,11 +3,14 @@ using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
 using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Exceptions;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Prescriptions;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 using WelloraHealthCareManagement.Domain.Enums;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {
@@ -18,6 +21,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly HealthCarePlusContext _context;
         private readonly IPrescriptionReminderService _prescriptionReminderService;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<PrescriptionService> _logger;
 
         public PrescriptionService(
@@ -26,6 +30,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IUnitOfWork unitOfWork,
             HealthCarePlusContext context,
             IPrescriptionReminderService prescriptionReminderService,
+            INotificationService notificationService,
             ILogger<PrescriptionService> logger)
         {
             _prescriptionRepository = prescriptionRepository;
@@ -33,6 +38,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _unitOfWork = unitOfWork;
             _context = context;
             _prescriptionReminderService = prescriptionReminderService;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -181,6 +187,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 // ─── NOW create reminders and cache (خارج transaction) ───
                 await _prescriptionReminderService.CreatePrescriptionRemindersAsync(prescription, cancellationToken);
+                await NotifyPrescriptionChangedAsync(
+                    prescription.PatientId,
+                    prescription.Id,
+                    "New Prescription",
+                    "Your doctor added a new prescription to your treatment plan.",
+                    NotificationType.PrescriptionCreated,
+                    cancellationToken);
 
                 _logger.LogInformation(
                     "✅ Prescription {PrescriptionId} created successfully with {ItemCount} items and reminders",
@@ -318,6 +331,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     await _prescriptionReminderService.CreatePrescriptionRemindersAsync(prescription, cancellationToken);
                 }
 
+                await NotifyPrescriptionChangedAsync(
+                    prescription.PatientId,
+                    prescription.Id,
+                    "Prescription Updated",
+                    "Your doctor added a medication item to your prescription.",
+                    NotificationType.PrescriptionUpdated,
+                    cancellationToken);
+
                 _logger.LogInformation("✅ Item {ItemId} added successfully with reminders", newItem.Id);
             }
             catch (Exception ex)
@@ -394,6 +415,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     item,
                     prescriptionId,
                     prescription.PatientId,
+                    cancellationToken);
+                await NotifyPrescriptionChangedAsync(
+                    prescription.PatientId,
+                    prescription.Id,
+                    "Prescription Updated",
+                    "Your doctor updated one of your prescription items.",
+                    NotificationType.PrescriptionUpdated,
                     cancellationToken);
 
                 _logger.LogInformation(
@@ -493,6 +521,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     }
                 }
 
+                await NotifyPrescriptionChangedAsync(
+                    prescription.PatientId,
+                    prescription.Id,
+                    "Prescription Updated",
+                    "Your doctor added new medications to your prescription.",
+                    NotificationType.PrescriptionUpdated,
+                    cancellationToken);
+
                 _logger.LogInformation("✅ Added {Count} items successfully with reminders", newItems.Count);
             }
             catch (Exception ex)
@@ -530,6 +566,25 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     Instructions = i.Instructions
                 }).ToList()
             };
+        }
+
+        private async Task NotifyPrescriptionChangedAsync(
+            int patientId,
+            Guid prescriptionId,
+            string title,
+            string message,
+            NotificationType type,
+            CancellationToken cancellationToken)
+        {
+            await _notificationService.NotifyAsync(new NotificationDispatchRequest
+            {
+                UserId = patientId,
+                Title = title,
+                Message = message,
+                Type = type,
+                RelatedEntityType = "Prescription",
+                Data = new Dictionary<string, string> { ["prescriptionId"] = prescriptionId.ToString() }
+            }, cancellationToken);
         }
 
         private static void EnsureCanAccessPrescription(

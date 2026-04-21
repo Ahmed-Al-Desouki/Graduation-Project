@@ -1,6 +1,7 @@
 ﻿// Application/Interfaces/Services/INotificationService.cs
 using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace WelloraHealthCareManagment.Application.Interfaces.Services
 {
@@ -11,10 +12,21 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Services
         Task<ServiceResult> CreateBulkNotificationsAsync(List<CreateNotificationRequest> requests, CancellationToken ct = default);
 
         // Internal: Send notifications (called from other services)
+        Task NotifyAsync(NotificationDispatchRequest request, CancellationToken ct = default);
+        Task NotifyManyAsync(IEnumerable<NotificationDispatchRequest> requests, CancellationToken ct = default);
+        Task NotifyAdminsAsync(
+            string title,
+            string message,
+            NotificationType type,
+            string? relatedEntityType = null,
+            int? relatedEntityId = null,
+            Dictionary<string, string>? data = null,
+            CancellationToken ct = default);
         Task SendDoctorApprovedNotificationAsync(int doctorId, CancellationToken ct = default);
         Task SendDoctorRejectedNotificationAsync(int doctorId, string rejectionReason, CancellationToken ct = default);
         Task SendAccountBlockedNotificationAsync(int userId, string reason, CancellationToken ct = default);
         Task SendAccountSuspendedNotificationAsync(int userId, DateTime suspensionEnd, string reason, CancellationToken ct = default);
+        Task SendAccountUnsuspendedNotificationAsync(int userId, CancellationToken ct = default);
         Task SendAccountUnblockedNotificationAsync(int userId, CancellationToken ct = default);
         Task SendTicketResponseNotificationAsync(int userId, Guid ticketId, CancellationToken ct = default);
         Task SendTicketClosedNotificationAsync(int userId, Guid ticketId, CancellationToken ct = default);
