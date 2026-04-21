@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
@@ -72,7 +74,7 @@ class NotificationService {
         allowWhileIdle: true,
       ),
     );
-    print("⏰ Alarm Scheduled at: $scheduledDate");
+    log("⏰ Alarm Scheduled at: $scheduledDate");
   }
 
   @pragma("vm:entry-point")
@@ -92,13 +94,13 @@ class NotificationService {
         newStatus: 2,
       );
       await AwesomeNotifications().dismiss(receivedAction.id!);
-      print("Action Recorded: TAKEN for ID: $occurrenceId");
+      log("Action Recorded: TAKEN for ID: $occurrenceId");
     } else if (actionKey == 'SNOOZE') {
       await LocalOccurrenceDataSource().updateOccurrenceActionOffline(
         id: occurrenceId,
         newStatus: 4,
       );
-      print("Action Recorded: SNOOZE for ID: $occurrenceId");
+      log("Action Recorded: SNOOZE for ID: $occurrenceId");
     }
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -502,8 +504,8 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
   @override
   void initState() {
     super.initState();
-    print("🆔 Current User ID: ${getIt<SessionManager>().userId}");
-    print("👤 Current User Name: ${getIt<SessionManager>().userName}");
+    log("🆔 Current User ID: ${getIt<SessionManager>().userId}");
+    log("👤 Current User Name: ${getIt<SessionManager>().userName}");
     final now = DateTime.now();
     final String targetDoctorId =
         widget.isPatientView

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:graduation_project/features/booking/domain/entities/schedule_entity.dart';
 
 // class ScheduleModel extends ScheduleEntity {
@@ -12,7 +14,7 @@ import 'package:graduation_project/features/booking/domain/entities/schedule_ent
 //   });
 
 //   factory ScheduleModel.fromJson(Map<String, dynamic> map) {
-//     print(
+//     log(
 //       "Parsing field slotDuration: ${map['slotDurationMinutes'].runtimeType}",
 //     );
 //     return ScheduleModel(
@@ -189,7 +191,7 @@ class TimeRangeModel extends TimeRangeEntity {
 
   factory TimeRangeModel.fromJson(Map<String, dynamic> map) {
     // 🔍 طباعة الـ Map عشان نتأكد من الـ Keys (شيلها بعد ما تتأكد)
-    print("DEBUG: Server Map Data: $map");
+    log("DEBUG: Server Map Data: $map");
 
     return TimeRangeModel(
       // ✅ استخدام الـ Helper الذكي لقراءة اليوم سواء رقم أو نص

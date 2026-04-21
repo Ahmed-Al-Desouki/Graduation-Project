@@ -78,7 +78,7 @@ import 'slot_card.dart';
 //                           instructions: "Follow-up appointment",
 //                         );
 //                       } else {
-//                         debugPrint(
+//                         debuglog(
 //                           "❌ Error: originalAppointmentId is null in Follow-up mode",
 //                         );
 //                       }

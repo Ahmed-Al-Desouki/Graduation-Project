@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class RatingRowForHeader extends StatelessWidget {
-  const RatingRowForHeader({super.key});
+  final double rating;
+  const RatingRowForHeader({super.key, required this.rating});
 
   @override
   Widget build(BuildContext context) {
@@ -9,15 +10,37 @@ class RatingRowForHeader extends StatelessWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            5,
-            (index) =>
-                Icon(Icons.star, color: Colors.yellow.shade600, size: 18),
-          ),
+          children: [
+            ...List.generate(5, (index) {
+              if (index < rating.floor()) {
+                return Icon(
+                  Icons.star,
+                  color: Colors.yellow.shade600,
+                  size: 18,
+                );
+              } else if (index < rating) {
+                return Icon(
+                  Icons.star_half,
+                  color: Colors.yellow.shade600,
+                  size: 18,
+                );
+              }
+              return Icon(
+                Icons.star_border,
+                color: Colors.yellow.shade600,
+                size: 18,
+              );
+            }),
+            const SizedBox(width: 3),
+            Text(
+              rating.toStringAsFixed(1),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ],
         ),
         const SizedBox(height: 5),
         const Text(
-          "4.9 (2,847 reviews)",
+          "(2,847 reviews)",
           style: TextStyle(color: Colors.white, fontSize: 13),
         ),
       ],

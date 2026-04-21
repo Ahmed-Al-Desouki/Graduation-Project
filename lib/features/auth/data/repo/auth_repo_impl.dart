@@ -82,7 +82,7 @@ class AuthRepositoryimpl implements AuthRepository {
         password: password,
         otpCode: otpCode ?? "",
       );
-      print("LOGIN RESPONSE => $res");
+      log("LOGIN RESPONSE => $res");
 
       if (res['success'] == true) {
         if (otpCode == null || otpCode.isEmpty) {
@@ -133,7 +133,7 @@ class AuthRepositoryimpl implements AuthRepository {
   Future<Either<Failure, bool>> checkAccessValidity(String accessToken) async {
     try {
       final res = await _authService.checkToken();
-      print(res);
+      log(res.toString());
       return Right(res['summary'] == 'all_valid');
     } catch (e) {
       return const Right(false);
@@ -146,7 +146,7 @@ class AuthRepositoryimpl implements AuthRepository {
   ) async {
     try {
       final res = await _authService.checkRefreshToken(refreshToken);
-      print(res);
+      log(res.toString());
 
       return Right(res['summary'] == 'all_valid');
     } catch (e) {

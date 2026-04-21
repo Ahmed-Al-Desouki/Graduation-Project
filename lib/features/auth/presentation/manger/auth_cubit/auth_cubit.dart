@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -69,7 +71,7 @@ class AuthCubit extends Cubit<AuthState> {
               role: finalRole,
             );
             emit(
-              LoginSuccess(uid: uid!, email: googleUser.email, role: finalRole),
+              LoginSuccess(uid: uid, email: googleUser.email, role: finalRole),
             );
           } catch (e) {
             emit(LoginFailure(errMessage: 'Processing Error: $e'));
@@ -117,7 +119,7 @@ class AuthCubit extends Cubit<AuthState> {
               name: name!,
               role: role,
             );
-            emit(LoginSuccess(uid: uid!, email: email, role: role));
+            emit(LoginSuccess(uid: uid, email: email, role: role));
           } catch (e) {
             emit(LoginFailure(errMessage: 'Processing Error: $e'));
           }
@@ -145,7 +147,7 @@ class AuthCubit extends Cubit<AuthState> {
 
       await AwesomeNotifications().cancelAll();
     } catch (e) {
-      print("Logout Error: $e");
+      log("Logout Error: $e");
     } finally {
       await SecureStorageHelper.clearAll();
 
@@ -159,7 +161,7 @@ class AuthCubit extends Cubit<AuthState> {
       try {
         await DefaultCacheManager().emptyCache();
       } catch (e) {
-        print("Cache Manager Error: $e");
+        log("Cache Manager Error: $e");
       }
 
       emit(LogoutSuccess());
@@ -238,7 +240,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
       return token;
     } catch (e) {
-      print("Error getting device token: $e");
+      log("Error getting device token: $e");
       return null;
     }
   }
@@ -270,7 +272,7 @@ class AuthCubit extends Cubit<AuthState> {
       try {
         await getIt<AuthWebServices>().registerDevice(deviceId);
       } catch (e) {
-        print("⚠️ Failed to register device: $e");
+        log("⚠️ Failed to register device: $e");
       }
     }
   }

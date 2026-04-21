@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -78,7 +80,7 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
       }
 
       for (var range in schedule.timeRanges) {
-        print("DEBUG: Range DayIndex: ${range.dayOfWeek}");
+        log("DEBUG: Range DayIndex: ${range.dayOfWeek}");
         int index = range.dayOfWeek;
         if (index >= 0 && index < 7) {
           weeklySettings[index].isEnabled = true;
@@ -334,8 +336,9 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
                                   const Duration(days: 365),
                                 ),
                               );
-                              if (picked != null)
+                              if (picked != null) {
                                 setDialogState(() => selectedDate = picked);
+                              }
                             },
                           ),
                           const SizedBox(height: 15),

@@ -1,9 +1,8 @@
-import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import 'package:graduation_project/features/booking/domain/entities/medication_item_entity.dart';
+import 'package:printing/printing.dart';
 
 class PdfPrescriptionService {
   static Future<void> generatePrescription({
@@ -136,7 +135,7 @@ class PdfPrescriptionService {
                     pw.Container(
                       width: 100,
                       decoration: const pw.BoxDecoration(
-                        border: const pw.Border(bottom: pw.BorderSide()),
+                        border: pw.Border(bottom: pw.BorderSide()),
                       ),
                     ),
                     pw.Text(
