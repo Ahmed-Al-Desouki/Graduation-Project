@@ -7,6 +7,8 @@ using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Domain.EnumForModels;
 using WelloraHealthCareManagment.Domain.Enums;
@@ -21,6 +23,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         private readonly IReminderOccurrencesCacheRepository _cacheRepository;
         private readonly IReminderOccurrenceLogRepository _logRepository;
         private readonly ITimezoneHelper _timezoneHelper;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<ReminderV2Service> _logger;
 
         // Constants
@@ -33,12 +36,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             IReminderOccurrencesCacheRepository cacheRepository,
             IReminderOccurrenceLogRepository logRepository,
             ITimezoneHelper timezoneHelper,
+            INotificationService notificationService,
             ILogger<ReminderV2Service> logger)
         {
             _reminderRepository = reminderRepository;
             _cacheRepository = cacheRepository;
             _logRepository = logRepository;
             _timezoneHelper = timezoneHelper;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -157,6 +162,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     j => j.GenerateForDoctorAsync(reminder.DoctorId.Value));
             }
 
+            await _notificationService.NotifyAsync(new NotificationDispatchRequest
+            {
+                UserId = patientId,
+                Title = "Reminder Created",
+                Message = $"A new reminder \"{reminder.Title}\" has been created.",
+                Type = NotificationType.ReminderCreated,
+                RelatedEntityType = "Reminder",
+                Data = BuildReminderPayload(reminder)
+            });
+
             return reminder;
         }
 
@@ -222,6 +237,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             //    This clears and rebuilds cache only for THIS reminder, not all patient reminders
             BackgroundJob.Enqueue<IReminderOccurrenceGenerator>(
                 j => j.GenerateForReminderAsync(reminder.Id));
+
+            await _notificationService.NotifyAsync(new NotificationDispatchRequest
+            {
+                UserId = patientId,
+                Title = "Reminder Updated",
+                Message = $"Your reminder \"{reminder.Title}\" has been updated.",
+                Type = NotificationType.ReminderUpdated,
+                RelatedEntityType = "Reminder",
+                Data = BuildReminderPayload(reminder)
+            });
 
             _logger.LogInformation(
                 "Reminder {Id} updated — cache rebuild enqueued", reminder.Id);
@@ -929,6 +954,33 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
             _logger.LogInformation(
                 "Reminder {Id} soft-deleted — cache cleared", reminderId);
+        }
+
+        private static Dictionary<string, string> BuildReminderPayload(ReminderV2 reminder)
+        {
+            var data = new Dictionary<string, string>
+            {
+                ["reminderId"] = reminder.Id.ToString(),
+                ["patientId"] = reminder.PatientId?.ToString() ?? string.Empty,
+                ["title"] = reminder.Title
+            };
+
+            if (reminder.AppointmentId.HasValue)
+            {
+                data["appointmentId"] = reminder.AppointmentId.Value.ToString();
+            }
+
+            if (reminder.PrescriptionId.HasValue)
+            {
+                data["prescriptionId"] = reminder.PrescriptionId.Value.ToString();
+            }
+
+            if (reminder.PrescriptionItemId.HasValue)
+            {
+                data["prescriptionItemId"] = reminder.PrescriptionItemId.Value.ToString();
+            }
+
+            return data;
         }
 
         private async Task<ReminderV2> ValidateReminderAccess(int reminderId, int patientId)

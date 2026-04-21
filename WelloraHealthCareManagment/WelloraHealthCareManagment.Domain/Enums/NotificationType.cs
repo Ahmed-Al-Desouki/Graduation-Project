@@ -9,6 +9,7 @@ namespace WelloraHealthCareManagment.Domain.Enums
     public enum NotificationType
     {
         Welcome,
+        PatientProfileCompleted,
         DoctorRegistrationSubmitted,
         DoctorProfileCompleted,
         DoctorVerificationSubmitted,
@@ -26,8 +27,15 @@ namespace WelloraHealthCareManagment.Domain.Enums
         PaymentSucceeded,
         PaymentFailed,
         RefundProcessed,
+        MedicalRecordCreated,
+        MedicalRecordUpdated,
         PrescriptionCreated,
         PrescriptionUpdated,
+        ReminderCreated,
+        ReminderUpdated,
+        MfaEnabled,
+        MfaDisabled,
+        PasswordReset,
         ReviewCreated,
         ReviewUpdated,
         ReviewDeletedByPatient,
