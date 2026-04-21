@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:graduation_project/features/auth/presentation/views/chat_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/profile_view.dart';
-import 'package:graduation_project/features/auth/presentation/views/search_view.dart';
+import 'package:graduation_project/features/search/presentation/views/search_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
 import 'package:graduation_project/features/home/presentation/views/patient_home_view.dart';
 
@@ -57,10 +57,10 @@ class _PatientHomeLayoutState extends State<PatientHomeLayout> {
             });
           },
           items: [
-            _buildNavItem(Icons.home, 'Home', 0),
-            _buildNavItem(Icons.search, 'Search', 1),
-            _buildNavItem(Icons.chat_bubble, 'Chat', 2),
-            _buildNavItem(Icons.person, 'Profile', 3),
+            _buildNavItem(Icons.home_filled, 'Home', 0),
+            _buildNavItem(Icons.search_rounded, 'Search', 1),
+            _buildNavItem(Icons.chat, 'Chat', 2),
+            _buildNavItem(Icons.account_circle_outlined, 'Profile', 3),
             _buildNavItem(Icons.settings, 'Settings', 4),
           ],
         ),

@@ -2,9 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/views/booking_calendar_view.dart';
+import 'package:graduation_project/features/booking/presentation/views/schedule_setup_view.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/views/chat_details_view.dart';
+import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_layout.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/doctor_profile_completion_view.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/profile_completion_loading_view.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/views/all_achievements_view.dart';
 import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
 import 'package:graduation_project/features/medical_history/domain/models/medical_file_model.dart';
@@ -34,9 +44,12 @@ import 'package:graduation_project/features/auth/presentation/views/test_setting
 import 'package:graduation_project/features/auth/presentation/views/widgets/forgot_password.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/medical_history_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/ringing_view.dart';
+import 'package:graduation_project/features/search/presentation/manager/search_cubit/search_cubit.dart';
+import 'package:graduation_project/features/search/presentation/views/search_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/onboarding_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
+import 'package:hive/hive.dart';
 
 abstract class AppRouter {
   static const kSplash = '/';
@@ -64,10 +77,60 @@ abstract class AppRouter {
   static const kAllReminders = '/allReminders';
   static const kAddReminder = '/addReminder';
   static const kChatDetails = '/chatDetails'; // ✅ أضف هذا الثابت
+  static const kDoctorSchedule = '/doctorSchedule';
+  static const kScheduleSetup = '/scheduleSetup';
+  static const kSearch = '/search';
+  static const kDoctorProfileCompletion = '/doctor/profile-completion';
+  static const kProfileCompletionLoading = '/doctor/profile-completion/loading';
+  static const kAllAchievements = '/doctor/profile/all-achievements';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
       GoRoute(path: kSplash, builder: (context, state) => const SplashBody()),
+
+      // 1. شاشة إعداد الجدول
+      GoRoute(
+        path: kScheduleSetup,
+        builder:
+            (context, state) => BlocProvider(
+              create:
+                  (context) =>
+                      getIt<ScheduleManagementCubit>(), // سحب النسخة من GetIt
+              child: const ScheduleSetupView(),
+            ),
+      ),
+
+      // 2. شاشة الكالندر (تحتاج الـ BookingCalendarCubit)
+      GoRoute(
+        path: kDoctorSchedule,
+        builder: (context, state) {
+          var box = Hive.box('booking_box');
+          bool isSetupComplete = box.get(
+            'isScheduleConfigured',
+            defaultValue: false,
+          );
+
+          if (isSetupComplete) {
+            return MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (context) => getIt<BookingCalendarCubit>(),
+                ),
+                BlocProvider(
+                  create: (context) => getIt<AppointmentActionCubit>(),
+                ),
+              ],
+              child: const BookingCalendarView(),
+            );
+          } else {
+            // لو رايح للـ Setup من هنا برضو لازم توفر الـ Cubit
+            return BlocProvider(
+              create: (context) => getIt<ScheduleManagementCubit>(),
+              child: const ScheduleSetupView(),
+            );
+          }
+        },
+      ),
 
       GoRoute(
         path: kOnboarding,
@@ -129,9 +192,17 @@ abstract class AppRouter {
 
       GoRoute(
         path: kHomeDoctor,
-        builder: (context, state) => const DoctorHomeLayout(),
+        builder:
+            (context, state) => BlocProvider(
+              create: (_) => getIt<DoctorProfileCubit>(),
+              child: const DoctorHomeLayout(),
+            ),
       ),
 
+      // GoRoute(
+      //   path: kHomeDoctor,
+      //   builder: (context, state) => const DoctorHomeLayout(),
+      // ),
       GoRoute(
         path: kReminder,
         builder:
@@ -326,6 +397,51 @@ abstract class AppRouter {
           );
         },
       ),
+
+      GoRoute(
+        path: kSearch,
+        builder:
+            (context, state) => BlocProvider(
+              create: (context) => getIt<SearchCubit>(),
+              child: const SearchView(),
+            ),
+      ),
+
+      GoRoute(
+        path: kDoctorProfileCompletion,
+        builder: (context, state) => const DoctorProfileCompletionView(),
+      ),
+
+      GoRoute(
+        path: AppRouter.kProfileCompletionLoading,
+        builder:
+            (context, state) => BlocProvider.value(
+              value: getIt<DoctorProfileCubit>(),
+              child: const ProfileCompletionLoadingView(),
+            ),
+      ),
+
+      // في app_router.dart
+      GoRoute(
+        path: kAllAchievements,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final cubit = extra['cubit'] as DoctorRealProfileCubit;
+
+          return BlocProvider.value(
+            value: cubit,
+            child: const AllAchievementsView(),
+          );
+        },
+      ),
+      // GoRoute(
+      //   path: kAllAchievements,
+      //   builder: (context, state) {
+      //     final achievements =
+      //         state.extra as List<AchievementProfileEntity>? ?? [];
+      //     return AllAchievementsView(achievements: achievements);
+      //   },
+      // ),
     ],
   );
 }

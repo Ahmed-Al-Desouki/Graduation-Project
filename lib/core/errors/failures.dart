@@ -60,4 +60,35 @@ class ServerFailure extends Failure {
       return ServerFailure('Unexpected Error Occurred: $statusCode');
     }
   }
+
+  factory ServerFailure.fromPlainStringResponse(
+    int? statusCode,
+    dynamic response,
+  ) {
+    // الـ API بيبعت string مش JSON
+    final message = response?.toString() ?? 'Unknown error';
+
+    switch (statusCode) {
+      case 400:
+        return ServerFailure(message);
+      case 401:
+        return ServerFailure('Token expired. Please login again.');
+      case 403:
+        return ServerFailure('Access denied. Doctor role required.');
+      case 404:
+        return ServerFailure(message);
+      case 500:
+        return ServerFailure('Server error. Please try again later.');
+      default:
+        return ServerFailure(message);
+    }
+  }
+}
+
+class CacheFailure extends Failure {
+  CacheFailure(super.errmessage);
+}
+
+class OfflineFailure extends Failure {
+  OfflineFailure(super.errmessage);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/doctor_appointments_card.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/doctor_home_header.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/doctor_revenue_card.dart';
@@ -153,6 +154,10 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
               gradientColor: const Color(0xFF9333EA),
               imageAsset: Assets.imagesSchedule,
               isSvg: false,
+              onTap: () {
+                // Navigate to past appointments screen
+                AppRouter.router.push(AppRouter.kDoctorSchedule);
+              },
             ),
             SizedBox(height: 20.h),
             QuickActionCard(

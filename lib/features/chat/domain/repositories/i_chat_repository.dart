@@ -6,11 +6,6 @@ import '../entities/chat_preview_entity.dart';
 
 abstract class IChatRepository {
   Future<Either<Failure, List<ChatPreviewEntity>>> getChatPreviews();
-  Future<Either<Failure, List<MessageEntity>>> getMessages(
-    String chatId,
-  ); // جديد
-  Future<Either<Failure, void>> sendMessage(
-    String chatId,
-    String message,
-  ); // جديد
+  Future<Either<Failure, List<MessageEntity>>> getMessages(String chatId);
+  Future<Either<Failure, void>> sendMessage(String chatId, String message);
 }
