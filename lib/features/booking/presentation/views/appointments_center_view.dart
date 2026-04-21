@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:graduation_project/features/booking/data/models/appointment_full_details_model.dart';
 import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
 import 'package:graduation_project/features/booking/presentation/manager/appointments_center_cubit/appointment_center_cubit.dart';
-import 'package:graduation_project/features/booking/presentation/views/widgets/AppointmentListItem.dart';
+import 'package:graduation_project/features/booking/presentation/views/widgets/appointment_list_item.dart';
 import '../../../../core/utils/app_router.dart';
 import '../../../../core/utils/helper/service_locator.dart';
 import '../../../../core/utils/helper/session_manager.dart';

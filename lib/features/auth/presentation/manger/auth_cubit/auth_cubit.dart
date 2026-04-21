@@ -16,7 +16,6 @@ import 'package:graduation_project/features/auth/data/services/auth_web_service.
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:meta/meta.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 part 'auth_state.dart';
