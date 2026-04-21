@@ -221,6 +221,9 @@ class AuthRepositoryimpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
+      final userId = await SecureStorageHelper.getUserId();
+      final jti = await SecureStorageHelper.getJti();
+      await _authService.logout(userId: int.parse(userId!), jti: jti!);
       await SecureStorageHelper.clearAll();
       await LocalDatabaseService.instance.clearAllData();
 
