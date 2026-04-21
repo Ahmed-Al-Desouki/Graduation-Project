@@ -254,7 +254,7 @@
 //                       child: Chip(
 //                         backgroundColor: const Color(
 //                           0xFF9333EA,
-//                         ).withOpacity(0.1),
+//                         ).withValues(alpha:0.1),
 //                         label: Text(
 //                           entry.value,
 //                           style: const TextStyle(color: Color(0xFF9333EA)),
@@ -1317,8 +1317,8 @@ class _AddMedicationSheetState extends State<AddMedicationSheet> {
                         size: 16,
                         color: Color(0xFF9333EA),
                       ),
-                      backgroundColor: Colors.purple.withOpacity(0.05),
-                      selectedColor: Colors.purple.withOpacity(0.1),
+                      backgroundColor: Colors.purple.withValues(alpha: 0.05),
+                      selectedColor: Colors.purple.withValues(alpha: 0.1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                         side: const BorderSide(color: Color(0xFF9333EA)),

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
@@ -24,17 +26,17 @@ class FileViewerHelper {
       Dio dio;
       if (url.contains('ngrok-free.dev')) {
         dio = getIt<Dio>();
-        print("🔗 Using Interceptor Dio (Internal Link)");
+        log("🔗 Using Interceptor Dio (Internal Link)");
       } else {
         dio = Dio();
-        print("☁️ Using Clean Dio (External Link)");
+        log("☁️ Using Clean Dio (External Link)");
       }
-      print("👉 Trying to download URL: $url");
+      log("👉 Trying to download URL: $url");
       String cleanName = originalFileName.split('?').first;
       final tempDir = await getTemporaryDirectory();
       final savePath = "${tempDir.path}/$cleanName";
 
-      print("📥 Downloading file to: $savePath");
+      log("📥 Downloading file to: $savePath");
 
       await dio.download(url, savePath);
 
@@ -68,7 +70,7 @@ class FileViewerHelper {
         //   ),
         // );
         showSnackBar(context, "Error opening file: $e", Colors.red);
-        print("❌ Error downloading: $e");
+        log("❌ Error downloading: $e");
       }
     }
   }

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
@@ -307,17 +308,17 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
 
   Future<void> getDoctorSlotConfig(int doctorId) async {
     emit(GetSlotConfigLoading());
-    print('📅 Fetching slot config for doctorId: $doctorId');
+    log('📅 Fetching slot config for doctorId: $doctorId');
     final result = await getDoctorSlotConfigUseCase(doctorId);
     result.fold(
       (failure) {
-        print('❌ Failed to fetch slot config: ${failure.errmessage}');
+        log('❌ Failed to fetch slot config: ${failure.errmessage}');
         emit(GetSlotConfigFailure(failure.errmessage));
       },
       (slots) {
-        print('✅ Fetched ${slots.length} slot configs');
+        log('✅ Fetched ${slots.length} slot configs');
         for (var slot in slots) {
-          print(
+          log(
             '   🗓️ ${slot.dayName}: ${slot.startTime} - ${slot.endTime} (active: ${slot.isActive})',
           );
         }

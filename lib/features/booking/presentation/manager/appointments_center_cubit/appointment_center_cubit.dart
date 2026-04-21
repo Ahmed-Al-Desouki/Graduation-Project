@@ -2,8 +2,6 @@ import 'package:bloc/bloc.dart';
 import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/GetDoctorAppointmentsUseCase.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/GetPatientAppointmentsUseCase.dart';
-import 'package:graduation_project/features/booking/domain/use_cases/cancel_block_by_doctor_use_case.dart';
-import 'package:graduation_project/features/booking/domain/use_cases/cancel_by_patient_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/update_appointment_status_use_case.dart';
 import 'package:meta/meta.dart';
 

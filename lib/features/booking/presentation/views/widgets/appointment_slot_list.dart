@@ -3,12 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
-import 'package:graduation_project/core/utils/helper/service_locator.dart';
-import 'package:graduation_project/core/utils/helper/session_manager.dart';
-import 'package:graduation_project/features/booking/domain/use_cases/update_appointment_status_use_case.dart';
+
 import '../../../domain/entities/slot_entity.dart';
 import '../../manager/appointment_action_cubit/appointment_action_cubit.dart';
-import '../../manager/booking_calendar_cubit/booking_calendar_cubit.dart';
 import 'slot_card.dart';
 
 // class AppointmentSlotList extends StatelessWidget {
@@ -458,7 +455,7 @@ class AppointmentSlotList extends StatelessWidget {
                                         ),
                                     selectedColor: const Color(
                                       0xFF9333EA,
-                                    ).withOpacity(0.2),
+                                    ).withValues(alpha: 0.2),
                                   );
                                 }).toList(),
                           ),
@@ -477,7 +474,7 @@ class AppointmentSlotList extends StatelessWidget {
                                 onChanged:
                                     (v) =>
                                         setDialogState(() => grantAccess = v),
-                                activeColor: const Color(0xFF9333EA),
+                                activeThumbColor: const Color(0xFF9333EA),
                               ),
                             ],
                           ),

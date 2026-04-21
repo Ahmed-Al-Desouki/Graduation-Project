@@ -238,7 +238,7 @@ class TimeSelector extends StatelessWidget {
                   decoration: BoxDecoration(
                     border: Border.all(color: kPrimaryColor),
                     borderRadius: BorderRadius.circular(8),
-                    color: kPrimaryColor.withOpacity(0.1),
+                    color: kPrimaryColor.withValues(alpha: 0.1),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

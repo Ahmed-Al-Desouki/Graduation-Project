@@ -1,5 +1,4 @@
 import 'package:bloc/bloc.dart';
-import 'package:graduation_project/core/errors/failures.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/booking/domain/entities/schedule_entity.dart';

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -94,9 +95,9 @@ class _DoctorProfileCompletionViewBodyState
                   _selectedLongitude = lng;
                 });
                 // ✅ اطبع عشان تتأكد
-                print('📍 Location: $location');
-                print('📍 Latitude: $lat');
-                print('📍 Longitude: $lng');
+                log('📍 Location: $location');
+                log('📍 Latitude: $lat');
+                log('📍 Longitude: $lng');
               }
               Navigator.pop(context);
             },
@@ -157,10 +158,10 @@ class _DoctorProfileCompletionViewBodyState
       return; // ✅ وقف هنا
     }
 
-  print('   └─ Clinic Address: ${_addressController.text}');
-  print('   └─ Hospital Name: ${_clinicNameController.text}');
-  print('   └─ Latitude: $_selectedLatitude');
-  print('   └─ Longitude: $_selectedLongitude');
+    log('   └─ Clinic Address: ${_addressController.text}');
+    log('   └─ Hospital Name: ${_clinicNameController.text}');
+    log('   └─ Latitude: $_selectedLatitude');
+    log('   └─ Longitude: $_selectedLongitude');
 
     // ✅ 2. لو الـ validation نجح، جهّز البيانات
     final cubit = context.read<DoctorProfileCubit>();
@@ -192,13 +193,15 @@ class _DoctorProfileCompletionViewBodyState
 
     // ✅ 5. Update Location
     await cubit.updateLocation(
-      clinicAddress: _selectedLocation ?? 
-      (_addressController.text.isNotEmpty ? _addressController.text : null),
+      clinicAddress:
+          _selectedLocation ??
+          (_addressController.text.isNotEmpty ? _addressController.text : null),
       latitude: _selectedLatitude,
       longitude: _selectedLongitude,
-      hospitalName: _clinicNameController.text.isNotEmpty 
-      ? _clinicNameController.text 
-      : null,
+      hospitalName:
+          _clinicNameController.text.isNotEmpty
+              ? _clinicNameController.text
+              : null,
     );
     // await cubit.updateLocation(
     //   clinicAddress: _addressController.text,
@@ -241,7 +244,7 @@ class _DoctorProfileCompletionViewBodyState
   //       'location': locationData,
   //     };
 
-  //     print('📝 Doctor Data: $doctorData');
+  //     log('📝 Doctor Data: $doctorData');
   //     // TODO: Submit to API
   //   }
 
@@ -336,7 +339,7 @@ class _DoctorProfileCompletionViewBodyState
               nationalIdController: _nationalIdController,
               specializationController: _specializationController,
               onSpecializationChanged: (value) {
-                print('Specialization changed to: $value');
+                log('Specialization changed to: $value');
               },
             ),
             SizedBox(height: 20.h),

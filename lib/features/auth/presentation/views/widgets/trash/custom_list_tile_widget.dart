@@ -39,7 +39,7 @@
 //     return Container(
 //       width: MediaQuery.of(context).size.width * 0.42,
 //       decoration: BoxDecoration(
-//         color: infocolor.withOpacity(0.1),
+//         color: infocolor.withValues(alpha:0.1),
 //         borderRadius: BorderRadius.circular(8),
 //       ),
 //       child: ListTile(
@@ -77,7 +77,7 @@
 //     return Container(
 //       width: MediaQuery.of(context).size.width * 0.42,
 //       decoration: BoxDecoration(
-//         color: infocolor.withOpacity(0.1),
+//         color: infocolor.withValues(alpha:0.1),
 //         borderRadius: BorderRadius.circular(8),
 //       ),
 //       child: Padding(

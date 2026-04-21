@@ -6,7 +6,7 @@ import 'package:graduation_project/features/booking/presentation/manager/appoint
 import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/exam_session_cubit/exam_session_cubit.dart';
 import 'package:graduation_project/features/booking/presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
-import 'package:graduation_project/features/booking/presentation/views/AppointmentsCenterView.dart';
+import 'package:graduation_project/features/booking/presentation/views/appointments_center_view.dart';
 import 'package:graduation_project/features/booking/presentation/views/booking_calendar_view.dart';
 import 'package:graduation_project/features/booking/presentation/views/booking_success_view.dart';
 import 'package:graduation_project/features/booking/presentation/views/medical_details_view.dart';

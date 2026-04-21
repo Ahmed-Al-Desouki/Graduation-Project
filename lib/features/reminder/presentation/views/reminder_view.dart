@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -38,11 +40,11 @@ class _ReminderViewState extends State<ReminderView> {
 
   Future<void> _fetchReminders() async {
     final patientId = await SecureStorageHelper.getUserId();
-    print("DEBUG: Fetched Patient ID is: $patientId");
+    log("DEBUG: Fetched Patient ID is: $patientId");
     if (patientId != null && patientId.isNotEmpty && mounted) {
       context.read<ReminderCubit>().getTodayReminders(patientId: patientId);
     } else {
-      print("DEBUG: patientId is invalid or missing, cannot fetch reminders.");
+      log("DEBUG: patientId is invalid or missing, cannot fetch reminders.");
     }
   }
 
@@ -125,10 +127,12 @@ class _ReminderViewState extends State<ReminderView> {
               }
             },
             builder: (context, state) {
-              if (state is ReminderLoading)
+              if (state is ReminderLoading) {
                 return const Center(child: CircularProgressIndicator());
-              if (state is UpcomingRemindersFailure)
+              }
+              if (state is UpcomingRemindersFailure) {
                 return Center(child: Text('Error: ${state.errMessage}'));
+              }
 
               List<ReminderInstanceModel> meds = [], appts = [], customs = [];
               if (state is UpcomingRemindersSuccess) {

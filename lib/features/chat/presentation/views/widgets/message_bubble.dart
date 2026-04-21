@@ -13,7 +13,7 @@ class MessageBubble extends StatelessWidget {
     final Color bubbleColor =
         message.isMe ? const Color(0xFF1B4E8C) : Colors.white;
     final Color textColor = message.isMe ? Colors.white : Colors.black87;
-    final TextAlign textAlign = message.isMe ? TextAlign.right : TextAlign.left;
+    // final TextAlign textAlign = message.isMe ? TextAlign.right : TextAlign.left;
     final CrossAxisAlignment crossAlign =
         message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     final BorderRadius borderRadius = BorderRadius.only(
@@ -38,7 +38,7 @@ class MessageBubble extends StatelessWidget {
               borderRadius: borderRadius,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 5,
                   offset: const Offset(0, 2),
                 ),

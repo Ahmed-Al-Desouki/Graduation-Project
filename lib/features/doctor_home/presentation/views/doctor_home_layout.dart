@@ -100,7 +100,7 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
             Positioned.fill(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: Container(color: Colors.black.withOpacity(0.3)),
+                child: Container(color: Colors.black.withValues(alpha: 0.3)),
               ),
             ),
         ],
@@ -121,7 +121,7 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, -2),
           ),
@@ -154,7 +154,7 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, -2),
           ),
@@ -166,7 +166,7 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
         elevation: 0,
         currentIndex: 0,
         selectedItemColor: inactiveGray,
-        unselectedItemColor: inactiveGray.withOpacity(0.5),
+        unselectedItemColor: inactiveGray.withValues(alpha: 0.5),
         showUnselectedLabels: true,
         onTap: null, // ✅ معطل
         items: [
@@ -210,7 +210,7 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
     return BottomNavigationBarItem(
       icon: Column(
         children: [
-          Icon(icon, color: inactiveGray.withOpacity(0.5)),
+          Icon(icon, color: inactiveGray.withValues(alpha: 0.5)),
           const SizedBox(height: 3),
         ],
       ),
@@ -258,7 +258,7 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
 //           color: Colors.white,
 //           boxShadow: [
 //             BoxShadow(
-//               color: Colors.black.withOpacity(0.05),
+//               color: Colors.black.withValues(alpha:0.05),
 //               blurRadius: 5,
 //               offset: const Offset(0, -2),
 //             ),

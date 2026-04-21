@@ -13,7 +13,7 @@ class ReminderHeader extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: Colors.lightBlue.withOpacity(0.1),
+            backgroundColor: Colors.lightBlue.withValues(alpha: 0.1),
             child: _ClockCalendarIcon(size: 28),
           ),
           const SizedBox(height: 7),

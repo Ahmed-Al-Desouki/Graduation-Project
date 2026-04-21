@@ -35,7 +35,7 @@
 //       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
 //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
 //       elevation: 0,
-//       color: _getSlotColor().withOpacity(0.1), // لون خفيف حسب الحالة
+//       color: _getSlotColor().withValues(alpha: 0.1), // لون خفيف حسب الحالة
 //       child: ListTile(
 //         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 //         leading: _buildTimeLeading(),
@@ -283,7 +283,7 @@
 //         return Container(
 //           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
 //           decoration: BoxDecoration(
-//             color: Colors.purple.withOpacity(0.1),
+//             color: Colors.purple.withValues(alpha: 0.1),
 //             borderRadius: BorderRadius.circular(8),
 //             border: Border.all(color: Colors.purple),
 //           ),
@@ -349,12 +349,12 @@
 //         borderRadius: BorderRadius.circular(20),
 //         boxShadow: [
 //           BoxShadow(
-//             color: Colors.black.withOpacity(0.04),
+//             color: Colors.black.withValues(alpha: 0.04),
 //             blurRadius: 12,
 //             offset: const Offset(0, 4),
 //           ),
 //         ],
-//         border: Border.all(color: statusColor.withOpacity(0.1), width: 1.5),
+//         border: Border.all(color: statusColor.withValues(alpha: 0.1), width: 1.5),
 //       ),
 //       child: IntrinsicHeight(
 //         child: Row(
@@ -447,7 +447,7 @@
 //     return Container(
 //       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
 //       decoration: BoxDecoration(
-//         color: color.withOpacity(0.1),
+//         color: color.withValues(alpha: 0.1),
 //         borderRadius: BorderRadius.circular(8),
 //       ),
 //       child: Text(
@@ -640,12 +640,12 @@
 //         borderRadius: BorderRadius.circular(20),
 //         boxShadow: [
 //           BoxShadow(
-//             color: Colors.black.withOpacity(0.04),
+//             color: Colors.black.withValues(alpha: 0.04),
 //             blurRadius: 12,
 //             offset: const Offset(0, 4),
 //           ),
 //         ],
-//         border: Border.all(color: statusColor.withOpacity(0.1), width: 1.5),
+//         border: Border.all(color: statusColor.withValues(alpha: 0.1), width: 1.5),
 //       ),
 //       child: IntrinsicHeight(
 //         child: Row(
@@ -830,12 +830,12 @@
 //         borderRadius: BorderRadius.circular(20),
 //         boxShadow: [
 //           BoxShadow(
-//             color: Colors.black.withOpacity(0.04),
+//             color: Colors.black.withValues(alpha: 0.04),
 //             blurRadius: 12,
 //             offset: const Offset(0, 4),
 //           ),
 //         ],
-//         border: Border.all(color: statusColor.withOpacity(0.1), width: 1.5),
+//         border: Border.all(color: statusColor.withValues(alpha: 0.1), width: 1.5),
 //       ),
 //       child: IntrinsicHeight(
 //         child: Row(
@@ -994,7 +994,7 @@
 //   Widget _buildStatusBadge(Color color, String status) => Container(
 //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
 //     decoration: BoxDecoration(
-//       color: color.withOpacity(0.1),
+//       color: color.withValues(alpha: 0.1),
 //       borderRadius: BorderRadius.circular(6),
 //     ),
 //     child: Text(
@@ -1031,9 +1031,6 @@
 //   String _getAmPm(String time) =>
 //       int.parse(time.split(':')[0]) >= 12 ? "PM" : "AM";
 // }
-
-import 'package:flutter/material.dart';
-import '../../../domain/entities/slot_entity.dart';
 
 import 'package:flutter/material.dart';
 import '../../../domain/entities/slot_entity.dart';
@@ -1083,12 +1080,15 @@ class SlotCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: statusColor.withOpacity(0.1), width: 1.5),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.1),
+          width: 1.5,
+        ),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -1247,7 +1247,7 @@ class SlotCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

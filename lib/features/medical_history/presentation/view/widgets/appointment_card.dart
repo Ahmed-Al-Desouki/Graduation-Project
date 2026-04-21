@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
-import 'package:graduation_project/features/booking/presentation/views/widgets/AppointmentListItem.dart';
+import 'package:graduation_project/features/booking/presentation/views/widgets/appointment_list_item.dart';
 
 // class AppointmentCard extends StatelessWidget {
 //   final AppointmentFullDetailsEntity appointment;

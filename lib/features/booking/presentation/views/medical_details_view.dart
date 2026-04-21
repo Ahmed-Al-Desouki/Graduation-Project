@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -63,7 +62,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
 
   // --- 3. Logic Core (Getters) ---
   bool get isPatient =>
-      getIt<SessionManager>().userRole?.toLowerCase() == 'patient';
+      getIt<SessionManager>().userRole.toLowerCase() == 'patient';
   bool get isCompleted => _currentStatus.toLowerCase() == 'completed';
   bool get isCancelled => _currentStatus.toLowerCase() == 'cancelled';
   bool get isInProgress => _currentStatus.toLowerCase() == 'inprogress';
@@ -118,8 +117,9 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
                   _currentStatus = d.status;
                   _isAccessGranted = d.canViewMedicalHistory;
                   if (isInProgress || isCompleted) _isStarted = true;
-                  if (d.medicalRecord != null)
+                  if (d.medicalRecord != null) {
                     _populateFields(d.medicalRecord!);
+                  }
                   if (d.prescriptions != null && d.prescriptions!.isNotEmpty) {
                     _prescriptionItems = List.from(
                       d.prescriptions!.first.items,
@@ -154,8 +154,9 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
         ],
         child: BlocBuilder<ExamSessionCubit, ExamSessionState>(
           builder: (context, state) {
-            if (state is MedicalRecordLoading && !_isStarted)
+            if (state is MedicalRecordLoading && !_isStarted) {
               return _buildShimmer();
+            }
             return _buildMainContent();
           },
         ),
@@ -266,7 +267,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Text(
@@ -290,7 +291,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
   //     decoration: BoxDecoration(
   //       color: Colors.white,
   //       borderRadius: BorderRadius.circular(15.r),
-  //       border: Border.all(color: const Color(0xFF9333EA).withOpacity(0.1)),
+  //       border: Border.all(color: const Color(0xFF9333EA).withValues(alpha: 0.1)),
   //     ),
   //     child: Row(
   //       children: [
@@ -316,7 +317,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
   //             setState(() => _isAccessGranted = val);
   //             // }
   //           },
-  //           activeColor: const Color(0xFF9333EA),
+  //           activeThumbColor: const Color(0xFF9333EA),
   //         ),
   //       ],
   //     ),
@@ -329,7 +330,9 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: const Color(0xFF9333EA).withOpacity(0.1)),
+        border: Border.all(
+          color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+        ),
       ),
       child: Row(
         children: [
@@ -363,7 +366,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
                 isError: !val,
               );
             },
-            activeColor: const Color(0xFF9333EA),
+            activeThumbColor: const Color(0xFF9333EA),
           ),
         ],
       ),
@@ -400,7 +403,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -527,13 +530,14 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
   }
 
   Widget _buildPrescriptionItemsList() {
-    if (_prescriptionItems.isEmpty)
+    if (_prescriptionItems.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(20),
           child: Text("No medicines prescribed."),
         ),
       );
+    }
 
     return ListView.builder(
       shrinkWrap: true,
@@ -775,9 +779,11 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
         child: Container(
           padding: EdgeInsets.symmetric(vertical: 14.h),
           decoration: BoxDecoration(
-            color: const Color(0xFF9333EA).withOpacity(0.05),
+            color: const Color(0xFF9333EA).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: const Color(0xFF9333EA).withOpacity(0.2)),
+            border: Border.all(
+              color: const Color(0xFF9333EA).withValues(alpha: 0.2),
+            ),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -973,9 +979,9 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
     _vitalsController.text = record.vitalSigns;
     _physicalExamController.text = record.physicalExamination;
     _diagnosisController.text = record.diagnosis;
-    _diagnosisCodeController.text = record.diagnosisCode ?? "";
+    _diagnosisCodeController.text = record.diagnosisCode;
     _treatmentPlanController.text = record.treatmentPlan;
-    _doctorNotesController.text = record.doctorNotes ?? "";
+    _doctorNotesController.text = record.doctorNotes;
   }
 }
 

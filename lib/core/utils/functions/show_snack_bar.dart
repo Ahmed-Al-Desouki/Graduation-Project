@@ -55,12 +55,14 @@ void showSnackBar(BuildContext context, String message, Color backgroundColor) {
       content: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: backgroundColor.withOpacity(0.95), // لون شفاف بسيط لشياكة أكتر
+          color: backgroundColor.withValues(
+            alpha: 0.95,
+          ), // لون شفاف بسيط لشياكة أكتر
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white24),
           boxShadow: [
             BoxShadow(
-              color: backgroundColor.withOpacity(0.3),
+              color: backgroundColor.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

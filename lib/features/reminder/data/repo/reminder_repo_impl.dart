@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
@@ -72,7 +74,7 @@ class ReminderRepositoryImpl implements ReminderRepository {
           localData.map((e) => ReminderInstanceModel.fromJson(e)).toList();
       return Right(instances);
     } catch (e) {
-      print("❌ Error in getTodayReminders: $e");
+      log("❌ Error in getTodayReminders: $e");
       final backupData = await _localDataSource.getTodayOccurrences();
       return Right(
         backupData.map((e) => ReminderInstanceModel.fromJson(e)).toList(),
@@ -112,7 +114,7 @@ class ReminderRepositoryImpl implements ReminderRepository {
         }
         await _localDataSource.updateSyncStatus(action['id'], 0);
       } catch (e) {
-        print("❌ Sync failed for an action: $e");
+        log("❌ Sync failed for an action: $e");
         return Left(
           ServerFailure("Failed to sync some actions due to network error."),
         );

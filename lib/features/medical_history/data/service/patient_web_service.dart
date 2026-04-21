@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/utils/helper/api.dart';
@@ -55,7 +56,7 @@ class PatientWebServices {
   Future<Map<String, dynamic>> upsertSocialHistory(
     Map<String, dynamic> body,
   ) async {
-    print("📤 Sending Social History Data: ${jsonEncode(body)}");
+    log("📤 Sending Social History Data: ${jsonEncode(body)}");
     return await _apiService.post('medical-history/social-history', body);
   }
 
@@ -68,7 +69,7 @@ class PatientWebServices {
   Future<Map<String, dynamic>> upsertSelfMedication(
     Map<String, dynamic> body,
   ) async {
-    print("📡 Sending Medication Data: $body");
+    log("📡 Sending Medication Data: $body");
     return await _apiService.post('medical-history/self-medication', body);
   }
 

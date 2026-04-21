@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
@@ -66,7 +68,7 @@ class _MapPickerBottomSheetState extends State<MapPickerBottomSheet> {
         });
       }
     } catch (e) {
-      print('Error getting address: $e');
+      log('Error getting address: $e');
       if (mounted) {
         setState(() {
           _selectedAddress = 'Selected Location';
@@ -433,7 +435,7 @@ class _MapPickerBottomSheetState extends State<MapPickerBottomSheet> {
               ElevatedButton(
                 onPressed: () {
                   if (widget.addressController?.text.isNotEmpty == true) {
-                    print(
+                    log(
                       '📍 [MapPicker] Address entered: ${widget.addressController!.text}',
                     );
                     _handleLocationSelected(

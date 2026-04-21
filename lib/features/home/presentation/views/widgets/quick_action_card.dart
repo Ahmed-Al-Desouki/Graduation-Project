@@ -43,7 +43,7 @@ class QuickActionCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(15.r),
               boxShadow: [
                 BoxShadow(
-                  color: gradientColor.withOpacity(0.4),
+                  color: gradientColor.withValues(alpha: 0.4),
                   blurRadius: 8.r,
                   offset: Offset(0, 4.h),
                 ),

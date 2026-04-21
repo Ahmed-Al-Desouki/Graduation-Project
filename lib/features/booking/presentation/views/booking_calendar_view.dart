@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/features/booking/domain/entities/slot_entity.dart';
-import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
@@ -52,7 +51,7 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
       return widget.doctorName ?? "Doctor";
     }
     final name = getIt<SessionManager>().userName;
-    return (name != null && name.isNotEmpty) ? name : "Doctor";
+    return (name.isNotEmpty) ? name : "Doctor";
   }
 
   void _fetchMonthData(DateTime month) {
@@ -150,10 +149,10 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
   //                         Container(
   //                           padding: const EdgeInsets.all(12),
   //                           decoration: BoxDecoration(
-  //                             color: const Color(0xFF9333EA).withOpacity(0.05),
+  //                             color: const Color(0xFF9333EA).withValues(alpha: 0.05),
   //                             borderRadius: BorderRadius.circular(12),
   //                             border: Border.all(
-  //                               color: const Color(0xFF9333EA).withOpacity(0.1),
+  //                               color: const Color(0xFF9333EA).withValues(alpha: 0.1),
   //                             ),
   //                           ),
   //                           child: Column(
@@ -177,7 +176,7 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
   //                                   ),
   //                                   Switch(
   //                                     value: grantAccess,
-  //                                     activeColor: const Color(0xFF9333EA),
+  //                                     activeThumbColor: const Color(0xFF9333EA),
   //                                     onChanged: (value) {
   //                                       setDialogState(
   //                                         () => grantAccess = value,
@@ -345,7 +344,7 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                             isSelected
                                                 ? const Color(
                                                   0xFF9333EA,
-                                                ).withOpacity(0.1)
+                                                ).withValues(alpha: 0.1)
                                                 : Colors.white,
                                         borderRadius: BorderRadius.circular(
                                           10.r,
@@ -396,7 +395,9 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                           Container(
                             padding: EdgeInsets.all(12.w),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF9333EA).withOpacity(0.05),
+                              color: const Color(
+                                0xFF9333EA,
+                              ).withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Row(
@@ -418,7 +419,8 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                 ),
                                 Switch(
                                   value: grantAccess,
-                                  activeColor: const Color(0xFF9333EA),
+                                  // activeThumbColor: const Color(0xFF9333EA),
+                                  activeThumbColor:  const Color(0xFF9333EA),
                                   onChanged:
                                       (val) => setDialogState(
                                         () => grantAccess = val,
@@ -1045,7 +1047,7 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),

@@ -11,7 +11,6 @@ import 'package:graduation_project/features/medical_history/presentation/view/wi
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/medical_qr_dialog_content.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:showcaseview/showcaseview.dart';
-import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'widgets/medical_history_drawer.dart';
 

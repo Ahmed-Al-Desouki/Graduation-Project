@@ -30,7 +30,23 @@ class _VerificationSectionState extends State<VerificationSection> {
   File? _graduationCertFile;
   File? _nationalIdFile;
   // ✅ Handle File Selection
+  // void _onFileSelected(String type, File? file) {
+  //   setState(() {
+  //     switch (type) {
+  //       case 'medical':
+  //         _medicalLicenseFile = file;
+  //         break;
+  //       case 'graduation':
+  //         _graduationCertFile = file;
+  //         break;
+  //       case 'national':
+  //         _nationalIdFile = file;
+  //         break;
+  //     }
+  //   });
+  // }
   void _onFileSelected(String type, File? file) {
+    // local UI update (اختياري)
     setState(() {
       switch (type) {
         case 'medical':
@@ -44,6 +60,9 @@ class _VerificationSectionState extends State<VerificationSection> {
           break;
       }
     });
+
+    // ✅ الأهم
+    widget.onFileSelected(type, file);
   }
 
   // ✅ Pick Document Function
@@ -70,8 +89,8 @@ class _VerificationSectionState extends State<VerificationSection> {
     }
 
     // ✅ Notify parent about file selection
-    _onFileSelected(type, file);
-
+    // _onFileSelected(type, file);
+    widget.onFileSelected(type, file);
     // ✅ Call Cubit upload method
     await widget.onUpload(type);
 
@@ -87,7 +106,7 @@ class _VerificationSectionState extends State<VerificationSection> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -257,7 +276,7 @@ class _VerificationSectionState extends State<VerificationSection> {
 //         borderRadius: BorderRadius.circular(16),
 //         boxShadow: [
 //           BoxShadow(
-//             color: Colors.black.withOpacity(0.05),
+//             color: Colors.black.withValues(alpha:0.05),
 //             blurRadius: 10,
 //             offset: const Offset(0, 2),
 //           ),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/constant.dart';
@@ -25,7 +26,7 @@ class ApiService {
       QueuedInterceptorsWrapper(
         onRequest: (options, handler) async {
           if (options.path.contains('share/medical-profile')) {
-            print('ℹ️ Skipping Auth Token for Shared Profile request');
+            log('ℹ️ Skipping Auth Token for Shared Profile request');
             return handler.next(options);
           }
           final token = await SecureStorageHelper.getAccessToken();
@@ -33,25 +34,25 @@ class ApiService {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
-          print('➡️ [REQUEST] ${options.method} ${options.path}');
-          print('➡️ [FULL URL]: ${options.uri}');
+          log('➡️ [REQUEST] ${options.method} ${options.path}');
+          log('➡️ [FULL URL]: ${options.uri}');
           return handler.next(options);
         },
 
         onResponse: (response, handler) {
-          print('✅ [RESPONSE] ${response.statusCode}');
+          log('✅ [RESPONSE] ${response.statusCode}');
           return handler.next(response);
         },
 
         onError: (DioException e, handler) async {
-          print('❌ [ERROR] ${e.response?.statusCode} | ${e.message}');
-          print('❌ [DIO ERROR TYPE]: ${e.type}');
-          print('❌ [ERROR DEBUG]: ${e.error}');
-          print('❌ [ERROR MESSAGE]: ${e.message}');
-          print('❌ [SERVER ERROR DATA]: ${e.response?.data}');
+          log('❌ [ERROR] ${e.response?.statusCode} | ${e.message}');
+          log('❌ [DIO ERROR TYPE]: ${e.type}');
+          log('❌ [ERROR DEBUG]: ${e.error}');
+          log('❌ [ERROR MESSAGE]: ${e.message}');
+          log('❌ [SERVER ERROR DATA]: ${e.response?.data}');
 
           if (e.response?.statusCode == 401) {
-            print("⚠️ Token Expired! Attempting to refresh...");
+            log("⚠️ Token Expired! Attempting to refresh...");
 
             try {
               final refreshToken = await SecureStorageHelper.getRefreshToken();
@@ -84,7 +85,7 @@ class ApiService {
                   newRefreshToken: newRefresh,
                 );
 
-                print("✅ Token Refreshed Successfully!");
+                log("✅ Token Refreshed Successfully!");
 
                 e.requestOptions.headers['Authorization'] = 'Bearer $newAccess';
 
@@ -110,7 +111,7 @@ class ApiService {
     ErrorInterceptorHandler handler,
     DioException e,
   ) async {
-    print("⛔ Session Expired. Logging out...");
+    log("⛔ Session Expired. Logging out...");
     await SecureStorageHelper.clearAll();
 
     AppRouter.router.go(AppRouter.kLogin);
@@ -136,13 +137,13 @@ class ApiService {
   Future<dynamic> post(String endpoint, dynamic body) async {
     try {
       if (body is FormData) {
-        print("📤 Sending Multipart Data (FormData)...");
+        log("📤 Sending Multipart Data (FormData)...");
         // لو عاوز تشوف الداتا اللي جوه الـ FormData (للتصحيح فقط)
         for (var element in body.fields) {
-          print("Field: ${element.key} = ${element.value}");
+          log("Field: ${element.key} = ${element.value}");
         }
       } else {
-        print("📤 Sending Body: ${jsonEncode(body)}");
+        log("📤 Sending Body: ${jsonEncode(body)}");
       }
       final response = await _dio.post(endpoint, data: body);
       return response.data;

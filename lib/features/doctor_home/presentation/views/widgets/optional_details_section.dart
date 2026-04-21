@@ -113,7 +113,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1B4E8C).withOpacity(0.1),
+                        color: const Color(0xFF1B4E8C).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -132,7 +132,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1B4E8C).withOpacity(0.1),
+                        color: const Color(0xFF1B4E8C).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -245,7 +245,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -569,7 +569,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
 //         borderRadius: BorderRadius.circular(16),
 //         boxShadow: [
 //           BoxShadow(
-//             color: Colors.black.withOpacity(0.05),
+//             color: Colors.black.withValues(alpha: 0.05),
 //             blurRadius: 10,
 //             offset: const Offset(0, 2),
 //           ),
@@ -641,7 +641,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
 //               ),
 //               style: TextButton.styleFrom(
 //                 padding: EdgeInsets.symmetric(vertical: 12.h),
-//                 backgroundColor: const Color(0xFF3B82F6).withOpacity(0.1),
+//                 backgroundColor: const Color(0xFF3B82F6).withValues(alpha: 0.1),
 //                 shape: RoundedRectangleBorder(
 //                   borderRadius: BorderRadius.circular(10),
 //                 ),

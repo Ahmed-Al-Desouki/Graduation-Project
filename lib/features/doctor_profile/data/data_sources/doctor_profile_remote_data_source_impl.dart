@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -136,7 +137,7 @@ class DoctorProfileRemoteDataSourceImpl
     );
 
     // ✅ هنا مهم: شوف شكل الـ response من الـ backend
-    print('📸 Profile Image Response: $response');
+    log('📸 Profile Image Response: $response');
 
     // لو الـ response راجع object مباشرة (مش داخل 'file')
     return ProfileImageModel.fromJson(response as Map<String, dynamic>);

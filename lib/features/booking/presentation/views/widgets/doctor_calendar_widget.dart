@@ -1,7 +1,5 @@
-import 'package:graduation_project/features/booking/presentation/manager/booking_calendar_cubit/booking_calendar_cubit.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/entities/day_slots_entity.dart';
 
 class DoctorCalendarWidget extends StatelessWidget {
@@ -71,8 +69,8 @@ class DoctorCalendarWidget extends StatelessWidget {
       //           // بنفسجي لو محجوز بالكامل، أخضر لو متاح
       //           color:
       //               dayData.isFullyUnavailable
-      //                   ? Colors.purple.withOpacity(0.3)
-      //                   : Colors.green.withOpacity(0.3),
+      //                   ? Colors.purple.withValues(alpha: 0.3)
+      //                   : Colors.green.withValues(alpha: 0.3),
       //           shape: BoxShape.circle,
       //           border: Border.all(
       //             color:
@@ -98,7 +96,7 @@ class DoctorCalendarWidget extends StatelessWidget {
           return Container(
             margin: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: isSelected ? Colors.orange : color.withOpacity(0.15),
+              color: isSelected ? Colors.orange : color.withValues(alpha: 0.15),
               shape: BoxShape.circle,
               border: Border.all(
                 color: isSelected ? Colors.orange : color,

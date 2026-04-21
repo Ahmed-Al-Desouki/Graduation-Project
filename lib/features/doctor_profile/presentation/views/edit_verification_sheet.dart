@@ -39,7 +39,7 @@ class EditVerificationSheet extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -50,7 +50,7 @@ class EditVerificationSheet extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(10.w),
             decoration: BoxDecoration(
-              color: _getIconColor(doc.documentType).withOpacity(0.1),
+              color: _getIconColor(doc.documentType).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -79,7 +79,7 @@ class EditVerificationSheet extends StatelessWidget {
 
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: IconButton(

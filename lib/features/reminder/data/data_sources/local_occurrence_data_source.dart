@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:graduation_project/features/reminder/data/models/reminder_instance_model.dart';
 import '../../../../core/database/local_database_service.dart';
 
@@ -36,7 +38,7 @@ class LocalOccurrenceDataSource {
       await batch.commit(noResult: true);
     });
 
-    print(
+    log(
       "✅ Transaction Completed: Cleared and Saved ${instances.length} reminders safely.",
     );
   }
@@ -115,6 +117,6 @@ class LocalOccurrenceDataSource {
       where: 'patientId = ?',
       whereArgs: [int.tryParse(patientId) ?? 0],
     );
-    print("🧹 Local database cleared for patient: $patientId");
+    log("🧹 Local database cleared for patient: $patientId");
   }
 }

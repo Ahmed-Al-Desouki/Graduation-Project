@@ -102,7 +102,7 @@ class _ProfileCompletionLoadingViewState
                     color: const Color(0xFFDBEAFE),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFF1B4E8C).withOpacity(0.3),
+                      color: const Color(0xFF1B4E8C).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(

@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/utils/helper/network_info.dart';
-import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/booking/data/models/appointment_full_details_model.dart';

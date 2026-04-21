@@ -63,7 +63,7 @@ class ServicesPricingSection extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.purple.withOpacity(0.1),
+                        color: Colors.purple.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: SvgPicture.asset(
@@ -119,10 +119,11 @@ class ServicesPricingSection extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => BlocProvider.value(
-        value: context.read<DoctorRealProfileCubit>(),
-        child: EditServicesSheet(currentFee: consultationFee),
-      ),
+      builder:
+          (_) => BlocProvider.value(
+            value: context.read<DoctorRealProfileCubit>(),
+            child: EditServicesSheet(currentFee: consultationFee),
+          ),
     );
   }
 }
