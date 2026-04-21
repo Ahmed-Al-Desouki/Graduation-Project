@@ -7,10 +7,13 @@ using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagement.Application.Interfaces;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo;
@@ -26,6 +29,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IUserStatusRepository _userStatusRepository;
         private readonly IAuthCoreService _authCoreService;
         private readonly IFileUploadService _fileUploadService;
+        private readonly INotificationService _notificationService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GoogleAuthService> _logger;
 
@@ -37,6 +41,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IUserStatusRepository userStatusRepository,
             IAuthCoreService authCoreService,
             IFileUploadService fileUploadService,
+            INotificationService notificationService,
             IConfiguration configuration,
             ILogger<GoogleAuthService> logger)
         {
@@ -47,6 +52,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _userStatusRepository = userStatusRepository;
             _authCoreService = authCoreService;
             _fileUploadService = fileUploadService;
+            _notificationService = notificationService;
             _configuration = configuration;
             _logger = logger;
         }
@@ -76,11 +82,16 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 _logger.LogInformation("GoogleLoginAsync: Requested role: {Role}", normalizedRole);
 
                 // 3. Get or Create User
-                var (user, error) = await GetOrCreateUserAsync(payload, normalizedRole);
+                var (user, error, isNewUser) = await GetOrCreateUserAsync(payload, normalizedRole);
                 if (user == null || !string.IsNullOrEmpty(error))
                 {
                     _logger.LogError("GoogleLoginAsync: Failed to get/create user. Error: {Error}", error);
                     return (null!, null!, error ?? "Failed to create user");
+                }
+
+                if (isNewUser)
+                {
+                    await SendRegistrationNotificationsAsync(user);
                 }
 
                 // 4. Generate Tokens via AuthCoreService
@@ -158,7 +169,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             return role;
         }
 
-        private async Task<(ApplicationUser? User, string? Error)> GetOrCreateUserAsync(
+        private async Task<(ApplicationUser? User, string? Error, bool IsNewUser)> GetOrCreateUserAsync(
             GooglePayload payload,
             string requestedRole)
         {
@@ -188,7 +199,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     {
                         var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
                         _logger.LogWarning("GetOrCreateUserAsync: User creation failed. Errors: {Errors}", errors);
-                        return (null, errors);
+                        return (null, errors, false);
                     }
 
                     // Add Role
@@ -209,6 +220,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     }
 
                     _logger.LogInformation("GetOrCreateUserAsync: New user created successfully. UserId: {UserId}", user.Id);
+                    return (user, null, true);
                 }
                 else
                 {
@@ -222,16 +234,16 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         _logger.LogWarning("GetOrCreateUserAsync: Role mismatch. User={UserId}, Requested={Req}, Actual={Act}",
                             user.Id, requestedRole, user.Role);
 
-                        return (null, "Role mismatch for existing account. Please use the role upgrade process.");
+                        return (null, "Role mismatch for existing account. Please use the role upgrade process.", false);
                     }
                 }
 
-                return (user, null);
+                return (user, null, false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "GetOrCreateUserAsync: Failed");
-                return (null, "Server error during user creation");
+                return (null, "Server error during user creation", false);
             }
         }
 
@@ -333,6 +345,39 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 IsSuspended = false,
                 CreatedAt = DateTime.UtcNow
             });
+        }
+
+        private async Task SendRegistrationNotificationsAsync(ApplicationUser user)
+        {
+            await _notificationService.NotifyAsync(new NotificationDispatchRequest
+            {
+                UserId = user.Id,
+                Title = "Welcome to Wellora",
+                Message = $"Welcome {user.FullName}! Your account is ready to use.",
+                Type = NotificationType.Welcome,
+                RelatedEntityType = "User",
+                RelatedEntityId = user.Id,
+                Data = new Dictionary<string, string>
+                {
+                    ["userId"] = user.Id.ToString(),
+                    ["role"] = user.Role
+                }
+            });
+
+            if (user.Role.Equals("Doctor", StringComparison.OrdinalIgnoreCase))
+            {
+                await _notificationService.NotifyAdminsAsync(
+                    title: "New Doctor Registration",
+                    message: $"{user.FullName} registered as a doctor and is waiting for review.",
+                    type: NotificationType.DoctorRegistrationSubmitted,
+                    relatedEntityType: "Doctor",
+                    relatedEntityId: user.Id,
+                    data: new Dictionary<string, string>
+                    {
+                        ["doctorId"] = user.Id.ToString(),
+                        ["userId"] = user.Id.ToString()
+                    });
+            }
         }
 
         #endregion

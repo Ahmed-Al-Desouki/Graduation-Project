@@ -139,7 +139,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             string requesterRole = "",
             CancellationToken cancellationToken = default)
         {
-            EnsureDoctorAccess(doctorId, requesterUserId, requesterRole);
+            EnsureDoctorRangeAccess(doctorId, requesterUserId, requesterRole);
 
             var from = startDate.Date;
             var to = endDate.Date;
@@ -196,6 +196,16 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 EndDate = to,
                 DailySlots = grouped
             };
+        }
+
+        private static void EnsureDoctorRangeAccess(int doctorId, int requesterUserId, string requesterRole)
+        {
+            if (string.Equals(requesterRole, "Patient", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            EnsureDoctorAccess(doctorId, requesterUserId, requesterRole);
         }
 
         private static void EnsureDoctorAccess(int doctorId, int requesterUserId, string requesterRole)

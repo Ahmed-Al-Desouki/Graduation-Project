@@ -969,6 +969,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         existingGrant.Id, patientId, appointment.DoctorId,
                         "AccessFullyRevoked", "Patient disabled all permissions", ct);
 
+                    await NotifyDoctorAboutMedicalAccessChangeAsync(
+                        doctorId: appointment.DoctorId,
+                        patientId: patientId,
+                        appointmentId: appointment.Id,
+                        type: NotificationType.MedicalHistoryAccessRevoked,
+                        title: "Medical History Access Revoked",
+                        message: "The patient revoked your access to their medical history for this appointment.",
+                        accessGrantId: existingGrant.Id,
+                        expiresAt: existingGrant.ExpiresAt,
+                        canViewMedicalHistory: false,
+                        canViewPrescriptions: false,
+                        canViewLabResults: false,
+                        ct: ct);
+
                     _logger.LogInformation(
                         "Medical access grant {GrantId} revoked for appointment {AppointmentId}",
                         existingGrant.Id, appointmentId);
@@ -989,6 +1003,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     await LogAccessActionAsync(
                         existingGrant.Id, patientId, appointment.DoctorId,
                         "PermissionsUpdated", "Medical access permissions updated", ct);
+
+                    await NotifyDoctorAboutMedicalAccessChangeAsync(
+                        doctorId: appointment.DoctorId,
+                        patientId: patientId,
+                        appointmentId: appointment.Id,
+                        type: NotificationType.MedicalHistoryAccessUpdated,
+                        title: "Medical History Access Updated",
+                        message: "The patient updated your medical history access permissions.",
+                        accessGrantId: existingGrant.Id,
+                        expiresAt: existingGrant.ExpiresAt,
+                        canViewMedicalHistory: request.CanViewMedicalHistory,
+                        canViewPrescriptions: request.CanViewPrescriptions,
+                        canViewLabResults: request.CanViewLabResults,
+                        ct: ct);
 
                     _logger.LogInformation(
                         "Permissions updated for grant {GrantId}, appointment {AppointmentId}",
@@ -1034,6 +1062,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 grant.Id, patientId, appointment.DoctorId,
                 "ExpiryExtended",
                 $"Expiry extended to {request.NewExpiryDate}", ct);
+
+            await NotifyDoctorAboutMedicalAccessChangeAsync(
+                doctorId: appointment.DoctorId,
+                patientId: patientId,
+                appointmentId: appointment.Id,
+                type: NotificationType.MedicalHistoryAccessExtended,
+                title: "Medical History Access Extended",
+                message: "The patient extended your medical history access period.",
+                accessGrantId: grant.Id,
+                expiresAt: request.NewExpiryDate,
+                canViewMedicalHistory: grant.CanViewMedicalHistory,
+                canViewPrescriptions: grant.CanViewPrescriptions,
+                canViewLabResults: grant.CanViewLabResults,
+                ct: ct);
 
             await _unitOfWork.SaveChangesAsync(ct);
         }
@@ -1281,10 +1323,65 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 "Medical access grant created",
                 cancellationToken);
 
+            await NotifyDoctorAboutMedicalAccessChangeAsync(
+                doctorId: doctorId,
+                patientId: patientId,
+                appointmentId: appointmentId,
+                type: NotificationType.MedicalHistoryAccessGranted,
+                title: "Medical History Access Granted",
+                message: "The patient granted you access to their medical history for this appointment.",
+                accessGrantId: grant.Id,
+                expiresAt: expiresAt,
+                canViewMedicalHistory: canViewMedicalHistory,
+                canViewPrescriptions: canViewPrescriptions,
+                canViewLabResults: canViewLabResults,
+                ct: cancellationToken);
+
             _logger.LogInformation(
                 "Medical access grant {GrantId} created for appointment {AppointmentId}, " +
                 "expires {ExpiresAt}",
                 grant.Id, appointmentId, expiresAt);
+        }
+
+        private async Task NotifyDoctorAboutMedicalAccessChangeAsync(
+            int doctorId,
+            int patientId,
+            Guid appointmentId,
+            NotificationType type,
+            string title,
+            string message,
+            Guid accessGrantId,
+            DateTime? expiresAt,
+            bool canViewMedicalHistory,
+            bool canViewPrescriptions,
+            bool canViewLabResults,
+            CancellationToken ct)
+        {
+            var data = new Dictionary<string, string>
+            {
+                ["appointmentId"] = appointmentId.ToString(),
+                ["doctorId"] = doctorId.ToString(),
+                ["patientId"] = patientId.ToString(),
+                ["accessGrantId"] = accessGrantId.ToString(),
+                ["canViewMedicalHistory"] = canViewMedicalHistory.ToString(),
+                ["canViewPrescriptions"] = canViewPrescriptions.ToString(),
+                ["canViewLabResults"] = canViewLabResults.ToString()
+            };
+
+            if (expiresAt.HasValue)
+            {
+                data["expiresAt"] = expiresAt.Value.ToString("O");
+            }
+
+            await _notificationService.NotifyAsync(new NotificationDispatchRequest
+            {
+                UserId = doctorId,
+                Title = title,
+                Message = message,
+                Type = type,
+                RelatedEntityType = "Appointment",
+                Data = data
+            }, ct);
         }
 
         // ════════════════════════════════════════════════════════════════════

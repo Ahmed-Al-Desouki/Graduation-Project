@@ -75,7 +75,7 @@ namespace WelloraHealthCareManagement.API.Controllers
         }
 
         [HttpGet("range")]
-        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
+        [Authorize(Policy = DoctorAuthorizationConstants.PatientAdminOrApprovedDoctorPolicy)]
         public async Task<IActionResult> GetTimeSlotsInRange(
             int doctorId,
             [FromQuery] DateTime startDate,

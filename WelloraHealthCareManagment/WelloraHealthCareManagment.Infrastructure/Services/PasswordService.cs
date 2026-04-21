@@ -6,6 +6,9 @@ using System.Text;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.Interfaces.Email;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.Tokens;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication.UserSessions;
 
@@ -17,6 +20,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IUserSessionRepository _sessionRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly IEmailService _emailService;
+        private readonly INotificationService _notificationService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<PasswordService> _logger;
 
@@ -25,6 +29,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IUserSessionRepository sessionRepository,
             IRefreshTokenRepository refreshTokenRepository,
             IEmailService emailService,
+            INotificationService notificationService,
             IConfiguration configuration,
             ILogger<PasswordService> logger)
         {
@@ -32,6 +37,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _sessionRepository = sessionRepository;
             _refreshTokenRepository = refreshTokenRepository;
             _emailService = emailService;
+            _notificationService = notificationService;
             _configuration = configuration;
             _logger = logger;
         }
@@ -182,6 +188,17 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 // 6. Revoke all refresh tokens (security measure)
                 await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id);
+
+                await _notificationService.NotifyAsync(new NotificationDispatchRequest
+                {
+                    UserId = user.Id,
+                    Title = "Password Changed",
+                    Message = "Your account password was reset successfully and all sessions were revoked.",
+                    Type = NotificationType.PasswordReset,
+                    RelatedEntityType = "User",
+                    RelatedEntityId = user.Id,
+                    Data = new Dictionary<string, string> { ["userId"] = user.Id.ToString() }
+                });
 
                 _logger.LogInformation("Password reset successfully for {Email}. All sessions revoked.", request.Email);
                 return (true, string.Empty);

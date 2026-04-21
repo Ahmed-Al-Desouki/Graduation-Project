@@ -5,6 +5,9 @@ using System.Security.Cryptography;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Authentication;
 using WelloraHealthCareManagment.Application.Interfaces.Email;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
+using WelloraHealthCareManagment.Domain.Enums;
 
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
@@ -14,6 +17,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IOtpRepository _otpRepository;
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<MfaService> _logger;
         private const int OTP_LENGTH = 6;
         private const int OTP_EXPIRY_MINUTES = 1;
@@ -22,11 +26,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IOtpRepository otpRepository,
             IUserRepository userRepository,
             IEmailService emailService,
+            INotificationService notificationService,
             ILogger<MfaService> logger)
         {
             _otpRepository = otpRepository;
             _userRepository = userRepository;
             _emailService = emailService;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -151,6 +157,17 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 if (!otpSent)
                     return (false, string.Empty, "MFA enabled but failed to send OTP");
 
+                await _notificationService.NotifyAsync(new NotificationDispatchRequest
+                {
+                    UserId = userId,
+                    Title = "MFA Enabled",
+                    Message = "Multi-factor authentication has been enabled on your account.",
+                    Type = NotificationType.MfaEnabled,
+                    RelatedEntityType = "User",
+                    RelatedEntityId = userId,
+                    Data = new Dictionary<string, string> { ["userId"] = userId.ToString() }
+                });
+
                 _logger.LogInformation("MFA enabled for user {UserId}", userId);
                 return (true, "MFA enabled. Check your email for the verification code.", string.Empty);
             }
@@ -179,6 +196,17 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 // 2. إبطال كل OTPs
                 await _otpRepository.InvalidateAllUserOtpsAsync(userId);
+
+                await _notificationService.NotifyAsync(new NotificationDispatchRequest
+                {
+                    UserId = userId,
+                    Title = "MFA Disabled",
+                    Message = "Multi-factor authentication has been disabled on your account.",
+                    Type = NotificationType.MfaDisabled,
+                    RelatedEntityType = "User",
+                    RelatedEntityId = userId,
+                    Data = new Dictionary<string, string> { ["userId"] = userId.ToString() }
+                });
 
                 _logger.LogInformation("MFA disabled for user {UserId}", userId);
                 return (true, string.Empty);

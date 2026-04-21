@@ -6,6 +6,9 @@ using WelloraHealthCareManagment.Domain.Repositories.MedicalHistoryRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using HealthCare_.Models.PatientModels.MedicalHistoryModels;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
+using WelloraHealthCareManagment.Domain.Enums;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services
 {
@@ -15,6 +18,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         private readonly IUserRepository _userRepository;
         private readonly IMedicalHistoryRepository _medicalHistoryRepository;
         private readonly ILocationLookupService _locationLookupService;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<PatientProfileService> _logger;
 
         public PatientProfileService(
@@ -22,12 +26,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             IUserRepository userRepository,
             IMedicalHistoryRepository medicalHistoryRepository,
             ILocationLookupService locationLookupService,
+            INotificationService notificationService,
             ILogger<PatientProfileService> logger)
         {
             _patientRepository = patientRepository;
             _userRepository = userRepository;
             _medicalHistoryRepository = medicalHistoryRepository;
             _locationLookupService = locationLookupService;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -182,6 +188,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     return ServiceResult<PatientProfileResponse>.Failure("No valid fields were provided for update");
                 }
 
+                var wasProfileCompleted = patient.IsProfileCompleted;
                 patient.IsProfileCompleted = true;
                 user.UpdatedAt = DateTime.UtcNow;
                 patient.UpdatedAt = DateTime.UtcNow;
@@ -209,6 +216,23 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 }
 
                 await _patientRepository.UpdateAsync(patient);
+
+                if (!wasProfileCompleted)
+                {
+                    await _notificationService.NotifyAsync(new NotificationDispatchRequest
+                    {
+                        UserId = patient.PatientID,
+                        Title = "Profile Completed",
+                        Message = "Your patient profile has been completed successfully.",
+                        Type = NotificationType.PatientProfileCompleted,
+                        RelatedEntityType = "Patient",
+                        RelatedEntityId = patient.PatientID,
+                        Data = new Dictionary<string, string>
+                        {
+                            ["patientId"] = patient.PatientID.ToString()
+                        }
+                    });
+                }
 
                 return await GetProfileAsync(patientId);
             }

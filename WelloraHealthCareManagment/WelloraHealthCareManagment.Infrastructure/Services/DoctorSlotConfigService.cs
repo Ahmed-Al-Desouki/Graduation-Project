@@ -834,8 +834,11 @@ using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Schedules;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.SlotConfig;
 using WelloraHealthCareManagment.Application.Interfaces;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Constants;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
@@ -848,6 +851,7 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
     private readonly IAppointmentReminderService _appointmentReminderService;
     private readonly ISlotGenerationService _generationService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<DoctorSlotConfigService> _logger;
 
     public DoctorSlotConfigService(
@@ -858,6 +862,7 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
         IAppointmentReminderService appointmentReminderService,
         ISlotGenerationService generationService,
         IUnitOfWork unitOfWork,
+        INotificationService notificationService,
         ILogger<DoctorSlotConfigService> logger)
     {
         _configRepository = configRepository;
@@ -867,6 +872,7 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
         _appointmentReminderService = appointmentReminderService;
         _generationService = generationService;
         _unitOfWork = unitOfWork;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -1214,11 +1220,30 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
             if (!appointmentBySlotId.TryGetValue(slot.Id, out var appointment))
                 continue;
 
+            var patientId = appointment.PatientId;
+            var doctorId = appointment.DoctorId;
+
             appointment.Cancel(CancelledBy.Doctor, reason);
             appointment.ClearPatientData();
             await _appointmentRepository.UpdateAsync(appointment, ct);
             await _appointmentReminderService.CancelAppointmentRemindersAsync(
-                appointment.Id, appointment.PatientId, ct);
+                appointment.Id, patientId, ct);
+
+            await _notificationService.NotifyAsync(new NotificationDispatchRequest
+            {
+                UserId = patientId,
+                Title = "Appointment Cancelled",
+                Message = $"Your appointment was cancelled because the doctor's schedule changed. Reason: {reason}",
+                Type = NotificationType.AppointmentCancelledByDoctor,
+                RelatedEntityType = "Appointment",
+                Data = new Dictionary<string, string>
+                {
+                    ["appointmentId"] = appointment.Id.ToString(),
+                    ["doctorId"] = doctorId.ToString(),
+                    ["patientId"] = patientId.ToString(),
+                    ["reason"] = reason
+                }
+            }, ct);
         }
     }
 }

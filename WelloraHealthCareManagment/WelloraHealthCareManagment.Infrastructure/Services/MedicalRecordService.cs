@@ -4,6 +4,9 @@ using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
+using WelloraHealthCareManagment.Application.DTOs.Admin;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
@@ -14,17 +17,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IMedicalRecordRepository _medicalRecordRepository;
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<MedicalRecordService> _logger;
 
         public MedicalRecordService(
             IMedicalRecordRepository medicalRecordRepository,
             IAppointmentRepository appointmentRepository,
             IUnitOfWork unitOfWork,
+            INotificationService notificationService,
             ILogger<MedicalRecordService> logger)
         {
             _medicalRecordRepository = medicalRecordRepository;
             _appointmentRepository = appointmentRepository;
             _unitOfWork = unitOfWork;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -85,6 +91,16 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                await _notificationService.NotifyAsync(new NotificationDispatchRequest
+                {
+                    UserId = appointment.PatientId,
+                    Title = "Medical Record Added",
+                    Message = "Your doctor added a new medical record for your appointment.",
+                    Type = NotificationType.MedicalRecordCreated,
+                    RelatedEntityType = "Appointment",
+                    Data = BuildMedicalRecordPayload(record.Id, appointmentId, appointment.DoctorId, appointment.PatientId, request.FollowUpDate)
+                }, cancellationToken);
 
                 _logger.LogInformation(
                     "Medical record {RecordId} created for appointment {AppointmentId}",
@@ -156,6 +172,16 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
+                await _notificationService.NotifyAsync(new NotificationDispatchRequest
+                {
+                    UserId = appointment.PatientId,
+                    Title = "Medical Record Updated",
+                    Message = "Your doctor updated your medical record.",
+                    Type = NotificationType.MedicalRecordUpdated,
+                    RelatedEntityType = "Appointment",
+                    Data = BuildMedicalRecordPayload(record.Id, appointmentId, appointment.DoctorId, appointment.PatientId, record.FollowUpDate)
+                }, cancellationToken);
+
                 _logger.LogInformation(
                     "Medical record updated for appointment {AppointmentId}",
                     appointmentId);
@@ -209,6 +235,29 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 FollowUpDate = record.FollowUpDate,
                 FollowUpInstructions = record.FollowUpInstructions
             };
+        }
+
+        private static Dictionary<string, string> BuildMedicalRecordPayload(
+            Guid medicalRecordId,
+            Guid appointmentId,
+            int doctorId,
+            int patientId,
+            DateTime? followUpDate)
+        {
+            var data = new Dictionary<string, string>
+            {
+                ["medicalRecordId"] = medicalRecordId.ToString(),
+                ["appointmentId"] = appointmentId.ToString(),
+                ["doctorId"] = doctorId.ToString(),
+                ["patientId"] = patientId.ToString()
+            };
+
+            if (followUpDate.HasValue)
+            {
+                data["followUpDate"] = followUpDate.Value.ToString("O");
+            }
+
+            return data;
         }
     }
 }
