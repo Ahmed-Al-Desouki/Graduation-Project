@@ -60,7 +60,7 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
           //     ? cubit.getDoctorAppointments()
           //     : cubit.getPatientAppointments();
           final bool isDoctor =
-              getIt<SessionManager>().userRole?.toLowerCase() == 'doctor';
+              getIt<SessionManager>().userRole.toLowerCase() == 'doctor';
           isDoctor
               ? cubit.getDoctorAppointments()
               : cubit.getPatientAppointments();
@@ -192,10 +192,12 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                     AppointmentsCenterState
                   >(
                     builder: (context, state) {
-                      if (state is AppointmentsCenterLoading)
+                      if (state is AppointmentsCenterLoading) {
                         return const Center(child: CircularProgressIndicator());
-                      if (state is AppointmentsCenterFailure)
+                      }
+                      if (state is AppointmentsCenterFailure) {
                         return Center(child: Text(state.errMessage));
+                      }
 
                       if (state is AppointmentsCenterSuccess) {
                         if (state.appointments.isEmpty) {
@@ -218,7 +220,7 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                                     isHistoryMode
                                         ? false
                                         : (getIt<SessionManager>().userRole
-                                                ?.toLowerCase() ==
+                                                .toLowerCase() ==
                                             'doctor'),
                                 onTap:
                                     () => context.push(

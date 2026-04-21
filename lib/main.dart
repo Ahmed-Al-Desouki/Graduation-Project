@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -53,7 +55,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _handleIncomingLink(Uri uri) {
-    debugPrint('📩 Received app link: $uri');
+    log('📩 Received app link: $uri');
     final String fullPath = uri.toString();
     if (uri.path.contains('reset-password')) {
       final email = uri.queryParameters['email'];
@@ -73,7 +75,7 @@ class _MyAppState extends State<MyApp> {
       }
 
       if (token != null) {
-        debugPrint('✅ Navigating with token: $token');
+        log('✅ Navigating with token: $token');
         AppRouter.router.push('/share-history?token=$token');
       }
     }

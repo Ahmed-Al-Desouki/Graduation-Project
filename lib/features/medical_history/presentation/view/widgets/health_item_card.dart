@@ -29,7 +29,7 @@ class HealthItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accentColor.withOpacity(0.1)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [

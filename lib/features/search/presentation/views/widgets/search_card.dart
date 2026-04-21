@@ -61,7 +61,10 @@ class _SearchCardState extends State<SearchCard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 12,
+              ),
             ],
           ),
           child: Column(
@@ -218,7 +221,7 @@ class _SearchCardState extends State<SearchCard> {
 //             color: Colors.white,
 //             borderRadius: BorderRadius.circular(14),
 //             boxShadow: [
-//               BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12),
+//               BoxShadow(color: Colors.black.withValues(alpha:0.08), blurRadius: 12),
 //             ],
 //           ),
 //           child: Column(
@@ -348,7 +351,7 @@ class _SearchCardState extends State<SearchCard> {
 //             borderRadius: BorderRadius.circular(14),
 //             boxShadow: [
 //               BoxShadow(
-//                 color: Colors.black.withOpacity(0.08),
+//                 color: Colors.black.withValues(alpha:0.08),
 //                 blurRadius: 12,
 //                 offset: const Offset(0, 6),
 //               ),

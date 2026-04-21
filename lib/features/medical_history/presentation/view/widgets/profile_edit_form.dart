@@ -173,7 +173,9 @@ class _ProfileEditFormState extends State<ProfileEditForm> {
                 if (state is PatientUpdateLoading) {
                   return ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB).withOpacity(0.7),
+                      backgroundColor: const Color(
+                        0xFF2563EB,
+                      ).withValues(alpha: 0.7),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

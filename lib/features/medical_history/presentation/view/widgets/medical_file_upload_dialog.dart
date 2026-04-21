@@ -156,7 +156,9 @@ class _UploadSheetState extends State<_UploadSheet> {
                 if (state is PatientUploadLoading) {
                   return ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F172A).withOpacity(0.7),
+                      backgroundColor: const Color(
+                        0xFF0F172A,
+                      ).withValues(alpha: 0.7),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

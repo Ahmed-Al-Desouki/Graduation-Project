@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -42,6 +44,6 @@ class LocalDatabaseService {
   Future<void> clearAllData() async {
     final db = await database;
     await db.delete('occurrences');
-    print("🧹 SQLite: Occurrences table cleared.");
+    log("🧹 SQLite: Occurrences table cleared.");
   }
 }

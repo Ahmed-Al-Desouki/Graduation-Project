@@ -26,7 +26,7 @@ class GeneralSettingsSection extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      color: Colors.blue.withOpacity(0.05),
+      color: Colors.blue.withValues(alpha: 0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: EdgeInsets.all(screenWidth * 0.04),

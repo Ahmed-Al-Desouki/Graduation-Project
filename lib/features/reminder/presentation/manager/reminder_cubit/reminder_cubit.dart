@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_instance_model.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_model.dart';
@@ -34,7 +36,7 @@ class ReminderCubit extends Cubit<ReminderState> {
 
     result.fold(
       (failure) {
-        print("CREATE REMINDER FAILED: ${failure.errmessage}");
+        log("CREATE REMINDER FAILED: ${failure.errmessage}");
         emit(ReminderCreateFailure(errMessage: failure.errmessage));
       },
       (reminder) async {
@@ -142,9 +144,9 @@ class ReminderCubit extends Cubit<ReminderState> {
 
     result.fold(
       (failure) =>
-          print("❌ Failed to sync upcoming reminders: ${failure.errmessage}"),
+          log("❌ Failed to sync upcoming reminders: ${failure.errmessage}"),
       (instances) async {
-        print("✅ Synced ${instances.length} reminders");
+        log("✅ Synced ${instances.length} reminders");
         final updatedData = await repo.getTodayReminders(patientId: patientId);
         updatedData.fold(
           (failure) => null,
@@ -159,10 +161,10 @@ class ReminderCubit extends Cubit<ReminderState> {
 
     result.fold(
       (failure) {
-        print("⚠️ Offline sync failed: ${failure.errmessage}");
+        log("⚠️ Offline sync failed: ${failure.errmessage}");
       },
       (_) {
-        print("✅ Offline actions processed successfully.");
+        log("✅ Offline actions processed successfully.");
       },
     );
   }

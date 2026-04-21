@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:graduation_project/features/booking/data/models/appointment_full_details_model.dart';
 import 'package:graduation_project/features/booking/domain/entities/appointment_full_details_entity.dart';
 
 // class AppointmentListItem extends StatelessWidget {
@@ -35,7 +34,7 @@ import 'package:graduation_project/features/booking/domain/entities/appointment_
 //                 children: [
 //                   CircleAvatar(
 //                     radius: 25.r,
-//                     backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
+//                     backgroundColor: const Color(0xFF2563EB).withValues(alpha:0.1),
 //                     child: Icon(
 //                       Icons.person,
 //                       color: const Color(0xFF2563EB),
@@ -87,7 +86,7 @@ import 'package:graduation_project/features/booking/domain/entities/appointment_
 //                         style: TextStyle(color: Colors.red),
 //                       ),
 //                       style: TextButton.styleFrom(
-//                         backgroundColor: Colors.red.withOpacity(0.05),
+//                         backgroundColor: Colors.red.withValues(alpha:0.05),
 //                         shape: RoundedRectangleBorder(
 //                           borderRadius: BorderRadius.circular(10.r),
 //                         ),
@@ -111,7 +110,7 @@ import 'package:graduation_project/features/booking/domain/entities/appointment_
 //     return Container(
 //       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
 //       decoration: BoxDecoration(
-//         color: color.withOpacity(0.1),
+//         color: color.withValues(alpha:0.1),
 //         borderRadius: BorderRadius.circular(20.r),
 //       ),
 //       child: Text(
@@ -144,7 +143,7 @@ class AppointmentListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isCancelled = appointment.status.toLowerCase() == 'cancelled';
+    // bool isCancelled = appointment.status.toLowerCase() == 'cancelled';
     bool isPending = appointment.status.toLowerCase() == 'pending';
 
     return Card(
@@ -163,7 +162,9 @@ class AppointmentListItem extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 25.r,
-                    backgroundColor: const Color(0xFF2563EB).withOpacity(0.1),
+                    backgroundColor: const Color(
+                      0xFF2563EB,
+                    ).withValues(alpha: 0.1),
                     child: Icon(
                       Icons.person,
                       color: const Color(0xFF2563EB),
@@ -232,7 +233,7 @@ class AppointmentListItem extends StatelessWidget {
                         ),
                       ),
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.red.withOpacity(0.05),
+                        backgroundColor: Colors.red.withValues(alpha: 0.05),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.r),
                         ),
@@ -257,7 +258,7 @@ class AppointmentListItem extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Text(

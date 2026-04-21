@@ -70,7 +70,7 @@ class AllAchievementsView extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(
@@ -96,7 +96,7 @@ class AllAchievementsView extends StatelessWidget {
                                 Text(
                                   '${achievements.length} ${achievements.length == 1 ? "achievement" : "achievements"}',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                     fontSize: 13,
                                   ),
                                 ),
@@ -123,7 +123,7 @@ class AllAchievementsView extends StatelessWidget {
                                   _showDeleteConfirmation(context, achievement),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),
@@ -155,7 +155,7 @@ class AllAchievementsView extends StatelessWidget {
     final cubit = context.read<DoctorRealProfileCubit>();
 
     confirmDelete(context, () async {
-      await cubit.deleteAchievement(achievementId: achievement.achievementId!);
+      await cubit.deleteAchievement(achievementId: achievement.achievementId);
     });
   }
 }
@@ -230,7 +230,7 @@ class AllAchievementsView extends StatelessWidget {
 //                           Container(
 //                             padding: const EdgeInsets.all(10),
 //                             decoration: BoxDecoration(
-//                               color: Colors.white.withOpacity(0.2),
+//                               color: Colors.white.withValues(alpha: 0.2),
 //                               borderRadius: BorderRadius.circular(10),
 //                             ),
 //                             child: const Icon(
@@ -256,7 +256,7 @@ class AllAchievementsView extends StatelessWidget {
 //                                 Text(
 //                                   '${achievements.length} ${achievements.length == 1 ? "achievement" : "achievements"}',
 //                                   style: TextStyle(
-//                                     color: Colors.white.withOpacity(0.9),
+//                                     color: Colors.white.withValues(alpha: 0.9),
 //                                     fontSize: 13,
 //                                   ),
 //                                 ),

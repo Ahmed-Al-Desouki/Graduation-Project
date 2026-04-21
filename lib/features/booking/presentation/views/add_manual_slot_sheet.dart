@@ -340,7 +340,7 @@ class _AddManualSlotSheetState extends State<AddManualSlotSheet> {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black.withOpacity(0.05)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         ),
         child: Column(
           children: [

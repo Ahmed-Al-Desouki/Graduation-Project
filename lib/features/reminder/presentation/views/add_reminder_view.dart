@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -66,9 +68,7 @@ class _AddReminderViewState extends State<AddReminderView> {
   void _initDataForEditing() {
     try {
       final r = widget.reminderToEdit!;
-      print(
-        "StartDate Hour: ${r.startDate.hour}, Minute: ${r.startDate.minute}",
-      );
+      log("StartDate Hour: ${r.startDate.hour}, Minute: ${r.startDate.minute}");
       titleController.text = r.title;
       messageController.text = r.message ?? "";
 
@@ -101,7 +101,7 @@ class _AddReminderViewState extends State<AddReminderView> {
           try {
             _extractDataFromRRule(r.rrule!);
           } catch (e) {
-            print("❌ RRule Parsing Error: $e");
+            log("❌ RRule Parsing Error: $e");
             selectedFrequency = 'Daily';
             selectedTimes = [
               TimeOfDay(hour: r.startDate.hour, minute: r.startDate.minute),
@@ -117,7 +117,7 @@ class _AddReminderViewState extends State<AddReminderView> {
         }
       });
     } catch (e) {
-      print("❌ General Initialization Error: $e");
+      log("❌ General Initialization Error: $e");
     }
   }
 
@@ -374,7 +374,7 @@ class _AddReminderViewState extends State<AddReminderView> {
   //     child: Container(
   //       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
   //       decoration: BoxDecoration(
-  //         color: isSelected ? color.withOpacity(0.05) : Colors.transparent,
+  //         color: isSelected ? color.withValues(alpha:0.05) : Colors.transparent,
   //         borderRadius: BorderRadius.circular(8),
   //       ),
   //       child: Row(
@@ -524,15 +524,15 @@ class _AddReminderViewState extends State<AddReminderView> {
       }
     }
 
-    print("✅ Sending RRule: $finalRRuleToSend");
-    print("✅ Sending reminder (Edit Mode: $isEditing)");
-    print("✅ Sending reminder:");
-    print("  Type: $selectedType");
-    print("  Title: ${titleController.text}");
-    print("  RRULE: $rruleString");
-    print("  Simple: ${simple?.toJson()}");
-    print("  Start: $dtStart");
-    print("  End: $endD");
+    log("✅ Sending RRule: $finalRRuleToSend");
+    log("✅ Sending reminder (Edit Mode: $isEditing)");
+    log("✅ Sending reminder:");
+    log("  Type: $selectedType");
+    log("  Title: ${titleController.text}");
+    log("  RRULE: $rruleString");
+    log("  Simple: ${simple?.toJson()}");
+    log("  Start: $dtStart");
+    log("  End: $endD");
   }
 
   String buildRRuleString() {

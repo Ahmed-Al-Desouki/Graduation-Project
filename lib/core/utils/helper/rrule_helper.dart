@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:rrule/rrule.dart';
 
 class RRuleHelper {
@@ -23,9 +25,7 @@ class RRuleHelper {
 
       return RecurrenceRule.fromString(cleanRule);
     } catch (e) {
-      print(
-        "⚠️ Warning: RRule parser skipped, using Regex fallback. Error: $e",
-      );
+      log("⚠️ Warning: RRule parser skipped, using Regex fallback. Error: $e");
       return null;
     }
   }
@@ -185,7 +185,7 @@ class RRuleHelper {
           .map((d) => d.copyWith(isUtc: false))
           .toList();
     } catch (e) {
-      print("❌ Error getting instances: $e");
+      log("❌ Error getting instances: $e");
       return [];
     }
   }
@@ -205,7 +205,7 @@ class RRuleHelper {
           .map((dt) => dt.copyWith(isUtc: false))
           .toList();
     } catch (e) {
-      print("❌ Error getting occurrences: $e");
+      log("❌ Error getting occurrences: $e");
       return [];
     }
   }
@@ -432,29 +432,29 @@ class RRuleHelper {
     }
   }
 
-  static void debugPrint(String rruleString) {
-    print("📅 ===== RRULE DEBUG INFO =====");
-    print("Full RRULE: $rruleString");
-    print("Frequency: ${getFrequency(rruleString)}");
-    print("Interval: ${getInterval(rruleString)}");
-    print("Until: ${getUntil(rruleString)}");
-    print("Week Days: ${getWeekDays(rruleString)}");
-    print("Month Days: ${getMonthDays(rruleString)}");
-    print("Hour: ${getHours(rruleString)}");
-    print("Minute: ${getMinutes(rruleString)}");
-    print("Valid: ${isValid(rruleString)}");
-    print("=============================");
+  static void debuglog(String rruleString) {
+    log("📅 ===== RRULE DEBUG INFO =====");
+    log("Full RRULE: $rruleString");
+    log("Frequency: ${getFrequency(rruleString)}");
+    log("Interval: ${getInterval(rruleString)}");
+    log("Until: ${getUntil(rruleString)}");
+    log("Week Days: ${getWeekDays(rruleString)}");
+    log("Month Days: ${getMonthDays(rruleString)}");
+    log("Hour: ${getHours(rruleString)}");
+    log("Minute: ${getMinutes(rruleString)}");
+    log("Valid: ${isValid(rruleString)}");
+    log("=============================");
   }
 
   static void exampleUsage() {
-    print("\n🔧 === RRULE Helper Examples ===\n");
+    log("\n🔧 === RRULE Helper Examples ===\n");
 
     final dailyRRule = buildDaily(
       hours: [9],
       minutes: [0],
       until: DateTime(2025, 12, 31),
     );
-    print("1️⃣ Daily RRULE: $dailyRRule");
+    log("1️⃣ Daily RRULE: $dailyRRule");
 
     final weeklyRRule = buildWeekly(
       weekDays: {DateTime.monday, DateTime.wednesday},
@@ -462,7 +462,7 @@ class RRuleHelper {
       minutes: [30],
       until: DateTime(2025, 12, 31),
     );
-    print("2️⃣ Weekly RRULE: $weeklyRRule");
+    log("2️⃣ Weekly RRULE: $weeklyRRule");
 
     final monthlyRRule = buildMonthly(
       monthDay: 1,
@@ -470,24 +470,24 @@ class RRuleHelper {
       minutes: [0],
       until: DateTime(2025, 12, 31),
     );
-    print("3️⃣ Monthly RRULE: $monthlyRRule");
+    log("3️⃣ Monthly RRULE: $monthlyRRule");
 
     final hourlyRRule = buildHourly(interval: 6, until: DateTime(2025, 12, 31));
-    print("4️⃣ Hourly RRULE: $hourlyRRule");
+    log("4️⃣ Hourly RRULE: $hourlyRRule");
 
-    print("\n📊 Debugging Daily RRULE:");
-    debugPrint(dailyRRule);
+    log("\n📊 Debugging Daily RRULE:");
+    debuglog(dailyRRule);
 
-    print("\n📆 First 5 occurrences:");
+    log("\n📆 First 5 occurrences:");
     final occurrences = getFirstOccurrences(
       rruleString: dailyRRule,
       start: DateTime.now(),
       count: 5,
     );
     for (var i = 0; i < occurrences.length; i++) {
-      print("  ${i + 1}. ${occurrences[i]}");
+      log("  ${i + 1}. ${occurrences[i]}");
     }
 
-    print("\n✅ === Examples Complete ===\n");
+    log("\n✅ === Examples Complete ===\n");
   }
 }

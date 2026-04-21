@@ -29,7 +29,7 @@ class _BiometricScreenState extends State<BiometricAuthScreen> {
     try {
       setState(() => _isAuthenticating = true);
       final bool didAuthenticate = await auth.authenticate(
-        localizedReason: 'Use your fingerprint to continue',
+        localizedReason: 'Use your fingerlog to continue',
         options: const AuthenticationOptions(
           biometricOnly: false,
           stickyAuth: true,

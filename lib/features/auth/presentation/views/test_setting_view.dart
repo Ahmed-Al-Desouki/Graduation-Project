@@ -35,7 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!canCheckBiometrics) {
       showSnackBar(
         context,
-        'This device does not support fingerprinting',
+        'This device does not support fingerloging',
         Colors.red,
       );
       return;
@@ -54,13 +54,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (value) {
           showSnackBar(
             context,
-            'Fingerprint activation was successful✅',
+            'Fingerlog activation was successful✅',
             Colors.green,
           );
         } else {
           showSnackBar(
             context,
-            'Fingerprint deactivation was successful❌',
+            'Fingerlog deactivation was successful❌',
             Colors.orange,
           );
         }

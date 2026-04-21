@@ -47,7 +47,7 @@ class AchievementItem extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(4.w),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(Icons.delete, color: Colors.red, size: 18),

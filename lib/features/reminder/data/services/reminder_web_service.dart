@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:graduation_project/core/utils/helper/api.dart';
 import 'package:graduation_project/core/utils/helper/time_zone_helper.dart';
 import 'package:graduation_project/features/reminder/data/models/reminder_instance_model.dart';
@@ -19,7 +21,7 @@ class ReminderWebService {
     required String message,
   }) async {
     final String timeZone = await TimeZoneHelper.getCurrentTimeZone();
-    print("Detected TimeZone: $timeZone");
+    log("Detected TimeZone: $timeZone");
 
     final Map<String, dynamic> body = {
       "type": type,
@@ -41,7 +43,7 @@ class ReminderWebService {
       body,
     );
 
-    print("Raw response from server: $response");
+    log("Raw response from server: $response");
     dynamic data = response;
 
     if (response is Map<String, dynamic> && response.containsKey('data')) {
@@ -66,7 +68,7 @@ class ReminderWebService {
   Future<List<ReminderModel>> getAllReminders(String patientId) async {
     final response = await _apiService.get("v2/patients/$patientId/reminders");
 
-    print("All Reminders Response: $response");
+    log("All Reminders Response: $response");
 
     if (response is List) {
       return response.map((e) => ReminderModel.fromJson(e)).toList();
@@ -80,7 +82,7 @@ class ReminderWebService {
     final response = await _apiService.get(
       "v2/patients/$patientId/reminders/today",
     );
-    print("Response received: $response");
+    log("Response received: $response");
     if (response is List) {
       return response.map((e) => ReminderInstanceModel.fromJson(e)).toList();
     }
@@ -117,7 +119,7 @@ class ReminderWebService {
     try {
       return ReminderModel.fromJson(response);
     } catch (e) {
-      print("Parsing Error in Update: $e");
+      log("Parsing Error in Update: $e");
       return ReminderModel(
         reminderId: reminderId,
         title: title,

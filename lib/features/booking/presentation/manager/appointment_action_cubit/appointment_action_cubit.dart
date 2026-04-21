@@ -3,7 +3,6 @@ import 'package:dartz/dartz.dart';
 import 'package:graduation_project/core/errors/failures.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
-import 'package:graduation_project/features/booking/domain/entities/booking_entity.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/block_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/book_follow_up_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_appointment_use_case.dart';

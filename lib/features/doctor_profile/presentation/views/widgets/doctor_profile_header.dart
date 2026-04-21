@@ -498,7 +498,7 @@ class DoctorProfileHeader extends StatelessWidget {
   //                 leading: Container(
   //                   padding: const EdgeInsets.all(8),
   //                   decoration: BoxDecoration(
-  //                     color: const Color(0xFF1B4E8C).withOpacity(0.1),
+  //                     color: const Color(0xFF1B4E8C).withValues(alpha: 0.1),
   //                     shape: BoxShape.circle,
   //                   ),
   //                   child: const Icon(
@@ -520,7 +520,7 @@ class DoctorProfileHeader extends StatelessWidget {
   //                 leading: Container(
   //                   padding: const EdgeInsets.all(8),
   //                   decoration: BoxDecoration(
-  //                     color: const Color(0xFF1B4E8C).withOpacity(0.1),
+  //                     color: const Color(0xFF1B4E8C).withValues(alpha: 0.1),
   //                     shape: BoxShape.circle,
   //                   ),
   //                   child: const Icon(

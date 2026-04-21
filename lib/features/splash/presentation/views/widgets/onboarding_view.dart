@@ -39,7 +39,7 @@ class _OnboardingViewState extends State<OnboardingView> {
       "title": "Secure & Fast Access",
       "desc":
           "Protect your data with Biometric login. Fast, secure, and always accessible when you need it.",
-      "image": "assets/lottie/Fingerprint biometric scan.json",
+      "image": "assets/lottie/Fingerlog biometric scan.json",
     },
   ];
 

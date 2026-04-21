@@ -15,7 +15,7 @@ class MedicalHistoryHeaderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A90E2).withOpacity(0.15),
+            color: const Color(0xFF4A90E2).withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),

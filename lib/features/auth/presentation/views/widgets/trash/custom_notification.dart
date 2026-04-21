@@ -30,7 +30,7 @@
 //         children: [
 //           CircleAvatar(
 //             radius: 18,
-//             backgroundColor: color.withOpacity(0.15),
+//             backgroundColor: color.withValues(alpha:0.15),
 //             child:
 //                 imagePath != null
 //                     ? SvgPicture.asset(

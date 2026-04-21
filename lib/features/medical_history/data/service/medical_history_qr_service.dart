@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:graduation_project/core/utils/helper/api.dart';
 
 class MedicalHistoryQrService {
@@ -30,7 +32,7 @@ class MedicalHistoryQrService {
       "share/medical-profile",
       queryParameters: {'token': token},
     );
-    print(" Raw Data from Server: $response");
+    log(" Raw Data from Server: $response");
     return response;
   }
 }

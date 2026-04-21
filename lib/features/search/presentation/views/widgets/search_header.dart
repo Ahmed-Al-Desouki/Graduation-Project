@@ -42,7 +42,7 @@ class SearchHeader extends StatelessWidget {
             "Connect with the right doctor for your needs",
             style: TextStyle(
               fontSize: 14.sp,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
         ],

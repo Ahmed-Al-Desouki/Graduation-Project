@@ -29,7 +29,7 @@ class MedicalSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = iconBgColor ?? themeColor.withOpacity(0.1);
+    final bgColor = iconBgColor ?? themeColor.withValues(alpha: 0.1);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -39,7 +39,7 @@ class MedicalSectionCard extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

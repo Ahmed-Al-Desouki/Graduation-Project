@@ -24,7 +24,7 @@ class AchievementTile extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.amber.withOpacity(0.15),
+            color: Colors.amber.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.emoji_events, color: Colors.amber),
@@ -78,7 +78,7 @@ class AchievementTile extends StatelessWidget {
                   height: 40,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: Color(0xFF2563EB).withOpacity(0.15),
+                    color: Color(0xFF2563EB).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: IconButton(
@@ -90,13 +90,13 @@ class AchievementTile extends StatelessWidget {
                     onPressed: onEdit,
                   ),
                 ),
-                SizedBox(width: 10),
+              SizedBox(width: 10),
               if (onDelete != null)
                 Container(
                   height: 40,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.15),
+                    color: Colors.red.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: IconButton(
@@ -133,7 +133,7 @@ class AchievementTile extends StatelessWidget {
 //         Container(
 //           padding: const EdgeInsets.all(10),
 //           decoration: BoxDecoration(
-//             color: Colors.amber.withOpacity(0.15),
+//             color: Colors.amber.withValues(alpha:0.15),
 //             borderRadius: BorderRadius.circular(10),
 //           ),
 //           child: Icon(Icons.emoji_events, color: Colors.amber),
@@ -175,7 +175,7 @@ class AchievementTile extends StatelessWidget {
 //           height: 40,
 //           width: 40,
 //           decoration: BoxDecoration(
-//             color: Color(0xFF2563EB).withOpacity(0.15),
+//             color: Color(0xFF2563EB).withValues(alpha:0.15),
 //             borderRadius: BorderRadius.circular(10),
 //           ),
 //           child: IconButton(
@@ -189,7 +189,7 @@ class AchievementTile extends StatelessWidget {
 //           height: 40,
 //           width: 40,
 //           decoration: BoxDecoration(
-//             color: Colors.red.withOpacity(0.15),
+//             color: Colors.red.withValues(alpha:0.15),
 //             borderRadius: BorderRadius.circular(10),
 //           ),
 //           child: IconButton(

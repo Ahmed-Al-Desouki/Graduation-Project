@@ -88,6 +88,8 @@ dependencies:
   geocoding: ^4.0.0
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
+  bloc: ^9.2.0
+  meta: ^1.17.0
 
   
 

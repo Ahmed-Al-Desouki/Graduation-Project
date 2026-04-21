@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
@@ -47,7 +49,7 @@ class _OtpScreenState extends State<OtpScreen> {
           (context) => AlertDialog(
             title: const Text('Enable Biometric Login?'),
             content: const Text(
-              'Would you like to use your fingerprint for faster logins?',
+              'Would you like to use your fingerlog for faster logins?',
             ),
             actions: [
               TextButton(
@@ -85,7 +87,7 @@ class _OtpScreenState extends State<OtpScreen> {
             }
           }
           if (state is LoginOtpRequired) {
-            print("MFA TOKEN IN OTP SCREEN: ${widget.mfaToken}");
+            log("MFA TOKEN IN OTP SCREEN: ${widget.mfaToken}");
           }
           if (state is ResendOtpSuccess) {
             showSnackBar(context, state.message, Colors.green);
@@ -144,10 +146,10 @@ class _OtpScreenState extends State<OtpScreen> {
                       const SizedBox(height: 20),
                       TextButton(
                         onPressed: () {
-                          // print("mfaToken : {$widget.mfaToken}");
+                          // log("mfaToken : {$widget.mfaToken}");
 
                           // if (widget.mfaToken != null) {
-                          // print("mfaToken : {$widget.mfaToken}");
+                          // log("mfaToken : {$widget.mfaToken}");
                           context.read<AuthCubit>().resendOtp(widget.mfaToken);
                           // }
                         },

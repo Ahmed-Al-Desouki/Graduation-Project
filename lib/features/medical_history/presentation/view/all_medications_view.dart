@@ -175,7 +175,7 @@ class _AllMedicationsViewState extends State<AllMedicationsView> {
             child: ChoiceChip(
               label: Text(opts[i], style: const TextStyle(fontSize: 11)),
               selected: current == i,
-              selectedColor: const Color(0xFF9C27B0).withOpacity(0.2),
+              selectedColor: const Color(0xFF9C27B0).withValues(alpha: 0.2),
               onSelected: (v) => onSel(i),
             ),
           ),

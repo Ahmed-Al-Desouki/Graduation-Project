@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -43,7 +45,7 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
       listener: (context, state) {
         if (state is LoginOtpRequired) {
           showSnackBar(context, '✅ ${state.message}', Colors.green);
-          print("mfaToken in listener: ${state.mfaToken}");
+          log("mfaToken in listener: ${state.mfaToken}");
           AppRouter.router.push(
             AppRouter.kOtpScreen,
             extra: {

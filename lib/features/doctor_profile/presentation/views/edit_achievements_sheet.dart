@@ -137,7 +137,7 @@ class _EditAchievementSheetState extends State<EditAchievementSheet> {
 
                     // ✅ أول حاجة: عمل التعديل
                     await cubit.updateAchievement(
-                      achievementId: widget.achievement.achievementId!,
+                      achievementId: widget.achievement.achievementId,
                       title: titleController.text,
                       description: descriptionController.text,
                       image: newImage,

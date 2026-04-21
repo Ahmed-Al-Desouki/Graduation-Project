@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
@@ -314,7 +316,7 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
                   // في الويب، LaunchMode.externalApplication هي الأفضل لفتح الـ PDF في تبويب جديد
                   await launchUrl(url, mode: LaunchMode.externalApplication);
                 } catch (e) {
-                  debugPrint('Could not launch $url, error: $e');
+                  log('Could not launch $url, error: $e');
                   // اختياري: أظهر SnackBar لو فشل
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Could not open the file")),
@@ -337,7 +339,10 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+          ),
         ],
       ),
       child: child,
@@ -406,7 +411,7 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
