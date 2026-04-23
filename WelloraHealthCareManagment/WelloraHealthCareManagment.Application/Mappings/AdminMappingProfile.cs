@@ -39,6 +39,7 @@ namespace WelloraHealthCareManagment.Application.Mappings
                 .ForMember(dest => dest.Messages, opt => opt.MapFrom(src => src.Messages));
 
             CreateMap<TicketMessage, TicketMessageDto>()
+                .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Message))
                 .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src => src.Sender.FullName));
 
             // DoctorVerification mappings

@@ -26,8 +26,12 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Services
         // User: Get own tickets
         Task<ServiceResult<TicketListResponse>> GetUserTicketsAsync(int userId, int page = 1, int pageSize = 10, CancellationToken ct = default);
 
-        // User: Get ticket details
-        Task<ServiceResult<TicketDetailsDto>> GetTicketDetailsAsync(Guid ticketId, int userId, CancellationToken ct = default);
+        // User/Admin: Get ticket details
+        Task<ServiceResult<TicketDetailsDto>> GetTicketDetailsAsync(
+            Guid ticketId,
+            int requesterId,
+            bool isAdmin,
+            CancellationToken ct = default);
 
         // Admin: Get all tickets with filtering
         Task<ServiceResult<TicketListResponse>> GetAllTicketsAsync(

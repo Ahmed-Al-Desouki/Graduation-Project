@@ -139,7 +139,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 var response = new TicketMessageHistoryResponse
                 {
                     TicketId = ticketId,
-                    Messages = messages.Select(MapMessageHistory).ToList(),
+                    Messages = _mapper.Map<List<TicketMessageDto>>(messages),
                     TotalCount = totalCount,
                     Page = page,
                     PageSize = pageSize,
@@ -181,7 +181,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     CreatedAt = DateTime.UtcNow
                 };
 
-                var created = await _ticketMessageRepository.CreateAsync(message, ct);
+                await _ticketMessageRepository.CreateAsync(message, ct);
+                var persistedMessage = await _ticketMessageRepository.GetLatestByTicketIdAsync(
+                    request.TicketId,
+                    ct);
+                if (persistedMessage == null)
+                    return ServiceResult<TicketMessageDto>.Failure("Failed to load created message");
 
                 var ticketStatusChanged = false;
                 if (ticket.ReopenIfResolved())
@@ -198,13 +203,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     data: new Dictionary<string, string> { ["ticketId"] = request.TicketId.ToString() },
                     ct: ct);
 
-                var dto = _mapper.Map<TicketMessageDto>(created);
+                var dto = _mapper.Map<TicketMessageDto>(persistedMessage);
                 await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
                     new[] { ticket.UserId },
                     "ticket",
                     request.TicketId.ToString("D"),
                     "ReceiveMessage",
-                    MapMessageHistory(created),
+                    dto,
                     ct);
 
                 if (ticketStatusChanged)
@@ -263,7 +268,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 
         public async Task<ServiceResult<TicketDetailsDto>> GetTicketDetailsAsync(
             Guid ticketId,
-            int userId,
+            int requesterId,
+            bool isAdmin,
             CancellationToken ct = default)
         {
             try
@@ -272,7 +278,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 if (ticket == null)
                     return ServiceResult<TicketDetailsDto>.Failure("Ticket not found");
 
-                if (ticket.UserId != userId)
+                if (!isAdmin && ticket.UserId != requesterId)
                     return ServiceResult<TicketDetailsDto>.Failure("Unauthorized");
 
                 var dto = _mapper.Map<TicketDetailsDto>(ticket);
@@ -350,7 +356,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     CreatedAt = DateTime.UtcNow
                 };
 
-                var created = await _ticketMessageRepository.CreateAsync(message, ct);
+                await _ticketMessageRepository.CreateAsync(message, ct);
+                var persistedMessage = await _ticketMessageRepository.GetLatestByTicketIdAsync(
+                    request.TicketId,
+                    ct);
+                if (persistedMessage == null)
+                    return ServiceResult<TicketMessageDto>.Failure("Failed to load created message");
 
                 var ticketStatusChanged = false;
                 if (ticket.MarkInProgress())
@@ -365,13 +376,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     request.TicketId,
                     ct);
 
-                var dto = _mapper.Map<TicketMessageDto>(created);
+                var dto = _mapper.Map<TicketMessageDto>(persistedMessage);
                 await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
                     new[] { ticket.UserId },
                     "ticket",
                     request.TicketId.ToString("D"),
                     "ReceiveMessage",
-                    MapMessageHistory(created),
+                    dto,
                     ct);
 
                 if (ticketStatusChanged)
@@ -513,17 +524,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 _logger.LogError(ex, "Error getting ticket statistics");
                 return ServiceResult<TicketStatisticsDto>.Failure("Failed to get statistics");
             }
-        }
-
-        private static TicketMessageHistoryDto MapMessageHistory(TicketMessage message)
-        {
-            return new TicketMessageHistoryDto
-            {
-                MessageId = message.Id,
-                Sender = message.IsFromAdmin ? "Admin" : "User",
-                Content = message.Message,
-                Timestamp = message.CreatedAt
-            };
         }
 
         private static TicketRealtimeUpdateDto MapRealtimeUpdate(Ticket ticket)

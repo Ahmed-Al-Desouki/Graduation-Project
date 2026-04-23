@@ -49,23 +49,15 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public Guid TicketId { get; set; }
         public int SenderId { get; set; }
         public string SenderName { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public bool IsFromAdmin { get; set; }
         public DateTime CreatedAt { get; set; }
-    }
-
-    public class TicketMessageHistoryDto
-    {
-        public Guid MessageId { get; set; }
-        public string Sender { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; }
     }
 
     public class TicketMessageHistoryResponse
     {
         public Guid TicketId { get; set; }
-        public List<TicketMessageHistoryDto> Messages { get; set; } = new();
+        public List<TicketMessageDto> Messages { get; set; } = new();
         public int TotalCount { get; set; }
         public int Page { get; set; }
         public int PageSize { get; set; }

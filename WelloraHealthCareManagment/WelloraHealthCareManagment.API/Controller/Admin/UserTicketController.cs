@@ -58,8 +58,10 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Ticket
         [HttpGet("{ticketId}")]
         public async Task<IActionResult> GetTicketDetails(Guid ticketId)
         {
-            var userId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
-            var result = await _ticketService.GetTicketDetailsAsync(ticketId, userId);
+            var userIdClaim = User.FindFirst("UserID")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = int.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : 0;
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _ticketService.GetTicketDetailsAsync(ticketId, userId, isAdmin);
             return result.IsSuccess ? Ok(result.Data) : BadRequest(new { error = result.Error });
         }
 
