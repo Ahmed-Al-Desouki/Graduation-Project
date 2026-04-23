@@ -34,6 +34,28 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<List<TicketMessage>> GetByTicketIdAsync(
+            Guid ticketId,
+            int page,
+            int pageSize,
+            bool descending,
+            CancellationToken ct = default)
+        {
+            var query = _context.TicketMessages
+                .Include(tm => tm.Sender)
+                .Where(tm => tm.TicketId == ticketId);
+
+            query = descending
+                ? query.OrderByDescending(tm => tm.CreatedAt)
+                : query.OrderBy(tm => tm.CreatedAt);
+
+            return await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
         public async Task<TicketMessage?> GetLatestByTicketIdAsync(
             Guid ticketId,
             CancellationToken ct = default)

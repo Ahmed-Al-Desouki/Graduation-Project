@@ -5,6 +5,7 @@ using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appointments;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
+using WelloraHealthCareManagment.Application.DTOs.Realtime;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
@@ -18,6 +19,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationService _notificationService;
+        private readonly IRealtimeService _realtimeService;
         private readonly ILogger<MedicalRecordService> _logger;
 
         public MedicalRecordService(
@@ -25,12 +27,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IAppointmentRepository appointmentRepository,
             IUnitOfWork unitOfWork,
             INotificationService notificationService,
+            IRealtimeService realtimeService,
             ILogger<MedicalRecordService> logger)
         {
             _medicalRecordRepository = medicalRecordRepository;
             _appointmentRepository = appointmentRepository;
             _unitOfWork = unitOfWork;
             _notificationService = notificationService;
+            _realtimeService = realtimeService;
             _logger = logger;
         }
 
@@ -101,6 +105,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     RelatedEntityType = "Appointment",
                     Data = BuildMedicalRecordPayload(record.Id, appointmentId, appointment.DoctorId, appointment.PatientId, request.FollowUpDate)
                 }, cancellationToken);
+                await BroadcastMedicalRecordUpdatedAsync(record, appointment, "MedicalRecordCreated", cancellationToken);
 
                 _logger.LogInformation(
                     "Medical record {RecordId} created for appointment {AppointmentId}",
@@ -181,6 +186,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     RelatedEntityType = "Appointment",
                     Data = BuildMedicalRecordPayload(record.Id, appointmentId, appointment.DoctorId, appointment.PatientId, record.FollowUpDate)
                 }, cancellationToken);
+                await BroadcastMedicalRecordUpdatedAsync(record, appointment, "MedicalRecordUpdated", cancellationToken);
 
                 _logger.LogInformation(
                     "Medical record updated for appointment {AppointmentId}",
@@ -258,6 +264,30 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
 
             return data;
+        }
+
+        private Task BroadcastMedicalRecordUpdatedAsync(
+            AppointmentMedicalRecord record,
+            Appointment appointment,
+            string eventName,
+            CancellationToken cancellationToken)
+        {
+            return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { appointment.PatientId, appointment.DoctorId },
+                "medicalrecord",
+                record.Id.ToString("D"),
+                eventName,
+                new MedicalRecordRealtimeDto
+                {
+                    MedicalRecordId = record.Id,
+                    AppointmentId = appointment.Id,
+                    DoctorId = appointment.DoctorId,
+                    PatientId = appointment.PatientId,
+                    FollowUpRequired = record.FollowUpRequired,
+                    FollowUpDate = record.FollowUpDate,
+                    UpdatedAt = record.UpdatedAt
+                },
+                cancellationToken);
         }
     }
 }

@@ -25,5 +25,56 @@ namespace WelloraHealthCareManagment.Domain.Entities.Support
         public ApplicationUser User { get; set; } = null!;
         public ApplicationUser? ClosedByAdmin { get; set; }
         public ICollection<TicketMessage> Messages { get; set; } = new List<TicketMessage>();
+
+        public void EnsureCanReceiveMessages()
+        {
+            if (Status == TicketStatus.Closed)
+            {
+                throw new InvalidOperationException("Cannot add message to a closed ticket.");
+            }
+        }
+
+        public bool ReopenIfResolved()
+        {
+            if (Status != TicketStatus.Resolved)
+            {
+                return false;
+            }
+
+            Status = TicketStatus.Open;
+            ClosedAt = null;
+            ClosedByAdminId = null;
+            UpdatedAt = DateTime.UtcNow;
+
+            return true;
+        }
+
+        public bool MarkInProgress()
+        {
+            if (Status != TicketStatus.Open)
+            {
+                return false;
+            }
+
+            Status = TicketStatus.InProgress;
+            UpdatedAt = DateTime.UtcNow;
+            return true;
+        }
+
+        public void SetStatus(TicketStatus status, int? adminId = null)
+        {
+            Status = status;
+            UpdatedAt = DateTime.UtcNow;
+
+            if (status == TicketStatus.Closed)
+            {
+                ClosedAt = UpdatedAt;
+                ClosedByAdminId = adminId;
+                return;
+            }
+
+            ClosedAt = null;
+            ClosedByAdminId = null;
+        }
     }
 }

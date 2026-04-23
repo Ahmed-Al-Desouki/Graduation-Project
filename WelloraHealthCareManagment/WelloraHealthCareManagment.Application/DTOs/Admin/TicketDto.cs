@@ -54,6 +54,25 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public DateTime CreatedAt { get; set; }
     }
 
+    public class TicketMessageHistoryDto
+    {
+        public Guid MessageId { get; set; }
+        public string Sender { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+    }
+
+    public class TicketMessageHistoryResponse
+    {
+        public Guid TicketId { get; set; }
+        public List<TicketMessageHistoryDto> Messages { get; set; } = new();
+        public int TotalCount { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public string SortDirection { get; set; } = "asc";
+        public bool HasNextPage => Page * PageSize < TotalCount;
+    }
+
     public class CreateTicketRequest
     {
         public string Title { get; set; } = string.Empty;
@@ -74,15 +93,25 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public TicketStatus Status { get; set; }
     }
 
+    public class PatchTicketRequest
+    {
+        public TicketStatus? Status { get; set; }
+    }
+
     public class UpdateTicketPriorityRequest
     {
         public Guid TicketId { get; set; }
         public TicketPriority Priority { get; set; }
     }
 
-    public class CloseTicketRequest
+    public class TicketRealtimeUpdateDto
     {
         public Guid TicketId { get; set; }
+        public int UserId { get; set; }
+        public TicketStatus Status { get; set; }
+        public TicketPriority Priority { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public DateTime? ClosedAt { get; set; }
     }
 
     public class TicketListResponse

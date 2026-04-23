@@ -13,6 +13,16 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Services
         // User: Add message to ticket
         Task<ServiceResult<TicketMessageDto>> AddMessageAsync(AddTicketMessageRequest request, int userId, CancellationToken ct = default);
 
+        // User/Admin: Get ticket message history
+        Task<ServiceResult<TicketMessageHistoryResponse>> GetTicketMessagesAsync(
+            Guid ticketId,
+            int requesterId,
+            bool isAdmin,
+            int page = 1,
+            int pageSize = 20,
+            bool descending = false,
+            CancellationToken ct = default);
+
         // User: Get own tickets
         Task<ServiceResult<TicketListResponse>> GetUserTicketsAsync(int userId, int page = 1, int pageSize = 10, CancellationToken ct = default);
 
@@ -42,9 +52,6 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Services
 
         // Admin: Update ticket priority
         Task<ServiceResult> UpdatePriorityAsync(UpdateTicketPriorityRequest request, int adminId, CancellationToken ct = default);
-
-        // Admin: Close ticket
-        Task<ServiceResult> CloseTicketAsync(CloseTicketRequest request, int adminId, CancellationToken ct = default);
 
         // Statistics
         Task<ServiceResult<TicketStatisticsDto>> GetStatisticsAsync(CancellationToken ct = default);

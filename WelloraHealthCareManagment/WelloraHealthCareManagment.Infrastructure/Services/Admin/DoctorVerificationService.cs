@@ -4,6 +4,7 @@ using AutoMapper;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
+using WelloraHealthCareManagment.Application.DTOs.Realtime;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Enums;
@@ -17,6 +18,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
         private readonly IDoctorVerificationRepository _verificationRepository;
         private readonly IDoctorRepository _doctorRepository;
         private readonly INotificationService _notificationService;
+        private readonly IRealtimeService _realtimeService;
         private readonly IAdminAuditService _auditService;
         private readonly IMapper _mapper;
         private readonly ILogger<DoctorVerificationService> _logger;
@@ -25,6 +27,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             IDoctorVerificationRepository verificationRepository,
             IDoctorRepository doctorRepository,
             INotificationService notificationService,
+            IRealtimeService realtimeService,
             IAdminAuditService auditService,
             IMapper mapper,
             ILogger<DoctorVerificationService> logger)
@@ -32,6 +35,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             _verificationRepository = verificationRepository;
             _doctorRepository = doctorRepository;
             _notificationService = notificationService;
+            _realtimeService = realtimeService;
             _auditService = auditService;
             _mapper = mapper;
             _logger = logger;
@@ -196,6 +200,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 _logger.LogInformation(
                     "Admin {AdminId} approved doctor verification request for doctor {DoctorId}",
                     adminId, doctorId);
+                await BroadcastVerificationUpdatedAsync(doctorId, doctor.IsActive, "Approved", null, ct);
 
                 return ServiceResult.Success();
             }
@@ -268,6 +273,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 _logger.LogInformation(
                     "Admin {AdminId} rejected doctor verification request for doctor {DoctorId}. Reason: {Reason}",
                     adminId, doctorId, request.RejectionReason);
+                await BroadcastVerificationUpdatedAsync(
+                    doctorId,
+                    doctor.IsActive,
+                    "Rejected",
+                    request.RejectionReason,
+                    ct);
 
                 return ServiceResult.Success();
             }
@@ -381,6 +392,29 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     })
                     .ToList()
             };
+        }
+
+        private Task BroadcastVerificationUpdatedAsync(
+            int doctorId,
+            bool isActive,
+            string status,
+            string? rejectionReason,
+            CancellationToken ct)
+        {
+            return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { doctorId },
+                "doctorverification",
+                doctorId.ToString(),
+                "DoctorVerificationUpdated",
+                new DoctorVerificationRealtimeDto
+                {
+                    DoctorId = doctorId,
+                    IsActive = isActive,
+                    Status = status,
+                    RejectionReason = rejectionReason,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                ct);
         }
     }
 }

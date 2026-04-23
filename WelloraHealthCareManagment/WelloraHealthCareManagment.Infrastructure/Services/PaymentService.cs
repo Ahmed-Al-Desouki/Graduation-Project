@@ -10,6 +10,7 @@ using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.DTOs.Payment;
+using WelloraHealthCareManagment.Application.DTOs.Realtime;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
@@ -33,6 +34,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IMedicalHistoryAccessRepository _accessRepository;
         private readonly IAppointmentReminderService _appointmentReminderService;
         private readonly INotificationService _notificationService;
+        private readonly IRealtimeService _realtimeService;
         private readonly ILogger<PaymentService> _logger;
 
         public PaymentService(
@@ -47,6 +49,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IMedicalHistoryAccessRepository accessRepository,
             IAppointmentReminderService appointmentReminderService,
             INotificationService notificationService,
+            IRealtimeService realtimeService,
             ILogger<PaymentService> logger)
         {
             _paymentRepository = paymentRepository;
@@ -60,6 +63,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _accessRepository = accessRepository;
             _appointmentReminderService = appointmentReminderService;
             _notificationService = notificationService;
+            _realtimeService = realtimeService;
             _logger = logger;
         }
 
@@ -329,6 +333,17 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     Data = new Dictionary<string, string> { ["paymentId"] = payment.Id.ToString() }
                 }
             }, cancellationToken);
+            await BroadcastPaymentUpdatedAsync(payment, cancellationToken);
+
+            if (reminderAppointment != null)
+            {
+                await BroadcastAppointmentCreatedAsync(reminderAppointment, cancellationToken);
+            }
+
+            if (reminderTimeSlot != null)
+            {
+                await BroadcastSlotUpdatedAsync(reminderTimeSlot, reminderAppointment?.Id, cancellationToken);
+            }
 
             return new ProcessCallbackResult
             {
@@ -355,6 +370,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     RelatedEntityType = "Payment",
                     Data = new Dictionary<string, string> { ["paymentId"] = payment.Id.ToString() }
                 }, cancellationToken);
+                await BroadcastPaymentUpdatedAsync(payment, cancellationToken);
             }
 
             return new ProcessCallbackResult
@@ -405,6 +421,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     ["reason"] = reason
                 }
             }, cancellationToken);
+            await BroadcastPaymentUpdatedAsync(payment, cancellationToken);
 
             return new ProcessCallbackResult
             {
@@ -629,6 +646,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     _logger.LogInformation(
                         "Payment created successfully for TimeSlot {TimeSlotId}, PaymentId: {PaymentId}, URL: {Url}",
                         request.TimeSlotId, payment.Id, paymobResponse.PaymentUrl);
+                    await BroadcastPaymentUpdatedAsync(payment, cancellationToken);
 
                     return new CreatePaymentResponse
                     {
@@ -748,6 +766,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     payment.SetPaymobOrderId(paymobResponse.PaymobOrderId);
                     await _paymentRepository.UpdateAsync(payment, cancellationToken);
                     await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    await BroadcastPaymentUpdatedAsync(payment, cancellationToken);
 
                     return new CreatePaymentResponse
                     {
@@ -1000,6 +1019,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         Data = new Dictionary<string, string> { ["paymentId"] = payment.Id.ToString() }
                     }
                 }, cancellationToken);
+                await BroadcastPaymentUpdatedAsync(payment, cancellationToken);
 
                 _logger.LogInformation(
                     "Refund completed successfully for payment {PaymentId}. " +
@@ -1138,6 +1158,82 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
 
             throw new UnauthorizedAccessException("You are not allowed to access this payment.");
+        }
+
+        private Task BroadcastPaymentUpdatedAsync(Payment payment, CancellationToken ct)
+        {
+            return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { payment.PatientId, payment.DoctorId },
+                "payment",
+                payment.Id.ToString("D"),
+                "PaymentUpdated",
+                new PaymentRealtimeDto
+                {
+                    PaymentId = payment.Id,
+                    AppointmentId = payment.AppointmentId,
+                    TimeSlotId = payment.TimeSlotId,
+                    PatientId = payment.PatientId,
+                    DoctorId = payment.DoctorId,
+                    Amount = payment.Amount,
+                    Method = payment.Method,
+                    Status = payment.Status,
+                    PaymobOrderId = payment.PaymobOrderId,
+                    FailureReason = payment.FailureReason,
+                    RefundAmount = payment.RefundAmount,
+                    PaidAt = payment.PaidAt,
+                    RefundedAt = payment.RefundedAt,
+                    UpdatedAt = payment.UpdatedAt
+                },
+                ct);
+        }
+
+        private Task BroadcastAppointmentCreatedAsync(Appointment appointment, CancellationToken ct)
+        {
+            var payload = new AppointmentRealtimeDto
+            {
+                AppointmentId = appointment.Id,
+                TimeSlotId = appointment.TimeSlotId,
+                DoctorId = appointment.DoctorId,
+                PatientId = appointment.PatientId,
+                Status = appointment.Status,
+                IsPaid = appointment.IsPaid,
+                CancellationReason = appointment.CancellationReason,
+                BookedAt = appointment.BookedAt,
+                ConfirmedAt = appointment.ConfirmedAt,
+                StartedAt = appointment.StartedAt,
+                CompletedAt = appointment.CompletedAt,
+                CancelledAt = appointment.CancelledAt
+            };
+
+            return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { appointment.PatientId, appointment.DoctorId },
+                "appointment",
+                appointment.Id.ToString("D"),
+                "AppointmentCreated",
+                payload,
+                ct);
+        }
+
+        private Task BroadcastSlotUpdatedAsync(TimeSlot timeSlot, Guid? appointmentId, CancellationToken ct)
+        {
+            return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { timeSlot.DoctorId },
+                "timeslot",
+                timeSlot.Id.ToString("D"),
+                "SlotUpdated",
+                new SlotRealtimeDto
+                {
+                    SlotId = timeSlot.Id,
+                    DoctorId = timeSlot.DoctorId,
+                    AppointmentId = appointmentId,
+                    Status = timeSlot.Status,
+                    SlotDate = timeSlot.SlotDate,
+                    StartTime = timeSlot.StartTime,
+                    EndTime = timeSlot.EndTime,
+                    IsManuallyCreated = timeSlot.IsManuallyCreated,
+                    UpdatedAt = timeSlot.UpdatedAt
+                },
+                ct);
         }
 
         #endregion

@@ -5,6 +5,7 @@ using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Application.DTOs.Realtime;
 using WelloraHealthCareManagment.Domain.Entities.Support;
 using WelloraHealthCareManagment.Domain.Enums;
 
@@ -15,6 +16,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
         private readonly ITicketRepository _ticketRepository;
         private readonly ITicketMessageRepository _ticketMessageRepository;
         private readonly INotificationService _notificationService;
+        private readonly IRealtimeService _realtimeService;
         private readonly IAdminAuditService _auditService;
         private readonly IMapper _mapper;
         private readonly ILogger<TicketService> _logger;
@@ -23,6 +25,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             ITicketRepository ticketRepository,
             ITicketMessageRepository ticketMessageRepository,
             INotificationService notificationService,
+            IRealtimeService realtimeService,
             IAdminAuditService auditService,
             IMapper mapper,
             ILogger<TicketService> logger)
@@ -30,6 +33,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             _ticketRepository = ticketRepository;
             _ticketMessageRepository = ticketMessageRepository;
             _notificationService = notificationService;
+            _realtimeService = realtimeService;
             _auditService = auditService;
             _mapper = mapper;
             _logger = logger;
@@ -76,7 +80,19 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 
                 // Reload with relations
                 var ticketDetails = await _ticketRepository.GetByIdWithMessagesAsync(created.Id, ct);
+                if (ticketDetails == null)
+                {
+                    return ServiceResult<TicketDetailsDto>.Failure("Failed to load created ticket");
+                }
+
                 var dto = _mapper.Map<TicketDetailsDto>(ticketDetails);
+                await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                    new[] { dto.UserId },
+                    "ticket",
+                    dto.Id.ToString("D"),
+                    "TicketCreated",
+                    dto,
+                    ct);
 
                 _logger.LogInformation(
                     "Ticket created by user {UserId}: {TicketId}",
@@ -88,6 +104,54 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 _logger.LogError(ex, "Error creating ticket for user {UserId}", userId);
                 return ServiceResult<TicketDetailsDto>.Failure("Failed to create ticket");
+            }
+        }
+
+        public async Task<ServiceResult<TicketMessageHistoryResponse>> GetTicketMessagesAsync(
+            Guid ticketId,
+            int requesterId,
+            bool isAdmin,
+            int page = 1,
+            int pageSize = 20,
+            bool descending = false,
+            CancellationToken ct = default)
+        {
+            try
+            {
+                page = Math.Max(page, 1);
+                pageSize = Math.Clamp(pageSize, 1, 100);
+
+                var ticket = await _ticketRepository.GetByIdAsync(ticketId, ct);
+                if (ticket == null)
+                    return ServiceResult<TicketMessageHistoryResponse>.Failure("Ticket not found");
+
+                if (!isAdmin && ticket.UserId != requesterId)
+                    return ServiceResult<TicketMessageHistoryResponse>.Failure("Unauthorized");
+
+                var messages = await _ticketMessageRepository.GetByTicketIdAsync(
+                    ticketId,
+                    page,
+                    pageSize,
+                    descending,
+                    ct);
+                var totalCount = await _ticketMessageRepository.CountByTicketIdAsync(ticketId, ct);
+
+                var response = new TicketMessageHistoryResponse
+                {
+                    TicketId = ticketId,
+                    Messages = messages.Select(MapMessageHistory).ToList(),
+                    TotalCount = totalCount,
+                    Page = page,
+                    PageSize = pageSize,
+                    SortDirection = descending ? "desc" : "asc"
+                };
+
+                return ServiceResult<TicketMessageHistoryResponse>.Success(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting ticket messages for ticket {TicketId}", ticketId);
+                return ServiceResult<TicketMessageHistoryResponse>.Failure("Failed to get ticket messages");
             }
         }
 
@@ -106,9 +170,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 if (ticket.UserId != userId)
                     return ServiceResult<TicketMessageDto>.Failure("Unauthorized");
 
-                // Check if ticket is closed
-                if (ticket.Status == TicketStatus.Closed)
-                    return ServiceResult<TicketMessageDto>.Failure("Cannot add message to closed ticket");
+                ticket.EnsureCanReceiveMessages();
 
                 var message = new TicketMessage
                 {
@@ -121,12 +183,11 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 
                 var created = await _ticketMessageRepository.CreateAsync(message, ct);
 
-                // Update ticket status if it was resolved
-                if (ticket.Status == TicketStatus.Resolved)
+                var ticketStatusChanged = false;
+                if (ticket.ReopenIfResolved())
                 {
-                    ticket.Status = TicketStatus.Open;
-                    ticket.UpdatedAt = DateTime.UtcNow;
                     await _ticketRepository.UpdateAsync(ticket, ct);
+                    ticketStatusChanged = true;
                 }
 
                 await _notificationService.NotifyAdminsAsync(
@@ -138,6 +199,24 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     ct: ct);
 
                 var dto = _mapper.Map<TicketMessageDto>(created);
+                await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                    new[] { ticket.UserId },
+                    "ticket",
+                    request.TicketId.ToString("D"),
+                    "ReceiveMessage",
+                    MapMessageHistory(created),
+                    ct);
+
+                if (ticketStatusChanged)
+                {
+                    await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                        new[] { ticket.UserId },
+                        "ticket",
+                        ticket.Id.ToString("D"),
+                        "TicketUpdated",
+                        MapRealtimeUpdate(ticket),
+                        ct);
+                }
 
                 _logger.LogInformation(
                     "User {UserId} added message to ticket {TicketId}",
@@ -260,6 +339,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 if (ticket == null)
                     return ServiceResult<TicketMessageDto>.Failure("Ticket not found");
 
+                ticket.EnsureCanReceiveMessages();
+
                 var message = new TicketMessage
                 {
                     TicketId = request.TicketId,
@@ -271,12 +352,11 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 
                 var created = await _ticketMessageRepository.CreateAsync(message, ct);
 
-                // Update ticket status to InProgress if it was Open
-                if (ticket.Status == TicketStatus.Open)
+                var ticketStatusChanged = false;
+                if (ticket.MarkInProgress())
                 {
-                    ticket.Status = TicketStatus.InProgress;
-                    ticket.UpdatedAt = DateTime.UtcNow;
                     await _ticketRepository.UpdateAsync(ticket, ct);
+                    ticketStatusChanged = true;
                 }
 
                 // Send notification to user
@@ -286,6 +366,24 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     ct);
 
                 var dto = _mapper.Map<TicketMessageDto>(created);
+                await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                    new[] { ticket.UserId },
+                    "ticket",
+                    request.TicketId.ToString("D"),
+                    "ReceiveMessage",
+                    MapMessageHistory(created),
+                    ct);
+
+                if (ticketStatusChanged)
+                {
+                    await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                        new[] { ticket.UserId },
+                        "ticket",
+                        ticket.Id.ToString("D"),
+                        "TicketUpdated",
+                        MapRealtimeUpdate(ticket),
+                        ct);
+                }
 
                 _logger.LogInformation(
                     "Admin {AdminId} responded to ticket {TicketId}",
@@ -311,10 +409,32 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 if (ticket == null)
                     return ServiceResult.Failure("Ticket not found");
 
-                ticket.Status = request.Status;
-                ticket.UpdatedAt = DateTime.UtcNow;
+                ticket.SetStatus(request.Status, adminId);
 
                 await _ticketRepository.UpdateAsync(ticket, ct);
+
+                if (request.Status == TicketStatus.Closed)
+                {
+                    await _notificationService.SendTicketClosedNotificationAsync(
+                        ticket.UserId,
+                        request.TicketId,
+                        ct);
+
+                    await _auditService.LogActionAsync(
+                        adminId,
+                        AdminActionType.CloseTicket,
+                        "Ticket",
+                        request.TicketId.ToString(),
+                        ct: ct);
+                }
+
+                await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                    new[] { ticket.UserId },
+                    "ticket",
+                    ticket.Id.ToString("D"),
+                    "TicketUpdated",
+                    MapRealtimeUpdate(ticket),
+                    ct);
 
                 _logger.LogInformation(
                     "Admin {AdminId} updated ticket {TicketId} status to {Status}",
@@ -344,6 +464,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 ticket.UpdatedAt = DateTime.UtcNow;
 
                 await _ticketRepository.UpdateAsync(ticket, ct);
+                await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                    new[] { ticket.UserId },
+                    "ticket",
+                    ticket.Id.ToString("D"),
+                    "TicketUpdated",
+                    MapRealtimeUpdate(ticket),
+                    ct);
 
                 _logger.LogInformation(
                     "Admin {AdminId} updated ticket {TicketId} priority to {Priority}",
@@ -355,51 +482,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 _logger.LogError(ex, "Error updating ticket priority {TicketId}", request.TicketId);
                 return ServiceResult.Failure("Failed to update ticket priority");
-            }
-        }
-
-        public async Task<ServiceResult> CloseTicketAsync(
-            CloseTicketRequest request,
-            int adminId,
-            CancellationToken ct = default)
-        {
-            try
-            {
-                var ticket = await _ticketRepository.GetByIdWithUserAsync(request.TicketId, ct);
-                if (ticket == null)
-                    return ServiceResult.Failure("Ticket not found");
-
-                ticket.Status = TicketStatus.Closed;
-                ticket.ClosedAt = DateTime.UtcNow;
-                ticket.ClosedByAdminId = adminId;
-                ticket.UpdatedAt = DateTime.UtcNow;
-
-                await _ticketRepository.UpdateAsync(ticket, ct);
-
-                // Send notification to user
-                await _notificationService.SendTicketClosedNotificationAsync(
-                    ticket.UserId,
-                    request.TicketId,
-                    ct);
-
-                // Log action
-                await _auditService.LogActionAsync(
-                    adminId,
-                    AdminActionType.CloseTicket,
-                    "Ticket",
-                    request.TicketId.ToString(),
-                    ct: ct);
-
-                _logger.LogInformation(
-                    "Admin {AdminId} closed ticket {TicketId}",
-                    adminId, request.TicketId);
-
-                return ServiceResult.Success();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error closing ticket {TicketId}", request.TicketId);
-                return ServiceResult.Failure("Failed to close ticket");
             }
         }
 
@@ -431,6 +513,30 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 _logger.LogError(ex, "Error getting ticket statistics");
                 return ServiceResult<TicketStatisticsDto>.Failure("Failed to get statistics");
             }
+        }
+
+        private static TicketMessageHistoryDto MapMessageHistory(TicketMessage message)
+        {
+            return new TicketMessageHistoryDto
+            {
+                MessageId = message.Id,
+                Sender = message.IsFromAdmin ? "Admin" : "User",
+                Content = message.Message,
+                Timestamp = message.CreatedAt
+            };
+        }
+
+        private static TicketRealtimeUpdateDto MapRealtimeUpdate(Ticket ticket)
+        {
+            return new TicketRealtimeUpdateDto
+            {
+                TicketId = ticket.Id,
+                UserId = ticket.UserId,
+                Status = ticket.Status,
+                Priority = ticket.Priority,
+                UpdatedAt = ticket.UpdatedAt,
+                ClosedAt = ticket.ClosedAt
+            };
         }
     }
 }

@@ -11,6 +11,7 @@ using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Appoi
 using WelloraHealthCareManagment.Application.DTOs.Payment;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Application.DTOs.Realtime;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.ValueObjects;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
@@ -29,6 +30,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IPaymentService _paymentService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationService _notificationService;
+        private readonly IRealtimeService _realtimeService;
         private readonly ILogger<AppointmentService> _logger;
 
         public AppointmentService(
@@ -41,6 +43,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IPaymentService paymentService,
             IUnitOfWork unitOfWork,
             INotificationService notificationService,
+            IRealtimeService realtimeService,
             ILogger<AppointmentService> logger)
         {
             _appointmentRepository = appointmentRepository;
@@ -52,6 +55,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _paymentService = paymentService;
             _unitOfWork = unitOfWork;
             _notificationService = notificationService;
+            _realtimeService = realtimeService;
             _logger = logger;
         }
 
@@ -143,6 +147,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     timeSlot.DoctorId,
                     timeSlot,
                     cancellationToken);
+                await BroadcastAppointmentCreatedAsync(appointment, timeSlot, cancellationToken);
 
                 _logger.LogInformation(
                     "Appointment {AppointmentId} booked successfully by Patient {PatientId}",
@@ -345,6 +350,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     timeSlot.DoctorId,
                     timeSlot,
                     cancellationToken);
+                await BroadcastAppointmentCreatedAsync(appointment, timeSlot, cancellationToken);
 
                 _logger.LogInformation(
                     "Booking completed: Appointment {AppointmentId}, Payment {PaymentId}",
@@ -643,6 +649,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await BroadcastAppointmentUpdatedAsync(appointment, cancellationToken);
 
             _logger.LogInformation("Appointment {AppointmentId} confirmed", appointmentId);
         }
@@ -669,6 +676,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             await _appointmentRepository.UpdateAsync(appointment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await BroadcastAppointmentUpdatedAsync(appointment, cancellationToken);
 
             _logger.LogInformation("Appointment {AppointmentId} started", appointmentId);
         }
@@ -724,6 +732,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         ["doctorId"] = appointment.DoctorId.ToString()
                     }
                 }, cancellationToken);
+                await BroadcastAppointmentUpdatedAsync(appointment, cancellationToken);
+
+                if (timeSlot != null)
+                {
+                    await BroadcastSlotUpdatedAsync(timeSlot, appointment.Id, cancellationToken);
+                }
 
                 _logger.LogInformation("Appointment {AppointmentId} completed", appointmentId);
             }
@@ -795,6 +809,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 // SaveChanges قبل الـ Commit
                 await _unitOfWork.SaveChangesAsync(ct);
                 await _unitOfWork.CommitTransactionAsync(ct);
+                await BroadcastAppointmentCreatedAsync(newAppt, slot, ct);
 
                 return new FollowUpResponse
                 {
@@ -880,6 +895,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 await _unitOfWork.SaveChangesAsync(ct);
                 await _unitOfWork.CommitTransactionAsync(ct);
+                await BroadcastAppointmentCreatedAsync(newAppt, newSlot, ct);
 
                 return new FollowUpResponse
                 {
@@ -926,6 +942,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             // 2. Get existing active grant
             var existingGrant = await _accessRepository
                 .GetActiveAppointmentGrantAsync(appointmentId.Value, ct);
+            var medicalAccessChangeType = "Updated";
+            Guid? accessGrantId = existingGrant?.Id;
+            DateTime? accessGrantExpiresAt = existingGrant?.ExpiresAt;
+            var canViewMedicalHistory = request.CanViewMedicalHistory;
+            var canViewPrescriptions = request.CanViewPrescriptions;
+            var canViewLabResults = request.CanViewLabResults;
 
             if (existingGrant == null)
             {
@@ -948,6 +970,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     canViewPrescriptions: request.CanViewPrescriptions,
                     canViewLabResults: request.CanViewLabResults,
                     cancellationToken: ct);
+                medicalAccessChangeType = "Granted";
             }
             else
             {
@@ -986,6 +1009,10 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     _logger.LogInformation(
                         "Medical access grant {GrantId} revoked for appointment {AppointmentId}",
                         existingGrant.Id, appointmentId);
+                    medicalAccessChangeType = "Revoked";
+                    canViewMedicalHistory = false;
+                    canViewPrescriptions = false;
+                    canViewLabResults = false;
                 }
                 else
                 {
@@ -1021,10 +1048,26 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     _logger.LogInformation(
                         "Permissions updated for grant {GrantId}, appointment {AppointmentId}",
                         existingGrant.Id, appointmentId);
+                    medicalAccessChangeType = "Updated";
+                    accessGrantExpiresAt = existingGrant.ExpiresAt;
                 }
             }
 
             await _unitOfWork.SaveChangesAsync(ct);
+            await BroadcastMedicalAccessChangedAsync(
+                new MedicalAccessRealtimeDto
+                {
+                    AppointmentId = appointment.Id,
+                    DoctorId = appointment.DoctorId,
+                    PatientId = patientId,
+                    AccessGrantId = accessGrantId,
+                    ChangeType = medicalAccessChangeType,
+                    CanViewMedicalHistory = canViewMedicalHistory,
+                    CanViewPrescriptions = canViewPrescriptions,
+                    CanViewLabResults = canViewLabResults,
+                    ExpiresAt = accessGrantExpiresAt
+                },
+                ct);
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -1078,6 +1121,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 ct: ct);
 
             await _unitOfWork.SaveChangesAsync(ct);
+            await BroadcastMedicalAccessChangedAsync(
+                new MedicalAccessRealtimeDto
+                {
+                    AppointmentId = appointment.Id,
+                    DoctorId = appointment.DoctorId,
+                    PatientId = patientId,
+                    AccessGrantId = grant.Id,
+                    ChangeType = "ExpiryExtended",
+                    CanViewMedicalHistory = grant.CanViewMedicalHistory,
+                    CanViewPrescriptions = grant.CanViewPrescriptions,
+                    CanViewLabResults = grant.CanViewLabResults,
+                    ExpiresAt = request.NewExpiryDate
+                },
+                ct);
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -1261,6 +1318,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     reason,
                     refundAmount,
                     cancellationToken);
+                await BroadcastAppointmentCancelledAsync(appointment, timeSlot, cancellationToken);
 
                 var message = refundProcessed
                     ? $"Appointment cancelled successfully. " +
@@ -1494,6 +1552,143 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     }
                 }
             }, cancellationToken);
+        }
+
+        private async Task BroadcastAppointmentCreatedAsync(
+            Appointment appointment,
+            TimeSlot timeSlot,
+            CancellationToken ct)
+        {
+            var payload = MapAppointmentRealtimeDto(appointment);
+            var userIds = new[] { appointment.PatientId, appointment.DoctorId };
+
+            await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                userIds,
+                "appointment",
+                appointment.Id.ToString("D"),
+                "AppointmentCreated",
+                payload,
+                ct);
+
+            await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                userIds,
+                "booking",
+                appointment.Id.ToString("D"),
+                "BookingCreated",
+                payload,
+                ct);
+
+            await BroadcastSlotUpdatedAsync(timeSlot, appointment.Id, ct);
+        }
+
+        private async Task BroadcastAppointmentUpdatedAsync(
+            Appointment appointment,
+            CancellationToken ct)
+        {
+            var payload = MapAppointmentRealtimeDto(appointment);
+            var userIds = new[] { appointment.PatientId, appointment.DoctorId };
+
+            await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                userIds,
+                "appointment",
+                appointment.Id.ToString("D"),
+                "AppointmentUpdated",
+                payload,
+                ct);
+
+            await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                userIds,
+                "booking",
+                appointment.Id.ToString("D"),
+                "BookingUpdated",
+                payload,
+                ct);
+        }
+
+        private async Task BroadcastAppointmentCancelledAsync(
+            Appointment appointment,
+            TimeSlot timeSlot,
+            CancellationToken ct)
+        {
+            var payload = MapAppointmentRealtimeDto(appointment);
+            var userIds = new[] { appointment.PatientId, appointment.DoctorId };
+
+            await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                userIds,
+                "appointment",
+                appointment.Id.ToString("D"),
+                "AppointmentCancelled",
+                payload,
+                ct);
+
+            await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                userIds,
+                "booking",
+                appointment.Id.ToString("D"),
+                "BookingUpdated",
+                payload,
+                ct);
+
+            await BroadcastSlotUpdatedAsync(timeSlot, appointment.Id, ct);
+        }
+
+        private Task BroadcastSlotUpdatedAsync(
+            TimeSlot timeSlot,
+            Guid? appointmentId,
+            CancellationToken ct)
+        {
+            var payload = new SlotRealtimeDto
+            {
+                SlotId = timeSlot.Id,
+                DoctorId = timeSlot.DoctorId,
+                AppointmentId = appointmentId,
+                Status = timeSlot.Status,
+                SlotDate = timeSlot.SlotDate,
+                StartTime = timeSlot.StartTime,
+                EndTime = timeSlot.EndTime,
+                IsManuallyCreated = timeSlot.IsManuallyCreated,
+                UpdatedAt = timeSlot.UpdatedAt
+            };
+
+            return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { timeSlot.DoctorId },
+                "timeslot",
+                timeSlot.Id.ToString("D"),
+                "SlotUpdated",
+                payload,
+                ct);
+        }
+
+        private Task BroadcastMedicalAccessChangedAsync(
+            MedicalAccessRealtimeDto payload,
+            CancellationToken ct)
+        {
+            return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { payload.PatientId, payload.DoctorId },
+                "appointment",
+                payload.AppointmentId.ToString("D"),
+                "MedicalAccessUpdated",
+                payload,
+                ct);
+        }
+
+        private static AppointmentRealtimeDto MapAppointmentRealtimeDto(Appointment appointment)
+        {
+            return new AppointmentRealtimeDto
+            {
+                AppointmentId = appointment.Id,
+                TimeSlotId = appointment.TimeSlotId,
+                DoctorId = appointment.DoctorId,
+                PatientId = appointment.PatientId,
+                Status = appointment.Status,
+                IsPaid = appointment.IsPaid,
+                CancellationReason = appointment.CancellationReason,
+                BookedAt = appointment.BookedAt,
+                ConfirmedAt = appointment.ConfirmedAt,
+                StartedAt = appointment.StartedAt,
+                CompletedAt = appointment.CompletedAt,
+                CancelledAt = appointment.CancelledAt
+            };
         }
 
         // ════════════════════════════════════════════════════════════════════

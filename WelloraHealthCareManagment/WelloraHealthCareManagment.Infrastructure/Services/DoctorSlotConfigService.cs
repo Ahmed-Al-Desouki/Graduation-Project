@@ -834,6 +834,7 @@ using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Schedules;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.SlotConfig;
 using WelloraHealthCareManagment.Application.Interfaces;
+using WelloraHealthCareManagment.Application.DTOs.Realtime;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Constants;
@@ -852,6 +853,7 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
     private readonly ISlotGenerationService _generationService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly INotificationService _notificationService;
+    private readonly IRealtimeService _realtimeService;
     private readonly ILogger<DoctorSlotConfigService> _logger;
 
     public DoctorSlotConfigService(
@@ -863,6 +865,7 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
         ISlotGenerationService generationService,
         IUnitOfWork unitOfWork,
         INotificationService notificationService,
+        IRealtimeService realtimeService,
         ILogger<DoctorSlotConfigService> logger)
     {
         _configRepository = configRepository;
@@ -873,6 +876,7 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
         _generationService = generationService;
         _unitOfWork = unitOfWork;
         _notificationService = notificationService;
+        _realtimeService = realtimeService;
         _logger = logger;
     }
 
@@ -935,6 +939,13 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
             }
 
             await transaction.CommitAsync(ct);
+            await BroadcastScheduleUpdatedAsync(
+                doctorId,
+                isUpdate ? "DayConfigUpdated" : "DayConfigCreated",
+                request.DayOfWeek.ToString(),
+                null,
+                null,
+                ct);
 
             _logger.LogInformation(
                 "{Action} config for doctor {DoctorId} day {Day}",
@@ -999,6 +1010,13 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
 
             await _unitOfWork.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
+            await BroadcastScheduleUpdatedAsync(
+                doctorId,
+                "DayRemoved",
+                day.ToString(),
+                null,
+                "Doctor removed this day from their schedule",
+                ct);
 
             _logger.LogInformation(
                 "Removed day {Day} for doctor {DoctorId}. Blocked {Count} slots",
@@ -1074,6 +1092,13 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
 
             await _unitOfWork.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
+            await BroadcastScheduleUpdatedAsync(
+                doctorId,
+                "DayOffAdded",
+                request.Date.DayOfWeek.ToString(),
+                request.Date,
+                request.Reason,
+                ct);
 
             _logger.LogInformation(
                 "Day off added for doctor {DoctorId} on {Date}. Blocked {Count} slots",
@@ -1135,6 +1160,13 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
 
             await _unitOfWork.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
+            await BroadcastScheduleUpdatedAsync(
+                doctorId,
+                "CustomHoursAdded",
+                request.Date.DayOfWeek.ToString(),
+                request.Date,
+                request.Reason,
+                ct);
 
             _logger.LogInformation(
                 "Custom hours added for doctor {DoctorId} on {Date}. Blocked {Count} slots",
@@ -1177,6 +1209,13 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
 
             await _unitOfWork.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
+            await BroadcastScheduleUpdatedAsync(
+                doctorId,
+                "ExceptionRemoved",
+                date.DayOfWeek.ToString(),
+                date,
+                null,
+                ct);
 
             _logger.LogInformation(
                 "Exception removed for doctor {DoctorId} on {Date}. Regenerated: {Regen}",
@@ -1244,6 +1283,53 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
                     ["reason"] = reason
                 }
             }, ct);
+
+            await _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { patientId, doctorId },
+                "appointment",
+                appointment.Id.ToString("D"),
+                "AppointmentCancelled",
+                new AppointmentRealtimeDto
+                {
+                    AppointmentId = appointment.Id,
+                    TimeSlotId = appointment.TimeSlotId,
+                    DoctorId = doctorId,
+                    PatientId = patientId,
+                    Status = appointment.Status,
+                    IsPaid = appointment.IsPaid,
+                    CancellationReason = appointment.CancellationReason,
+                    BookedAt = appointment.BookedAt,
+                    ConfirmedAt = appointment.ConfirmedAt,
+                    StartedAt = appointment.StartedAt,
+                    CompletedAt = appointment.CompletedAt,
+                    CancelledAt = appointment.CancelledAt
+                },
+                ct);
         }
+    }
+
+    private Task BroadcastScheduleUpdatedAsync(
+        int doctorId,
+        string changeType,
+        string? dayOfWeek,
+        DateTime? date,
+        string? reason,
+        CancellationToken ct)
+    {
+        return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+            new[] { doctorId },
+            "schedule",
+            doctorId.ToString(),
+            "ScheduleUpdated",
+            new ScheduleRealtimeDto
+            {
+                DoctorId = doctorId,
+                ChangeType = changeType,
+                DayOfWeek = dayOfWeek,
+                Date = date,
+                Reason = reason,
+                OccurredAt = DateTime.UtcNow
+            },
+            ct);
     }
 }

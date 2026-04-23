@@ -36,6 +36,7 @@ using WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Search;
 using WelloraHealthCareManagment.Infrastructure.Services;
 using WelloraHealthCareManagment.Infrastructure.Services.Admin;
+using WelloraHealthCareManagment.Infrastructure.SignalR;
 
 namespace WelloraHealthCareManagement.Infrastructure
 {
@@ -53,6 +54,7 @@ namespace WelloraHealthCareManagement.Infrastructure
 
             services.AddHttpContextAccessor();
             services.Configure<FirebaseSettings>(configuration.GetSection("Firebase"));
+            services.AddSignalR();
 
             services.AddAutoMapper(cfg =>
             {
@@ -180,6 +182,7 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<ITicketService, TicketService>();
             services.AddScoped<IUserManagementService, UserManagementService>();
             services.AddScoped<IUserSearchService, UserSearchService>();
+            services.AddScoped<IRealtimeService, AppRealtimeService>();
 
             services.AddScoped<IMfaService, MfaService>();
 

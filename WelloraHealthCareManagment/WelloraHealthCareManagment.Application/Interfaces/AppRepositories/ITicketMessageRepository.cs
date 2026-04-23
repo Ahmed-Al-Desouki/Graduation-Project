@@ -9,6 +9,12 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
         Task<List<TicketMessage>> GetByTicketIdAsync(
             Guid ticketId,
             CancellationToken ct = default);
+        Task<List<TicketMessage>> GetByTicketIdAsync(
+            Guid ticketId,
+            int page,
+            int pageSize,
+            bool descending,
+            CancellationToken ct = default);
 
         Task<TicketMessage?> GetLatestByTicketIdAsync(
             Guid ticketId,

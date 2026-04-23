@@ -49,28 +49,12 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Ticket
             return result.IsSuccess ? Ok(result.Data) : BadRequest(new { error = result.Error });
         }
 
-        [HttpPut("status")]
-        public async Task<IActionResult> UpdateStatus([FromBody] UpdateTicketStatusRequest request)
-        {
-            var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
-            var result = await _ticketService.UpdateStatusAsync(request, adminId);
-            return result.IsSuccess ? Ok(new { message = "Status updated" }) : BadRequest(new { error = result.Error });
-        }
-
         [HttpPut("priority")]
         public async Task<IActionResult> UpdatePriority([FromBody] UpdateTicketPriorityRequest request)
         {
             var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
             var result = await _ticketService.UpdatePriorityAsync(request, adminId);
             return result.IsSuccess ? Ok(new { message = "Priority updated" }) : BadRequest(new { error = result.Error });
-        }
-
-        [HttpPost("close")]
-        public async Task<IActionResult> CloseTicket([FromBody] CloseTicketRequest request)
-        {
-            var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");
-            var result = await _ticketService.CloseTicketAsync(request, adminId);
-            return result.IsSuccess ? Ok(new { message = "Ticket closed" }) : BadRequest(new { error = result.Error });
         }
 
         [HttpGet("statistics")]

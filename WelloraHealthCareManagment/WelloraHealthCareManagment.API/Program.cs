@@ -18,6 +18,7 @@ using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs;
+using WelloraHealthCareManagment.Infrastructure.SignalR;
 
 
 internal class Program
@@ -102,6 +103,23 @@ internal class Program
             {
                 options.RequireHttpsMetadata = false;
                 options.SaveToken = true;
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+
+                        if (!string.IsNullOrWhiteSpace(accessToken) &&
+                            (path.StartsWithSegments("/hubs/app") ||
+                             path.StartsWithSegments("/hubs/support")))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                };
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
@@ -286,6 +304,8 @@ internal class Program
             });
 
             app.MapControllers();
+            app.MapHub<AppHub>("/hubs/app");
+            app.MapHub<AppHub>("/hubs/support");
 
             app.Run();
         }

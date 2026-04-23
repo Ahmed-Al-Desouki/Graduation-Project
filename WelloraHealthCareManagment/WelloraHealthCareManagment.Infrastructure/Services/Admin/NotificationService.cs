@@ -19,6 +19,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
         private readonly IUserRepository _userRepository;
         private readonly IUserDeviceRepository _userDeviceRepository;
         private readonly IFirebaseNotificationService _firebaseService;
+        private readonly IRealtimeService _realtimeService;
         private readonly IMapper _mapper;
         private readonly ILogger<NotificationService> _logger;
 
@@ -27,6 +28,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             IUserRepository userRepository,
             IUserDeviceRepository userDeviceRepository,
             IFirebaseNotificationService firebaseService,
+            IRealtimeService realtimeService,
             IMapper mapper,
             ILogger<NotificationService> logger)
         {
@@ -34,6 +36,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             _userRepository = userRepository;
             _userDeviceRepository = userDeviceRepository;
             _firebaseService = firebaseService;
+            _realtimeService = realtimeService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -134,6 +137,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 
                 var created = await _notificationRepository.CreateAsync(notification, ct);
                 var dto = _mapper.Map<NotificationDto>(created);
+
+                await _realtimeService.BroadcastToUserAsync(
+                    request.UserId,
+                    "NotificationReceived",
+                    dto,
+                    ct);
 
                 _logger.LogInformation(
                     "Notification created for user {UserId}: {Type}",

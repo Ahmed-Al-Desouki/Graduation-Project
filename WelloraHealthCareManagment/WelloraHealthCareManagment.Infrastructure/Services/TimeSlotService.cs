@@ -4,6 +4,8 @@ using WelloraHealthCareManagement.Domain.Entities;
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.TimeSlots;
+using WelloraHealthCareManagment.Application.DTOs.Realtime;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
@@ -13,17 +15,20 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly ITimeSlotRepository _timeSlotRepository;
         private readonly IScheduleExceptionRepository _exceptionRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IRealtimeService _realtimeService;
         private readonly ILogger<TimeSlotService> _logger;
 
         public TimeSlotService(
             ITimeSlotRepository timeSlotRepository,
             IScheduleExceptionRepository exceptionRepository,
             IUnitOfWork unitOfWork,
+            IRealtimeService realtimeService,
             ILogger<TimeSlotService> logger)
         {
             _timeSlotRepository = timeSlotRepository;
             _exceptionRepository = exceptionRepository;
             _unitOfWork = unitOfWork;
+            _realtimeService = realtimeService;
             _logger = logger;
         }
 
@@ -72,6 +77,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             await _timeSlotRepository.AddAsync(slot, ct);
             await _unitOfWork.SaveChangesAsync(ct);
+            await BroadcastSlotUpdatedAsync(slot, ct);
 
             _logger.LogInformation(
                 "Manual slot {SlotId} created for doctor {DoctorId}",
@@ -103,6 +109,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             await _timeSlotRepository.DeleteAsync(slot, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await BroadcastSlotUpdatedAsync(slot, cancellationToken);
 
             _logger.LogInformation("Slot {SlotId} deleted", slotId);
         }
@@ -126,6 +133,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
             await _timeSlotRepository.UpdateAsync(slot, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await BroadcastSlotUpdatedAsync(slot, cancellationToken);
 
             _logger.LogInformation("Slot {SlotId} blocked", slotId);
         }
@@ -222,6 +230,30 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
 
             throw new UnauthorizedAccessException("You are not allowed to manage these time slots.");
+        }
+
+        private Task BroadcastSlotUpdatedAsync(TimeSlot slot, CancellationToken ct)
+        {
+            var payload = new SlotRealtimeDto
+            {
+                SlotId = slot.Id,
+                DoctorId = slot.DoctorId,
+                AppointmentId = slot.Appointment?.Id,
+                Status = slot.Status,
+                SlotDate = slot.SlotDate,
+                StartTime = slot.StartTime,
+                EndTime = slot.EndTime,
+                IsManuallyCreated = slot.IsManuallyCreated,
+                UpdatedAt = slot.UpdatedAt
+            };
+
+            return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { slot.DoctorId },
+                "timeslot",
+                slot.Id.ToString("D"),
+                "SlotUpdated",
+                payload,
+                ct);
         }
     }
 }

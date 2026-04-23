@@ -6,6 +6,7 @@ using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Prescriptions;
+using WelloraHealthCareManagment.Application.DTOs.Realtime;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 using WelloraHealthCareManagement.Domain.Enums;
@@ -22,6 +23,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly HealthCarePlusContext _context;
         private readonly IPrescriptionReminderService _prescriptionReminderService;
         private readonly INotificationService _notificationService;
+        private readonly IRealtimeService _realtimeService;
         private readonly ILogger<PrescriptionService> _logger;
 
         public PrescriptionService(
@@ -31,6 +33,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             HealthCarePlusContext context,
             IPrescriptionReminderService prescriptionReminderService,
             INotificationService notificationService,
+            IRealtimeService realtimeService,
             ILogger<PrescriptionService> logger)
         {
             _prescriptionRepository = prescriptionRepository;
@@ -39,6 +42,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             _context = context;
             _prescriptionReminderService = prescriptionReminderService;
             _notificationService = notificationService;
+            _realtimeService = realtimeService;
             _logger = logger;
         }
 
@@ -194,6 +198,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     "Your doctor added a new prescription to your treatment plan.",
                     NotificationType.PrescriptionCreated,
                     cancellationToken);
+                await BroadcastPrescriptionUpdatedAsync(prescription, "PrescriptionCreated", cancellationToken);
 
                 _logger.LogInformation(
                     "✅ Prescription {PrescriptionId} created successfully with {ItemCount} items and reminders",
@@ -338,6 +343,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     "Your doctor added a medication item to your prescription.",
                     NotificationType.PrescriptionUpdated,
                     cancellationToken);
+                await BroadcastPrescriptionUpdatedAsync(prescription, "PrescriptionUpdated", cancellationToken);
 
                 _logger.LogInformation("✅ Item {ItemId} added successfully with reminders", newItem.Id);
             }
@@ -423,6 +429,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     "Your doctor updated one of your prescription items.",
                     NotificationType.PrescriptionUpdated,
                     cancellationToken);
+                await BroadcastPrescriptionUpdatedAsync(prescription, "PrescriptionUpdated", cancellationToken);
 
                 _logger.LogInformation(
                     "✅ PrescriptionItem {ItemId} updated with cache rebuild", itemId);
@@ -528,6 +535,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     "Your doctor added new medications to your prescription.",
                     NotificationType.PrescriptionUpdated,
                     cancellationToken);
+                await BroadcastPrescriptionUpdatedAsync(prescription, "PrescriptionUpdated", cancellationToken);
 
                 _logger.LogInformation("✅ Added {Count} items successfully with reminders", newItems.Count);
             }
@@ -585,6 +593,29 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 RelatedEntityType = "Prescription",
                 Data = new Dictionary<string, string> { ["prescriptionId"] = prescriptionId.ToString() }
             }, cancellationToken);
+        }
+
+        private Task BroadcastPrescriptionUpdatedAsync(
+            Prescription prescription,
+            string eventName,
+            CancellationToken cancellationToken)
+        {
+            return _realtimeService.BroadcastToUsersAdminsAndEntityAsync(
+                new[] { prescription.PatientId, prescription.DoctorId },
+                "prescription",
+                prescription.Id.ToString("D"),
+                eventName,
+                new PrescriptionRealtimeDto
+                {
+                    PrescriptionId = prescription.Id,
+                    AppointmentId = prescription.AppointmentId,
+                    DoctorId = prescription.DoctorId,
+                    PatientId = prescription.PatientId,
+                    ItemCount = prescription.Items.Count,
+                    IssuedAt = prescription.IssuedAt,
+                    ValidUntil = prescription.ValidUntil
+                },
+                cancellationToken);
         }
 
         private static void EnsureCanAccessPrescription(

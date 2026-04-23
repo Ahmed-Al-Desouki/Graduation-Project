@@ -41,6 +41,14 @@ namespace WelloraHealthCareManagment.Domain.Enums
         TicketResponse,
         TicketClosed,
         ReviewDeleted,
-        SystemAlert
+        SystemAlert,
+        MedicalHistoryAccessExtended,
+        MedicalHistoryAccessGranted,
+        MedicalHistoryAccessRequested,
+        MedicalHistoryAccessRevoked,
+        MedicalHistoryAccessUpdated,
+        MedicalHistoryViewed,
+        MedicalRecordCreated,
+        MedicalRecordUpdated
     }
 }
