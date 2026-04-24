@@ -36,18 +36,26 @@ class _BiometricScreenState extends State<BiometricAuthScreen> {
         ),
       );
 
+      if (!mounted) {
+        return;
+      }
+
       if (didAuthenticate) {
         await _handleAfterBiometricSuccess();
       } else {
         setState(() => _isAuthenticating = false);
-        if (context.mounted) context.go(AppRouter.kLogin);
+        context.go(AppRouter.kLogin);
       }
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
         _errorMessage = 'Biometric auth failed: $e';
         _isAuthenticating = false;
       });
-      if (context.mounted) context.go(AppRouter.kLogin);
+      context.go(AppRouter.kLogin);
     }
   }
 
@@ -63,7 +71,7 @@ class _BiometricScreenState extends State<BiometricAuthScreen> {
       final role = roleData['role']?.toLowerCase();
 
       if (role == 'doctor') {
-        AppRouter.router.go(AppRouter.kHomeDoctor);
+        AppRouter.router.go(AppRouter.kDoctorProfileGate);
       } else {
         AppRouter.router.go(AppRouter.kHomePatient);
       }

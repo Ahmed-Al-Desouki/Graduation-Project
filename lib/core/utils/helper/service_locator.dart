@@ -236,6 +236,9 @@ Future<void> setupServiceLocator() async {
       getIt<UpdateLocationUseCase>(),
       getIt<AddAchievementUseCase>(),
       getIt<DoctorProfileRepository>(),
+      getIt<GetDoctorProfileUseCase>(),
+      getIt<UpdateBasicInfoUseCase>(),
+      getIt<ReplaceVerificationDocumentUseCase>(),
     ),
   );
 

@@ -58,7 +58,7 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
           showSnackBar(context, '✅ Login successful!', Colors.green);
           final role = state.role;
           if (role == 'doctor') {
-            AppRouter.router.go(AppRouter.kHomeDoctor);
+            AppRouter.router.go(AppRouter.kDoctorProfileGate);
           } else {
             AppRouter.router.go(AppRouter.kHomePatient);
           }

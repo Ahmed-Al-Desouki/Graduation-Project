@@ -1,84 +1,48 @@
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
+import 'package:graduation_project/features/doctor_home/domain/entities/verification_document_entity.dart'
+    as onboarding_document;
+import 'package:graduation_project/features/doctor_profile/domain/entities/verification_document_profile_entity.dart'
+    as profile_document;
 import 'upload_document_item.dart';
 
 class VerificationSection extends StatefulWidget {
-  final bool medicalLicenseUploaded;
-  final bool graduationCertUploaded;
-  final bool nationalIdUploaded;
-  final Function(String, File?) onFileSelected;
-  final Function(String) onUpload;
+  final List<profile_document.VerificationDocumentProfileEntity>
+  existingDocuments;
 
-  const VerificationSection({
-    super.key,
-    required this.medicalLicenseUploaded,
-    required this.graduationCertUploaded,
-    required this.nationalIdUploaded,
-    required this.onFileSelected,
-    required this.onUpload,
-  });
+  const VerificationSection({super.key, this.existingDocuments = const []});
 
   @override
-  State<VerificationSection> createState() => _VerificationSectionState();
+  State<VerificationSection> createState() => VerificationSectionState();
 }
 
-class _VerificationSectionState extends State<VerificationSection> {
-  File? _medicalLicenseFile;
-  File? _graduationCertFile;
-  File? _nationalIdFile;
-  // ✅ Handle File Selection
-  // void _onFileSelected(String type, File? file) {
-  //   setState(() {
-  //     switch (type) {
-  //       case 'medical':
-  //         _medicalLicenseFile = file;
-  //         break;
-  //       case 'graduation':
-  //         _graduationCertFile = file;
-  //         break;
-  //       case 'national':
-  //         _nationalIdFile = file;
-  //         break;
-  //     }
-  //   });
-  // }
-  void _onFileSelected(String type, File? file) {
-    // local UI update (اختياري)
-    setState(() {
-      switch (type) {
-        case 'medical':
-          _medicalLicenseFile = file;
-          break;
-        case 'graduation':
-          _graduationCertFile = file;
-          break;
-        case 'national':
-          _nationalIdFile = file;
-          break;
-      }
-    });
+class VerificationSectionState extends State<VerificationSection> {
+  final Map<onboarding_document.DocumentType, File?> _selectedFiles = {};
 
-    // ✅ الأهم
-    widget.onFileSelected(type, file);
-  }
+  Map<onboarding_document.DocumentType, File?> get selectedFiles =>
+      Map.unmodifiable(_selectedFiles);
 
-  // ✅ Pick Document Function
-  Future<void> _pickDocument(String type) async {
+  Future<void> _pickDocument(onboarding_document.DocumentType type) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
       allowMultiple: false,
     );
 
-    if (result == null || result.files.isEmpty) return;
+    if (result == null || result.files.isEmpty) {
+      return;
+    }
 
     final file = File(result.files.first.path!);
     final fileSize = result.files.first.size;
+    if (!mounted) {
+      return;
+    }
 
-    // ✅ Validate file size (Max 10MB)
     if (fileSize > 10 * 1024 * 1024) {
       showSnackBar(
         context,
@@ -88,13 +52,44 @@ class _VerificationSectionState extends State<VerificationSection> {
       return;
     }
 
-    // ✅ Notify parent about file selection
-    // _onFileSelected(type, file);
-    widget.onFileSelected(type, file);
-    // ✅ Call Cubit upload method
-    await widget.onUpload(type);
+    setState(() {
+      _selectedFiles[type] = file;
+    });
+  }
 
-    showSnackBar(context, 'Document uploaded successfully', Colors.green);
+  void _clearSelection(onboarding_document.DocumentType type) {
+    setState(() {
+      _selectedFiles.remove(type);
+    });
+  }
+
+  profile_document.VerificationDocumentProfileEntity? _existingDocumentForType(
+    onboarding_document.DocumentType type,
+  ) {
+    final expectedType = _profileTypeFor(type);
+
+    for (final document in widget.existingDocuments) {
+      if (document.documentType == expectedType) {
+        return document;
+      }
+    }
+
+    return null;
+  }
+
+  profile_document.DocumentType _profileTypeFor(
+    onboarding_document.DocumentType type,
+  ) {
+    switch (type) {
+      case onboarding_document.DocumentType.license:
+        return profile_document.DocumentType.license;
+      case onboarding_document.DocumentType.graduationCertificate:
+        return profile_document.DocumentType.graduationCertificate;
+      case onboarding_document.DocumentType.nationalId:
+        return profile_document.DocumentType.nationalId;
+      case onboarding_document.DocumentType.other:
+        return profile_document.DocumentType.other;
+    }
   }
 
   @override
@@ -124,7 +119,7 @@ class _VerificationSectionState extends State<VerificationSection> {
               ),
               SizedBox(width: 12.w),
               Text(
-                "Verification Documents",
+                'Verification Documents',
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
@@ -135,7 +130,7 @@ class _VerificationSectionState extends State<VerificationSection> {
           ),
           SizedBox(height: 24.h),
           Text(
-            'Upload required documents for admin verification. Each document can only be submitted once.',
+            'Upload the required documents for verification. Existing documents stay on your profile unless you replace them.',
             style: TextStyle(
               fontSize: 12.sp,
               color: const Color(0xFF6B7280),
@@ -143,40 +138,57 @@ class _VerificationSectionState extends State<VerificationSection> {
             ),
           ),
           SizedBox(height: 24.h),
-
-          // ✅ Medical License
           UploadDocumentItem(
             icon: Icons.description,
             label: 'Medical License',
-            isUploaded: widget.medicalLicenseUploaded,
-            selectedFile: _medicalLicenseFile,
-            onFileSelected: (file) => _onFileSelected('medical', file),
-            onUpload: () => _pickDocument('medical'),
+            existingDocument: _existingDocumentForType(
+              onboarding_document.DocumentType.license,
+            ),
+            selectedFile:
+                _selectedFiles[onboarding_document.DocumentType.license],
+            onUpload:
+                () => _pickDocument(onboarding_document.DocumentType.license),
+            onClearSelection:
+                () => _clearSelection(onboarding_document.DocumentType.license),
           ),
           SizedBox(height: 20.h),
-
-          // ✅ Graduation Certificate
           UploadDocumentItem(
             icon: Icons.school,
             label: 'Graduation Certificate',
-            isUploaded: widget.graduationCertUploaded,
-            selectedFile: _graduationCertFile,
-            onFileSelected: (file) => _onFileSelected('graduation', file),
-            onUpload: () => _pickDocument('graduation'),
+            existingDocument: _existingDocumentForType(
+              onboarding_document.DocumentType.graduationCertificate,
+            ),
+            selectedFile:
+                _selectedFiles[onboarding_document
+                    .DocumentType
+                    .graduationCertificate],
+            onUpload:
+                () => _pickDocument(
+                  onboarding_document.DocumentType.graduationCertificate,
+                ),
+            onClearSelection:
+                () => _clearSelection(
+                  onboarding_document.DocumentType.graduationCertificate,
+                ),
           ),
           SizedBox(height: 20.h),
-
-          // ✅ National ID
           UploadDocumentItem(
             icon: Icons.badge,
             label: 'National ID',
-            isUploaded: widget.nationalIdUploaded,
-            selectedFile: _nationalIdFile,
-            onFileSelected: (file) => _onFileSelected('national', file),
-            onUpload: () => _pickDocument('national'),
+            existingDocument: _existingDocumentForType(
+              onboarding_document.DocumentType.nationalId,
+            ),
+            selectedFile:
+                _selectedFiles[onboarding_document.DocumentType.nationalId],
+            onUpload:
+                () =>
+                    _pickDocument(onboarding_document.DocumentType.nationalId),
+            onClearSelection:
+                () => _clearSelection(
+                  onboarding_document.DocumentType.nationalId,
+                ),
           ),
           SizedBox(height: 16.h),
-
           Center(
             child: Text(
               'All 3 documents are required for admin approval',
@@ -192,170 +204,3 @@ class _VerificationSectionState extends State<VerificationSection> {
     );
   }
 }
-// import 'dart:io';
-// import 'package:file_picker/file_picker.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
-// import 'upload_document_item.dart';
-
-// class VerificationSection extends StatefulWidget {
-//   final bool medicalLicenseUploaded;
-//   final bool graduationCertUploaded;
-//   final bool nationalIdUploaded;
-
-//   const VerificationSection({
-//     super.key,
-//     required this.medicalLicenseUploaded,
-//     required this.graduationCertUploaded,
-//     required this.nationalIdUploaded,
-//   });
-
-//   @override
-//   State<VerificationSection> createState() => _VerificationSectionState();
-// }
-
-// class _VerificationSectionState extends State<VerificationSection> {
-//   // ✅ Selected Files (قبل الـ Upload)
-//   File? _medicalLicenseFile;
-//   File? _graduationCertFile;
-//   File? _nationalIdFile;
-
-//   // ✅ Handle File Selection
-//   void _onFileSelected(String type, File? file) {
-//     setState(() {
-//       switch (type) {
-//         case 'medical':
-//           _medicalLicenseFile = file;
-//           break;
-//         case 'graduation':
-//           _graduationCertFile = file;
-//           break;
-//         case 'national':
-//           _nationalIdFile = file;
-//           break;
-//       }
-//     });
-//   }
-
-//   // ✅ Pick Document Function (نقلت الدالة هنا)
-//   Future<void> _pickDocument(String type) async {
-//     final result = await FilePicker.platform.pickFiles(
-//       type: FileType.custom,
-//       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-//       allowMultiple: false,
-//     );
-
-//     if (result == null || result.files.isEmpty) return;
-
-//     final file = File(result.files.first.path!);
-//     final fileSize = result.files.first.size;
-
-//     // ✅ Validate file size (Max 10MB)
-//     if (fileSize > 10 * 1024 * 1024) {
-//       showSnackBar(
-//         context,
-//         'File size must be less than 10MB. Current size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)}MB',
-//         Colors.red,
-//       );
-//       return;
-//     }
-
-//     // ✅ نمرر الملف للـ UploadDocumentItem
-//     _onFileSelected(type, file);
-
-//     showSnackBar(context, 'Document uploaded successfully', Colors.green);
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       padding: EdgeInsets.all(20.w),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(16),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black.withValues(alpha:0.05),
-//             blurRadius: 10,
-//             offset: const Offset(0, 2),
-//           ),
-//         ],
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             children: [
-//               Icon(
-//                 Icons.verified_user,
-//                 color: const Color(0xFF1B4E8C),
-//                 size: 25.sp,
-//               ),
-//               SizedBox(width: 12.w),
-//               Text(
-//                 "Verification Documents",
-//                 style: TextStyle(
-//                   fontSize: 18.sp,
-//                   fontWeight: FontWeight.bold,
-//                   color: Colors.black,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           SizedBox(height: 24.h),
-//           Text(
-//             'Upload required documents for admin verification. Each document can only be submitted once.',
-//             style: TextStyle(
-//               fontSize: 12.sp,
-//               color: const Color(0xFF6B7280),
-//               height: 1.5,
-//             ),
-//           ),
-//           SizedBox(height: 24.h),
-
-//           UploadDocumentItem(
-//             icon: Icons.description,
-//             label: 'Medical License',
-//             isUploaded: widget.medicalLicenseUploaded,
-//             selectedFile: _medicalLicenseFile, // ✅ الملف هيظهر هنا
-//             onFileSelected: (file) => _onFileSelected('medical', file),
-//             onUpload: () => _pickDocument('medical'), // ✅ الدالة الجديدة
-//           ),
-//           SizedBox(height: 20.h),
-
-//           UploadDocumentItem(
-//             icon: Icons.school,
-//             label: 'Graduation Certificate',
-//             isUploaded: widget.graduationCertUploaded,
-//             selectedFile: _graduationCertFile, // ✅ الملف هيظهر هنا
-//             onFileSelected: (file) => _onFileSelected('graduation', file),
-//             onUpload: () => _pickDocument('graduation'), // ✅ الدالة الجديدة
-//           ),
-//           SizedBox(height: 20.h),
-
-//           UploadDocumentItem(
-//             icon: Icons.badge,
-//             label: 'National ID',
-//             isUploaded: widget.nationalIdUploaded,
-//             selectedFile: _nationalIdFile, // ✅ الملف هيظهر هنا
-//             onFileSelected: (file) => _onFileSelected('national', file),
-//             onUpload: () => _pickDocument('national'), // ✅ الدالة الجديدة
-//           ),
-//           SizedBox(height: 16.h),
-
-//           Center(
-//             child: Text(
-//               'All 3 documents are required for admin approval',
-//               style: TextStyle(
-//                 fontSize: 12.sp,
-//                 color: const Color(0xFF9CA3AF),
-//                 fontStyle: FontStyle.italic,
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }

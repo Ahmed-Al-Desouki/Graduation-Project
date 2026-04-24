@@ -1,11 +1,13 @@
-import 'dart:developer';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
-import 'package:graduation_project/features/doctor_home/domain/entities/verification_document_entity.dart';
+import 'package:graduation_project/features/doctor_home/domain/entities/achievement_entity.dart';
+import 'package:graduation_project/features/doctor_home/domain/entities/verification_document_entity.dart'
+    as onboarding_document;
 import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_state.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/bio_section.dart';
@@ -13,13 +15,18 @@ import 'package:graduation_project/features/doctor_home/presentation/views/widge
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/map_picker_bottom_sheet.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/optional_details_section.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/personal_info_section.dart';
-import 'package:graduation_project/features/doctor_home/presentation/views/widgets/professional_details_section.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/profile_completion_button.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/profile_header_section.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/widgets/professional_details_section.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/verification_section.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/doctor_profile_entity.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/verification_document_profile_entity.dart'
+    as profile_document;
 
 class DoctorProfileCompletionViewBody extends StatefulWidget {
-  const DoctorProfileCompletionViewBody({super.key});
+  final DoctorProfileEntity? initialProfile;
+
+  const DoctorProfileCompletionViewBody({super.key, this.initialProfile});
 
   @override
   State<DoctorProfileCompletionViewBody> createState() =>
@@ -28,11 +35,11 @@ class DoctorProfileCompletionViewBody extends StatefulWidget {
 
 class _DoctorProfileCompletionViewBodyState
     extends State<DoctorProfileCompletionViewBody> {
-  // ✅ Form Keys
   final _personalInfoKey = GlobalKey<FormState>();
   final _professionalInfoKey = GlobalKey<FormState>();
+  final _verificationSectionKey = GlobalKey<VerificationSectionState>();
+  final _optionalDetailsKey = GlobalKey<OptionalDetailsSectionState>();
 
-  // ✅ Controllers
   final _fullNameController = TextEditingController();
   final _phoneNumberController = TextEditingController();
   final _dateOfBirthController = TextEditingController();
@@ -46,20 +53,16 @@ class _DoctorProfileCompletionViewBodyState
   final _clinicNameController = TextEditingController();
   final _addressController = TextEditingController();
 
-  // ✅ Selected Values
   String? _selectedLocation;
   DateTime? _selectedDateOfBirth;
-  // ✅ أضف الـ Coordinates variables
   double? _selectedLatitude;
   double? _selectedLongitude;
 
-  // ✅ Upload States (للـ UI فقط - الـ Logic في الـ Cubit)
-  bool _medicalLicenseUploaded = false;
-  bool _graduationCertUploaded = false;
-  bool _nationalIdUploaded = false;
-  File? _medicalLicenseFile;
-  File? _graduationCertFile;
-  File? _nationalIdFile;
+  @override
+  void initState() {
+    super.initState();
+    _prefillFromProfile(widget.initialProfile);
+  }
 
   @override
   void dispose() {
@@ -78,7 +81,29 @@ class _DoctorProfileCompletionViewBodyState
     super.dispose();
   }
 
-  // ✅ Map Picker (محدث)
+  void _prefillFromProfile(DoctorProfileEntity? profile) {
+    if (profile == null) {
+      return;
+    }
+
+    _fullNameController.text = profile.fullName;
+    _phoneNumberController.text = profile.phoneNumber ?? '';
+    _selectedDateOfBirth = profile.dateOfBirth;
+    if (_selectedDateOfBirth != null) {
+      _dateOfBirthController.text = _formatDate(_selectedDateOfBirth!);
+    }
+    _specializationController.text = profile.specialization;
+    _experienceController.text = profile.yearsOfExperience.toString();
+    _feeController.text = _formatFee(profile.consultationFee);
+    _nationalIdController.text = profile.nationalId ?? '';
+    _bioController.text = profile.description ?? '';
+    _clinicNameController.text = profile.hospitalName ?? '';
+    _addressController.text = profile.clinicAddress ?? '';
+    _selectedLocation = profile.clinicAddress;
+    _selectedLatitude = profile.clinicLatitude;
+    _selectedLongitude = profile.clinicLongitude;
+  }
+
   void _showMapPicker() {
     showModalBottomSheet(
       context: context,
@@ -87,18 +112,17 @@ class _DoctorProfileCompletionViewBodyState
       builder:
           (context) => MapPickerBottomSheet(
             onLocationSelected: (location, lat, lng) {
-              // ✅ عدّل الـ callback
-              if (mounted) {
-                setState(() {
-                  _selectedLocation = location;
-                  _selectedLatitude = lat;
-                  _selectedLongitude = lng;
-                });
-                // ✅ اطبع عشان تتأكد
-                log('📍 Location: $location');
-                log('📍 Latitude: $lat');
-                log('📍 Longitude: $lng');
+              if (!mounted) {
+                return;
               }
+
+              setState(() {
+                _selectedLocation = location;
+                _selectedLatitude = lat;
+                _selectedLongitude = lng;
+                _addressController.text = location;
+              });
+
               Navigator.pop(context);
             },
             addressController: _addressController,
@@ -106,304 +130,159 @@ class _DoctorProfileCompletionViewBodyState
     );
   }
 
-  // ✅ Verification Document Upload
-  Future<void> _uploadVerificationDocument(String type) async {
-    File? file;
-    DocumentType docType;
-
-    switch (type) {
-      case 'medical':
-        file = _medicalLicenseFile;
-        docType = DocumentType.license;
-        break;
-      case 'graduation':
-        file = _graduationCertFile;
-        docType = DocumentType.graduationCertificate;
-        break;
-      case 'national':
-        file = _nationalIdFile;
-        docType = DocumentType.nationalId;
-        break;
-      default:
-        return;
-    }
-
-    if (file == null) return;
-
-    // ✅ Call Cubit method
-    await context.read<DoctorProfileCubit>().uploadVerificationDocument(
-      documentType: docType,
-      file: file,
-    );
-  }
-
-  // ✅ Achievement Upload (من الـ OptionalDetailsSection)
-  Future<void> _addAchievement({
-    required String title,
-    String? description,
-    File? image,
-  }) async {
-    await context.read<DoctorProfileCubit>().addAchievement(
-      title: title,
-      description: description,
-      image: image,
-    );
-  }
-
-  // ✅ Main Submit Function
   Future<void> _validateAndSubmit() async {
-    // ✅ 1. لو الـ validation فشل، ارجع فوراً
     if (!_personalInfoKey.currentState!.validate() ||
         !_professionalInfoKey.currentState!.validate()) {
-      return; // ✅ وقف هنا
+      return;
     }
 
-    log('   └─ Clinic Address: ${_addressController.text}');
-    log('   └─ Hospital Name: ${_clinicNameController.text}');
-    log('   └─ Latitude: $_selectedLatitude');
-    log('   └─ Longitude: $_selectedLongitude');
-
-    // ✅ 2. لو الـ validation نجح، جهّز البيانات
-    final cubit = context.read<DoctorProfileCubit>();
-
-    // ✅ 3. Complete Profile
-    await cubit.completeProfile(
-      fullName: _fullNameController.text,
-      phoneNumber: _phoneNumberController.text,
-      dateOfBirth: _selectedDateOfBirth!, // ⚠️ شوف النقطة 3 تحت
-      specialization: _specializationController.text,
-      yearsOfExperience:
-          int.tryParse(_experienceController.text) ?? 0, // ✅ استخدم tryParse
-      consultationFee:
-          double.tryParse(_feeController.text) ?? 0.0, // ✅ استخدم tryParse
-      nationalId: _nationalIdController.text,
-      bio: _bioController.text,
-    );
-
-    // ✅ 4. Upload Verification Documents
-    if (_medicalLicenseFile != null) {
-      await _uploadVerificationDocument('medical');
-    }
-    if (_graduationCertFile != null) {
-      await _uploadVerificationDocument('graduation');
-    }
-    if (_nationalIdFile != null) {
-      await _uploadVerificationDocument('national');
+    if (_selectedDateOfBirth == null) {
+      showSnackBar(context, 'Please select your date of birth.', Colors.red);
+      return;
     }
 
-    // ✅ 5. Update Location
-    await cubit.updateLocation(
+    if (!_validateRequiredDocuments()) {
+      return;
+    }
+
+    final verificationFiles =
+        _verificationSectionKey.currentState?.selectedFiles ??
+        const <onboarding_document.DocumentType, File?>{};
+
+    final achievements =
+        _optionalDetailsKey.currentState?.achievements
+            .map(
+              (achievement) => AchievementEntity(
+                title: achievement.title,
+                description: achievement.description,
+                image: achievement.image,
+                createdAt: achievement.createdAt,
+              ),
+            )
+            .toList() ??
+        const <AchievementEntity>[];
+
+    await context.read<DoctorProfileCubit>().submitProfile(
+      fullName: _fullNameController.text.trim(),
+      phoneNumber: _phoneNumberController.text.trim(),
+      dateOfBirth: _selectedDateOfBirth!,
+      specialization: _specializationController.text.trim(),
+      yearsOfExperience: int.tryParse(_experienceController.text.trim()) ?? 0,
+      consultationFee: double.tryParse(_feeController.text.trim()) ?? 0,
+      nationalId: _nationalIdController.text.trim(),
+      bio: _bioController.text.trim(),
       clinicAddress:
-          _selectedLocation ??
-          (_addressController.text.isNotEmpty ? _addressController.text : null),
+          _resolvedClinicAddress.isEmpty ? null : _resolvedClinicAddress,
       latitude: _selectedLatitude,
       longitude: _selectedLongitude,
       hospitalName:
-          _clinicNameController.text.isNotEmpty
-              ? _clinicNameController.text
-              : null,
+          _clinicNameController.text.trim().isEmpty
+              ? null
+              : _clinicNameController.text.trim(),
+      verificationFiles: verificationFiles,
+      achievements: achievements,
+      existingProfile: widget.initialProfile,
     );
-    // await cubit.updateLocation(
-    //   clinicAddress: _addressController.text,
-    //   latitude: _selectedLatitude,
-    //   longitude: _selectedLongitude,
-    //   hospitalName: _clinicNameController.text,
-    // );
+  }
 
-    // ✅ 6. Navigate to Loading Screen
-    if (mounted) {
-      cubit.startAdminReviewPolling();
-      AppRouter.router.push(AppRouter.kProfileCompletionLoading);
+  bool _validateRequiredDocuments() {
+    for (final type in const [
+      onboarding_document.DocumentType.license,
+      onboarding_document.DocumentType.graduationCertificate,
+      onboarding_document.DocumentType.nationalId,
+    ]) {
+      final selectedFiles = _verificationSectionKey.currentState?.selectedFiles;
+      final selectedFile = selectedFiles?[type];
+      final existingDocument = _findExistingDocument(type);
+
+      if (selectedFile != null || existingDocument != null) {
+        continue;
+      }
+
+      showSnackBar(
+        context,
+        'Please upload ${_requiredDocumentLabel(type)}.',
+        Colors.red,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  profile_document.VerificationDocumentProfileEntity? _findExistingDocument(
+    onboarding_document.DocumentType documentType,
+  ) {
+    final profile = widget.initialProfile;
+    if (profile == null) {
+      return null;
+    }
+
+    for (final document in profile.verificationDocuments) {
+      if (_matchesDocumentType(document.documentType, documentType)) {
+        return document;
+      }
+    }
+
+    return null;
+  }
+
+  bool _matchesDocumentType(
+    profile_document.DocumentType profileType,
+    onboarding_document.DocumentType formType,
+  ) {
+    switch (formType) {
+      case onboarding_document.DocumentType.license:
+        return profileType == profile_document.DocumentType.license;
+      case onboarding_document.DocumentType.graduationCertificate:
+        return profileType ==
+            profile_document.DocumentType.graduationCertificate;
+      case onboarding_document.DocumentType.nationalId:
+        return profileType == profile_document.DocumentType.nationalId;
+      case onboarding_document.DocumentType.other:
+        return profileType == profile_document.DocumentType.other;
     }
   }
-  // Future<void> _validateAndSubmit() async {
-  //   if (!_personalInfoKey.currentState!.validate() ||
-  //       !_professionalInfoKey.currentState!.validate()) {
-  //     // ✅ جهّز بيانات اللوكيشن للـ API
-  //     final locationData = {
-  //       if (_addressController.text.isNotEmpty)
-  //         'clinicAddress': _addressController.text,
-  //       if (_clinicNameController.text.isNotEmpty)
-  //         'hospitalName': _clinicNameController.text,
-  //       if (_selectedLatitude != null)
-  //         'clinicLatitude': _selectedLatitude,
-  //       if (_selectedLongitude != null)
-  //         'clinicLongitude': _selectedLongitude,
-  //     };
 
-  //     final doctorData = {
-  //       'fullName': _fullNameController.text,
-  //       'phoneNumber': _phoneNumberController.text,
-  //       'dateOfBirth': _selectedDateOfBirth?.toUtc().toIso8601String(),
-  //       'specialization': _specializationController.text,
-  //       'yearsOfExperience': int.tryParse(_experienceController.text) ?? 0,
-  //       'consultationFee': double.tryParse(_feeController.text) ?? 0.0,
-  //       'nationalId': _nationalIdController.text,
-  //       'bio': _bioController.text,
-  //       // ✅ أضف اللوكيشن
-  //       'location': locationData,
-  //     };
-
-  //     log('📝 Doctor Data: $doctorData');
-  //     // TODO: Submit to API
-  //   }
-
-  //   final cubit = context.read<DoctorProfileCubit>();
-
-  //   // ✅ 1. Complete Profile (Required fields)
-  //   await cubit.completeProfile(
-  //     fullName: _fullNameController.text,
-  //     phoneNumber: _phoneNumberController.text,
-  //     dateOfBirth: _selectedDateOfBirth!,
-  //     specialization: _specializationController.text,
-  //     yearsOfExperience: int.parse(_experienceController.text),
-  //     consultationFee: double.parse(_feeController.text),
-  //     nationalId: _nationalIdController.text,
-  //     bio: _bioController.text,  // ✅ هيضاف من الباك بعدين
-  //   );
-
-  //   // ✅ 2. Upload Verification Documents (لو موجودة)
-  //   if (_medicalLicenseFile != null) {
-  //     await _uploadVerificationDocument('medical');
-  //   }
-  //   if (_graduationCertFile != null) {
-  //     await _uploadVerificationDocument('graduation');
-  //   }
-  //   if (_nationalIdFile != null) {
-  //     await _uploadVerificationDocument('national');
-  //   }
-
-  //   // ✅ 3. Update Location (لو موجود)
-  //   if (_clinicNameController.text.isNotEmpty ||
-  //       _addressController.text.isNotEmpty) {
-  //     await cubit.updateLocation(
-  //       clinicAddress: _addressController.text,
-  //       hospitalName: _clinicNameController.text,
-  //     );
-  //   }
-
-  //   // ✅ 4. Add Achievements (من الـ OptionalDetailsSection)
-  //   // Loop through achievements and call _addAchievement for each
-
-  //   // ✅ 5. Navigate to Loading Screen
-  //   if (mounted) {
-  //     // ✅ Start polling for admin review
-  //     cubit.startAdminReviewPolling();
-  //     AppRouter.router.push(AppRouter.kProfileCompletionLoading);
-  //   }
-  // }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocListener<DoctorProfileCubit, DoctorProfileState>(
-      listener: (context, state) {
-        // ✅ Handle errors
-        if (state is CompleteProfileFailure) {
-          showSnackBar(context, state.errorMessage, Colors.red);
-        }
-        if (state is VerificationDocumentFailure) {
-          showSnackBar(context, state.errorMessage, Colors.red);
-        }
-        if (state is UpdateLocationFailure) {
-          showSnackBar(context, state.errorMessage, Colors.red);
-        }
-        if (state is AddAchievementFailure) {
-          showSnackBar(context, state.errorMessage, Colors.red);
-        }
-      },
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const ProfileHeaderSection(),
-            // SizedBox(height: 24.h),
-            // const ProfileProgressSection(currentStep: 1, totalSteps: 2),
-            SizedBox(height: 15.h),
-
-            // ✅ Personal Info
-            PersonalInfoSection(
-              formKey: _personalInfoKey,
-              fullNameController: _fullNameController,
-              phoneNumberController: _phoneNumberController,
-              dateOfBirthController: _dateOfBirthController,
-              onDateSelected: _selectDateOfBirth,
-            ),
-            SizedBox(height: 20.h),
-
-            // ✅ Professional Details
-            ProfessionalDetailsSection(
-              formKey: _professionalInfoKey,
-              experienceController: _experienceController,
-              feeController: _feeController,
-              nationalIdController: _nationalIdController,
-              specializationController: _specializationController,
-              onSpecializationChanged: (value) {
-                log('Specialization changed to: $value');
-              },
-            ),
-            SizedBox(height: 20.h),
-
-            // ✅ Verification Documents
-            VerificationSection(
-              medicalLicenseUploaded: _medicalLicenseUploaded,
-              graduationCertUploaded: _graduationCertUploaded,
-              nationalIdUploaded: _nationalIdUploaded,
-              onFileSelected: (type, file) {
-                // ✅ Handle file selection
-                setState(() {
-                  switch (type) {
-                    case 'medical':
-                      _medicalLicenseFile = file;
-                      break;
-                    case 'graduation':
-                      _graduationCertFile = file;
-                      break;
-                    case 'national':
-                      _nationalIdFile = file;
-                      break;
-                  }
-                });
-              },
-              onUpload: _uploadVerificationDocument,
-            ),
-            SizedBox(height: 20.h),
-
-            // ✅ Bio
-            BioSection(bioController: _bioController),
-            SizedBox(height: 20.h),
-
-            // ✅ Location
-            LocationSection(
-              clinicNameController: _clinicNameController,
-              addressController: _addressController,
-              onPickLocation: _showMapPicker,
-              selectedLocation: _selectedLocation,
-            ),
-            SizedBox(height: 20.h),
-
-            // ✅ Optional Details (Achievements)
-            OptionalDetailsSection(
-              titleController: _titleController,
-              descriptionController: _descriptionController,
-              onAddAchievement: _addAchievement, // ✅ أضف الـ callback ده
-            ),
-            SizedBox(height: 20.h),
-
-            // ✅ Submit Button
-            ProfileCompletionButton(onPressed: _validateAndSubmit),
-            SizedBox(height: 20.h),
-          ],
-        ),
-      ),
-    );
+  String _requiredDocumentLabel(onboarding_document.DocumentType type) {
+    switch (type) {
+      case onboarding_document.DocumentType.license:
+        return 'your medical license';
+      case onboarding_document.DocumentType.graduationCertificate:
+        return 'your graduation certificate';
+      case onboarding_document.DocumentType.nationalId:
+        return 'your national ID';
+      case onboarding_document.DocumentType.other:
+        return 'the required document';
+    }
   }
 
-  // ✅ Date Picker
+  String get _resolvedClinicAddress {
+    final selectedLocation = _selectedLocation?.trim();
+    if (selectedLocation != null && selectedLocation.isNotEmpty) {
+      return selectedLocation;
+    }
+
+    final addressText = _addressController.text.trim();
+    return addressText;
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  String _formatFee(double fee) {
+    if (fee == fee.roundToDouble()) {
+      return fee.toStringAsFixed(0);
+    }
+
+    return fee.toString();
+  }
+
   Future<void> _selectDateOfBirth() async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(1990),
+      initialDate: _selectedDateOfBirth ?? DateTime(1990),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
     );
@@ -411,9 +290,94 @@ class _DoctorProfileCompletionViewBodyState
     if (picked != null && mounted) {
       setState(() {
         _selectedDateOfBirth = picked;
-        _dateOfBirthController.text =
-            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        _dateOfBirthController.text = _formatDate(picked);
       });
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEditing = widget.initialProfile != null;
+
+    return BlocConsumer<DoctorProfileCubit, DoctorProfileState>(
+      listener: (context, state) {
+        if (state is ProfileSubmissionFailure) {
+          showSnackBar(context, state.errorMessage, Colors.red);
+        }
+
+        if (state is ProfileSubmissionSuccess) {
+          showSnackBar(
+            context,
+            isEditing
+                ? 'Profile updated successfully.'
+                : 'Profile submitted successfully.',
+            Colors.green,
+          );
+          AppRouter.router.go(AppRouter.kDoctorProfileGate);
+        }
+      },
+      builder: (context, state) {
+        final isSubmitting = state is ProfileSubmissionLoading;
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ProfileHeaderSection(),
+              SizedBox(height: 15.h),
+              PersonalInfoSection(
+                formKey: _personalInfoKey,
+                fullNameController: _fullNameController,
+                phoneNumberController: _phoneNumberController,
+                dateOfBirthController: _dateOfBirthController,
+                onDateSelected: _selectDateOfBirth,
+              ),
+              SizedBox(height: 20.h),
+              ProfessionalDetailsSection(
+                formKey: _professionalInfoKey,
+                experienceController: _experienceController,
+                feeController: _feeController,
+                nationalIdController: _nationalIdController,
+                specializationController: _specializationController,
+              ),
+              SizedBox(height: 20.h),
+              VerificationSection(
+                key: _verificationSectionKey,
+                existingDocuments:
+                    widget.initialProfile?.verificationDocuments ?? const [],
+              ),
+              SizedBox(height: 20.h),
+              BioSection(bioController: _bioController),
+              SizedBox(height: 20.h),
+              LocationSection(
+                clinicNameController: _clinicNameController,
+                addressController: _addressController,
+                onPickLocation: _showMapPicker,
+                selectedLocation: _selectedLocation,
+                latitude: _selectedLatitude,
+                longitude: _selectedLongitude,
+              ),
+              SizedBox(height: 20.h),
+              OptionalDetailsSection(
+                key: _optionalDetailsKey,
+                titleController: _titleController,
+                descriptionController: _descriptionController,
+                existingAchievements:
+                    widget.initialProfile?.achievements ?? const [],
+              ),
+              SizedBox(height: 20.h),
+              ProfileCompletionButton(
+                onPressed: isSubmitting ? null : _validateAndSubmit,
+                isLoading: isSubmitting,
+                label:
+                    isEditing ? 'Update & Resubmit Profile' : 'Submit Profile',
+              ),
+              SizedBox(height: 20.h),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

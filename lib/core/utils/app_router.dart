@@ -14,10 +14,13 @@ import 'package:graduation_project/features/booking/presentation/views/payment_w
 import 'package:graduation_project/features/booking/presentation/views/schedule_setup_view.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/views/chat_details_view.dart';
+import 'package:graduation_project/features/doctor_home/domain/entities/doctor_profile_status_entity.dart';
 import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_layout.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_profile_completion_view.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/doctor_profile_gate_view.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/profile_completion_loading_view.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/doctor_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/all_achievements_view.dart';
 import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
@@ -67,6 +70,7 @@ abstract class AppRouter {
   // static const kHome = '/home';
   static const kHomePatient = '/home/patient';
   static const kHomeDoctor = '/home/doctor';
+  static const kDoctorProfileGate = '/doctor/profile-gate';
   static const kReminder = '/reminder';
   static const kResetPassword = '/resetPassword';
   static const kResetSuccess = '/resetSuccess';
@@ -286,17 +290,18 @@ abstract class AppRouter {
 
       GoRoute(
         path: kHomeDoctor,
+        builder: (context, state) => const DoctorHomeLayout(),
+      ),
+
+      GoRoute(
+        path: kDoctorProfileGate,
         builder:
             (context, state) => BlocProvider(
               create: (_) => getIt<DoctorProfileCubit>(),
-              child: const DoctorHomeLayout(),
+              child: const DoctorProfileGateView(),
             ),
       ),
 
-      // GoRoute(
-      //   path: kHomeDoctor,
-      //   builder: (context, state) => const DoctorHomeLayout(),
-      // ),
       GoRoute(
         path: kReminder,
         builder:
@@ -590,16 +595,54 @@ abstract class AppRouter {
       ),
       GoRoute(
         path: kDoctorProfileCompletion,
-        builder: (context, state) => const DoctorProfileCompletionView(),
+        builder: (context, state) {
+          final extra = state.extra;
+          DoctorProfileCubit? cubit;
+          DoctorProfileEntity? profile;
+
+          if (extra is Map<String, dynamic>) {
+            cubit = extra['cubit'] as DoctorProfileCubit?;
+            profile = extra['profile'] as DoctorProfileEntity?;
+          }
+
+          final child = DoctorProfileCompletionView(initialProfile: profile);
+
+          if (cubit != null) {
+            return BlocProvider.value(value: cubit, child: child);
+          }
+
+          return BlocProvider(
+            create: (_) => getIt<DoctorProfileCubit>(),
+            child: child,
+          );
+        },
       ),
 
       GoRoute(
         path: AppRouter.kProfileCompletionLoading,
-        builder:
-            (context, state) => BlocProvider.value(
-              value: getIt<DoctorProfileCubit>(),
-              child: const ProfileCompletionLoadingView(),
-            ),
+        builder: (context, state) {
+          final extra = state.extra;
+          DoctorProfileCubit? cubit;
+          DoctorProfileStatusEntity? status;
+
+          if (extra is DoctorProfileStatusEntity) {
+            status = extra;
+          } else if (extra is Map<String, dynamic>) {
+            cubit = extra['cubit'] as DoctorProfileCubit?;
+            status = extra['status'] as DoctorProfileStatusEntity?;
+          }
+
+          final child = ProfileCompletionLoadingView(status: status);
+
+          if (cubit != null) {
+            return BlocProvider.value(value: cubit, child: child);
+          }
+
+          return BlocProvider(
+            create: (_) => getIt<DoctorProfileCubit>(),
+            child: child,
+          );
+        },
       ),
 
       // في app_router.dart
