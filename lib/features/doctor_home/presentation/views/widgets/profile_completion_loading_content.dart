@@ -266,38 +266,36 @@ class _ProfileCompletionLoadingContentState
                                   : const Text('Edit & Resubmit Profile'),
                         ),
                       ),
-                      if (isRejected) ...[
-                        SizedBox(height: 12.h),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52.h,
-                          child: OutlinedButton(
-                            onPressed:
-                                isLoggingOut
-                                    ? null
-                                    : () => context.read<AuthCubit>().logout(),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: const Color(0xFFB91C1C),
-                              side: const BorderSide(color: Color(0xFFB91C1C)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
+                      SizedBox(height: 12.h),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52.h,
+                        child: OutlinedButton(
+                          onPressed:
+                              isLoggingOut
+                                  ? null
+                                  : () => context.read<AuthCubit>().logout(),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: const Color(0xFFB91C1C),
+                            side: const BorderSide(color: Color(0xFFB91C1C)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
-                            child:
-                                isLoggingOut
-                                    ? SizedBox(
-                                      width: 22.w,
-                                      height: 22.w,
-                                      child: const CircularProgressIndicator(
-                                        strokeWidth: 2.2,
-                                        color: Color(0xFFB91C1C),
-                                      ),
-                                    )
-                                    : const Text('Logout'),
                           ),
+                          child:
+                              isLoggingOut
+                                  ? SizedBox(
+                                    width: 22.w,
+                                    height: 22.w,
+                                    child: const CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      color: Color(0xFFB91C1C),
+                                    ),
+                                  )
+                                  : const Text('Logout'),
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
