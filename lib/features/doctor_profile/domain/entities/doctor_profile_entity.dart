@@ -12,7 +12,7 @@ class DoctorProfileEntity {
   final String specialization;
   final int yearsOfExperience;
   final double consultationFee;
-  final String? description;
+  final String? bio;
   final double averageRating;
   final bool isActive;
   final bool isProfileCompleted;
@@ -34,7 +34,7 @@ class DoctorProfileEntity {
     required this.specialization,
     required this.yearsOfExperience,
     required this.consultationFee,
-    this.description,
+    this.bio,
     required this.averageRating,
     required this.isActive,
     required this.isProfileCompleted,
@@ -57,7 +57,7 @@ class DoctorProfileEntity {
     String? specialization,
     int? yearsOfExperience,
     double? consultationFee,
-    String? description,
+    String? bio,
     double? averageRating,
     bool? isActive,
     bool? isProfileCompleted,
@@ -79,7 +79,7 @@ class DoctorProfileEntity {
       specialization: specialization ?? this.specialization,
       yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
       consultationFee: consultationFee ?? this.consultationFee,
-      description: description ?? this.description,
+      bio: bio ?? this.bio,
       averageRating: averageRating ?? this.averageRating,
       isActive: isActive ?? this.isActive,
       isProfileCompleted: isProfileCompleted ?? this.isProfileCompleted,

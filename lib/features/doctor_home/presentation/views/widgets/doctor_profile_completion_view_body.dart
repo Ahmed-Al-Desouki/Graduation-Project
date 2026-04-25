@@ -96,7 +96,7 @@ class _DoctorProfileCompletionViewBodyState
     _experienceController.text = profile.yearsOfExperience.toString();
     _feeController.text = _formatFee(profile.consultationFee);
     _nationalIdController.text = profile.nationalId ?? '';
-    _bioController.text = profile.description ?? '';
+    _bioController.text = profile.bio ?? '';
     _clinicNameController.text = profile.hospitalName ?? '';
     _addressController.text = profile.clinicAddress ?? '';
     _selectedLocation = profile.clinicAddress;

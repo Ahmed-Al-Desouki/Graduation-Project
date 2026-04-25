@@ -4,8 +4,8 @@ import 'package:graduation_project/features/doctor_profile/presentation/manager/
 import 'package:graduation_project/features/doctor_profile/presentation/views/edit_about_sheet.dart';
 
 class AboutMeSection extends StatelessWidget {
-  final String? description;
-  const AboutMeSection({super.key, this.description});
+  final String? bio;
+  const AboutMeSection({super.key, this.bio});
 
   @override
   Widget build(BuildContext context) {
@@ -25,36 +25,39 @@ class AboutMeSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "About Me",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      _showEditAboutSheet(context, description);
-                    },
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, color: Color(0xFF2563EB), size: 17),
-                        SizedBox(width: 5),
-                        Text(
-                          "Edit",
-                          style: TextStyle(
-                            color: Color(0xFF2563EB),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "About Me",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                    TextButton(
+                      onPressed: () {
+                        _showEditAboutSheet(context, bio);
+                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, color: Color(0xFF2563EB), size: 17),
+                          SizedBox(width: 5),
+                          Text(
+                            "Edit",
+                            style: TextStyle(
+                              color: Color(0xFF2563EB),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 15),
                 Text(
-                  description ?? 'No description added yet.',
+                  bio ?? 'No description added yet.',
                   style: const TextStyle(color: Colors.black54, height: 1.5),
                 ),
               ],
@@ -69,10 +72,11 @@ class AboutMeSection extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => BlocProvider.value(
-        value: context.read<DoctorRealProfileCubit>(),
-        child: EditAboutSheet(currentDescription: description),
-      ),
+      builder:
+          (_) => BlocProvider.value(
+            value: context.read<DoctorRealProfileCubit>(),
+            child: EditAboutSheet(currentDescription: description),
+          ),
     );
   }
 }

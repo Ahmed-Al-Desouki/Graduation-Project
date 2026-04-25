@@ -83,10 +83,7 @@ class DoctorProfileViewBody extends StatelessWidget {
                 SizedBox(height: 15),
 
                 _buildSection(infoKey, InfoSection(profile: profile)),
-                _buildSection(
-                  aboutKey,
-                  AboutMeSection(description: profile.description),
-                ),
+                _buildSection(aboutKey, AboutMeSection(bio: profile.bio)),
                 _buildSection(
                   verificationKey,
                   VerificationDocumentsSection(
