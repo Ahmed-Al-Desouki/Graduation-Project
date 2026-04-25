@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/doctor_profile_entity.dart';
 
 class DoctorHomeHeader extends StatelessWidget {
-  const DoctorHomeHeader({super.key});
+  final DoctorProfileEntity profile;
+  const DoctorHomeHeader({super.key, required this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -29,16 +29,7 @@ class DoctorHomeHeader extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 33.r,
-                backgroundColor: Colors.white,
-                child: SvgPicture.asset(
-                  Assets.imagesHeartRate,
-                  height: 35.h,
-                  width: 35.w,
-                  colorFilter: const ColorFilter.mode(
-                    Color(0xFF754EA6),
-                    BlendMode.srcIn,
-                  ),
-                ),
+                backgroundImage: NetworkImage(profile.profileImageUrl ?? ''),
               ),
               SizedBox(width: 12.w),
               Column(
@@ -46,14 +37,14 @@ class DoctorHomeHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Dr. UserName',
+                    profile.fullName,
                     style: AppStyles.styleSemiBold18Dark.copyWith(
                       color: Colors.white,
                       fontSize: 18.sp,
                     ),
                   ),
                   Text(
-                    'Cardiologist',
+                    profile.specialization,
                     style: AppStyles.styleRegular14Gray.copyWith(
                       color: Colors.white70,
                       fontSize: 14.sp,
