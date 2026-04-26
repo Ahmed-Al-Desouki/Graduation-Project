@@ -7,7 +7,12 @@ import 'package:graduation_project/features/doctor_profile/presentation/views/ed
 
 class ServicesPricingSection extends StatelessWidget {
   final double consultationFee;
-  const ServicesPricingSection({super.key, required this.consultationFee});
+  final bool isEditable;
+  const ServicesPricingSection({
+    super.key,
+    required this.consultationFee,
+    this.isEditable = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,25 +34,26 @@ class ServicesPricingSection extends StatelessWidget {
                     "Services & Pricing",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      _showEditServicesSheet(context, consultationFee);
-                    },
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, color: Color(0xFF2563EB), size: 17),
-                        SizedBox(width: 5),
-                        Text(
-                          "Edit",
-                          style: TextStyle(
-                            color: Color(0xFF2563EB),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                  if (isEditable)
+                    TextButton(
+                      onPressed: () {
+                        _showEditServicesSheet(context, consultationFee);
+                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, color: Color(0xFF2563EB), size: 17),
+                          SizedBox(width: 5),
+                          Text(
+                            "Edit",
+                            style: TextStyle(
+                              color: Color(0xFF2563EB),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
               SizedBox(height: 20),

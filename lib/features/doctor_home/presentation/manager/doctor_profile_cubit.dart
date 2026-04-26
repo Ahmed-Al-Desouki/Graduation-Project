@@ -114,7 +114,7 @@ class DoctorProfileCubit extends Cubit<DoctorProfileState> {
         specialization: specialization,
         yearsOfExperience: yearsOfExperience,
         consultationFee: consultationFee,
-        description: bio,
+        bio: bio,
         nationalId: nationalId,
       );
     } else {

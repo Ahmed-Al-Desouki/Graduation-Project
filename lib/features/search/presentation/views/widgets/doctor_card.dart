@@ -41,25 +41,39 @@ class DoctorCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundImage:
-                        imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                    child:
-                        imageUrl.isEmpty
-                            ? const Icon(Icons.person, size: 30)
-                            : null,
+                  GestureDetector(
+                    onTap:
+                        () => context.push(
+                          AppRouter.kPublicDoctorProfile,
+                          extra: doctorId,
+                        ),
+                    child: CircleAvatar(
+                      radius: 26,
+                      backgroundImage:
+                          imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                      child:
+                          imageUrl.isEmpty
+                              ? const Icon(Icons.person, size: 30)
+                              : null,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          fullName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        GestureDetector(
+                          onTap:
+                              () => context.push(
+                                AppRouter.kPublicDoctorProfile,
+                                extra: doctorId,
+                              ),
+                          child: Text(
+                            fullName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -122,13 +136,11 @@ class DoctorCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       context.push(
-                        AppRouter
-                            .kDoctorSchedule, // المسار اللي إنت معرفه للكالندر
+                        AppRouter.kDoctorSchedule,
                         extra: {
                           'doctorId': doctorId.toString(),
                           'doctorName': fullName,
-                          'isPatientView':
-                              true, // ✅ أهم Flag عشان نخفي الترس والتحكم
+                          'isPatientView': true,
                           'consultationFee': consultationFee,
                         },
                       );

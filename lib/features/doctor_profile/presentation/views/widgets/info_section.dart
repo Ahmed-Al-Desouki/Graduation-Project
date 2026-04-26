@@ -7,8 +7,9 @@ import 'package:graduation_project/features/doctor_profile/presentation/views/ed
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/info_tile.dart';
 
 class InfoSection extends StatelessWidget {
-  final DoctorProfileEntity profile; // ✅ نمرر الـ profile
-  const InfoSection({super.key, required this.profile});
+  final dynamic profile;
+  final bool isEditable;
+  const InfoSection({super.key, required this.profile, this.isEditable = true});
 
   @override
   Widget build(BuildContext context) {
@@ -30,25 +31,26 @@ class InfoSection extends StatelessWidget {
                     "Doctor Information",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      _showEditLocationSheet(context, profile);
-                    },
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, color: Color(0xFF2563EB), size: 17),
-                        SizedBox(width: 5),
-                        Text(
-                          "Edit",
-                          style: TextStyle(
-                            color: Color(0xFF2563EB),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                  if (isEditable)
+                    TextButton(
+                      onPressed: () {
+                        _showEditLocationSheet(context, profile);
+                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, color: Color(0xFF2563EB), size: 17),
+                          SizedBox(width: 5),
+                          Text(
+                            "Edit",
+                            style: TextStyle(
+                              color: Color(0xFF2563EB),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
 
@@ -57,7 +59,7 @@ class InfoSection extends StatelessWidget {
                 imageAsset: Assets.imagesCertificate,
                 iconColor: Colors.orange,
                 title: "Specializations",
-                subtitle: profile.specialization, // ✅ من الـ API
+                subtitle: profile.specialization,
               ),
               if (profile.hospitalName != null) ...[
                 const SizedBox(height: 15),
@@ -84,14 +86,18 @@ class InfoSection extends StatelessWidget {
     );
   }
 
-  void _showEditLocationSheet(BuildContext context, DoctorProfileEntity profile) {
+  void _showEditLocationSheet(
+    BuildContext context,
+    DoctorProfileEntity profile,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => BlocProvider.value(
-        value: context.read<DoctorRealProfileCubit>(),
-        child: EditLocationSheet(profile: profile),
-      ),
+      builder:
+          (_) => BlocProvider.value(
+            value: context.read<DoctorRealProfileCubit>(),
+            child: EditLocationSheet(profile: profile),
+          ),
     );
   }
 }

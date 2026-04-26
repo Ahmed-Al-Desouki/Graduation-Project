@@ -1,4 +1,5 @@
 import 'package:graduation_project/features/doctor_profile/domain/entities/profile_image_entity.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/public_doctor_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/slot_config_entity.dart';
 import 'package:meta/meta.dart';
 import '../../domain/entities/doctor_profile_entity.dart';
@@ -20,7 +21,6 @@ final class DoctorProfileFailure extends DoctorRealProfileState {
   DoctorProfileFailure(this.errorMessage);
 }
 
-// ✅ Update States
 final class UpdateBasicInfoLoading extends DoctorRealProfileState {}
 
 final class UpdateBasicInfoSuccess extends DoctorRealProfileState {}
@@ -88,4 +88,9 @@ final class GetSlotConfigSuccess extends DoctorRealProfileState {
 final class GetSlotConfigFailure extends DoctorRealProfileState {
   final String errorMessage;
   GetSlotConfigFailure(this.errorMessage);
+}
+
+final class PublicDoctorProfileSuccess extends DoctorRealProfileState {
+  final PublicDoctorProfileEntity profile;
+  PublicDoctorProfileSuccess(this.profile);
 }

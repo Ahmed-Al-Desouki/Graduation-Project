@@ -6,6 +6,7 @@ import 'package:graduation_project/features/doctor_profile/domain/entities/achie
 import 'package:graduation_project/features/doctor_profile/domain/entities/slot_config_entity.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/delete_achievement_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_doctor_slot_config_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_public_doctor_profile_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/replace_verification_document_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_achievement_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_basic_info_use_case.dart';
@@ -24,6 +25,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
   final DeleteAchievementUseCase deleteAchievementUseCase;
   final UpdateProfileImageUseCase updateProfileImageUseCase;
   final GetDoctorSlotConfigUseCase getDoctorSlotConfigUseCase;
+  final GetPublicDoctorProfileUseCase getPublicDoctorProfileUseCase;
 
   DoctorRealProfileCubit(
     this.getDoctorProfileUseCase,
@@ -34,6 +36,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
     this.deleteAchievementUseCase,
     this.updateProfileImageUseCase,
     this.getDoctorSlotConfigUseCase,
+    this.getPublicDoctorProfileUseCase,
   ) : super(DoctorProfileInitial());
 
   DoctorProfileEntity? _cachedProfile;
@@ -56,7 +59,6 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
     });
   }
 
-  // ✅ Update Basic Info
   Future<void> updateBasicInfo({
     String? fullName,
     String? phoneNumber,
@@ -64,7 +66,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
     String? specialization,
     int? yearsOfExperience,
     double? consultationFee,
-    String? description,
+    String? bio,
     String? nationalId,
   }) async {
     emit(UpdateBasicInfoLoading());
@@ -75,7 +77,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
       specialization: specialization,
       yearsOfExperience: yearsOfExperience,
       consultationFee: consultationFee,
-      description: description,
+      bio: bio,
       nationalId: nationalId,
     );
     result.fold((failure) => emit(UpdateBasicInfoFailure(failure.errmessage)), (
@@ -85,7 +87,6 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
     });
   }
 
-  // ✅ Update Location
   Future<void> updateLocation({
     String? clinicAddress,
     double? latitude,
@@ -107,7 +108,6 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
     );
   }
 
-  // ✅ Replace Verification Document
   Future<void> replaceVerificationDocument({
     required int verificationId,
     required File newFile,
@@ -125,7 +125,6 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
     );
   }
 
-  // ✅ Update Achievement
   Future<void> updateAchievement({
     required int achievementId,
     String? title,
@@ -134,7 +133,6 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
   }) async {
     final oldProfile = _cachedProfile;
 
-    // ✅ حدّث الـ cache على طول
     if (_cachedProfile != null) {
       final updatedAchievements =
           _cachedProfile!.achievements.map((a) {
@@ -143,7 +141,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
                 achievementId: a.achievementId,
                 title: title ?? a.title,
                 description: description ?? a.description,
-                imageUrl: a.imageUrl, // الصورة هتتحدث بعد الـ refresh
+                imageUrl: a.imageUrl,
                 createdAt: a.createdAt,
               );
             }
@@ -190,17 +188,14 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
       },
       (_) {
         emit(UpdateAchievementSuccess());
-        getDoctorProfile(); // ✅ refresh في الـ background
+        getDoctorProfile();
       },
     );
   }
 
-  // ✅ Delete Achievement
   Future<void> deleteAchievement({required int achievementId}) async {
-    // ✅ احفظ البيانات القديمة عشان ترجعها لو حصل error
     final oldProfile = _cachedProfile;
 
-    // ✅ حدّث الـ cache على طول قبل الـ API
     if (_cachedProfile != null) {
       final updatedAchievements =
           _cachedProfile!.achievements
@@ -229,61 +224,23 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
         achievements: updatedAchievements,
       );
 
-      // ✅ emit على طول بالبيانات الجديدة
       emit(DoctorProfileSuccess(_cachedProfile!));
     }
 
-    // ✅ بعدين عمل الـ API call في الـ background
     final result = await deleteAchievementUseCase(achievementId: achievementId);
 
     result.fold(
       (failure) {
-        // ❌ لو فشل، ارجع للبيانات القديمة
         _cachedProfile = oldProfile;
         if (oldProfile != null) emit(DoctorProfileSuccess(oldProfile));
         emit(DeleteAchievementFailure(failure.errmessage));
       },
       (_) {
         emit(DeleteAchievementSuccess());
-        // ✅ refresh في الـ background بدون إنك تستنى نتيجته
         getDoctorProfile();
       },
     );
   }
-
-  // // ✅ Update Achievement
-  // Future<void> updateAchievement({
-  //   required int achievementId,
-  //   String? title,
-  //   String? description,
-  //   File? image,
-  // }) async {
-  //   emit(UpdateAchievementLoading());
-  //   final result = await updateAchievementUseCase(
-  //     achievementId: achievementId,
-  //     title: title,
-  //     description: description,
-  //     image: image,
-  //   );
-  //   result.fold(
-  //     (failure) => emit(UpdateAchievementFailure(failure.errmessage)),
-  //     (success) {
-  //       emit(UpdateAchievementSuccess());
-  //     },
-  //   );
-  // }
-
-  // // ✅ Delete Achievement
-  // Future<void> deleteAchievement({required int achievementId}) async {
-  //   emit(DeleteAchievementLoading());
-  //   final result = await deleteAchievementUseCase(achievementId: achievementId);
-  //   result.fold(
-  //     (failure) => emit(DeleteAchievementFailure(failure.errmessage)),
-  //     (success) {
-  //       emit(DeleteAchievementSuccess());
-  //     },
-  //   );
-  // }
 
   Future<void> updateProfileImage(File imageFile) async {
     emit(UpdateProfileImageLoading());
@@ -326,5 +283,17 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
         emit(GetSlotConfigSuccess(slots));
       },
     );
+  }
+
+  Future<void> getPublicDoctorProfile(int doctorId) async {
+    emit(DoctorProfileLoading());
+
+    final result = await getPublicDoctorProfileUseCase(doctorId);
+
+    result.fold((failure) => emit(DoctorProfileFailure(failure.errmessage)), (
+      profile,
+    ) {
+      emit(PublicDoctorProfileSuccess(profile));
+    });
   }
 }

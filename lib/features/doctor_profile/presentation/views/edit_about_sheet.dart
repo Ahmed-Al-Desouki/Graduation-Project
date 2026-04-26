@@ -65,7 +65,7 @@ class _EditAboutSheetState extends State<EditAboutSheet> {
                   Navigator.of(context).pop();
 
                   WidgetsBinding.instance.addPostFrameCallback((_) async {
-                    await cubit.updateBasicInfo(description: _controller.text);
+                    await cubit.updateBasicInfo(bio: _controller.text);
 
                     await cubit.getDoctorProfile();
                   });

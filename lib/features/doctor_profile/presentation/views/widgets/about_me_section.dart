@@ -5,7 +5,8 @@ import 'package:graduation_project/features/doctor_profile/presentation/views/ed
 
 class AboutMeSection extends StatelessWidget {
   final String? bio;
-  const AboutMeSection({super.key, this.bio});
+  final bool isEditable;
+  const AboutMeSection({super.key, this.bio, this.isEditable = true});
 
   @override
   Widget build(BuildContext context) {
@@ -34,25 +35,30 @@ class AboutMeSection extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        _showEditAboutSheet(context, bio);
-                      },
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, color: Color(0xFF2563EB), size: 17),
-                          SizedBox(width: 5),
-                          Text(
-                            "Edit",
-                            style: TextStyle(
+                    if (isEditable)
+                      TextButton(
+                        onPressed: () {
+                          _showEditAboutSheet(context, bio);
+                        },
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.edit,
                               color: Color(0xFF2563EB),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              size: 17,
                             ),
-                          ),
-                        ],
+                            SizedBox(width: 5),
+                            Text(
+                              "Edit",
+                              style: TextStyle(
+                                color: Color(0xFF2563EB),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 15),

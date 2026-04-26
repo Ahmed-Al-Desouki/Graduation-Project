@@ -30,6 +30,7 @@ import 'package:graduation_project/features/doctor_profile/domain/repositories/d
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/delete_achievement_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_doctor_profile_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_doctor_slot_config_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_public_doctor_profile_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/replace_verification_document_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_achievement_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_basic_info_use_case.dart';
@@ -285,6 +286,10 @@ Future<void> setupServiceLocator() async {
     () => GetDoctorSlotConfigUseCase(getIt<DoctorRealProfileRepository>()),
   );
 
+  getIt.registerLazySingleton<GetPublicDoctorProfileUseCase>(
+    () => GetPublicDoctorProfileUseCase(getIt<DoctorRealProfileRepository>()),
+  );
+
   getIt.registerFactory<DoctorRealProfileCubit>(
     () => DoctorRealProfileCubit(
       getIt<GetDoctorProfileUseCase>(),
@@ -295,6 +300,7 @@ Future<void> setupServiceLocator() async {
       getIt<DeleteAchievementUseCase>(),
       getIt<UpdateProfileImageUseCase>(),
       getIt<GetDoctorSlotConfigUseCase>(),
+      getIt<GetPublicDoctorProfileUseCase>(),
     ),
   );
 }
