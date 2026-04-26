@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:graduation_project/core/constant.dart';
+import 'package:graduation_project/core/services/signalr_service.dart';
 import 'package:graduation_project/core/utils/helper/api.dart';
 import 'package:graduation_project/core/utils/helper/network_info.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
@@ -61,6 +62,15 @@ import 'package:graduation_project/features/search/domain/use_cases/get_speciali
 import 'package:graduation_project/features/search/domain/use_cases/get_top_rated_doctors_use_case.dart';
 import 'package:graduation_project/features/search/domain/use_cases/search_doctors_use_case.dart';
 import 'package:graduation_project/features/search/presentation/manager/search_cubit/search_cubit.dart';
+import 'package:graduation_project/features/support_tickets/data/data_sources/support_remote_data_source.dart';
+import 'package:graduation_project/features/support_tickets/data/repositories/support_repository_impl.dart';
+import 'package:graduation_project/features/support_tickets/domain/repositories/support_repository.dart';
+import 'package:graduation_project/features/support_tickets/domain/use_cases/create_ticket_use_case.dart';
+import 'package:graduation_project/features/support_tickets/domain/use_cases/get_my_tickets_use_case.dart';
+import 'package:graduation_project/features/support_tickets/domain/use_cases/get_ticket_messages_use_case.dart';
+import 'package:graduation_project/features/support_tickets/domain/use_cases/send_ticket_message_use_case.dart';
+import 'package:graduation_project/features/support_tickets/presentation/manager/ticket_chat_cubit/ticket_chat_cubit.dart';
+import 'package:graduation_project/features/support_tickets/presentation/manager/tickets_cubit/tickets_cubit.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 final getIt = GetIt.instance;
@@ -78,6 +88,9 @@ Future<void> setupServiceLocator() async {
   getIt.registerLazySingleton<NetworkInfo>(
     () => NetworkInfoImpl(InternetConnectionChecker.createInstance()),
   );
+
+  // 1. SignalR Service (بما إنها LazySingleton فهي موجودة عندك فعلاً)
+  getIt.registerLazySingleton<SignalRService>(() => SignalRService());
 
   getIt.registerLazySingleton<LocalOccurrenceDataSource>(
     () => LocalOccurrenceDataSource(),
@@ -292,6 +305,46 @@ Future<void> setupServiceLocator() async {
       getIt<DeleteAchievementUseCase>(),
       getIt<UpdateProfileImageUseCase>(),
       getIt<GetDoctorSlotConfigUseCase>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<TicketRemoteDataSource>(
+    () => TicketRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+
+  // 3. Repositories
+  getIt.registerLazySingleton<TicketRepository>(
+    () =>
+        TicketRepositoryImpl(remoteDataSource: getIt<TicketRemoteDataSource>()),
+  );
+
+  // 4. Use Cases
+  getIt.registerLazySingleton(
+    () => GetMyTicketsUseCase(getIt<TicketRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => CreateTicketUseCase(getIt<TicketRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => GetTicketMessagesUseCase(getIt<TicketRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => SendTicketMessageUseCase(getIt<TicketRepository>()),
+  );
+
+  // 5. Cubits (نستخدم Factory عشان الـ Cubit يتكريت جديد مع كل شاشة)
+  getIt.registerFactory(
+    () => TicketChatCubit(
+      getMessagesUseCase: getIt<GetTicketMessagesUseCase>(),
+      sendMessageUseCase: getIt<SendTicketMessageUseCase>(),
+      signalRService: getIt<SignalRService>(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => TicketsCubit(
+      getIt<GetMyTicketsUseCase>(),
+      getIt<CreateTicketUseCase>(),
     ),
   );
 }

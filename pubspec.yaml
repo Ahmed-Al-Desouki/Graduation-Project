@@ -90,6 +90,7 @@ dependencies:
   latlong2: ^0.9.1
   bloc: ^9.2.0
   meta: ^1.17.0
+  signalr_netcore: ^1.4.4
 
   
 

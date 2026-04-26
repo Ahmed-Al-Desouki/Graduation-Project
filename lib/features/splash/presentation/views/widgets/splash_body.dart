@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:graduation_project/core/services/signalr_service.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
@@ -33,6 +34,8 @@ class _SplashBodyState extends State<SplashBody>
   static const double textEnd = 0.8;
   static const double fadeOutStartTime = 0.9;
   static const int totalDurationMs = 3000;
+
+  SignalRService get signalRService => getIt<SignalRService>();
 
   @override
   void initState() {
@@ -87,6 +90,7 @@ class _SplashBodyState extends State<SplashBody>
     );
 
     _controller.forward();
+
     _controller.addStatusListener((status) async {
       if (status == AnimationStatus.completed && mounted) {
         final settingsBox = await Hive.openBox('settings');
@@ -124,6 +128,12 @@ class _SplashBodyState extends State<SplashBody>
   Future<void> _navigateToHome() async {
     final roleData = await SecureStorageHelper.getUserRole();
     final role = roleData['role']?.toLowerCase();
+    final token = await SecureStorageHelper.getAccessToken();
+
+    // 2. لو التوكن موجود، ابدأ الـ SignalR
+    if (token != null) {
+      await signalRService.init(token); // يفضل تعمل await لو عاوز تضمن إنه بدأ
+    }
 
     if (role == 'doctor') {
       AppRouter.router.go(AppRouter.kHomeDoctor);

@@ -97,6 +97,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: isBiometricEnabled,
                   onChanged: _toggleBiometric,
                 ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.support_agent_rounded,
+                    color: Color(0xFF0D9488),
+                  ),
+                  title: const Text('الدعم الفني والشكاوى'),
+                  subtitle: const Text('تواصل معنا لمساعدتك في أي مشكلة'),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                  ),
+                  onTap: () {
+                    // التنقل لصفحة التذاكر
+                    context.push(AppRouter.kTickets);
+                  },
+                ),
+
+                const Spacer(),
+
                 const Spacer(),
 
                 Padding(

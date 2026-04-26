@@ -54,6 +54,10 @@ import 'package:graduation_project/features/search/presentation/views/search_vie
 import 'package:graduation_project/features/splash/presentation/views/widgets/onboarding_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
+import 'package:graduation_project/features/support_tickets/domain/entities/ticket_entity.dart';
+import 'package:graduation_project/features/support_tickets/presentation/manager/tickets_cubit/tickets_cubit.dart';
+import 'package:graduation_project/features/support_tickets/presentation/pages/support_chat_page.dart';
+import 'package:graduation_project/features/support_tickets/presentation/pages/support_tickets_page.dart';
 import 'package:hive/hive.dart';
 
 abstract class AppRouter {
@@ -92,6 +96,7 @@ abstract class AppRouter {
   static const kDoctorProfileCompletion = '/doctor/profile-completion';
   static const kProfileCompletionLoading = '/doctor/profile-completion/loading';
   static const kAllAchievements = '/doctor/profile/all-achievements';
+  static const kTickets = '/tickets';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -124,44 +129,6 @@ abstract class AppRouter {
               child: const ScheduleSetupView(),
             ),
       ),
-
-      // 2. شاشة الكالندر (تحتاج الـ BookingCalendarCubit)
-      // GoRoute(
-      //   path: kDoctorSchedule,
-      //   builder: (context, state) {
-      //     var box = Hive.box('booking_box');
-      //     bool isSetupComplete = box.get(
-      //       'isScheduleConfigured',
-      //       defaultValue: false,
-      //     );
-      //     final Map<String, dynamic>? extra =
-      //         state.extra as Map<String, dynamic>?;
-
-      //     if (isSetupComplete) {
-      //       return MultiBlocProvider(
-      //         providers: [
-      //           BlocProvider(
-      //             create: (context) => getIt<BookingCalendarCubit>(),
-      //           ),
-      //           BlocProvider(
-      //             create: (context) => getIt<AppointmentActionCubit>(),
-      //           ),
-      //         ],
-      //         child: BookingCalendarView(
-      //           followUpPatientName: extra?['patientName'],
-      //           originalAppointmentId: extra?['originalAppointmentId'],
-      //         ),
-      //       );
-      //     } else {
-      //       // لو رايح للـ Setup من هنا برضو لازم توفر الـ Cubit
-      //       return BlocProvider(
-      //         create: (context) => getIt<ScheduleManagementCubit>(),
-      //         child: const ScheduleSetupView(),
-      //       );
-      //     }
-      //   },
-      // ),
-
       // 2. شاشة الكالندر (تدعم الطبيب والمريض)
       GoRoute(
         path: kDoctorSchedule,
@@ -506,32 +473,6 @@ abstract class AppRouter {
           );
         },
       ),
-
-      // داخل AppRouter.dart
-      // GoRoute(
-      //   path: kMedicalDetails,
-      //   builder: (context, state) {
-      //     final Map<String, dynamic> extra =
-      //         state.extra as Map<String, dynamic>;
-      //     return MultiBlocProvider(
-      //       providers: [
-      //         BlocProvider(create: (context) => getIt<ExamSessionCubit>()),
-      //         BlocProvider(
-      //           create: (context) => getIt<AppointmentActionCubit>(),
-      //         ),
-      //       ],
-      //       child: MedicalDetailsView(
-
-      //         appointmentId: extra['appointmentId'],
-      //         patientName: extra['patientName'],
-      //         patientNote: extra['patientNote'],
-      //         // هات بيانات الدكتور من الـ SessionManager هنا أو جوا الـ View
-      //         doctorName: getIt<SessionManager>().userName,
-      //         doctorSpecialty: "Specialist", // أو أي حقل متاح
-      //       ),
-      //     );
-      //   },
-      // ),
       GoRoute(
         path: kMedicalDetails,
         builder: (context, state) {
@@ -615,15 +556,26 @@ abstract class AppRouter {
           );
         },
       ),
-
-      // GoRoute(
-      //   path: kAllAchievements,
-      //   builder: (context, state) {
-      //     final achievements =
-      //         state.extra as List<AchievementProfileEntity>? ?? [];
-      //     return AllAchievementsView(achievements: achievements);
-      //   },
-      // ),
+      // inside your GoRouter configuration
+      GoRoute(
+        path: kTickets,
+        builder:
+            (context, state) => BlocProvider(
+              create: (context) => getIt<TicketsCubit>(),
+              child: const SupportTicketsPage(),
+            ),
+        routes: [
+          // 🚀 صفحة الشات مضافة كـ Sub-route
+          GoRoute(
+            path: 'ticket-chat', // المسار هيكون /tickets/ticket-chat
+            builder: (context, state) {
+              // بنستلم الـ ticket entity اللي باعتينها من صفحة القائمة
+              final ticket = state.extra as TicketEntity;
+              return SupportChatPage(ticket: ticket);
+            },
+          ),
+        ],
+      ),
     ],
   );
 }
