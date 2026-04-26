@@ -244,21 +244,19 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
 
   Future<void> updateProfileImage(File imageFile) async {
     emit(UpdateProfileImageLoading());
+
     final result = await updateProfileImageUseCase(imageFile);
 
     result.fold(
       (failure) => emit(UpdateProfileImageFailure(failure.errmessage)),
       (profileImageEntity) {
         if (_cachedProfile != null) {
-          // 1. حدث الكاش في صمت
           _cachedProfile = _cachedProfile!.copyWith(
             profileImageUrl: profileImageEntity.fileUrl,
           );
         }
-
-        // 2. ابعت حالة نجاح الصورة فقط (وهي شايلة الـ Entity الجديد)
-        // الـ UI كدة كدة بيقرأ من الـ cachedProfile اللي إحنا لسه محدثينه
         emit(UpdateProfileImageSuccess(profileImageEntity));
+        getDoctorProfile();
       },
     );
   }
