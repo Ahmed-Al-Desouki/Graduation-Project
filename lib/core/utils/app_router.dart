@@ -34,6 +34,8 @@ import 'package:graduation_project/features/medical_history/presentation/view/al
 import 'package:graduation_project/features/auth/presentation/layout/patient_home_layout.dart';
 import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/shared_history_view.dart';
+import 'package:graduation_project/features/notification/presentation/notification_cubit/notification_cubit.dart';
+import 'package:graduation_project/features/notification/presentation/pages/notifications_page.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
 import 'package:graduation_project/features/auth/presentation/views/biometric_auth_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/create_account_view.dart';
@@ -97,6 +99,7 @@ abstract class AppRouter {
   static const kProfileCompletionLoading = '/doctor/profile-completion/loading';
   static const kAllAchievements = '/doctor/profile/all-achievements';
   static const kTickets = '/tickets';
+  static const kNotifications = '/notifications';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -107,6 +110,16 @@ abstract class AppRouter {
           final bookingData = state.extra as Map<String, dynamic>? ?? {};
           return BookingSuccessView(bookingData: bookingData);
         },
+      ),
+      GoRoute(
+        path: kNotifications,
+        builder:
+            (context, state) => BlocProvider.value(
+              // 🚀 بنستخدم .value وبنجيب النسخة اللي في getIt
+              // عشان نضمن إنه يفتح "نفس النسخة" اللي بدأت تسمع للـ SignalR في الهوم
+              value: getIt<NotificationCubit>(),
+              child: const NotificationsPage(),
+            ),
       ),
       GoRoute(
         path: kAppointmentsCenter,
@@ -244,6 +257,16 @@ abstract class AppRouter {
         builder:
             (context, state) => MultiBlocProvider(
               providers: [
+                // BlocProvider(
+                //   create:
+                //       (context) =>
+                //           getIt<NotificationCubit>()..fetchNotifications(),
+                // ),
+                // BlocProvider(create: (context) => getIt<ReminderCubit>()),
+                // BlocProvider(create: (context) => getIt<HomeCubit>()),
+                BlocProvider.value(
+                  value: getIt<NotificationCubit>()..fetchNotifications(),
+                ),
                 BlocProvider(create: (context) => getIt<ReminderCubit>()),
                 BlocProvider(create: (context) => getIt<HomeCubit>()),
               ],
@@ -254,8 +277,20 @@ abstract class AppRouter {
       GoRoute(
         path: kHomeDoctor,
         builder:
-            (context, state) => BlocProvider(
-              create: (_) => getIt<DoctorProfileCubit>(),
+            (context, state) => MultiBlocProvider(
+              providers: [
+                // BlocProvider(create: (_) => getIt<DoctorProfileCubit>()),
+                // BlocProvider(
+                //   create:
+                //       (context) =>
+                //           getIt<NotificationCubit>()..fetchNotifications(),
+                // ),
+                BlocProvider(create: (_) => getIt<DoctorProfileCubit>()),
+                // 🚀 التعديل هنا: استخدم .value عشان الـ Provider ميقفلش الكيوبت
+                BlocProvider.value(
+                  value: getIt<NotificationCubit>()..fetchNotifications(),
+                ),
+              ],
               child: const DoctorHomeLayout(),
             ),
       ),
@@ -566,12 +601,32 @@ abstract class AppRouter {
             ),
         routes: [
           // 🚀 صفحة الشات مضافة كـ Sub-route
+          // GoRoute(
+          //   path: 'ticket-chat', // المسار هيكون /tickets/ticket-chat
+          //   builder: (context, state) {
+          //     // بنستلم الـ ticket entity اللي باعتينها من صفحة القائمة
+          //     // final ticket = state.extra as TicketEntity;
+          //     // return SupportChatPage(ticket: ticket);
+          //     final ticketId = state.extra as String;
+          //     return SupportChatPage(ticketId: ticketId);
+          //   },
+          // ),
           GoRoute(
-            path: 'ticket-chat', // المسار هيكون /tickets/ticket-chat
+            path: 'ticket-chat',
             builder: (context, state) {
-              // بنستلم الـ ticket entity اللي باعتينها من صفحة القائمة
-              final ticket = state.extra as TicketEntity;
-              return SupportChatPage(ticket: ticket);
+              String id = "";
+              String? status;
+
+              // 🚀 بنشيك على النوع اللي مبعوث في الـ extra
+              if (state.extra is Map<String, dynamic>) {
+                final data = state.extra as Map<String, dynamic>;
+                id = data['id'];
+                status = data['status'];
+              } else if (state.extra is String) {
+                id = state.extra as String;
+              }
+
+              return SupportChatPage(ticketId: id, initialStatus: status);
             },
           ),
         ],

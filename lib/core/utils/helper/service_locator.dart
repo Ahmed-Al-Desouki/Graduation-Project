@@ -44,6 +44,8 @@ import 'package:graduation_project/features/home/presentation/manager/home_cubit
 import 'package:graduation_project/features/medical_history/data/repository/medical_history_qr_repo.dart';
 import 'package:graduation_project/features/medical_history/data/service/medical_history_qr_service.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/medical_qr/medicalqr_cubit.dart';
+import 'package:graduation_project/features/notification/data/repos/notification_repository_impl.dart';
+import 'package:graduation_project/features/notification/presentation/notification_cubit/notification_cubit.dart';
 import 'package:graduation_project/features/reminder/data/data_sources/local_occurrence_data_source.dart';
 import 'package:graduation_project/features/reminder/data/repo/reminder_repo.dart';
 import 'package:graduation_project/features/reminder/data/repo/reminder_repo_impl.dart';
@@ -98,6 +100,22 @@ Future<void> setupServiceLocator() async {
 
   getIt.registerLazySingleton<AuthWebServices>(
     () => AuthWebServices(getIt<ApiService>()),
+  );
+
+  // --- Notifications Feature ---
+
+  // 1. Repository
+  getIt.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(getIt<ApiService>()),
+  );
+
+  // 2. Cubit
+  // بنسجله كـ LazySingleton عشان يفضل محتفظ بالحالة والاتصال طول ما الأبب مفتوح
+  getIt.registerLazySingleton<NotificationCubit>(
+    () => NotificationCubit(
+      getIt<NotificationRepository>(),
+      getIt<SignalRService>(),
+    ),
   );
 
   getIt.registerLazySingleton<ReminderWebService>(

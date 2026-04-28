@@ -91,6 +91,8 @@ dependencies:
   bloc: ^9.2.0
   meta: ^1.17.0
   signalr_netcore: ^1.4.4
+  equatable: ^2.0.8
+  flutter_local_notifications: ^20.1.0
 
   
 

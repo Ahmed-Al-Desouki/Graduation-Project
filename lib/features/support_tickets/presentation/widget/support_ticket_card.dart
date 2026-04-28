@@ -24,15 +24,16 @@ class SupportTicketCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: () {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => SupportChatPage(ticket: ticket),
-          //   ),
+          // context.push(
+          //   '${AppRouter.kTickets}/ticket-chat', // المسار الكامل
+          //   extra: ticket.id, // بنبعت الـ object كامل
           // );
           context.push(
-            '${AppRouter.kTickets}/ticket-chat', // المسار الكامل
-            extra: ticket, // بنبعت الـ object كامل
+            '/tickets/ticket-chat',
+            extra: {
+              'id': ticket.id,
+              'status': ticket.status, // الحالة اللي جاية من الـ API بره
+            },
           );
         },
         borderRadius: BorderRadius.circular(12),

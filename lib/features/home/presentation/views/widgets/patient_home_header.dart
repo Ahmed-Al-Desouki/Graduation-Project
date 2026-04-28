@@ -1,10 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/core/widgets/tutorial_tooltip_widget.dart';
+import 'package:graduation_project/features/notification/presentation/notification_cubit/notification_cubit.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 class PatientHomeHeader extends StatelessWidget {
@@ -100,23 +103,69 @@ class PatientHomeHeader extends StatelessWidget {
   }
 
   Widget _buildNotificationIcon(BuildContext context) {
-    return Showcase.withWidget(
-      key: notificationKey,
-      width: 270.w,
-      tooltipPosition: TooltipPosition.bottom,
-      container: TutorialTooltipWidget(
-        title: 'Notifications',
-        description: 'Check your reminders and updates.',
-        currentStep: 1,
-        totalSteps: 4,
-        onNext: () => ShowCaseWidget.of(context).next(),
-        onSkip: () => ShowCaseWidget.of(context).dismiss(),
-      ),
-      height: null,
-      child: IconButton(
-        icon: Icon(Icons.notifications, color: Colors.white, size: 28.sp),
-        onPressed: () {},
-      ),
+    return BlocBuilder<NotificationCubit, NotificationState>(
+      builder: (context, state) {
+        // بنجيب عدد الإشعارات غير المقروءة من الكيوبت
+        final int count = context.read<NotificationCubit>().unreadCount;
+
+        return Showcase.withWidget(
+          height: null,
+          key: notificationKey,
+          width: 270.w,
+          tooltipPosition: TooltipPosition.bottom,
+          container: TutorialTooltipWidget(
+            title: 'Notifications',
+            description: 'Check your reminders and updates.',
+            currentStep: 1,
+            totalSteps: 4,
+            onNext: () => ShowCaseWidget.of(context).next(),
+            onSkip: () => ShowCaseWidget.of(context).dismiss(),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.notifications,
+                  color: Colors.white,
+                  size: 28.sp,
+                ),
+                onPressed: () {
+                  // 🚀 التوجيه لصفحة الإشعارات اللي عملناها
+                  context.push('/notifications');
+                },
+              ),
+              // لو فيه إشعارات، اظهر الدائرة الحمراء
+              if (count > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 16.w,
+                      minHeight: 16.h,
+                    ),
+                    child: Text(
+                      count > 9 ? '+9' : '$count',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

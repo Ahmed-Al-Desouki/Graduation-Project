@@ -128,13 +128,14 @@ class ApiService {
         endpoint,
         queryParameters: queryParameters,
       );
+      log('✅ [GET] ${response.statusCode} | ${response.data}');
       return response.data;
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<dynamic> post(String endpoint, dynamic body) async {
+  Future<dynamic> post(String endpoint, [dynamic body]) async {
     try {
       if (body is FormData) {
         log("📤 Sending Multipart Data (FormData)...");

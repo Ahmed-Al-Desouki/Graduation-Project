@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
+import 'package:graduation_project/features/notification/presentation/notification_cubit/notification_cubit.dart';
 
 class DoctorHomeHeader extends StatelessWidget {
   const DoctorHomeHeader({super.key});
@@ -62,16 +65,57 @@ class DoctorHomeHeader extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.notifications),
-                color: Colors.white,
-                iconSize: 28.sp,
-                onPressed: () {},
-              ),
+              _buildNotificationWithBadge(context),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildNotificationWithBadge(BuildContext context) {
+    return BlocBuilder<NotificationCubit, NotificationState>(
+      builder: (context, state) {
+        final count = context.read<NotificationCubit>().unreadCount;
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications),
+              color: Colors.white,
+              iconSize: 28.sp,
+              onPressed: () {
+                // التوجه لصفحة الإشعارات الموحدة
+                AppRouter.router.push(AppRouter.kNotifications);
+              },
+            ),
+            if (count > 0)
+              Positioned(
+                right: 5,
+                top: 5,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  constraints: BoxConstraints(minWidth: 18.w, minHeight: 18.h),
+                  child: Text(
+                    count > 9 ? '+9' : '$count',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

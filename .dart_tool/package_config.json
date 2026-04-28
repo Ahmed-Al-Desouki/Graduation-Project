@@ -392,6 +392,30 @@
       "languageVersion": "3.8"
     },
     {
+      "name": "flutter_local_notifications",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_local_notifications-20.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
+      "name": "flutter_local_notifications_linux",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_local_notifications_linux-7.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
+      "name": "flutter_local_notifications_platform_interface",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_local_notifications_platform_interface-10.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
+      "name": "flutter_local_notifications_windows",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_local_notifications_windows-2.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
       "name": "flutter_map",
       "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_map-8.3.0",
       "packageUri": "lib/",

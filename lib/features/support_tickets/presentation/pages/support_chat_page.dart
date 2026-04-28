@@ -6,51 +6,72 @@ import 'package:graduation_project/features/support_tickets/presentation/manager
 import 'package:graduation_project/features/support_tickets/presentation/widget/chat_bottom_bar.dart';
 import 'package:graduation_project/features/support_tickets/presentation/widget/chat_messages_list.dart';
 
-// class SupportChatPage extends StatelessWidget {
-//   final TicketEntity ticket; // استخدمنا الـ Entity اللي عملناها للموبايل
+// class SupportChatPage extends StatefulWidget {
+//   final TicketEntity ticket;
 
 //   const SupportChatPage({super.key, required this.ticket});
 
 //   @override
+//   State<SupportChatPage> createState() => _SupportChatPageState();
+// }
+
+// class _SupportChatPageState extends State<SupportChatPage> {
+//   @override
 //   Widget build(BuildContext context) {
 //     return BlocProvider(
-//       create: (context) => getIt<TicketChatCubit>()..fetchMessages(ticket.id),
+//       create: (context) => getIt<TicketChatCubit>()..fetchMessages(widget.ticket.id),
 //       child: Scaffold(
 //         appBar: AppBar(
 //           centerTitle: false,
-//           title: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Text(
-//                 ticket.title,
-//                 style: const TextStyle(
-//                   fontSize: 16,
-//                   fontWeight: FontWeight.bold,
-//                 ),
-//               ),
-//               Text(
-//                 "TKT-${ticket.id.substring(0, 5)} • ${ticket.status}",
-//                 style: const TextStyle(fontSize: 12, color: Colors.grey),
-//               ),
-//             ],
+//           title: BlocBuilder<TicketChatCubit, TicketChatState>(
+//             // بنستخدم buildWhen عشان الـ AppBar ميعملش ريبيلد مع كل رسالة، بس لما الحالة تتغير
+//             buildWhen: (previous, current) => current is TicketChatSuccess,
+//             builder: (context, state) {
+//               String currentStatus = widget.ticket.status;
+//               if (state is TicketChatSuccess) {
+//                 currentStatus = state.newStatus ?? currentStatus;
+//               }
+
+//               return Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(
+//                     widget.ticket.title,
+//                     style: const TextStyle(
+//                       fontSize: 16,
+//                       fontWeight: FontWeight.bold,
+//                     ),
+//                   ),
+//                   Text(
+//                     "TKT-${widget.ticket.id.substring(0, 5)} • $currentStatus",
+//                     style: TextStyle(
+//                       fontSize: 12,
+//                       color:
+//                           currentStatus == "Open"
+//                               ? Colors.green
+//                               : (currentStatus == "InProgress"
+//                                   ? Colors.blue
+//                                   : Colors.red), // حتة شياكة
+//                     ),
+//                   ),
+//                 ],
+//               );
+//             },
 //           ),
 //         ),
-
-//         // lib/features/support_tickets/presentation/pages/support_chat_page.dart
 //         body: Column(
 //           children: [
 //             const Expanded(child: ChatMessagesList()),
 
-//             // 🚀 الـ BlocBuilder هنا هو اللي هيتحكم في ظهور الـ TextField
+//             // الـ BlocBuilder الخاص بالـ Input Bar
 //             BlocBuilder<TicketChatCubit, TicketChatState>(
 //               builder: (context, state) {
-//                 String currentStatus = ticket.status;
+//                 String currentStatus = widget.ticket.status;
 
 //                 if (state is TicketChatSuccess) {
 //                   currentStatus = state.newStatus ?? currentStatus;
 //                 }
 
-//                 // لو الحالة مقفولة أو محلولة، شيل الـ Input Bar
 //                 if (currentStatus == "Closed" || currentStatus == "Resolved") {
 //                   return Container(
 //                     width: double.infinity,
@@ -61,7 +82,7 @@ import 'package:graduation_project/features/support_tickets/presentation/widget/
 //                         Icon(Icons.lock_outline, color: Colors.grey.shade600),
 //                         const SizedBox(height: 8),
 //                         Text(
-//                           "هذه التذكرة مغلقة حالياً $currentStatus",
+//                           "هذه التذكرة مغلقة حالياً ($currentStatus)",
 //                           style: TextStyle(
 //                             color: Colors.grey.shade600,
 //                             fontWeight: FontWeight.bold,
@@ -72,8 +93,7 @@ import 'package:graduation_project/features/support_tickets/presentation/widget/
 //                   );
 //                 }
 
-//                 // لو لسه مفتوحة، اظهر الـ Bottom Bar عادي
-//                 return ChatBottomBar(ticketId: ticket.id);
+//                 return ChatBottomBar(ticketId: widget.ticket.id);
 //               },
 //             ),
 //           ],
@@ -83,47 +103,60 @@ import 'package:graduation_project/features/support_tickets/presentation/widget/
 //   }
 // }
 
-class SupportChatPage extends StatelessWidget {
-  final TicketEntity ticket;
+class SupportChatPage extends StatefulWidget {
+  final String ticketId; // المعرف الوحيد اللي معانا حالياً
+  final String? initialStatus;
+  const SupportChatPage({
+    super.key,
+    required this.ticketId,
+    this.initialStatus,
+  });
 
-  const SupportChatPage({super.key, required this.ticket});
+  @override
+  State<SupportChatPage> createState() => _SupportChatPageState();
+}
 
+class _SupportChatPageState extends State<SupportChatPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => getIt<TicketChatCubit>()..fetchMessages(ticket.id),
+      // 🚀 نمرر الـ widget.ticketId للكيوبت مباشرة
+      create:
+          (context) =>
+              getIt<TicketChatCubit>()..fetchMessages(
+                widget.ticketId,
+                initialStatus: widget.initialStatus,
+              ),
       child: Scaffold(
         appBar: AppBar(
           centerTitle: false,
           title: BlocBuilder<TicketChatCubit, TicketChatState>(
-            // بنستخدم buildWhen عشان الـ AppBar ميعملش ريبيلد مع كل رسالة، بس لما الحالة تتغير
             buildWhen: (previous, current) => current is TicketChatSuccess,
             builder: (context, state) {
-              String currentStatus = ticket.status;
+              // 💡 بما إن العنوان مش معانا، هنعرض الـ ID مؤقتاً كعنوان أو "Support Ticket"
+              String title = "Ticket #${widget.ticketId.substring(0, 5)}";
+              String currentStatus = "Loading...";
+
               if (state is TicketChatSuccess) {
-                currentStatus = state.newStatus ?? currentStatus;
+                // الكيوبت بيحدث الـ Status بمجرد ما الـ API يرد أو SignalR يبعت تحديث
+                currentStatus = state.newStatus ?? "Open";
               }
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ticket.title,
+                    title,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    "TKT-${ticket.id.substring(0, 5)} • $currentStatus",
+                    "TKT-${widget.ticketId.substring(0, 5)} • $currentStatus",
                     style: TextStyle(
                       fontSize: 12,
-                      color:
-                          currentStatus == "Open"
-                              ? Colors.green
-                              : (currentStatus == "InProgress"
-                                  ? Colors.blue
-                                  : Colors.red), // حتة شياكة
+                      color: _getStatusColor(currentStatus), // ميثود الشياكة
                     ),
                   ),
                 ],
@@ -135,41 +168,60 @@ class SupportChatPage extends StatelessWidget {
           children: [
             const Expanded(child: ChatMessagesList()),
 
-            // الـ BlocBuilder الخاص بالـ Input Bar
+            // Input Bar المنطقي
             BlocBuilder<TicketChatCubit, TicketChatState>(
               builder: (context, state) {
-                String currentStatus = ticket.status;
-
+                String currentStatus = "Open";
                 if (state is TicketChatSuccess) {
-                  currentStatus = state.newStatus ?? currentStatus;
+                  currentStatus = state.newStatus ?? "Open";
                 }
 
                 if (currentStatus == "Closed" || currentStatus == "Resolved") {
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    color: Colors.grey.shade100,
-                    child: Column(
-                      children: [
-                        Icon(Icons.lock_outline, color: Colors.grey.shade600),
-                        const SizedBox(height: 8),
-                        Text(
-                          "هذه التذكرة مغلقة حالياً ($currentStatus)",
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+                  return _buildClosedBanner(currentStatus);
                 }
 
-                return ChatBottomBar(ticketId: ticket.id);
+                return ChatBottomBar(ticketId: widget.ticketId);
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ميثود مساعدة للألوان
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case "Open":
+        return Colors.green;
+      case "InProgress":
+        return Colors.blue;
+      case "Resolved":
+      case "Closed":
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // ميثود بناء بانر التذكرة المغلقة
+  Widget _buildClosedBanner(String status) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      color: Colors.grey.shade100,
+      child: Column(
+        children: [
+          Icon(Icons.lock_outline, color: Colors.grey.shade600),
+          const SizedBox(height: 8),
+          Text(
+            "هذه التذكرة مغلقة حالياً ($status)",
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
