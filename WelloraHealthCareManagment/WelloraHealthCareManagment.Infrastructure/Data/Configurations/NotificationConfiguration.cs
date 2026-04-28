@@ -16,6 +16,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
             builder.Property(n => n.Message).HasMaxLength(1000).IsRequired();
             builder.Property(n => n.Type).IsRequired().HasConversion<string>();
             builder.Property(n => n.RelatedEntityType).HasMaxLength(50);
+            builder.Property(n => n.RelatedEntityKey).HasMaxLength(100);
+            builder.Property(n => n.NavigationTarget).HasMaxLength(100);
+            builder.Property(n => n.NavigationPayloadJson).HasColumnType("nvarchar(max)");
 
             builder.HasOne(n => n.User)
                    .WithMany()
@@ -26,6 +29,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Data.Configurations
             // Indexes for efficient querying
             builder.HasIndex(n => new { n.UserId, n.IsRead, n.CreatedAt });
             builder.HasIndex(n => n.Type);
+            builder.HasIndex(n => new { n.RelatedEntityType, n.RelatedEntityKey });
         }
     }
 }

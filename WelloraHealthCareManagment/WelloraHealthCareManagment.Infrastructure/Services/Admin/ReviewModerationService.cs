@@ -218,6 +218,16 @@ public class ReviewModerationService : IReviewModerationService
             if (!review.IsDeleted)
                 return ServiceResult.Failure("Review is not deleted");
 
+            if (review.TargetType == "Doctor")
+            {
+                var existingActiveReview = await _reviewRepository
+                    .GetActiveByPatientAndDoctorAsync(review.UserID, review.TargetID);
+
+                if (existingActiveReview != null)
+                    return ServiceResult.Failure(
+                        "Cannot restore this review because the patient already has an active review for this doctor.");
+            }
+
             await _reviewRepository.RestoreAsync(review, ct);
 
             if (review.TargetType == "Doctor")

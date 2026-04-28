@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WelloraHealthCareManagment.Infrastructure.Context;
 
@@ -11,9 +12,11 @@ using WelloraHealthCareManagment.Infrastructure.Context;
 namespace WelloraHealthCareManagment.Infrastructure.Migrations
 {
     [DbContext(typeof(HealthCarePlusContext))]
-    partial class HealthCarePlusContextModelSnapshot : ModelSnapshot
+    [Migration("20260427091052_PreventDuplicateActiveDoctorReviews")]
+    partial class PreventDuplicateActiveDoctorReviews
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2208,22 +2211,11 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<string>("NavigationPayloadJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NavigationTarget")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<DateTime?>("ReadAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("RelatedEntityId")
                         .HasColumnType("int");
-
-                    b.Property<string>("RelatedEntityKey")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("RelatedEntityType")
                         .HasMaxLength(50)
@@ -2247,8 +2239,6 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Type");
-
-                    b.HasIndex("RelatedEntityType", "RelatedEntityKey");
 
                     b.HasIndex("UserId", "IsRead", "CreatedAt");
 

@@ -1,5 +1,6 @@
 ﻿// Application/Mappings/AdminMappingProfile.cs
 using HealthCare_.Models.sharedModels.Reviews;
+using System.Text.Json;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Domain.Entities.AdminLogs;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
@@ -23,7 +24,10 @@ namespace WelloraHealthCareManagment.Application.Mappings
                 .ForMember(dest => dest.SuspendedByAdminName, opt => opt.MapFrom(src => src.SuspendedByAdmin != null ? src.SuspendedByAdmin.FullName : null));
 
             // Notification mappings
-            CreateMap<Notification, NotificationDto>();
+            CreateMap<Notification, NotificationDto>()
+                .ForMember(
+                    dest => dest.NavigationPayload,
+                    opt => opt.MapFrom(src => DeserializeNavigationPayload(src.NavigationPayloadJson)));
 
             // Ticket mappings
             CreateMap<Ticket, TicketDto>()
@@ -54,12 +58,29 @@ namespace WelloraHealthCareManagment.Application.Mappings
             CreateMap<Review, ReviewModerationDto>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
                 .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User.Email))
+                .ForMember(dest => dest.ReviewerProfileImageUrl, opt => opt.MapFrom(src => src.User.ProfileImagePath != null ? src.User.ProfileImagePath.FileUrl : null))
                 .ForMember(dest => dest.DoctorName, opt => opt.Ignore()) // Will be set manually in service
                 .ForMember(dest => dest.DeletedByAdminName, opt => opt.MapFrom(src => src.DeletedByAdmin != null ? src.DeletedByAdmin.FullName : null));
 
             // AdminActionLog mappings
             CreateMap<AdminActionLog, AdminAuditLogDto>()
                 .ForMember(dest => dest.AdminName, opt => opt.MapFrom(src => src.Admin.FullName));
+        }
+        private static Dictionary<string, string>? DeserializeNavigationPayload(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return null;
+            }
+
+            try
+            {
+                return JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

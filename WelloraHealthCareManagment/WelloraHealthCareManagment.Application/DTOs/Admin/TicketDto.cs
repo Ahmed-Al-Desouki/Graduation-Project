@@ -123,6 +123,10 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public int ResolvedTickets { get; set; }
         public int ClosedTickets { get; set; }
         public int UrgentTickets { get; set; }
+        public int ClosedTicketsThisMonth { get; set; }
+        public int ClosedTicketsLastMonth { get; set; }
+        public double ClosedTicketsPercentageChange { get; set; }
+        public List<int> LastSevenDaysTrend { get; set; } = new();
         public Dictionary<TicketCategory, int> TicketsByCategory { get; set; } = new();
         public Dictionary<TicketStatus, int> TicketsByStatus { get; set; } = new();
     }

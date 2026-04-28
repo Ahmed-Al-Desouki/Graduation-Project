@@ -84,5 +84,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public Dictionary<DoctorVerificationRequestStatus, int> DoctorsByStatus { get; set; } = new();
         public int ApprovedThisMonth { get; set; }
         public int RejectedThisMonth { get; set; }
+        public double PendingDoctorsPercentageChange { get; set; }
+        public List<int> LastSevenDaysTrend { get; set; } = new();
     }
 }

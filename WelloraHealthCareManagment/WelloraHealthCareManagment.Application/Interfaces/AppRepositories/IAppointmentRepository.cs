@@ -36,6 +36,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking
             int patientId,
             int doctorId,
             CancellationToken cancellationToken = default);
+        Task<int> GetDistinctPatientCountByDoctorAsync(
+            int doctorId,
+            CancellationToken cancellationToken = default);
         Task<List<Appointment>> GetByTimeSlotIdsAsync(
             List<Guid> slotIds,
             CancellationToken ct = default);

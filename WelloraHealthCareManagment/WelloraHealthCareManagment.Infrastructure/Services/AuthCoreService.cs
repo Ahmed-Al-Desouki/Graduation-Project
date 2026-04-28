@@ -149,7 +149,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     UserName = request.Email,
                     Email = request.Email,
                     FullName = request.FullName,
-                    Role = request.Role ?? "Patient",
+                    //Role = request.Role ?? "Patient",
+                    Role = DetermineUserRole(request.Role),
                     CreatedAt = DateTime.UtcNow,
                     EmailConfirmed = true,
                     TwoFactorEnabled = true
@@ -585,7 +586,18 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     });
             }
         }
+        private static string DetermineUserRole(string? requestedRole)
+        {
+            var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Patient",
+                "Doctor"
+            };
 
+            return allowed.Contains(requestedRole ?? "")
+                ? requestedRole!
+                : "Patient";
+        }
         #endregion
     }
 }

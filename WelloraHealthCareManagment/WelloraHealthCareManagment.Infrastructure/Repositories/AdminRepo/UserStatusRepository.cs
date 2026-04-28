@@ -192,6 +192,18 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .CountAsync(u => u.CreatedAt >= startDate && u.CreatedAt < endDate, ct);
         }
 
+        public async Task<int> GetNewDoctorsCountAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default)
+        {
+            return await _context.Doctors
+                .CountAsync(d => d.CreatedAt >= startDate && d.CreatedAt < endDate, ct);
+        }
+
+        public async Task<int> GetNewPatientsCountAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default)
+        {
+            return await _context.Patients
+                .CountAsync(p => p.CreatedAt >= startDate && p.CreatedAt < endDate, ct);
+        }
+
         public async Task<List<ApplicationUser>> GetAllUsersWithDoctorAsync(CancellationToken ct = default)
         {
             return await _context.Users

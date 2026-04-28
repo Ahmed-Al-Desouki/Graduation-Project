@@ -1,9 +1,11 @@
 ﻿// Infrastructure/Services/UserManagementService.cs
 using AutoMapper;
+using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Application.Interfaces.Email;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Entities.UserManagement;
 using WelloraHealthCareManagment.Domain.Enums;
@@ -16,6 +18,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
         private readonly IUserRepository _userRepository;
         private readonly INotificationService _notificationService;
         private readonly IAdminAuditService _auditService;
+        private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private readonly ILogger<UserManagementService> _logger;
 
@@ -24,6 +27,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             IUserRepository userRepository,
             INotificationService notificationService,
             IAdminAuditService auditService,
+            IEmailService emailService,
             IMapper mapper,
             ILogger<UserManagementService> logger)
         {
@@ -31,6 +35,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             _userRepository = userRepository;
             _notificationService = notificationService;
             _auditService = auditService;
+            _emailService = emailService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -85,6 +90,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     request.Reason,
                     ct);
 
+                await SendBlockedEmailAsync(user, request.Reason);
+
                 // Log action
                 await _auditService.LogActionAsync(
                     adminId,
@@ -131,6 +138,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 
                 // Send notification
                 await _notificationService.SendAccountUnblockedNotificationAsync(request.UserId, ct);
+
+                var user = await _userRepository.GetByIdAsync(request.UserId);
+                if (user != null)
+                {
+                    await SendUnblockedEmailAsync(user);
+                }
 
                 // Log action
                 await _auditService.LogActionAsync(
@@ -214,6 +227,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     request.Reason,
                     ct);
 
+                await SendSuspendedEmailAsync(user, request.SuspensionEndDate, request.Reason);
+
                 // Log action
                 await _auditService.LogActionAsync(
                     adminId,
@@ -264,6 +279,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 await _userStatusRepository.UpdateAsync(userStatus, ct);
                 await _notificationService.SendAccountUnsuspendedNotificationAsync(request.UserId, ct);
 
+                var user = await _userRepository.GetByIdAsync(request.UserId);
+                if (user != null)
+                {
+                    await SendUnsuspendedEmailAsync(user);
+                }
+
                 // Log action
                 await _auditService.LogActionAsync(
                     adminId,
@@ -284,6 +305,57 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 _logger.LogError(ex, "Error unsuspending user {UserId}", request.UserId);
                 return ServiceResult.Failure("Failed to unsuspend user");
+            }
+        }
+
+        private async Task SendBlockedEmailAsync(ApplicationUser user, string reason)
+        {
+            await SendEmailAsync(
+                user.Email,
+                user.FullName,
+                () => _emailService.SendAccountBlockedEmailAsync(user.Email!, user.FullName ?? "User", reason),
+                "blocked");
+        }
+
+        private async Task SendUnblockedEmailAsync(ApplicationUser user)
+        {
+            await SendEmailAsync(
+                user.Email,
+                user.FullName,
+                () => _emailService.SendAccountUnblockedEmailAsync(user.Email!, user.FullName ?? "User"),
+                "unblocked");
+        }
+
+        private async Task SendSuspendedEmailAsync(ApplicationUser user, DateTime suspensionEnd, string reason)
+        {
+            await SendEmailAsync(
+                user.Email,
+                user.FullName,
+                () => _emailService.SendAccountSuspendedEmailAsync(user.Email!, user.FullName ?? "User", suspensionEnd, reason),
+                "suspended");
+        }
+
+        private async Task SendUnsuspendedEmailAsync(ApplicationUser user)
+        {
+            await SendEmailAsync(
+                user.Email,
+                user.FullName,
+                () => _emailService.SendAccountUnsuspendedEmailAsync(user.Email!, user.FullName ?? "User"),
+                "unsuspended");
+        }
+
+        private async Task SendEmailAsync(string? email, string? fullName, Func<Task<bool>> sendEmail, string actionName)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                _logger.LogWarning("Skipped {ActionName} email because the user has no email address", actionName);
+                return;
+            }
+
+            var sent = await sendEmail();
+            if (!sent)
+            {
+                _logger.LogWarning("Failed to send {ActionName} email to user {UserName}", actionName, fullName ?? "Unknown");
             }
         }
 

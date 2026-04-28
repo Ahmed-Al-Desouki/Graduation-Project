@@ -19,6 +19,9 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public DateTime CreatedAt { get; set; }
         public string? RelatedEntityType { get; set; }
         public int? RelatedEntityId { get; set; }
+        public string? RelatedEntityKey { get; set; }
+        public string? NavigationTarget { get; set; }
+        public Dictionary<string, string>? NavigationPayload { get; set; }
     }
 
     public class CreateNotificationRequest
@@ -29,6 +32,9 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public NotificationType Type { get; set; }
         public string? RelatedEntityType { get; set; }
         public int? RelatedEntityId { get; set; }
+        public string? RelatedEntityKey { get; set; }
+        public string? NavigationTarget { get; set; }
+        public Dictionary<string, string>? NavigationPayload { get; set; }
     }
 
     public class NotificationDispatchRequest
@@ -39,6 +45,8 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public NotificationType Type { get; set; }
         public string? RelatedEntityType { get; set; }
         public int? RelatedEntityId { get; set; }
+        public string? RelatedEntityKey { get; set; }
+        public string? NavigationTarget { get; set; }
         public Dictionary<string, string>? Data { get; set; }
     }
 

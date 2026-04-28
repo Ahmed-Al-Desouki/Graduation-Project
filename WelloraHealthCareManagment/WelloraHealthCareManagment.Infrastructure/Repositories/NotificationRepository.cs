@@ -66,6 +66,22 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<int> CountByUserIdAsync(
+            int userId,
+            bool unreadOnly = false,
+            CancellationToken ct = default)
+        {
+            var query = _context.Notifications
+                .Where(n => n.UserId == userId);
+
+            if (unreadOnly)
+            {
+                query = query.Where(n => !n.IsRead);
+            }
+
+            return await query.CountAsync(ct);
+        }
+
         public async Task<int> CountUnreadByUserIdAsync(int userId, CancellationToken ct = default)
         {
             return await _context.Notifications

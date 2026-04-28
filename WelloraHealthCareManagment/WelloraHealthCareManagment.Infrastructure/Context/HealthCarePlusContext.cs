@@ -596,6 +596,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Context
 
                 entity.HasIndex(r => r.IsDeleted);
                 entity.HasIndex(r => new { r.TargetType, r.TargetID, r.IsDeleted });
+                entity.HasIndex(r => new { r.UserID, r.TargetType, r.TargetID })
+                      .IsUnique()
+                      .HasFilter("[IsDeleted] = 0")
+                      .HasDatabaseName("UX_Reviews_User_Target_Active");
 
             });
 

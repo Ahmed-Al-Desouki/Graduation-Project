@@ -6,6 +6,7 @@ using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.DTOs.Realtime;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
+using WelloraHealthCareManagment.Application.Interfaces.Email;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
@@ -20,6 +21,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
         private readonly INotificationService _notificationService;
         private readonly IRealtimeService _realtimeService;
         private readonly IAdminAuditService _auditService;
+        private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private readonly ILogger<DoctorVerificationService> _logger;
 
@@ -29,6 +31,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             INotificationService notificationService,
             IRealtimeService realtimeService,
             IAdminAuditService auditService,
+            IEmailService emailService,
             IMapper mapper,
             ILogger<DoctorVerificationService> logger)
         {
@@ -37,6 +40,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             _notificationService = notificationService;
             _realtimeService = realtimeService;
             _auditService = auditService;
+            _emailService = emailService;
             _mapper = mapper;
             _logger = logger;
         }
@@ -183,6 +187,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     doctorId,
                     ct);
 
+                await SendDoctorApprovalEmailAsync(doctor, request.AdminNotes);
+
                 // Log action
                 await _auditService.LogActionAsync(
                     adminId,
@@ -254,6 +260,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     doctorId,
                     request.RejectionReason,
                     ct);
+
+                await SendDoctorRejectionEmailAsync(doctor, request.RejectionReason, request.AdminNotes);
 
                 // Log action
                 await _auditService.LogActionAsync(
@@ -415,6 +423,47 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     UpdatedAt = DateTime.UtcNow
                 },
                 ct);
+        }
+
+        private async Task SendDoctorApprovalEmailAsync(Doctor doctor, string? adminNotes)
+        {
+            var email = doctor.User?.Email;
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                _logger.LogWarning("Skipped doctor approval email because doctor {DoctorId} has no email address", doctor.DoctorId);
+                return;
+            }
+
+            var sent = await _emailService.SendDoctorVerificationApprovedEmailAsync(
+                email,
+                doctor.User?.FullName ?? "Doctor",
+                adminNotes);
+
+            if (!sent)
+            {
+                _logger.LogWarning("Failed to send doctor approval email to doctor {DoctorId}", doctor.DoctorId);
+            }
+        }
+
+        private async Task SendDoctorRejectionEmailAsync(Doctor doctor, string rejectionReason, string? adminNotes)
+        {
+            var email = doctor.User?.Email;
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                _logger.LogWarning("Skipped doctor rejection email because doctor {DoctorId} has no email address", doctor.DoctorId);
+                return;
+            }
+
+            var sent = await _emailService.SendDoctorVerificationRejectedEmailAsync(
+                email,
+                doctor.User?.FullName ?? "Doctor",
+                rejectionReason,
+                adminNotes);
+
+            if (!sent)
+            {
+                _logger.LogWarning("Failed to send doctor rejection email to doctor {DoctorId}", doctor.DoctorId);
+            }
         }
     }
 }

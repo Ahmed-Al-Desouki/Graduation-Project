@@ -46,6 +46,7 @@ Support message payloads are now unified across:
 
 - `GET /api/tickets/{ticketId}/messages`
 - `POST /api/tickets/{ticketId}/messages`
+- `POST /api/tickets/messages`
 - `POST /api/admin/tickets/respond`
 - SignalR event `ReceiveMessage`
 
@@ -164,30 +165,51 @@ Important:
 
 ## Support
 
-### User Ticket APIs
+### Shared Ticket APIs
 
+These endpoints now work for both `User` and `Admin` where it makes sense:
+
+- `GET /api/tickets`
 - `POST /api/tickets`
 - `POST /api/tickets/messages`
 - `POST /api/tickets/{ticketId}/messages`
-- `GET /api/tickets/my-tickets`
 - `GET /api/tickets/{ticketId}`
 - `GET /api/tickets/{ticketId}/messages?page=1&pageSize=20&sort=asc`
+
+Notes:
+
+- `GET /api/tickets` is now the preferred list endpoint for new Flutter code
+- for `Admin`, `GET /api/tickets` supports the full filtering/query behavior
+- for `User`, `GET /api/tickets` automatically returns only that user's tickets
+- `POST /api/tickets` is functionally for users creating tickets
+- `POST /api/tickets/{ticketId}/messages` is now a shared send-message endpoint
+- `GET /api/tickets/{ticketId}` is now a shared details endpoint
+- `GET /api/tickets/{ticketId}/messages` is now a shared history endpoint
+
+### User-Only Ticket APIs
+
+- `GET /api/tickets/my-tickets` (legacy compatibility route; prefer `GET /api/tickets` in new Flutter code)
+
+### Admin-Only Ticket APIs
+
 - `PATCH /api/tickets/{ticketId}`
 
-### Admin Ticket APIs
+### Admin Dashboard Ticket APIs
 
 - `GET /api/admin/tickets`
-- `POST /api/admin/tickets/respond`
+- `POST /api/admin/tickets/respond` (legacy compatibility route; prefer shared message endpoint in new Flutter code)
 - `PUT /api/admin/tickets/priority`
 - `GET /api/admin/tickets/statistics`
 
 ### Support Flow Recommendation
 
-1. load ticket details with `GET /api/tickets/{ticketId}`
-2. load paged history with `GET /api/tickets/{ticketId}/messages`
-3. join `JoinTicket(ticketId)`
-4. append `ReceiveMessage` directly to the local list
-5. update ticket badge/status on `TicketUpdated`
+1. load ticket list with `GET /api/tickets`
+2. load ticket details with `GET /api/tickets/{ticketId}`
+3. load paged history with `GET /api/tickets/{ticketId}/messages`
+4. join `JoinTicket(ticketId)`
+5. send new messages using `POST /api/tickets/{ticketId}/messages`
+6. append `ReceiveMessage` directly to the local list
+7. update ticket badge/status on `TicketUpdated`
 
 ## Appointments
 
@@ -305,7 +327,7 @@ Main endpoints:
 Use one model for:
 
 - support message history
-- send-message response
+- shared send-message response
 - admin-respond response
 - `ReceiveMessage` realtime event
 
@@ -424,6 +446,8 @@ For every realtime-enabled screen:
 ## Important Notes
 
 - `ReceiveMessage` payload already matches the history API message item shape
+- new Flutter code should prefer `/api/tickets/{ticketId}/messages` for both user and admin chat sends
+- new Flutter code should prefer `GET /api/tickets` for both user and admin ticket lists
 - ticket history now includes `senderName` and `isFromAdmin`
 - `PATCH /api/tickets/{ticketId}` is the correct status update endpoint
 - `POST /api/admin/tickets/close` is no longer the model to build around
@@ -450,4 +474,3 @@ The correct frontend architecture now is:
 - SignalR for live synchronization
 - one unified support message model
 - no polling for features already covered by events
-

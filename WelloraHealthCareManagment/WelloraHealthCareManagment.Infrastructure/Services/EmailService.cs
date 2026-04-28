@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using System.Net;
 using WelloraHealthCareManagment.Application.Interfaces.Email;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
@@ -110,6 +111,48 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         {
             var subject = "Verify Your Email - HealthCare App";
             var htmlMessage = GenerateEmailVerificationTemplate(verificationToken, userName);
+            return await SendEmailAsync(toEmail, subject, htmlMessage);
+        }
+
+        public async Task<bool> SendDoctorVerificationApprovedEmailAsync(string toEmail, string userName, string? adminNotes = null)
+        {
+            var subject = "Your Doctor Verification Has Been Approved";
+            var htmlMessage = GenerateDoctorVerificationApprovedTemplate(userName, adminNotes);
+            return await SendEmailAsync(toEmail, subject, htmlMessage);
+        }
+
+        public async Task<bool> SendDoctorVerificationRejectedEmailAsync(string toEmail, string userName, string rejectionReason, string? adminNotes = null)
+        {
+            var subject = "Update About Your Doctor Verification";
+            var htmlMessage = GenerateDoctorVerificationRejectedTemplate(userName, rejectionReason, adminNotes);
+            return await SendEmailAsync(toEmail, subject, htmlMessage);
+        }
+
+        public async Task<bool> SendAccountBlockedEmailAsync(string toEmail, string userName, string reason)
+        {
+            var subject = "Important Notice About Your Account";
+            var htmlMessage = GenerateAccountBlockedTemplate(userName, reason);
+            return await SendEmailAsync(toEmail, subject, htmlMessage);
+        }
+
+        public async Task<bool> SendAccountUnblockedEmailAsync(string toEmail, string userName)
+        {
+            var subject = "Your Account Access Has Been Restored";
+            var htmlMessage = GenerateAccountUnblockedTemplate(userName);
+            return await SendEmailAsync(toEmail, subject, htmlMessage);
+        }
+
+        public async Task<bool> SendAccountSuspendedEmailAsync(string toEmail, string userName, DateTime suspensionEnd, string reason)
+        {
+            var subject = "Your Account Has Been Temporarily Suspended";
+            var htmlMessage = GenerateAccountSuspendedTemplate(userName, suspensionEnd, reason);
+            return await SendEmailAsync(toEmail, subject, htmlMessage);
+        }
+
+        public async Task<bool> SendAccountUnsuspendedEmailAsync(string toEmail, string userName)
+        {
+            var subject = "Your Account Is Active Again";
+            var htmlMessage = GenerateAccountUnsuspendedTemplate(userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
@@ -379,6 +422,219 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
     </div>
 </body>
 </html>";
+        }
+
+        private string GenerateDoctorVerificationApprovedTemplate(string userName, string? adminNotes)
+        {
+            var body = $@"
+                <p>We are pleased to let you know that your doctor verification request has been <strong>approved</strong>.</p>
+                <p>Your professional account is now verified, and you can continue using all doctor features available on the platform.</p>
+                {BuildOptionalCallout("Admin notes", adminNotes)}
+                <p>If you face any issue accessing your doctor tools, please contact our support team.</p>";
+
+            return BuildStatusEmailTemplate(
+                "Verification Approved",
+                "Your doctor account is now verified.",
+                userName,
+                body,
+                "#0f9d58",
+                "Wellora Team");
+        }
+
+        private string GenerateDoctorVerificationRejectedTemplate(string userName, string rejectionReason, string? adminNotes)
+        {
+            var body = $@"
+                <p>We reviewed your doctor verification request, but we could not approve it at this time.</p>
+                {BuildHighlightedReason("Reason for rejection", rejectionReason, "#c62828", "#fff5f5")}
+                {BuildOptionalCallout("Admin notes", adminNotes)}
+                <p>Please update the required details or upload corrected documents, then submit your request again for review.</p>";
+
+            return BuildStatusEmailTemplate(
+                "Verification Rejected",
+                "Please review the feedback and resubmit your documents.",
+                userName,
+                body,
+                "#d93025",
+                "Wellora Team");
+        }
+
+        private string GenerateAccountBlockedTemplate(string userName, string reason)
+        {
+            var body = $@"
+                <p>Your account has been <strong>blocked</strong> by the administration team.</p>
+                {BuildHighlightedReason("Reason", reason, "#c62828", "#fff5f5")}
+                <p>If you believe this was done by mistake or you need more information, please contact support.</p>";
+
+            return BuildStatusEmailTemplate(
+                "Account Blocked",
+                "Your access is currently restricted.",
+                userName,
+                body,
+                "#b3261e",
+                "Wellora Support");
+        }
+
+        private string GenerateAccountUnblockedTemplate(string userName)
+        {
+            var body = @"
+                <p>Your account has been <strong>unblocked</strong>, and your access to the platform has been restored.</p>
+                <p>You can now sign in again and continue using your account normally.</p>";
+
+            return BuildStatusEmailTemplate(
+                "Account Restored",
+                "Your access is active again.",
+                userName,
+                body,
+                "#0f9d58",
+                "Wellora Support");
+        }
+
+        private string GenerateAccountSuspendedTemplate(string userName, DateTime suspensionEnd, string reason)
+        {
+            var body = $@"
+                <p>Your account has been <strong>temporarily suspended</strong>.</p>
+                {BuildHighlightedReason("Reason", reason, "#8d6e00", "#fff9e6")}
+                <div style='margin: 18px 0; padding: 16px 18px; border-radius: 14px; background: #f7f9fc; border: 1px solid #d9e2f2;'>
+                    <strong>Suspension end date:</strong> {WebUtility.HtmlEncode(suspensionEnd.ToString("yyyy-MM-dd HH:mm 'UTC'"))}
+                </div>
+                <p>Your access will be restored once the suspension period ends, unless you receive another update from the administration team.</p>";
+
+            return BuildStatusEmailTemplate(
+                "Account Suspended",
+                "Your access has been paused temporarily.",
+                userName,
+                body,
+                "#f9ab00",
+                "Wellora Support");
+        }
+
+        private string GenerateAccountUnsuspendedTemplate(string userName)
+        {
+            var body = @"
+                <p>Your account suspension has ended, and your access has now been restored.</p>
+                <p>You can return to the platform and continue using your account normally.</p>";
+
+            return BuildStatusEmailTemplate(
+                "Suspension Ended",
+                "Your account is active again.",
+                userName,
+                body,
+                "#1a73e8",
+                "Wellora Support");
+        }
+
+        private string BuildStatusEmailTemplate(
+            string title,
+            string subtitle,
+            string userName,
+            string bodyHtml,
+            string accentColor,
+            string footerSignature)
+        {
+            var encodedTitle = WebUtility.HtmlEncode(title);
+            var encodedSubtitle = WebUtility.HtmlEncode(subtitle);
+            var encodedUserName = WebUtility.HtmlEncode(userName);
+            var encodedFooterSignature = WebUtility.HtmlEncode(footerSignature);
+
+            return $@"
+<!DOCTYPE html>
+<html lang='en' dir='ltr'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>{encodedTitle}</title>
+    <style>
+        body {{
+            margin: 0;
+            padding: 24px;
+            background: #eef3f8;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #1f2937;
+        }}
+        .container {{
+            max-width: 620px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+        }}
+        .header {{
+            padding: 36px 32px;
+            background: linear-gradient(135deg, {accentColor} 0%, #16324f 100%);
+            color: #ffffff;
+        }}
+        .header h1 {{
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 700;
+        }}
+        .header p {{
+            margin: 0;
+            font-size: 15px;
+            opacity: 0.92;
+        }}
+        .content {{
+            padding: 34px 32px 28px;
+            line-height: 1.7;
+            font-size: 15px;
+        }}
+        .content h2 {{
+            margin-top: 0;
+            margin-bottom: 14px;
+            color: #111827;
+            font-size: 22px;
+        }}
+        .content p {{
+            margin: 0 0 16px;
+        }}
+        .footer {{
+            padding: 22px 32px 30px;
+            color: #6b7280;
+            font-size: 13px;
+            border-top: 1px solid #e5e7eb;
+            background: #fafbfd;
+        }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>{encodedTitle}</h1>
+            <p>{encodedSubtitle}</p>
+        </div>
+        <div class='content'>
+            <h2>Hello, {encodedUserName}</h2>
+            {bodyHtml}
+        </div>
+        <div class='footer'>
+            <p>Thank you,<br /><strong>{encodedFooterSignature}</strong></p>
+            <p>This is an automated email from Wellora HealthCare Management.</p>
+        </div>
+    </div>
+</body>
+</html>";
+        }
+
+        private static string BuildOptionalCallout(string title, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            return $@"
+                <div style='margin: 18px 0; padding: 16px 18px; border-radius: 14px; background: #f7f9fc; border: 1px solid #d9e2f2;'>
+                    <strong>{WebUtility.HtmlEncode(title)}:</strong><br />
+                    {WebUtility.HtmlEncode(value)}
+                </div>";
+        }
+
+        private static string BuildHighlightedReason(string title, string value, string textColor, string backgroundColor)
+        {
+            return $@"
+                <div style='margin: 18px 0; padding: 16px 18px; border-radius: 14px; background: {backgroundColor}; border: 1px solid {textColor}; color: {textColor};'>
+                    <strong>{WebUtility.HtmlEncode(title)}:</strong><br />
+                    {WebUtility.HtmlEncode(value)}
+                </div>";
         }
 
         #endregion

@@ -199,6 +199,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.Doct
                     a.Status == AppointmentStatus.Completed,
                     cancellationToken);
         }
+        public async Task<int> GetDistinctPatientCountByDoctorAsync(
+            int doctorId,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Where(a =>
+                    a.DoctorId == doctorId &&
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.NoShow)
+                .Select(a => a.PatientId)
+                .Distinct()
+                .CountAsync(cancellationToken);
+        }
         public async Task<List<Appointment>> GetByTimeSlotIdsAsync(
             List<Guid> slotIds,
             CancellationToken ct = default)

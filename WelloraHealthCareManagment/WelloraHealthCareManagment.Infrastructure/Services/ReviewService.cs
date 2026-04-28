@@ -1,4 +1,5 @@
 ﻿using HealthCare_.Models.sharedModels.Reviews;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Reviews.Requests;
@@ -55,7 +56,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     return ServiceResult<ReviewResponse>.Failure(
                         "You can only review a doctor after completing an appointment with them");
 
-                // 3. إنشاء الـ review
+                // 3. امنع تكرار review لنفس المريض على نفس الدكتور
+                var existingReview = await _reviewRepository.GetActiveByPatientAndDoctorAsync(patientId, request.DoctorId);
+                if (existingReview != null)
+                    return ServiceResult<ReviewResponse>.Failure(
+                        "You already reviewed this doctor. Please update your existing review instead.");
+
+                // 4. إنشاء الـ review
                 var review = new Review
                 {
                     UserID = patientId,
@@ -70,7 +77,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
                 await _reviewRepository.CreateAsync(review);
 
-                // 4. تحديث AverageRating في جدول Doctor
+                // 5. تحديث AverageRating في جدول Doctor
                 await UpdateDoctorAverageRatingAsync(request.DoctorId);
                 await NotifyDoctorAboutReviewAsync(
                     request.DoctorId,
@@ -85,6 +92,16 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     patientId, request.DoctorId);
 
                 return ServiceResult<ReviewResponse>.Success(MapToResponse(review, ""));
+            }
+            catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "AddReviewAsync duplicate review prevented for patient {PatientId} and doctor {DoctorId}",
+                    patientId,
+                    request.DoctorId);
+                return ServiceResult<ReviewResponse>.Failure(
+                    "You already reviewed this doctor. Please update your existing review instead.");
             }
             catch (Exception ex)
             {
@@ -182,7 +199,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         {
             try
             {
-                var reviews = await _reviewRepository.GetByDoctorIdAsync(doctorId);
+                var reviews = await _reviewRepository.GetByDoctorIdActiveAsync(doctorId);
 
                 var result = reviews
                     .Select(r => MapToResponse(r, r.User?.FullName ?? "Patient"))
@@ -204,7 +221,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         {
             try
             {
-                var newAverage = await _reviewRepository.GetAverageRatingForDoctorAsync(doctorId);
+                var newAverage = await _reviewRepository.GetAverageRatingForDoctorActiveAsync(doctorId);
                 var doctor = await _doctorRepository.GetByIdAsync(doctorId);
                 if (doctor == null) return;
 
@@ -228,6 +245,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 ReviewId = review.ReviewID,
                 PatientId = review.UserID,
                 PatientName = patientName,
+                PatientImagePorfile = review.User?.ProfileImagePath?.FileUrl,
                 Rating = review.Rating,
                 Comment = review.Comment,
                 ReviewDate = review.ReviewDate,

@@ -18,6 +18,11 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
             int pageSize = 20,
             CancellationToken ct = default);
 
+        Task<int> CountByUserIdAsync(
+            int userId,
+            bool unreadOnly = false,
+            CancellationToken ct = default);
+
         Task<int> CountUnreadByUserIdAsync(int userId, CancellationToken ct = default);
 
         // Mark as read

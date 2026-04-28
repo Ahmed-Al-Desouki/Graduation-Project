@@ -1,4 +1,6 @@
-﻿using Hangfire;
+﻿using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Hangfire;
 using HealthCare_.Middleware;
 using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -12,12 +14,13 @@ using System.Text;
 using WelloraHealthCareManagement.Application;
 using WelloraHealthCareManagement.Infrastructure;
 using WelloraHealthCareManagement.Infrastructure.Data.Interceptors;
+using WelloraHealthCareManagment.API;
 using WelloraHealthCareManagment.API.Middleware;
 using WelloraHealthCareManagment.Application.Common.Security;
-using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Application.Interfaces.RemindersInterface;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs;
 using WelloraHealthCareManagment.Infrastructure.BackgroundJobs.ReminderJobs;
+using WelloraHealthCareManagment.Infrastructure.Context;
 using WelloraHealthCareManagment.Infrastructure.SignalR;
 
 
@@ -75,6 +78,13 @@ internal class Program
             // ====================== APPLICATION & INFRASTRUCTURE ======================
             builder.Services.AddInfrastructure(builder.Configuration); // DI من Infrastructure.cs
             builder.Services.AddApplication();
+            builder.Services.AddSingleton<FirebaseDiagnostic>();
+
+            //// ====================== FIREBASE INITIALIZATION ======================
+            //FirebaseApp.Create(new AppOptions()
+            //{
+            //    Credential = GoogleCredential.FromFile("C:\\Users\\pc\\Desktop\\Graduation Project\\Onion Architecture\\WelloraHealthCareManagment\\WelloraHealthCareManagment.API\\keys\\key-fc7e23a9-dea4-419a-824a-8e630ad16184.xml")
+            //});
 
 
             // ====================== IDENTITY ======================
@@ -141,6 +151,9 @@ internal class Program
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
                 options.SlidingExpiration = true;
             });
+
+
+
 
             // ====================== AUTHORIZATION ======================
             builder.Services.AddAuthorization(options =>
@@ -234,10 +247,13 @@ internal class Program
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.WithOrigins("https://healthcare-9dd79.web.app")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
+                    policy.WithOrigins(
+                            "https://healthcare-9dd79.web.app",
+                            "https://wellora-dashboard.web.app"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
             });
 
@@ -266,36 +282,44 @@ internal class Program
             app.UseAuthorization();
             // ====================== HANGFIRE CONFIG ======================
             app.UseHangfireDashboard("/hangfire");
-            var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
 
-            recurringJobManager.AddOrUpdate<ReminderJobOrchestrator>(
-             "ReminderJobOrchestrator-CacheHealthCheckAsync",
-             job => job.CacheHealthCheckAsync(),
-             "0 */6 * * *");
+            try
+            {
+                var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
 
-            recurringJobManager.AddOrUpdate<ReminderOccurrenceGenerator>(
-             "generate-reminder-occurrences",
-             job => job.GenerateForAllPatientsAsync(),
-             "15 2 * * *");
+                recurringJobManager.AddOrUpdate<ReminderJobOrchestrator>(
+                 "ReminderJobOrchestrator-CacheHealthCheckAsync",
+                 job => job.CacheHealthCheckAsync(),
+                 "0 */6 * * *");
 
-            RecurringJob.AddOrUpdate<IReminderOccurrenceGenerator>(
-                "generate-doctor-cache",
-                j => j.GenerateForAllDoctorsAsync(),
-                "45 2 * * *");
+                recurringJobManager.AddOrUpdate<ReminderOccurrenceGenerator>(
+                 "generate-reminder-occurrences",
+                 job => job.GenerateForAllPatientsAsync(),
+                 "15 2 * * *");
 
-            RecurringJob.AddOrUpdate<ReminderCleanupJob>(
-                "daily-reminder-cleanup",
-                job => job.CleanupAllExpiredRemindersAsync(),
-                "30 1 * * *"); // Cron: every day at 1:30 AM UTC
+                RecurringJob.AddOrUpdate<IReminderOccurrenceGenerator>(
+                    "generate-doctor-cache",
+                    j => j.GenerateForAllDoctorsAsync(),
+                    "45 2 * * *");
 
-            RecurringJob.AddOrUpdate<SlotRollingWindowJob>(
-                recurringJobId: "slot-rolling-window",
-                methodCall: job => job.ExecuteAsync(CancellationToken.None),
-                cronExpression: "15 3 * * *",
-                options: new RecurringJobOptions
-                {
-                    TimeZone = TimeZoneInfo.Utc
-                });
+                RecurringJob.AddOrUpdate<ReminderCleanupJob>(
+                    "daily-reminder-cleanup",
+                    job => job.CleanupAllExpiredRemindersAsync(),
+                    "30 1 * * *"); // Cron: every day at 1:30 AM UTC
+
+                RecurringJob.AddOrUpdate<SlotRollingWindowJob>(
+                    recurringJobId: "slot-rolling-window",
+                    methodCall: job => job.ExecuteAsync(CancellationToken.None),
+                    cronExpression: "15 3 * * *",
+                    options: new RecurringJobOptions
+                    {
+                        TimeZone = TimeZoneInfo.Utc
+                    });
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogError(ex, "Hangfire recurring jobs could not be registered during startup. The API will continue running, but background jobs are currently unavailable.");
+            }
 
             app.Use(async (context, next) =>
             {
@@ -306,6 +330,13 @@ internal class Program
             app.MapControllers();
             app.MapHub<AppHub>("/hubs/app");
             app.MapHub<AppHub>("/hubs/support");
+
+            // Firebase diagnostic endpoint
+            app.MapGet("/api/test/firebase", async (FirebaseDiagnostic diagnostic) =>
+            {
+                var result = await diagnostic.TestFirebaseConnectionAsync();
+                return Results.Ok(new { Success = result, Message = result ? "Firebase connection successful" : "Firebase connection failed" });
+            });
 
             app.Run();
         }

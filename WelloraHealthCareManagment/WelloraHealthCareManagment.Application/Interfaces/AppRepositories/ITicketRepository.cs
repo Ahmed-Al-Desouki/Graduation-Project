@@ -61,6 +61,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
         // ─── Methods for Admin Dashboard ───
         Task<int> GetInProgressTicketsCountAsync(CancellationToken ct = default);
         Task<int> GetResolvedTicketsCountAsync(CancellationToken ct = default);
+        Task<int> CountClosedTicketsBetweenAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default);
         Task<List<TicketDto>> GetRecentTicketsAsync(int count = 5, CancellationToken ct = default);
 
 

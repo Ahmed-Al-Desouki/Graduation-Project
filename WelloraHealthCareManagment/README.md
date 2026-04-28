@@ -442,7 +442,12 @@ If published as self-contained executable:
 - `POST /api/admin/users/block`
 - `POST /api/admin/users/suspend`
 - `GET /api/admin/reviews`
-- `GET /api/admin/tickets`
+- `GET /api/tickets`
+- `GET /api/tickets/{ticketId}`
+- `GET /api/tickets/{ticketId}/messages`
+- `POST /api/tickets/{ticketId}/messages`
+- `PATCH /api/tickets/{ticketId}`
+- `GET /api/admin/tickets` (legacy compatibility route)
 
 ## Example Requests
 

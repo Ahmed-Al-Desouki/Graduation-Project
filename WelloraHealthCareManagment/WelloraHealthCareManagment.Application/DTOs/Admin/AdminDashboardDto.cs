@@ -12,6 +12,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public DoctorStatisticsDto DoctorStatistics { get; set; } = new();
         public TicketStatisticsDto TicketStatistics { get; set; } = new();
         public VerificationStatisticsDto VerificationStatistics { get; set; } = new();
+        public List<UserRegistrationTrendDto> UserRegistrationTrends { get; set; } = new();
         public RecentActivityDto RecentActivity { get; set; } = new();
     }
 
@@ -26,6 +27,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public int NewUsersThisMonth { get; set; }
         public int NewUsersLastMonth { get; set; }
         public double NewUsersPercentageChange { get; set; }
+        public List<int> LastSevenDaysTrend { get; set; } = new();
     }
 
     public class DoctorStatisticsDto
@@ -39,6 +41,14 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public int VerifiedDoctorsThisMonth { get; set; }
         public int VerifiedDoctorsLastMonth { get; set; }
         public double VerifiedDoctorsPercentageChange { get; set; }
+        public List<int> LastSevenDaysTrend { get; set; } = new();
+    }
+
+    public class UserRegistrationTrendDto
+    {
+        public string Month { get; set; } = string.Empty;
+        public int Patients { get; set; }
+        public int Doctors { get; set; }
     }
 
     public class RecentActivityDto

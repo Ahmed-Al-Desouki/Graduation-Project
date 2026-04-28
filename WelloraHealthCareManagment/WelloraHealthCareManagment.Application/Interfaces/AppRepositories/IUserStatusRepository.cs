@@ -34,6 +34,8 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
         Task<int> CountActiveUsersAsync(CancellationToken ct = default);
         Task<int> GetNewUsersThisMonthAsync(DateTime startOfMonth, CancellationToken ct = default);
         Task<int> GetNewUsersCountAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default);
+        Task<int> GetNewDoctorsCountAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default);
+        Task<int> GetNewPatientsCountAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default);
         Task<List<ApplicationUser>> GetAllUsersWithDoctorAsync(CancellationToken ct = default);
         Task<Dictionary<int, UserStatus>> GetUserStatusesByUserIdsAsync(
         List<int> userIds, CancellationToken ct = default);

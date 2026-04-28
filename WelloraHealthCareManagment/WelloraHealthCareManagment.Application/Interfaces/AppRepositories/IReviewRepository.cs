@@ -16,6 +16,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
 
         // للتحقق من ownership عند update/delete
         Task<Review?> GetByIdAndPatientAsync(int reviewId, int patientId);
+        Task<Review?> GetActiveByPatientAndDoctorAsync(int patientId, int doctorId);
 
         // لعرض reviews الدكتور في GET /profile
         Task<List<Review>> GetByDoctorIdAsync(int doctorId);

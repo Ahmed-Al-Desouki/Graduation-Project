@@ -37,6 +37,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         {
             return await _context.Reviews
                 .Include(r => r.User)
+                    .ThenInclude(u => u.ProfileImagePath)
                 .FirstOrDefaultAsync(r => r.ReviewID == reviewId);
         }
 
@@ -48,10 +49,22 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                     r.UserID == patientId);
         }
 
+        public async Task<Review?> GetActiveByPatientAndDoctorAsync(int patientId, int doctorId)
+        {
+            return await _context.Reviews
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r =>
+                    r.UserID == patientId &&
+                    r.TargetType == "Doctor" &&
+                    r.TargetID == doctorId &&
+                    !r.IsDeleted);
+        }
+
         public async Task<List<Review>> GetByDoctorIdAsync(int doctorId)
         {
             return await _context.Reviews
                 .Include(r => r.User)
+                    .ThenInclude(u => u.ProfileImagePath)
                 .AsNoTracking()
                 .Where(r =>
                     r.TargetType == "Doctor" &&
@@ -110,6 +123,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         {
             return await _context.Reviews
                 .Include(r => r.User)
+                    .ThenInclude(u => u.ProfileImagePath)
                 .AsNoTracking()
                 .Where(r =>
                     r.TargetType == "Doctor" &&
@@ -151,6 +165,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         {
             return await _context.Reviews
                 .Include(r => r.User)
+                    .ThenInclude(u => u.ProfileImagePath)
                 .Include(r => r.DeletedByAdmin)
                 .Where(r => r.IsDeleted)
                 .OrderByDescending(r => r.DeletedAt)
@@ -178,6 +193,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         {
             var query = _context.Reviews
                 .Include(r => r.User)
+                    .ThenInclude(u => u.ProfileImagePath)
                 .Include(r => r.DeletedByAdmin)
                 .Where(r => !r.IsDeleted)
                 .AsQueryable();
@@ -262,6 +278,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
         {
             return await _context.Reviews
                 .Include(r => r.User)
+                    .ThenInclude(u => u.ProfileImagePath)
                 .Include(r => r.DeletedByAdmin)
                 .FirstOrDefaultAsync(r => r.ReviewID == reviewId, ct);
         }

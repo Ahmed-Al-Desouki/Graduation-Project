@@ -148,36 +148,106 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .CountAsync(dv => dv.Status == VerificationStatus.Pending, ct);
         }
 
+        //public async Task<List<Doctor>> GetPendingDoctorsWithVerificationsAsync(
+        //    int page = 1,
+        //    int pageSize = 10,
+        //    CancellationToken ct = default)
+        //{
+        //    return await _context.Doctors
+        //        .Where(d =>
+        //            d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License) &&
+        //            d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate) &&
+        //            d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId) &&
+        //            (
+        //                d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License && v.Status == VerificationStatus.Pending) ||
+        //                d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate && v.Status == VerificationStatus.Pending) ||
+        //                d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId && v.Status == VerificationStatus.Pending)
+        //            ) &&
+        //            !d.Verifications.Any(v =>
+        //                (v.DocumentType == DoctorDocumentType.License ||
+        //                 v.DocumentType == DoctorDocumentType.GraduationCertificate ||
+        //                 v.DocumentType == DoctorDocumentType.NationalId) &&
+        //                v.Status == VerificationStatus.Rejected))
+        //        .OrderBy(d => d.Verifications
+        //            .Where(v =>
+        //                (v.DocumentType == DoctorDocumentType.License ||
+        //                 v.DocumentType == DoctorDocumentType.GraduationCertificate ||
+        //                 v.DocumentType == DoctorDocumentType.NationalId) &&
+        //                v.Status == VerificationStatus.Pending)
+        //            .Min(v => v.SubmittedAt))
+        //        .ThenBy(d => d.DoctorId)
+        //        .Skip((page - 1) * pageSize)
+        //        .Take(pageSize)
+        //        .Include(d => d.User)
+        //        .Include(d => d.Verifications)
+        //            .ThenInclude(v => v.File)
+        //        .Include(d => d.Verifications)
+        //            .ThenInclude(v => v.ReviewedByAdmin)
+        //        .AsSplitQuery()
+        //        .AsNoTracking()
+        //        .ToListAsync(ct);
+        //}
+
+        //public async Task<int> CountPendingDoctorsAsync(CancellationToken ct = default)
+        //{
+        //    return await _context.Doctors
+        //        .CountAsync(d =>
+        //            d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License) &&
+        //            d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate) &&
+        //            d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId) &&
+        //            (
+        //                d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License && v.Status == VerificationStatus.Pending) ||
+        //                d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate && v.Status == VerificationStatus.Pending) ||
+        //                d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId && v.Status == VerificationStatus.Pending)
+        //            ) &&
+        //            !d.Verifications.Any(v =>
+        //                (v.DocumentType == DoctorDocumentType.License ||
+        //                 v.DocumentType == DoctorDocumentType.GraduationCertificate ||
+        //                 v.DocumentType == DoctorDocumentType.NationalId) &&
+        //                v.Status == VerificationStatus.Rejected), ct);
+        //}
         public async Task<List<Doctor>> GetPendingDoctorsWithVerificationsAsync(
-            int page = 1,
-            int pageSize = 10,
-            CancellationToken ct = default)
+    int page = 1,
+    int pageSize = 10,
+    CancellationToken ct = default)
         {
-            return await _context.Doctors
-                .Where(d =>
-                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License) &&
-                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate) &&
-                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId) &&
-                    (
-                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License && v.Status == VerificationStatus.Pending) ||
-                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate && v.Status == VerificationStatus.Pending) ||
-                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId && v.Status == VerificationStatus.Pending)
-                    ) &&
-                    !d.Verifications.Any(v =>
-                        (v.DocumentType == DoctorDocumentType.License ||
-                         v.DocumentType == DoctorDocumentType.GraduationCertificate ||
-                         v.DocumentType == DoctorDocumentType.NationalId) &&
-                        v.Status == VerificationStatus.Rejected))
-                .OrderBy(d => d.Verifications
-                    .Where(v =>
-                        (v.DocumentType == DoctorDocumentType.License ||
-                         v.DocumentType == DoctorDocumentType.GraduationCertificate ||
-                         v.DocumentType == DoctorDocumentType.NationalId) &&
-                        v.Status == VerificationStatus.Pending)
+            var requiredTypes = new[]
+            {
+        DoctorDocumentType.License,
+        DoctorDocumentType.GraduationCertificate,
+        DoctorDocumentType.NationalId
+    };
+
+            // الخطوة 1: جيب IDs بس من الـ DB (query بسيطة)
+            var verifications = await _context.DoctorVerifications
+                .Where(v => requiredTypes.Contains(v.DocumentType))
+                .Select(v => new { v.DoctorId, v.DocumentType, v.Status, v.SubmittedAt })
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            // الخطوة 2: الـ filtering والـ sorting في الـ memory
+            var qualifyingIds = verifications
+                .GroupBy(v => v.DoctorId)
+                .Where(g =>
+                    requiredTypes.All(t => g.Any(v => v.DocumentType == t)) &&
+                    g.Any(v => v.Status == VerificationStatus.Pending) &&
+                    !g.Any(v => v.Status == VerificationStatus.Rejected)
+                )
+                .OrderBy(g => g
+                    .Where(v => v.Status == VerificationStatus.Pending)
                     .Min(v => v.SubmittedAt))
-                .ThenBy(d => d.DoctorId)
+                .ThenBy(g => g.Key)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (!qualifyingIds.Any())
+                return new List<Doctor>();
+
+            // الخطوة 3: جيب بيانات الـ Doctors الكاملة بـ IDs بسيطة
+            return await _context.Doctors
+                .Where(d => qualifyingIds.Contains(d.DoctorId))
                 .Include(d => d.User)
                 .Include(d => d.Verifications)
                     .ThenInclude(v => v.File)
@@ -187,24 +257,30 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .AsNoTracking()
                 .ToListAsync(ct);
         }
-
         public async Task<int> CountPendingDoctorsAsync(CancellationToken ct = default)
         {
-            return await _context.Doctors
-                .CountAsync(d =>
-                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License) &&
-                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate) &&
-                    d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId) &&
-                    (
-                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.License && v.Status == VerificationStatus.Pending) ||
-                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.GraduationCertificate && v.Status == VerificationStatus.Pending) ||
-                        d.Verifications.Any(v => v.DocumentType == DoctorDocumentType.NationalId && v.Status == VerificationStatus.Pending)
-                    ) &&
-                    !d.Verifications.Any(v =>
-                        (v.DocumentType == DoctorDocumentType.License ||
-                         v.DocumentType == DoctorDocumentType.GraduationCertificate ||
-                         v.DocumentType == DoctorDocumentType.NationalId) &&
-                        v.Status == VerificationStatus.Rejected), ct);
+            var requiredTypes = new[]
+            {
+        DoctorDocumentType.License,
+        DoctorDocumentType.GraduationCertificate,
+        DoctorDocumentType.NationalId
+    };
+
+            // جيب بس الـ columns اللي محتاجها - مفيش Includes أو joins
+            var verifications = await _context.DoctorVerifications
+                .Where(v => requiredTypes.Contains(v.DocumentType))
+                .Select(v => new { v.DoctorId, v.DocumentType, v.Status })
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            // عمل الـ filtering في الـ memory بدل SQL
+            return verifications
+                .GroupBy(v => v.DoctorId)
+                .Count(g =>
+                    requiredTypes.All(t => g.Any(v => v.DocumentType == t)) &&   // عنده الـ 3 documents
+                    g.Any(v => v.Status == VerificationStatus.Pending) &&         // في pending
+                    !g.Any(v => v.Status == VerificationStatus.Rejected)          // مفيش rejected
+                );
         }
 
         public async Task<List<DoctorVerification>> GetAllAsync(
@@ -414,6 +490,17 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                                   dv.ReviewedAt.HasValue &&
                                   dv.ReviewedAt.Value >= startDate &&
                                   dv.ReviewedAt.Value < endDate, ct);
+        }
+
+        public async Task<int> CountPendingDoctorRequestsBetweenAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default)
+        {
+            return await _context.DoctorVerifications
+                .Where(dv => dv.SubmittedAt >= startDate &&
+                             dv.SubmittedAt < endDate &&
+                             dv.Status == VerificationStatus.Pending)
+                .Select(dv => dv.DoctorId)
+                .Distinct()
+                .CountAsync(ct);
         }
 
         public async Task<List<DoctorVerificationDto>> GetRecentPendingVerificationsAsync(int count = 5, CancellationToken ct = default)

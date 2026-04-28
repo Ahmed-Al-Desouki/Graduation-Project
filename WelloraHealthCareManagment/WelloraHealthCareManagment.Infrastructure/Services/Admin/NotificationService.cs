@@ -43,26 +43,33 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 
         public async Task NotifyAsync(NotificationDispatchRequest request, CancellationToken ct = default)
         {
+            var normalizedRequest = NormalizeDispatchRequest(request);
+
             var createResult = await CreateNotificationAsync(new CreateNotificationRequest
             {
-                UserId = request.UserId,
-                Title = request.Title,
-                Message = request.Message,
-                Type = request.Type,
-                RelatedEntityType = request.RelatedEntityType,
-                RelatedEntityId = request.RelatedEntityId
+                UserId = normalizedRequest.UserId,
+                Title = normalizedRequest.Title,
+                Message = normalizedRequest.Message,
+                Type = normalizedRequest.Type,
+                RelatedEntityType = normalizedRequest.RelatedEntityType,
+                RelatedEntityId = normalizedRequest.RelatedEntityId,
+                RelatedEntityKey = normalizedRequest.RelatedEntityKey,
+                NavigationTarget = normalizedRequest.NavigationTarget,
+                NavigationPayload = normalizedRequest.Data == null
+                    ? null
+                    : new Dictionary<string, string>(normalizedRequest.Data)
             }, ct);
 
             if (!createResult.IsSuccess)
             {
                 _logger.LogWarning(
                     "Failed to persist notification for user {UserId} and type {Type}",
-                    request.UserId,
-                    request.Type);
+                    normalizedRequest.UserId,
+                    normalizedRequest.Type);
             }
 
-            var data = BuildPushPayload(request);
-            await SendPushNotificationAsync(request.UserId, request.Title, request.Message, data, ct);
+            var data = BuildPushPayload(normalizedRequest);
+            await SendPushNotificationAsync(normalizedRequest.UserId, normalizedRequest.Title, normalizedRequest.Message, data, ct);
         }
 
         public async Task NotifyManyAsync(IEnumerable<NotificationDispatchRequest> requests, CancellationToken ct = default)
@@ -76,7 +83,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     r.Message,
                     r.Type,
                     r.RelatedEntityType,
-                    r.RelatedEntityId
+                    r.RelatedEntityId,
+                    r.RelatedEntityKey,
+                    r.NavigationTarget
                 })
                 .Select(g => g.First())
                 .ToList();
@@ -131,6 +140,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     Type = request.Type,
                     RelatedEntityType = request.RelatedEntityType,
                     RelatedEntityId = request.RelatedEntityId,
+                    RelatedEntityKey = request.RelatedEntityKey,
+                    NavigationTarget = request.NavigationTarget,
+                    NavigationPayloadJson = SerializeNavigationPayload(request.NavigationPayload),
                     IsRead = false,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -171,6 +183,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     Type = r.Type,
                     RelatedEntityType = r.RelatedEntityType,
                     RelatedEntityId = r.RelatedEntityId,
+                    RelatedEntityKey = r.RelatedEntityKey,
+                    NavigationTarget = r.NavigationTarget,
+                    NavigationPayloadJson = SerializeNavigationPayload(r.NavigationPayload),
                     IsRead = false,
                     CreatedAt = DateTime.UtcNow
                 }).ToList();
@@ -347,6 +362,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
         {
             try
             {
+                page = Math.Max(page, 1);
+                pageSize = pageSize <= 0 ? 20 : pageSize;
+
+                var totalCount = await _notificationRepository.CountByUserIdAsync(
+                    userId, unreadOnly, ct);
+
                 var notifications = await _notificationRepository.GetByUserIdAsync(
                     userId, unreadOnly, page, pageSize, ct);
 
@@ -357,7 +378,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 var response = new NotificationListResponse
                 {
                     Notifications = dtos,
-                    TotalCount = notifications.Count,
+                    TotalCount = totalCount,
                     UnreadCount = unreadCount,
                     Page = page,
                     PageSize = pageSize
@@ -489,8 +510,208 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 payload["relatedEntityId"] = request.RelatedEntityId.Value.ToString();
             }
 
+            if (!string.IsNullOrWhiteSpace(request.RelatedEntityKey))
+            {
+                payload["relatedEntityKey"] = request.RelatedEntityKey;
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.NavigationTarget))
+            {
+                payload["navigationTarget"] = request.NavigationTarget;
+            }
+
             return payload.Count == 0 ? null : JsonSerializer.Serialize(payload);
         }
+
+        private static NotificationDispatchRequest NormalizeDispatchRequest(NotificationDispatchRequest request)
+        {
+            var data = request.Data == null
+                ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, string>(request.Data, StringComparer.OrdinalIgnoreCase);
+
+            var relatedEntityType = string.IsNullOrWhiteSpace(request.RelatedEntityType)
+                ? InferRelatedEntityType(request.Type, data)
+                : request.RelatedEntityType;
+
+            var relatedEntityId = request.RelatedEntityId ?? InferNumericEntityId(relatedEntityType, data);
+            var relatedEntityKey = string.IsNullOrWhiteSpace(request.RelatedEntityKey)
+                ? InferEntityKey(relatedEntityType, relatedEntityId, data)
+                : request.RelatedEntityKey;
+            var navigationTarget = string.IsNullOrWhiteSpace(request.NavigationTarget)
+                ? InferNavigationTarget(relatedEntityType, request.Type)
+                : request.NavigationTarget;
+
+            if (!string.IsNullOrWhiteSpace(relatedEntityType))
+            {
+                data["relatedEntityType"] = relatedEntityType;
+            }
+
+            if (relatedEntityId.HasValue)
+            {
+                data["relatedEntityId"] = relatedEntityId.Value.ToString();
+            }
+
+            if (!string.IsNullOrWhiteSpace(relatedEntityKey))
+            {
+                data["relatedEntityKey"] = relatedEntityKey;
+            }
+
+            if (!string.IsNullOrWhiteSpace(navigationTarget))
+            {
+                data["navigationTarget"] = navigationTarget;
+            }
+
+            return new NotificationDispatchRequest
+            {
+                UserId = request.UserId,
+                Title = request.Title,
+                Message = request.Message,
+                Type = request.Type,
+                RelatedEntityType = relatedEntityType,
+                RelatedEntityId = relatedEntityId,
+                RelatedEntityKey = relatedEntityKey,
+                NavigationTarget = navigationTarget,
+                Data = data.Count == 0 ? null : data
+            };
+        }
+
+        private static string? InferRelatedEntityType(NotificationType type, Dictionary<string, string> data)
+        {
+            foreach (var pair in PrimaryEntityKeyMap)
+            {
+                if (data.ContainsKey(pair.Value))
+                {
+                    return pair.Key;
+                }
+            }
+
+            return type switch
+            {
+                NotificationType.Welcome => "User",
+                NotificationType.DoctorRegistrationSubmitted => "Doctor",
+                NotificationType.DoctorProfileCompleted => "Doctor",
+                NotificationType.DoctorVerificationSubmitted => "DoctorVerification",
+                NotificationType.DoctorApproved => "Doctor",
+                NotificationType.DoctorRejected => "Doctor",
+                NotificationType.AccountBlocked => "User",
+                NotificationType.AccountSuspended => "User",
+                NotificationType.AccountUnsuspended => "User",
+                NotificationType.AccountUnblocked => "User",
+                NotificationType.AppointmentBooked => "Appointment",
+                NotificationType.AppointmentCancelledByPatient => "Appointment",
+                NotificationType.AppointmentCancelledByDoctor => "Appointment",
+                NotificationType.ReviewRequested => "Appointment",
+                NotificationType.PaymentPending => "Payment",
+                NotificationType.PaymentSucceeded => "Payment",
+                NotificationType.PaymentFailed => "Payment",
+                NotificationType.RefundProcessed => "Payment",
+                NotificationType.MedicalRecordCreated => "MedicalRecord",
+                NotificationType.MedicalRecordUpdated => "MedicalRecord",
+                NotificationType.MedicalHistoryViewed => "Appointment",
+                NotificationType.MedicalHistoryAccessRequested => "Appointment",
+                NotificationType.MedicalHistoryAccessGranted => "Appointment",
+                NotificationType.MedicalHistoryAccessUpdated => "Appointment",
+                NotificationType.MedicalHistoryAccessRevoked => "Appointment",
+                NotificationType.MedicalHistoryAccessExtended => "Appointment",
+                NotificationType.PrescriptionCreated => "Prescription",
+                NotificationType.PrescriptionUpdated => "Prescription",
+                NotificationType.ReminderCreated => "Reminder",
+                NotificationType.ReminderUpdated => "Reminder",
+                NotificationType.MfaEnabled => "User",
+                NotificationType.MfaDisabled => "User",
+                NotificationType.PasswordReset => "User",
+                NotificationType.ReviewCreated => "Review",
+                NotificationType.ReviewUpdated => "Review",
+                NotificationType.ReviewDeletedByPatient => "Review",
+                NotificationType.TicketCreated => "Ticket",
+                NotificationType.TicketResponse => "Ticket",
+                NotificationType.TicketClosed => "Ticket",
+                NotificationType.ReviewDeleted => "Review",
+                _ => null
+            };
+        }
+
+        private static int? InferNumericEntityId(string? relatedEntityType, Dictionary<string, string> data)
+        {
+            if (!string.IsNullOrWhiteSpace(relatedEntityType) &&
+                PrimaryEntityKeyMap.TryGetValue(relatedEntityType, out var primaryKeyName) &&
+                data.TryGetValue(primaryKeyName, out var primaryKeyValue) &&
+                int.TryParse(primaryKeyValue, out var parsedPrimaryId))
+            {
+                return parsedPrimaryId;
+            }
+
+            if (data.TryGetValue("relatedEntityId", out var relatedEntityIdValue) &&
+                int.TryParse(relatedEntityIdValue, out var parsedRelatedEntityId))
+            {
+                return parsedRelatedEntityId;
+            }
+
+            return null;
+        }
+
+        private static string? InferEntityKey(
+            string? relatedEntityType,
+            int? relatedEntityId,
+            Dictionary<string, string> data)
+        {
+            if (!string.IsNullOrWhiteSpace(relatedEntityType) &&
+                PrimaryEntityKeyMap.TryGetValue(relatedEntityType, out var primaryKeyName) &&
+                data.TryGetValue(primaryKeyName, out var primaryKeyValue) &&
+                !string.IsNullOrWhiteSpace(primaryKeyValue))
+            {
+                return primaryKeyValue;
+            }
+
+            if (data.TryGetValue("relatedEntityKey", out var relatedEntityKey) &&
+                !string.IsNullOrWhiteSpace(relatedEntityKey))
+            {
+                return relatedEntityKey;
+            }
+
+            return relatedEntityId?.ToString();
+        }
+
+        private static string InferNavigationTarget(string? relatedEntityType, NotificationType type)
+        {
+            return relatedEntityType switch
+            {
+                "Appointment" => type == NotificationType.ReviewRequested ? "review_create" : "appointment_details",
+                "Payment" => "payment_details",
+                "Prescription" => "prescription_details",
+                "Review" => "review_details",
+                "Ticket" => "ticket_details",
+                "Doctor" => "doctor_profile",
+                "DoctorVerification" => "doctor_verification_status",
+                "Patient" => "patient_profile",
+                "Reminder" => "reminder_details",
+                "MedicalRecord" => "medical_record_details",
+                "User" => "account_security",
+                _ => "notifications"
+            };
+        }
+
+        private static string? SerializeNavigationPayload(Dictionary<string, string>? payload)
+        {
+            return payload == null || payload.Count == 0
+                ? null
+                : JsonSerializer.Serialize(payload);
+        }
+
+        private static readonly Dictionary<string, string> PrimaryEntityKeyMap = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Appointment"] = "appointmentId",
+            ["Payment"] = "paymentId",
+            ["Prescription"] = "prescriptionId",
+            ["Review"] = "reviewId",
+            ["Ticket"] = "ticketId",
+            ["Doctor"] = "doctorId",
+            ["Patient"] = "patientId",
+            ["User"] = "userId",
+            ["Reminder"] = "reminderId",
+            ["MedicalRecord"] = "medicalRecordId",
+            ["DoctorVerification"] = "verificationId"
+        };
 
         public async Task SendPushToTokenAsync(
             string fcmToken,

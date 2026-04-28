@@ -12,6 +12,7 @@ using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
 using WelloraHealthCareManagment.Domain.Entities.PatientModels;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.FileRepo;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services
@@ -25,6 +26,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         private readonly IExternalFileRepository _fileRepository;
         private readonly ICloudStorageService _cloudStorage;
         private readonly IReviewRepository _reviewRepository;
+        private readonly IAppointmentRepository _appointmentRepository;
         private readonly IExternalFileRepository _externalFileRepository;
         private readonly INotificationService _notificationService;
         private readonly ILogger<DoctorProfileService> _logger;
@@ -37,6 +39,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             IExternalFileRepository fileRepository,
             ICloudStorageService cloudStorage,
             IReviewRepository reviewRepository,
+            IAppointmentRepository appointmentRepository,
             IExternalFileRepository externalFileRepository,
             INotificationService notificationService,
             ILogger<DoctorProfileService> logger)
@@ -48,6 +51,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             _fileRepository = fileRepository;
             _cloudStorage = cloudStorage;
             _reviewRepository = reviewRepository;
+            _appointmentRepository = appointmentRepository;
             _externalFileRepository = externalFileRepository;
             _notificationService = notificationService;
             _logger = logger;
@@ -65,7 +69,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
 
                 var verifications = await _verificationRepository.GetByDoctorIdAsync(doctorId);
                 var achievements = await _achievementRepository.GetByDoctorIdAsync(doctorId);
-                var reviews = await _reviewRepository.GetByDoctorIdAsync(doctorId);
+                var reviews = await _reviewRepository.GetByDoctorIdActiveAsync(doctorId);
+                var patientCount = await _appointmentRepository.GetDistinctPatientCountByDoctorAsync(doctorId);
                 var verificationRequestStatus = DoctorVerificationPolicy.DetermineRequestStatus(verifications);
                 var missingRequiredDocuments = DoctorVerificationPolicy.GetMissingRequiredDocuments(verifications);
                 var latestReviewSnapshot = verifications
@@ -91,6 +96,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     ConsultationFee = doctor.ConsultationFee,
                     Bio = doctor.Bio,
                     AverageRating = doctor.AverageRating,
+                    PatientCount = patientCount,
                     IsActive = doctor.IsActive,
                     IsProfileCompleted = doctor.IsProfileCompleted,
                     VerificationRequestStatus = verificationRequestStatus,
@@ -130,6 +136,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                         ReviewId = r.ReviewID,
                         PatientId = r.UserID,
                         PatientName = r.User?.FullName ?? "Patient",
+                        PatientImagePorfile = r.User?.ProfileImagePath?.FileUrl,
                         Rating = r.Rating,
                         Comment = r.Comment,
                         ReviewDate = r.ReviewDate,
@@ -157,13 +164,14 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 if (!doctor.IsActive)
                     return ServiceResult<PublicDoctorProfileResponse>.Failure("Doctor profile is not available");
 
-                var reviews = await _reviewRepository.GetByDoctorIdAsync(doctorId);
+                var reviews = await _reviewRepository.GetByDoctorIdActiveAsync(doctorId);
                 var achievements = await _achievementRepository.GetByDoctorIdAsync(doctorId);
 
                 var response = new PublicDoctorProfileResponse
                 {
                     DoctorId = doctor.DoctorId,
                     FullName = doctor.User.FullName,
+                    ProfileImageUrl = doctor.User.ProfileImagePath?.FileUrl,
                     Specialization = doctor.Specialization,
                     YearsOfExperience = doctor.YearsOfExperience,
                     ConsultationFee = doctor.ConsultationFee,
@@ -181,6 +189,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                         ReviewId = r.ReviewID,
                         PatientId = r.UserID,
                         PatientName = r.User?.FullName ?? "Patient",
+                        PatientImagePorfile = r.User?.ProfileImagePath?.FileUrl,
                         Rating = r.Rating,
                         Comment = r.Comment,
                         ReviewDate = r.ReviewDate,
@@ -512,6 +521,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 verification.UpdatedAt = DateTime.UtcNow;
 
                 await _verificationRepository.UpdateAsync(verification);
+                await ReopenRejectedVerificationsForReviewAsync(doctorId, verification.VerificationId);
                 var doctor = await _doctorRepository.GetByIdAsync(doctorId);
                 if (doctor != null)
                 {
@@ -722,6 +732,36 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             doctor.IsActive = DoctorVerificationPolicy.IsDoctorEligibleForActivation(currentVerifications);
             doctor.UpdatedAt = DateTime.UtcNow;
             await _doctorRepository.UpdateAsync(doctor);
+        }
+
+        private async Task ReopenRejectedVerificationsForReviewAsync(int doctorId, int? excludedVerificationId = null)
+        {
+            var currentVerifications = await _verificationRepository.GetByDoctorIdAsync(doctorId);
+            var rejectedVerifications = currentVerifications
+                .Where(verification =>
+                    verification.Status == VerificationStatus.Rejected &&
+                    (!excludedVerificationId.HasValue || verification.VerificationId != excludedVerificationId.Value))
+                .ToList();
+
+            if (rejectedVerifications.Count == 0)
+                return;
+
+            foreach (var rejectedVerification in rejectedVerifications)
+            {
+                rejectedVerification.Status = VerificationStatus.Pending;
+                rejectedVerification.AdminNotes = null;
+                rejectedVerification.RejectionReason = null;
+                rejectedVerification.ReviewedAt = null;
+                rejectedVerification.ReviewedByAdminId = null;
+                rejectedVerification.UpdatedAt = DateTime.UtcNow;
+
+                await _verificationRepository.UpdateAsync(rejectedVerification);
+            }
+
+            _logger.LogInformation(
+                "ReopenRejectedVerificationsForReviewAsync: Reopened {Count} rejected verification documents for doctor {DoctorId}",
+                rejectedVerifications.Count,
+                doctorId);
         }
     }
 }

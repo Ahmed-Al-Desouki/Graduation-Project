@@ -42,6 +42,7 @@ public class AdminDashboardService : IAdminDashboardService
             var ticketStats = await GetTicketStatisticsAsync(ct);
             var verificationStats = await GetVerificationStatisticsAsync(ct);
             var recentActivity = await GetRecentActivityAsync(ct);
+            var registrationTrends = await BuildSixMonthRegistrationTrendsAsync(ct);
 
             // التحقق من وجود أخطاء في أي قسم
             if (!userStats.IsSuccess)
@@ -65,6 +66,7 @@ public class AdminDashboardService : IAdminDashboardService
                 DoctorStatistics = doctorStats.Data!,
                 TicketStatistics = ticketStats.Data!,
                 VerificationStatistics = verificationStats.Data!,
+                UserRegistrationTrends = registrationTrends,
                 RecentActivity = recentActivity.Data!
             };
 
@@ -101,6 +103,9 @@ public class AdminDashboardService : IAdminDashboardService
                 startOfPreviousMonth,
                 startOfCurrentMonth,
                 ct);
+            var lastSevenDaysTrend = await BuildDailyTrendAsync(
+                (start, end, token) => _userStatusRepository.GetNewUsersCountAsync(start, end, token),
+                ct);
 
             var stats = new UserStatisticsDto
             {
@@ -112,7 +117,8 @@ public class AdminDashboardService : IAdminDashboardService
                 ActiveUsers = activeUsers,
                 NewUsersThisMonth = newUsersThisMonth,
                 NewUsersLastMonth = newUsersLastMonth,
-                NewUsersPercentageChange = CalculatePercentageChange(newUsersThisMonth, newUsersLastMonth)
+                NewUsersPercentageChange = CalculatePercentageChange(newUsersThisMonth, newUsersLastMonth),
+                LastSevenDaysTrend = lastSevenDaysTrend
             };
 
             return ServiceResult<UserStatisticsDto>.Success(stats);
@@ -148,6 +154,9 @@ public class AdminDashboardService : IAdminDashboardService
                 startOfPreviousMonth,
                 startOfCurrentMonth,
                 ct);
+            var lastSevenDaysTrend = await BuildDailyTrendAsync(
+                (start, end, token) => _userStatusRepository.GetNewDoctorsCountAsync(start, end, token),
+                ct);
 
             var stats = new DoctorStatisticsDto
             {
@@ -161,7 +170,8 @@ public class AdminDashboardService : IAdminDashboardService
                 VerifiedDoctorsLastMonth = verifiedDoctorsLastMonth,
                 VerifiedDoctorsPercentageChange = CalculatePercentageChange(
                     verifiedDoctorsThisMonth,
-                    verifiedDoctorsLastMonth)
+                    verifiedDoctorsLastMonth),
+                LastSevenDaysTrend = lastSevenDaysTrend
             };
 
             return ServiceResult<DoctorStatisticsDto>.Success(stats);
@@ -185,6 +195,21 @@ public class AdminDashboardService : IAdminDashboardService
             var resolved = await _ticketRepository.GetResolvedTicketsCountAsync(ct);
             var closed = statusCounts.GetValueOrDefault(TicketStatus.Closed, 0);
             var urgent = await _ticketRepository.GetUrgentTicketsCountAsync(ct);
+            var now = DateTime.UtcNow;
+            var startOfCurrentMonth = new DateTime(now.Year, now.Month, 1);
+            var startOfNextMonth = startOfCurrentMonth.AddMonths(1);
+            var startOfPreviousMonth = startOfCurrentMonth.AddMonths(-1);
+            var closedTicketsThisMonth = await _ticketRepository.CountClosedTicketsBetweenAsync(
+                startOfCurrentMonth,
+                startOfNextMonth,
+                ct);
+            var closedTicketsLastMonth = await _ticketRepository.CountClosedTicketsBetweenAsync(
+                startOfPreviousMonth,
+                startOfCurrentMonth,
+                ct);
+            var lastSevenDaysTrend = await BuildDailyTrendAsync(
+                (start, end, token) => _ticketRepository.CountClosedTicketsBetweenAsync(start, end, token),
+                ct);
 
             var stats = new TicketStatisticsDto
             {
@@ -194,6 +219,10 @@ public class AdminDashboardService : IAdminDashboardService
                 ResolvedTickets = resolved,
                 ClosedTickets = closed,
                 UrgentTickets = urgent,
+                ClosedTicketsThisMonth = closedTicketsThisMonth,
+                ClosedTicketsLastMonth = closedTicketsLastMonth,
+                ClosedTicketsPercentageChange = CalculatePercentageChange(closedTicketsThisMonth, closedTicketsLastMonth),
+                LastSevenDaysTrend = lastSevenDaysTrend,
                 TicketsByCategory = categoryCounts,
                 TicketsByStatus = statusCounts
             };
@@ -216,7 +245,21 @@ public class AdminDashboardService : IAdminDashboardService
                 .Select(d => DoctorVerificationPolicy.DetermineRequestStatus(d.Verifications))
                 .GroupBy(status => status)
                 .ToDictionary(group => group.Key, group => group.Count());
-            var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            var now = DateTime.UtcNow;
+            var startOfMonth = new DateTime(now.Year, now.Month, 1);
+            var startOfNextMonth = startOfMonth.AddMonths(1);
+            var startOfPreviousMonth = startOfMonth.AddMonths(-1);
+            var pendingThisMonth = await _verificationRepository.CountPendingDoctorRequestsBetweenAsync(
+                startOfMonth,
+                startOfNextMonth,
+                ct);
+            var pendingLastMonth = await _verificationRepository.CountPendingDoctorRequestsBetweenAsync(
+                startOfPreviousMonth,
+                startOfMonth,
+                ct);
+            var lastSevenDaysTrend = await BuildDailyTrendAsync(
+                (start, end, token) => _verificationRepository.CountPendingDoctorRequestsBetweenAsync(start, end, token),
+                ct);
             var stats = new VerificationStatisticsDto
             {
                 TotalDoctors = doctors.Count,
@@ -226,7 +269,9 @@ public class AdminDashboardService : IAdminDashboardService
                 IncompleteDoctors = statusCounts.GetValueOrDefault(DoctorVerificationRequestStatus.Incomplete, 0),
                 DoctorsByStatus = statusCounts,
                 ApprovedThisMonth = await _verificationRepository.CountApprovedThisMonthAsync(startOfMonth, ct),
-                RejectedThisMonth = await _verificationRepository.CountRejectedThisMonthAsync(startOfMonth, ct)
+                RejectedThisMonth = await _verificationRepository.CountRejectedThisMonthAsync(startOfMonth, ct),
+                PendingDoctorsPercentageChange = CalculatePercentageChange(pendingThisMonth, pendingLastMonth),
+                LastSevenDaysTrend = lastSevenDaysTrend
             };
 
             return ServiceResult<VerificationStatisticsDto>.Success(stats);
@@ -278,5 +323,45 @@ public class AdminDashboardService : IAdminDashboardService
         var percentageChange = (double)difference / previousValue * 100;
 
         return Math.Round(percentageChange, 2);
+    }
+
+    private async Task<List<int>> BuildDailyTrendAsync(
+        Func<DateTime, DateTime, CancellationToken, Task<int>> countFunc,
+        CancellationToken ct)
+    {
+        var today = DateTime.UtcNow.Date;
+        var values = new List<int>(capacity: 7);
+
+        for (var offset = 6; offset >= 0; offset--)
+        {
+            var start = today.AddDays(-offset);
+            var end = start.AddDays(1);
+            values.Add(await countFunc(start, end, ct));
+        }
+
+        return values;
+    }
+
+    private async Task<List<UserRegistrationTrendDto>> BuildSixMonthRegistrationTrendsAsync(CancellationToken ct)
+    {
+        var currentMonthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var monthStarts = Enumerable.Range(0, 6)
+            .Select(offset => currentMonthStart.AddMonths(-(5 - offset)))
+            .ToList();
+
+        var trends = new List<UserRegistrationTrendDto>(capacity: 6);
+
+        foreach (var monthStart in monthStarts)
+        {
+            var monthEnd = monthStart.AddMonths(1);
+            trends.Add(new UserRegistrationTrendDto
+            {
+                Month = monthStart.ToString("MMM yyyy"),
+                Patients = await _userStatusRepository.GetNewPatientsCountAsync(monthStart, monthEnd, ct),
+                Doctors = await _userStatusRepository.GetNewDoctorsCountAsync(monthStart, monthEnd, ct)
+            });
+        }
+
+        return trends;
     }
 }

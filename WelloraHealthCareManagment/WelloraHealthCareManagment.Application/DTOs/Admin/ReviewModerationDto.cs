@@ -12,6 +12,7 @@ namespace WelloraHealthCareManagment.Application.DTOs.Admin
         public int UserID { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string UserEmail { get; set; } = string.Empty;
+        public string? ReviewerProfileImageUrl { get; set; }
         public int TargetID { get; set; }
         public string TargetType { get; set; } = string.Empty;
         public string? DoctorName { get; set; }

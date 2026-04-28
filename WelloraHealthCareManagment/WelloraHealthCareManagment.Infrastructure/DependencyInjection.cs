@@ -53,6 +53,15 @@ namespace WelloraHealthCareManagement.Infrastructure
                 configuration.GetSection("LocationLookup"));
 
             services.AddHttpContextAccessor();
+            var firebaseSection = configuration.GetSection("Firebase");
+            var firebasePath = firebaseSection.GetValue<string>("ServiceAccountPath");
+
+            if (string.IsNullOrWhiteSpace(firebasePath))
+            {
+                firebaseSection = configuration.GetSection("FCM");
+            }
+
+            services.Configure<FirebaseSettings>(firebaseSection);
             services.Configure<FirebaseSettings>(configuration.GetSection("Firebase"));
             services.AddSignalR();
 

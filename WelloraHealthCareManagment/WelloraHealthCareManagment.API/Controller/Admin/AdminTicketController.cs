@@ -21,6 +21,7 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Ticket
         }
 
         [HttpGet]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<IActionResult> GetAllTickets(
             [FromQuery] TicketStatus? status = null,
             [FromQuery] TicketCategory? category = null,
@@ -42,6 +43,7 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Ticket
         }
 
         [HttpPost("respond")]
+        [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<IActionResult> AdminRespond([FromBody] AddTicketMessageRequest request)
         {
             var adminId = int.Parse(User.FindFirst("UserID")?.Value ?? "0");

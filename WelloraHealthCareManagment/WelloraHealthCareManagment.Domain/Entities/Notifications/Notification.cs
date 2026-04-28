@@ -21,6 +21,9 @@ namespace WelloraHealthCareManagment.Domain.Entities.Notifications
         // For linking to specific entities (optional)
         public string? RelatedEntityType { get; set; } // "Doctor", "Ticket", "Review"
         public int? RelatedEntityId { get; set; }
+        public string? RelatedEntityKey { get; set; }
+        public string? NavigationTarget { get; set; }
+        public string? NavigationPayloadJson { get; set; }
 
         // Navigation
         public ApplicationUser User { get; set; } = null!;

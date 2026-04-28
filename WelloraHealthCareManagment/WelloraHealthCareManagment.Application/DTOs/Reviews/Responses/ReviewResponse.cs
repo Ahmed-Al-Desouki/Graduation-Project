@@ -15,5 +15,6 @@ namespace WelloraHealthCareManagment.Application.DTOs.Reviews.Responses
         public string? Comment { get; set; }
         public DateTime ReviewDate { get; set; }
         public bool IsVerified { get; set; }  // true = patient had real appointment
+        public string? PatientImagePorfile { get; set; }
     }
 }

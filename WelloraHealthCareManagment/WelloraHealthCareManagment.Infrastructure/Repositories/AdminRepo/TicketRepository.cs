@@ -310,6 +310,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.AdminRepo
                 .CountAsync(t => t.Status == TicketStatus.Resolved, ct); // تأكد من وجود Resolved في Enum
         }
 
+        public async Task<int> CountClosedTicketsBetweenAsync(DateTime startDate, DateTime endDate, CancellationToken ct = default)
+        {
+            return await _context.Tickets
+                .CountAsync(t => t.Status == TicketStatus.Closed &&
+                                 t.ClosedAt.HasValue &&
+                                 t.ClosedAt.Value >= startDate &&
+                                 t.ClosedAt.Value < endDate, ct);
+        }
+
         public async Task<List<TicketDto>> GetRecentTicketsAsync(int count = 5, CancellationToken ct = default)
         {
             return await _context.Tickets
