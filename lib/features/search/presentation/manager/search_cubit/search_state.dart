@@ -2,7 +2,6 @@ part of 'search_cubit.dart';
 
 @immutable
 sealed class SearchState {
-  // ✅ نضيف الـ UI values هنا عشان تكون في كل الـ states
   final String selectedSpecialty;
   final String searchQuery;
 
@@ -22,7 +21,7 @@ final class SearchSuccess extends SearchState {
   final List<DoctorEntity> doctors;
   final List<String> allSpecializations;
   final List<String> popularSpecialties;
-  final bool isFetchingMore; // لمعرفة هل بنحمل الصفحة التالية الآن
+  final bool isFetchingMore;
   final bool hasNextPage;
   final String? paginationErrorMessage;
 
@@ -41,9 +40,5 @@ final class SearchSuccess extends SearchState {
 final class SearchFailure extends SearchState {
   final String errmessage;
 
-  SearchFailure(
-    this.errmessage, {
-    super.selectedSpecialty,
-    super.searchQuery,
-  });
+  SearchFailure(this.errmessage, {super.selectedSpecialty, super.searchQuery});
 }

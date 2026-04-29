@@ -301,6 +301,7 @@ Future<void> setupServiceLocator() async {
       getIt<UpdateProfileImageUseCase>(),
       getIt<GetDoctorSlotConfigUseCase>(),
       getIt<GetPublicDoctorProfileUseCase>(),
+      getIt<AddAchievementUseCase>(),
     ),
   );
 }

@@ -1,5 +1,5 @@
+import 'package:graduation_project/features/doctor_profile/domain/entities/review_entity.dart';
 import 'achievement_profile_entity.dart';
-// import 'review_response_entity.dart';
 
 class PublicDoctorProfileEntity {
   final int doctorId;
@@ -16,7 +16,7 @@ class PublicDoctorProfileEntity {
   final double? clinicLatitude;
   final double? clinicLongitude;
   final String? hospitalName;
-  // final List<ReviewResponse> reviews;
+  final List<ReviewEntity> reviews;
   final List<AchievementProfileEntity> achievements;
 
   PublicDoctorProfileEntity({
@@ -34,7 +34,7 @@ class PublicDoctorProfileEntity {
     this.clinicLatitude,
     this.clinicLongitude,
     this.hospitalName,
-    // required this.reviews,
+    required this.reviews,
     required this.achievements,
   });
 }

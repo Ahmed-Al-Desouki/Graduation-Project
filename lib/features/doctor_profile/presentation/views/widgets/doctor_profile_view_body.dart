@@ -107,7 +107,28 @@ class DoctorProfileViewBody extends StatelessWidget {
                   hoursKey,
                   WorkingHoursSection(doctorId: profile.doctorId),
                 ),
-                _buildSection(reviewsKey, ReviewsSection()),
+                _buildSection(
+                  reviewsKey,
+                  BlocBuilder<DoctorRealProfileCubit, DoctorRealProfileState>(
+                    buildWhen: (previous, current) {
+                      if (previous is DoctorProfileSuccess &&
+                          current is DoctorProfileSuccess) {
+                        return previous.profile.reviews !=
+                            current.profile.reviews;
+                      }
+                      return current is DoctorProfileSuccess;
+                    },
+                    builder: (context, state) {
+                      if (state is DoctorProfileSuccess) {
+                        return ReviewsSection(
+                          averageRating: profile.averageRating,
+                          reviews: profile.reviews,
+                        );
+                      }
+                      return const SizedBox();
+                    },
+                  ),
+                ),
                 _buildSection(
                   servicesKey,
                   ServicesPricingSection(

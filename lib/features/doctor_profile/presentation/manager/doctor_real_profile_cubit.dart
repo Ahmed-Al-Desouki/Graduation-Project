@@ -2,6 +2,8 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:graduation_project/features/doctor_home/domain/entities/achievement_entity.dart';
+import 'package:graduation_project/features/doctor_home/domain/use_cases/add_achievement_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/achievement_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/slot_config_entity.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/delete_achievement_use_case.dart';
@@ -26,6 +28,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
   final UpdateProfileImageUseCase updateProfileImageUseCase;
   final GetDoctorSlotConfigUseCase getDoctorSlotConfigUseCase;
   final GetPublicDoctorProfileUseCase getPublicDoctorProfileUseCase;
+  final AddAchievementUseCase addAchievementUseCase;
 
   DoctorRealProfileCubit(
     this.getDoctorProfileUseCase,
@@ -37,10 +40,10 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
     this.updateProfileImageUseCase,
     this.getDoctorSlotConfigUseCase,
     this.getPublicDoctorProfileUseCase,
+    this.addAchievementUseCase,
   ) : super(DoctorProfileInitial());
 
   DoctorProfileEntity? _cachedProfile;
-
   DoctorProfileEntity? get cachedProfile => _cachedProfile;
 
   List<SlotConfigEntity>? _cachedSlots;
@@ -160,6 +163,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
         consultationFee: _cachedProfile!.consultationFee,
         bio: _cachedProfile!.bio,
         averageRating: _cachedProfile!.averageRating,
+        patientCount: _cachedProfile!.patientCount,
         isActive: _cachedProfile!.isActive,
         isProfileCompleted: _cachedProfile!.isProfileCompleted,
         clinicAddress: _cachedProfile!.clinicAddress,
@@ -168,6 +172,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
         hospitalName: _cachedProfile!.hospitalName,
         verificationDocuments: _cachedProfile!.verificationDocuments,
         achievements: updatedAchievements,
+        reviews: _cachedProfile!.reviews,
       );
 
       emit(DoctorProfileSuccess(_cachedProfile!));
@@ -214,6 +219,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
         consultationFee: _cachedProfile!.consultationFee,
         bio: _cachedProfile!.bio,
         averageRating: _cachedProfile!.averageRating,
+        patientCount: _cachedProfile!.patientCount,
         isActive: _cachedProfile!.isActive,
         isProfileCompleted: _cachedProfile!.isProfileCompleted,
         clinicAddress: _cachedProfile!.clinicAddress,
@@ -222,6 +228,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
         hospitalName: _cachedProfile!.hospitalName,
         verificationDocuments: _cachedProfile!.verificationDocuments,
         achievements: updatedAchievements,
+        reviews: _cachedProfile!.reviews,
       );
 
       emit(DoctorProfileSuccess(_cachedProfile!));
@@ -263,7 +270,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
 
   Future<void> getDoctorSlotConfig(int doctorId) async {
     emit(GetSlotConfigLoading());
-    log('📅 Fetching slot config for doctorId: $doctorId');
+    log('Fetching slot config for doctorId: $doctorId');
     final result = await getDoctorSlotConfigUseCase(doctorId);
     result.fold(
       (failure) {
@@ -274,7 +281,7 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
         log('✅ Fetched ${slots.length} slot configs');
         for (var slot in slots) {
           log(
-            '   🗓️ ${slot.dayName}: ${slot.startTime} - ${slot.endTime} (active: ${slot.isActive})',
+            '${slot.dayName}: ${slot.startTime} - ${slot.endTime} (active: ${slot.isActive})',
           );
         }
         _cachedSlots = slots;
@@ -292,6 +299,30 @@ class DoctorRealProfileCubit extends Cubit<DoctorRealProfileState> {
       profile,
     ) {
       emit(PublicDoctorProfileSuccess(profile));
+    });
+  }
+
+  Future<void> addAchievement({
+    required String title,
+    String? description,
+    File? image,
+  }) async {
+    emit(AddAchievementLoading());
+
+    final achievement = AchievementEntity(
+      title: title,
+      description: description,
+      image: image,
+      createdAt: DateTime.now(),
+    );
+
+    final result = await addAchievementUseCase(achievement);
+
+    result.fold((failure) => emit(AddAchievementFailure(failure.errmessage)), (
+      _,
+    ) {
+      emit(AddAchievementSuccess());
+      getDoctorProfile();
     });
   }
 }

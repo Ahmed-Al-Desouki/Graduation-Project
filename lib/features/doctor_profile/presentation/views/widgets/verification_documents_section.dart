@@ -118,14 +118,18 @@ class VerificationDocumentsSection extends StatelessWidget {
     );
   }
 
-  void _showEditVerificationSheet(BuildContext context, List<VerificationDocumentProfileEntity> documents) {
+  void _showEditVerificationSheet(
+    BuildContext context,
+    List<VerificationDocumentProfileEntity> documents,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => BlocProvider.value(
-        value: context.read<DoctorRealProfileCubit>(),
-        child: EditVerificationSheet(documents: documents),
-      ),
+      builder:
+          (_) => BlocProvider.value(
+            value: context.read<DoctorRealProfileCubit>(),
+            child: EditVerificationSheet(documents: documents),
+          ),
     );
   }
 }

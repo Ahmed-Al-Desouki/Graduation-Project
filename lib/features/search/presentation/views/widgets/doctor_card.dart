@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 
@@ -7,7 +8,7 @@ class DoctorCard extends StatelessWidget {
   final String fullName;
   final String imageUrl;
   final String specialty;
-  final String rating;
+  final double rating;
   final int totalReviews;
   final int yearsOfExperience;
   final double consultationFee;
@@ -92,18 +93,40 @@ class DoctorCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Row(
-                      children: List.generate(
-                        5,
-                        (index) => Icon(
-                          Icons.star,
-                          color: Colors.yellow.shade600,
-                          size: 15,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ...List.generate(5, (index) {
+                          if (index < rating.floor()) {
+                            return Icon(
+                              Icons.star,
+                              color: Colors.yellow.shade600,
+                              size: 18,
+                            );
+                          } else if (index < rating) {
+                            return Icon(
+                              Icons.star_half,
+                              color: Colors.yellow.shade600,
+                              size: 18,
+                            );
+                          }
+                          return Icon(
+                            Icons.star_border,
+                            color: Colors.yellow.shade600,
+                            size: 18,
+                          );
+                        }),
+                        SizedBox(width: 3.w),
+                        Text(
+                          rating.toStringAsFixed(2),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.sp,
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 4),
-                    Text(rating),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 5),
                     Text(
                       '($totalReviews reviews)',
                       style: const TextStyle(color: Colors.grey),

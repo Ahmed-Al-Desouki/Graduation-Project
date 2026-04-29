@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/functions/confirm_delete.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/achievement_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/views/add_achievement_sheet.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/edit_achievements_sheet.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/achievement_tile.dart';
 
@@ -39,6 +40,24 @@ class AllAchievementsView extends StatelessWidget {
         ),
         centerTitle: true,
       ),
+      floatingActionButton:
+          showActions
+              ? Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6A80DA), Color(0xFF754EA6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.add, color: Colors.white, size: 30),
+                  onPressed: () => _showAddAchievementSheet(context),
+                ),
+              )
+              : null,
       body:
           achievements.isEmpty
               ? const Center(
@@ -169,5 +188,19 @@ class AllAchievementsView extends StatelessWidget {
     confirmDelete(context, () async {
       await cubit.deleteAchievement(achievementId: achievement.achievementId);
     });
+  }
+
+  void _showAddAchievementSheet(BuildContext context) {
+    final cubit = context.read<DoctorRealProfileCubit>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder:
+          (_) => BlocProvider.value(
+            value: cubit,
+            child: const AddAchievementSheet(),
+          ),
+    );
   }
 }

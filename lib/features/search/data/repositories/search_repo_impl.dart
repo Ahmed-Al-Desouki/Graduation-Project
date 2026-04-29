@@ -25,7 +25,6 @@ class SearchRepositoryImpl implements SearchRepo {
         pageSize: pageSize,
       );
 
-      // استخراج الدكاترة من حقل doctors
       List<dynamic> doctorsData = [];
       if (response.containsKey('doctors')) {
         doctorsData = response['doctors'] as List;
@@ -38,7 +37,6 @@ class SearchRepositoryImpl implements SearchRepo {
               )
               .toList();
 
-      // استخراج معلومات الـ Pagination
       final hasNextPage = response['hasNextPage'] as bool? ?? false;
       final totalCount = response['totalCount'] as int? ?? 0;
 

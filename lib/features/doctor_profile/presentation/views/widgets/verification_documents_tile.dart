@@ -32,7 +32,7 @@ class VerificationDocumentsTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              // ✅ لو في صورة، اعرضها
+
               if (fileUrl != null) ...[
                 const SizedBox(height: 8),
                 ClipRRect(

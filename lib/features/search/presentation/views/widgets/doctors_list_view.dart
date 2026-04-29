@@ -16,7 +16,7 @@ class DoctorsListView extends StatelessWidget {
       return ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: 4, // 4 كروت وهمية يملوا الشاشة
+        itemCount: 4,
         itemBuilder: (context, index) {
           return const Padding(
             padding: EdgeInsets.only(bottom: 10, left: 5, right: 5),
@@ -50,7 +50,6 @@ class DoctorsListView extends StatelessWidget {
       );
     }
 
-    // تم وضع الليستة وجزء التحميل في Column عشان يظهروا تحت بعض بشكل منظم
     return Column(
       children: [
         ListView.builder(
@@ -66,7 +65,7 @@ class DoctorsListView extends StatelessWidget {
                 fullName: doctor.fullName,
                 imageUrl: doctor.profileImageUrl ?? '',
                 specialty: doctor.specialization,
-                rating: doctor.averageRating.toString(),
+                rating: doctor.averageRating,
                 totalReviews: doctor.totalReviews,
                 yearsOfExperience: doctor.yearsOfExperience,
                 consultationFee: doctor.consultationFee,
@@ -76,7 +75,6 @@ class DoctorsListView extends StatelessWidget {
           },
         ),
 
-        // Loader صغير بيظهر في آخر الصفحة لما نوصل لـ 70% وبيحمل الداتا الجديدة
         if (state is SearchSuccess && (state as SearchSuccess).isFetchingMore)
           const Padding(
             padding: EdgeInsets.only(bottom: 20, top: 10, left: 5, right: 5),

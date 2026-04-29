@@ -50,5 +50,7 @@ abstract class DoctorRealProfileRepository {
     int doctorId,
   );
 
-Future<Either<Failure, PublicDoctorProfileEntity>> getPublicDoctorProfile(int doctorId);
+  Future<Either<Failure, PublicDoctorProfileEntity>> getPublicDoctorProfile(
+    int doctorId,
+  );
 }

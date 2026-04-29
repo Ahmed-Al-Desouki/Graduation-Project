@@ -1,6 +1,6 @@
 import 'package:graduation_project/features/doctor_profile/data/models/achievement_profile_model.dart';
+import 'package:graduation_project/features/doctor_profile/data/models/review_model.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/public_doctor_profile_entity.dart';
-// import 'package:graduation_project/features/doctor_profile/domain/entities/review_response_entity.dart';
 
 class PublicDoctorProfileModel extends PublicDoctorProfileEntity {
   PublicDoctorProfileModel({
@@ -18,7 +18,7 @@ class PublicDoctorProfileModel extends PublicDoctorProfileEntity {
     super.clinicLatitude,
     super.clinicLongitude,
     super.hospitalName,
-    // required super.reviews,
+    required super.reviews,
     required super.achievements,
   });
 
@@ -38,9 +38,11 @@ class PublicDoctorProfileModel extends PublicDoctorProfileEntity {
       clinicLatitude: json['clinicLatitude']?.toDouble(),
       clinicLongitude: json['clinicLongitude']?.toDouble(),
       hospitalName: json['hospitalName'],
-      // reviews: (json['reviews'] as List)
-      //     .map((e) => ReviewResponse.fromJson(e as Map<String, dynamic>))
-      //     .toList(),
+      reviews:
+          (json['reviews'] as List?)
+              ?.map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       achievements:
           (json['achievements'] as List)
               .map((e) => AchievementModel.fromJson(e))

@@ -7,9 +7,7 @@ class DeleteAchievementUseCase {
 
   DeleteAchievementUseCase(this.repository);
 
-  Future<Either<Failure, bool>> call({
-    required int achievementId,
-  }) async {
+  Future<Either<Failure, bool>> call({required int achievementId}) async {
     return await repository.deleteAchievement(achievementId: achievementId);
   }
 }

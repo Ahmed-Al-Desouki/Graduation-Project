@@ -82,7 +82,10 @@ class DoctorPublicProfileView extends StatelessWidget {
                   ),
                   const SizedBox(height: 15),
 
-                  const ReviewsSection(),
+                  ReviewsSection(
+                    averageRating: profile.averageRating,
+                    reviews: profile.reviews,
+                  ),
                   const SizedBox(height: 15),
 
                   ServicesPricingSection(

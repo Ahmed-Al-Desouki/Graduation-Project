@@ -57,6 +57,15 @@ final class UpdateAchievementFailure extends DoctorRealProfileState {
   UpdateAchievementFailure(this.errorMessage);
 }
 
+final class AddAchievementLoading extends DoctorRealProfileState {}
+
+final class AddAchievementSuccess extends DoctorRealProfileState {}
+
+final class AddAchievementFailure extends DoctorRealProfileState {
+  final String errorMessage;
+  AddAchievementFailure(this.errorMessage);
+}
+
 final class DeleteAchievementLoading extends DoctorRealProfileState {}
 
 final class DeleteAchievementSuccess extends DoctorRealProfileState {}
@@ -90,7 +99,14 @@ final class GetSlotConfigFailure extends DoctorRealProfileState {
   GetSlotConfigFailure(this.errorMessage);
 }
 
+final class PublicDoctorProfileLoading extends DoctorRealProfileState {}
+
 final class PublicDoctorProfileSuccess extends DoctorRealProfileState {
   final PublicDoctorProfileEntity profile;
   PublicDoctorProfileSuccess(this.profile);
+}
+
+final class PublicDoctorProfileFailure extends DoctorRealProfileState {
+  final String errorMessage;
+  PublicDoctorProfileFailure(this.errorMessage);
 }

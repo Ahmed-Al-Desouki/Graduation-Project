@@ -37,6 +37,7 @@ class _EditServicesSheetState extends State<EditServicesSheet> {
               style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 24.h),
+
             CustomFormTextField(
               label: 'Fee (\$)',
               hintText: 'e.g. 150',
@@ -44,12 +45,8 @@ class _EditServicesSheetState extends State<EditServicesSheet> {
               controller: _feeController,
               prefixIcon: Icons.attach_money_rounded,
             ),
-            //       TextField(
-            //   controller: _feeController,
-            //   keyboardType: TextInputType.number,
-            //   decoration: const InputDecoration(labelText: "Consultation Fee"),
-            // ),
             SizedBox(height: 32.h),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -68,9 +65,7 @@ class _EditServicesSheetState extends State<EditServicesSheet> {
 
                   WidgetsBinding.instance.addPostFrameCallback((_) async {
                     final fee = double.tryParse(_feeController.text) ?? 0;
-
                     await cubit.updateBasicInfo(consultationFee: fee);
-
                     await cubit.getDoctorProfile();
                   });
                 },

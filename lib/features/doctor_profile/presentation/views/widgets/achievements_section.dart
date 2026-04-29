@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
+import 'package:graduation_project/core/utils/functions/confirm_delete.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/achievement_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/views/edit_achievements_sheet.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/achievement_tile.dart';
 
 class AchievementsSection extends StatelessWidget {
@@ -37,7 +39,9 @@ class AchievementsSection extends StatelessWidget {
                     "Achievements & Awards",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  if (achievements.length > 3)
+                  if (showActions
+                      ? achievements.isNotEmpty
+                      : achievements.length > 3)
                     TextButton(
                       onPressed: () {
                         AppRouter.router.push(
@@ -73,11 +77,23 @@ class AchievementsSection extends StatelessWidget {
                 ),
 
               ...displayAchievements.map((achievement) {
+                final showActionsInCard =
+                    showActions && achievements.length <= 3;
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 15),
                   child: AchievementTile(
                     achievement: achievement,
-                    showActions: false,
+                    showActions: showActionsInCard,
+                    onEdit:
+                        showActionsInCard
+                            ? () => _showEditSheet(context, achievement)
+                            : null,
+                    onDelete:
+                        showActionsInCard
+                            ? () =>
+                                _showDeleteConfirmation(context, achievement)
+                            : null,
                   ),
                 );
               }),
@@ -86,5 +102,33 @@ class AchievementsSection extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showEditSheet(
+    BuildContext context,
+    AchievementProfileEntity achievement,
+  ) {
+    final cubit = context.read<DoctorRealProfileCubit>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder:
+          (_) => BlocProvider.value(
+            value: cubit,
+            child: EditAchievementSheet(achievement: achievement),
+          ),
+    );
+  }
+
+  void _showDeleteConfirmation(
+    BuildContext context,
+    AchievementProfileEntity achievement,
+  ) {
+    final cubit = context.read<DoctorRealProfileCubit>();
+
+    confirmDelete(context, () async {
+      await cubit.deleteAchievement(achievementId: achievement.achievementId);
+    });
   }
 }

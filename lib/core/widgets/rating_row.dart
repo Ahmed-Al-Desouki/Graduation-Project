@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-class RatingRowForHeader extends StatelessWidget {
+class RatingRow extends StatelessWidget {
   final double rating;
-  const RatingRowForHeader({super.key, required this.rating});
+  const RatingRow({super.key, required this.rating});
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +33,10 @@ class RatingRowForHeader extends StatelessWidget {
             }),
             const SizedBox(width: 3),
             Text(
-              rating.toStringAsFixed(1),
+              rating.toStringAsFixed(2),
               style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
           ],
-        ),
-        const SizedBox(height: 5),
-        const Text(
-          "(2,847 reviews)",
-          style: TextStyle(color: Colors.white, fontSize: 13),
         ),
       ],
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:graduation_project/core/widgets/rating_row.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/public_doctor_profile_entity.dart';
-import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/rating_row_for_header.dart';
 
 class PublicProfileHeader extends StatelessWidget {
   final PublicDoctorProfileEntity profile;
@@ -47,7 +47,12 @@ class PublicProfileHeader extends StatelessWidget {
             style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 8),
-          RatingRowForHeader(rating: profile.averageRating),
+          RatingRow(rating: profile.averageRating),
+          const SizedBox(height: 5),
+          Text(
+            "(${profile.reviews.length} ${profile.reviews.length == 1 ? 'review' : 'reviews'})",
+            style: TextStyle(color: Colors.white, fontSize: 13),
+          ),
         ],
       ),
     );

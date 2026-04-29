@@ -22,8 +22,10 @@ import 'package:graduation_project/features/doctor_home/presentation/views/docto
 import 'package:graduation_project/features/doctor_home/presentation/views/profile_completion_loading_view.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/achievement_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/doctor_profile_entity.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/review_entity.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/all_achievements_view.dart';
+import 'package:graduation_project/features/doctor_profile/presentation/views/all_reviews_view.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/doctor_public_profile_view.dart';
 import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
 import 'package:graduation_project/features/medical_history/domain/models/family_history_model.dart';
@@ -99,6 +101,7 @@ abstract class AppRouter {
   static const kProfileCompletionLoading = '/doctor/profile-completion/loading';
   static const kAllAchievements = '/doctor/profile/all-achievements';
   static const kPublicDoctorProfile = '/doctor/public-profile';
+  static const kAllReviews = '/doctor/profile/all-reviews';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -700,6 +703,16 @@ abstract class AppRouter {
                       ..getPublicDoctorProfile(doctorId),
             child: DoctorPublicProfileView(doctorId: doctorId),
           );
+        },
+      ),
+
+      GoRoute(
+        path: kAllReviews,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final reviews = extra['reviews'] as List<ReviewEntity>;
+          final averageRating = extra['averageRating'] as double;
+          return AllReviewsView(reviews: reviews, averageRating: averageRating);
         },
       ),
     ],

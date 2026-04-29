@@ -8,7 +8,7 @@ import 'package:graduation_project/features/doctor_profile/domain/entities/docto
 import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_state.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/edit_basic_info_sheet.dart';
-import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/rating_row_for_header.dart';
+import 'package:graduation_project/core/widgets/rating_row.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/stat_item_for_header.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -20,9 +20,8 @@ class DoctorProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<DoctorRealProfileCubit, DoctorRealProfileState>(
       listener: (context, state) {
-        log('📊 State changed: $state');
+        log('State changed: $state');
         if (state is UpdateProfileImageLoading) {
-          log('⏳ Uploading...');
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -109,6 +108,7 @@ class DoctorProfileHeader extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 15),
+
             Text(
               profile.fullName,
               style: const TextStyle(
@@ -118,6 +118,7 @@ class DoctorProfileHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 5),
+
             if (profile.dateOfBirth != null)
               Text(
                 profile.dateOfBirth!.toLocal().toString().split(' ')[0],
@@ -137,23 +138,37 @@ class DoctorProfileHeader extends StatelessWidget {
               style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 12),
-            RatingRowForHeader(rating: profile.averageRating),
+
+            RatingRow(rating: profile.averageRating),
+            const SizedBox(height: 5),
+
+            Text(
+              "(${profile.reviews.length} ${profile.reviews.length == 1 ? 'review' : 'reviews'})",
+              style: TextStyle(color: Colors.white, fontSize: 13),
+            ),
             const SizedBox(height: 20),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: const [
-                StatItemForHeader(value: "2.8K+", label: "Patients"),
-                StatItemForHeader(value: "98%", label: "Success Rate"),
-                StatItemForHeader(value: "24/7", label: "Available"),
+              children: [
+                StatItemForHeader(
+                  value: profile.patientCount.toString(),
+                  label: "Patients",
+                ),
+                StatItemForHeader(
+                  value: calculateSuccessRate(profile.averageRating),
+                  label: "Success Rate",
+                ),
               ],
             ),
             const SizedBox(height: 15),
+
             if (profile.nationalId != null)
               Text(
                 "National ID : ${profile.nationalId}",
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 10,
+                  fontSize: 12,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -161,6 +176,11 @@ class DoctorProfileHeader extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String calculateSuccessRate(double averageRating) {
+    final percentage = (averageRating / 5.0) * 100;
+    return '${percentage.toStringAsFixed(0)}%';
   }
 
   void _showEditBasicInfoSheet(
@@ -207,16 +227,23 @@ class DoctorProfileHeader extends StatelessWidget {
                   const Text(
                     'Change Profile Picture',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1B4E8C),
                     ),
                   ),
                   const SizedBox(height: 20),
                   ListTile(
-                    leading: const Icon(
-                      Icons.camera_alt,
-                      color: Color(0xFF1B4E8C),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B4E8C).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Color(0xFF1B4E8C),
+                      ),
                     ),
                     title: const Text('Take Photo'),
                     onTap: () {
@@ -225,9 +252,16 @@ class DoctorProfileHeader extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(
-                      Icons.photo_library,
-                      color: Color(0xFF1B4E8C),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B4E8C).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.photo_library,
+                        color: Color(0xFF1B4E8C),
+                      ),
                     ),
                     title: const Text('Choose from Gallery'),
                     onTap: () {
@@ -246,7 +280,7 @@ class DoctorProfileHeader extends StatelessWidget {
     DoctorRealProfileCubit cubit,
     ImageSource source,
   ) async {
-    log('📸 Starting image picker...');
+    log('Starting image picker...');
 
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
@@ -256,14 +290,14 @@ class DoctorProfileHeader extends StatelessWidget {
       imageQuality: 85,
     );
 
-    log('📸 Picked file: ${pickedFile?.path}');
+    log('Picked file: ${pickedFile?.path}');
 
     if (pickedFile != null) {
       final file = File(pickedFile.path);
       final fileSize = await file.length();
-      log('📸 File size: ${fileSize / 1024 / 1024} MB');
+      log('File size: ${fileSize / 1024 / 1024} MB');
       await cubit.updateProfileImage(file);
-      log('📸 Update completed');
+      log('Update completed');
     } else {
       log('❌ No image selected');
     }

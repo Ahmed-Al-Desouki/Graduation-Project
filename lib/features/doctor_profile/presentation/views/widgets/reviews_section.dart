@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/review_entity.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/widgets/review_card.dart';
 
 class ReviewsSection extends StatelessWidget {
-  const ReviewsSection({super.key});
+  final double averageRating;
+  final List<ReviewEntity> reviews;
+  const ReviewsSection({
+    super.key,
+    required this.averageRating,
+    required this.reviews,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,16 +33,26 @@ class ReviewsSection extends StatelessWidget {
                     "Patient's Reviews",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      "View All",
-                      style: TextStyle(
-                        color: Color(0xFF2563EB),
-                        fontWeight: FontWeight.bold,
+
+                  if (reviews.length > 3)
+                    TextButton(
+                      onPressed: () {
+                        AppRouter.router.push(
+                          AppRouter.kAllReviews,
+                          extra: {
+                            'reviews': reviews,
+                            'averageRating': averageRating,
+                          },
+                        );
+                      },
+                      child: const Text(
+                        "View All",
+                        style: TextStyle(
+                          color: Color(0xFF2563EB),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
               SizedBox(height: 20),
@@ -50,23 +68,38 @@ class ReviewsSection extends StatelessWidget {
                     Row(
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(
-                            5,
-                            (index) => Icon(
-                              Icons.star,
-                              color: Colors.yellow.shade600,
-                              size: 15,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ...List.generate(5, (index) {
+                              if (index < averageRating.floor()) {
+                                return Icon(
+                                  Icons.star,
+                                  color: Colors.yellow.shade600,
+                                  size: 18,
+                                );
+                              } else if (index < averageRating) {
+                                return Icon(
+                                  Icons.star_half,
+                                  color: Colors.yellow.shade600,
+                                  size: 18,
+                                );
+                              }
+                              return Icon(
+                                Icons.star_border,
+                                color: Colors.yellow.shade600,
+                                size: 18,
+                              );
+                            }),
+                            SizedBox(width: 3.w),
+                            Text(
+                              averageRating.toStringAsFixed(2),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.sp,
+                                color: Colors.black87,
+                              ),
                             ),
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        Text(
-                          "4.9",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.sp,
-                          ),
+                          ],
                         ),
                         SizedBox(width: 6.w),
                         Text(
@@ -75,9 +108,10 @@ class ReviewsSection extends StatelessWidget {
                         ),
                       ],
                     ),
+
                     SizedBox(height: 6.h),
                     Text(
-                      "Based on 2,847 reviews",
+                      "Based on ${reviews.length} ${reviews.length == 1 ? 'reviews' : 'reviews'}",
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: Colors.grey.shade600,
@@ -86,34 +120,41 @@ class ReviewsSection extends StatelessWidget {
                   ],
                 ),
               ),
+
               SizedBox(height: 15),
-              ReviewCard(
-                name: "Emily Rodriguez",
-                imageUrl: "https://i.pravatar.cc/150?img=47",
-                daysAgo: "2 days ago",
-                review:
-                    "Dr. Johnson is exceptional! She took the time to explain my condition thoroughly and made me feel comfortable throughout the entire process.",
-              ),
-              SizedBox(height: 15),
-              ReviewCard(
-                name: "Michael Chen",
-                imageUrl: "https://i.pravatar.cc/150?img=12",
-                daysAgo: "5 days ago",
-                review:
-                    "Outstanding doctor! Very professional, knowledgeable, and caring. Highly recommend Dr. Johnson for any cardiac concerns.",
-              ),
-              SizedBox(height: 15),
-              ReviewCard(
-                name: "Sarah Williams",
-                imageUrl: "https://i.pravatar.cc/150?img=28",
-                daysAgo: "1 week ago",
-                review:
-                    "Great experience overall. Dr. Johnson is very thorough in her examinations and provides clear explanations. The only minor issue was the waiting time, but the quality of care made up for it.",
-              ),
+              if (reviews.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.w),
+                    child: Text(
+                      'No reviews yet',
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  ),
+                )
+              else
+                ...reviews.take(3).map((review) {
+                  return Column(
+                    children: [
+                      ReviewCard(
+                        name: review.patientName,
+                        imageUrl: review.patientImagePorfile,
+                        reviewDate: _formatDate(review.reviewDate),
+                        review: review.comment,
+                        rating: review.rating,
+                      ),
+                      SizedBox(height: 15),
+                    ],
+                  );
+                }),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

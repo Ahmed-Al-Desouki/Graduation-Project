@@ -105,10 +105,7 @@ class DoctorProfileRemoteDataSourceImpl
       formData,
     );
 
-    // ✅ هنا مهم: شوف شكل الـ response من الـ backend
-    log('📸 Profile Image Response: $response');
-
-    // لو الـ response راجع object مباشرة (مش داخل 'file')
+    log('Profile Image Response: $response');
     return ProfileImageModel.fromJson(response as Map<String, dynamic>);
   }
 
