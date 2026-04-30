@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
+import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DoctorCard extends StatelessWidget {
   final int doctorId;
@@ -13,6 +15,9 @@ class DoctorCard extends StatelessWidget {
   final int yearsOfExperience;
   final double consultationFee;
   final bool isActive;
+  final double? distanceKm;
+  final String? clinicMapUrl;
+  final String? directionsMapUrl;
 
   const DoctorCard({
     super.key,
@@ -25,6 +30,9 @@ class DoctorCard extends StatelessWidget {
     required this.yearsOfExperience,
     required this.consultationFee,
     required this.isActive,
+    this.distanceKm,
+    this.clinicMapUrl,
+    this.directionsMapUrl,
   });
 
   @override
@@ -85,6 +93,22 @@ class DoctorCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (directionsMapUrl != null)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.map,
+                          color: Color(0xFF2563EB),
+                          size: 28,
+                        ),
+                        onPressed: () => _openMap(context, directionsMapUrl!),
+                        tooltip: 'Show directions',
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -144,9 +168,22 @@ class DoctorCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text('$yearsOfExperience years exp.'),
                     const SizedBox(width: 4),
-                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    const Text('1.8 km away'),
+                    if (distanceKm != null) ...[
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.grey.shade600,
+                        size: 16,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        '${distanceKm!.toStringAsFixed(1)} km',
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -190,5 +227,24 @@ class DoctorCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openMap(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && context.mounted) {
+        showSnackBar(context, 'Could not open map', Colors.red);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showSnackBar(context, 'Could not open map', Colors.red);
+      }
+    }
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:lottie/lottie.dart';
 
 class SearchHeader extends StatelessWidget {
   const SearchHeader({super.key});
@@ -19,13 +19,10 @@ class SearchHeader extends StatelessWidget {
       ),
       child: Column(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(30.r),
-            child: Image.asset(
-              Assets.imagesFindYourDoctor,
-              height: 100.h,
-              width: 100.w,
-              fit: BoxFit.cover,
+          Center(
+            child: Lottie.asset(
+              'assets/lottie/search for employee.json',
+              height: 120.h,
             ),
           ),
           SizedBox(height: 15.h),

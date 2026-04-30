@@ -23,6 +23,7 @@ import 'package:google_sign_in_web/google_sign_in_web.dart';
 import 'package:image_picker_for_web/image_picker_for_web.dart';
 import 'package:package_info_plus/src/package_info_plus_web.dart';
 import 'package:passkeys_web/passkeys_web.dart';
+import 'package:permission_handler_html/permission_handler_html.dart';
 import 'package:printing/printing_web.dart';
 import 'package:shared_preferences_web/shared_preferences_web.dart';
 import 'package:ua_client_hints/ua_client_hints_web.dart';
@@ -48,6 +49,7 @@ void registerPlugins([final Registrar? pluginRegistrar]) {
   ImagePickerPlugin.registerWith(registrar);
   PackageInfoPlusWebPlugin.registerWith(registrar);
   PasskeysWeb.registerWith(registrar);
+  WebPermissionHandler.registerWith(registrar);
   PrintingPlugin.registerWith(registrar);
   SharedPreferencesPlugin.registerWith(registrar);
   UaClientHintsWeb.registerWith(registrar);

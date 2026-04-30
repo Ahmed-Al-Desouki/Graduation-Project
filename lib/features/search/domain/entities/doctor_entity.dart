@@ -9,6 +9,13 @@ class DoctorEntity {
   final String? description;
   final String? profileImageUrl;
   final bool isActive;
+  final String? clinicAddress;
+  final double? clinicLatitude;
+  final double? clinicLongitude;
+  final String? hospitalName;
+  final double? distanceKm;
+  final String? clinicMapUrl;
+  final String? directionsMapUrl;
 
   DoctorEntity({
     required this.doctorId,
@@ -21,5 +28,12 @@ class DoctorEntity {
     this.description,
     this.profileImageUrl,
     required this.isActive,
+    this.clinicAddress,
+    this.clinicLatitude,
+    this.clinicLongitude,
+    this.hospitalName,
+    this.distanceKm,
+    this.clinicMapUrl,
+    this.directionsMapUrl,
   });
 }

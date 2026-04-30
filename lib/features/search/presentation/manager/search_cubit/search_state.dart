@@ -1,20 +1,37 @@
 part of 'search_cubit.dart';
 
+enum SearchType { topRated, byQuery, bySpecialty, nearby }
+
 @immutable
 sealed class SearchState {
   final String selectedSpecialty;
   final String searchQuery;
+  final double? patientLatitude;
+  final double? patientLongitude;
+  final double? radiusKm;
+  final SearchType searchType;
 
   SearchState({
     this.selectedSpecialty = 'All Specialties',
     this.searchQuery = '',
+    this.patientLatitude,
+    this.patientLongitude,
+    this.radiusKm,
+    this.searchType = SearchType.topRated,
   });
 }
 
 final class SearchInitial extends SearchState {}
 
 final class SearchLoading extends SearchState {
-  SearchLoading({super.selectedSpecialty, super.searchQuery});
+  SearchLoading({
+    super.selectedSpecialty,
+    super.searchQuery,
+    super.patientLatitude,
+    super.patientLongitude,
+    super.radiusKm,
+    super.searchType,
+  });
 }
 
 final class SearchSuccess extends SearchState {
@@ -33,6 +50,10 @@ final class SearchSuccess extends SearchState {
     this.hasNextPage = false,
     super.selectedSpecialty,
     super.searchQuery,
+    super.patientLatitude,
+    super.patientLongitude,
+    super.radiusKm,
+    super.searchType,
     this.paginationErrorMessage,
   });
 }
@@ -40,5 +61,13 @@ final class SearchSuccess extends SearchState {
 final class SearchFailure extends SearchState {
   final String errmessage;
 
-  SearchFailure(this.errmessage, {super.selectedSpecialty, super.searchQuery});
+  SearchFailure(
+    this.errmessage, {
+    super.selectedSpecialty,
+    super.searchQuery,
+    super.patientLatitude,
+    super.patientLongitude,
+    super.radiusKm,
+    super.searchType,
+  });
 }

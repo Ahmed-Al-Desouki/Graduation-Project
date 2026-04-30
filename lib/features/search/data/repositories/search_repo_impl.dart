@@ -14,6 +14,9 @@ class SearchRepositoryImpl implements SearchRepo {
   Future<Either<Failure, SearchResponseEntity>> searchDoctors({
     String? query,
     String? specialization,
+    double? patientLatitude,
+    double? patientLongitude,
+    double? radiusKm,
     int page = 1,
     int pageSize = 10,
   }) async {
@@ -21,6 +24,9 @@ class SearchRepositoryImpl implements SearchRepo {
       final response = await remoteDataSource.searchDoctors(
         query: query,
         specialization: specialization,
+        patientLatitude: patientLatitude,
+        patientLongitude: patientLongitude,
+        radiusKm: radiusKm,
         page: page,
         pageSize: pageSize,
       );

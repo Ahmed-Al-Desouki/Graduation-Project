@@ -70,6 +70,9 @@ class DoctorsListView extends StatelessWidget {
                 yearsOfExperience: doctor.yearsOfExperience,
                 consultationFee: doctor.consultationFee,
                 isActive: doctor.isActive,
+                distanceKm: doctor.distanceKm,
+                clinicMapUrl: doctor.clinicMapUrl,
+                directionsMapUrl: doctor.directionsMapUrl,
               ),
             );
           },

@@ -10,9 +10,28 @@ class SearchRemoteDataSourceImpl implements SearchRemoteDataSource {
   Future<Map<String, dynamic>> searchDoctors({
     String? query,
     String? specialization,
+    double? patientLatitude,
+    double? patientLongitude,
+    double? radiusKm,
     int page = 1,
     int pageSize = 10,
   }) async {
+    if (patientLatitude != null && patientLongitude != null) {
+      return await _apiService.get(
+        'doctors/search/nearby',
+        queryParameters: {
+          if (query != null && query.isNotEmpty) 'query': query,
+          if (specialization != null && specialization.isNotEmpty)
+            'specialization': specialization,
+          'patientLatitude': patientLatitude,
+          'patientLongitude': patientLongitude,
+          if (radiusKm != null) 'radiusKm': radiusKm,
+          'page': page,
+          'pageSize': pageSize,
+        },
+      );
+    }
+
     return await _apiService.get(
       'doctors/search',
       queryParameters: {
