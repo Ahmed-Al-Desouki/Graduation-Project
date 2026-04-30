@@ -20,7 +20,6 @@ class GeneralSettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // حساب الأبعاد بناءً على حجم الشاشة لضمان الـ Responsiveness
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
 
@@ -39,7 +38,6 @@ class GeneralSettingsSection extends StatelessWidget {
             ),
             SizedBox(height: screenHeight * 0.02),
 
-            // صف يحتوي على مدة الكشف والبريك جنب بعض
             Row(
               children: [
                 Expanded(
@@ -67,7 +65,6 @@ class GeneralSettingsSection extends StatelessWidget {
             ),
             SizedBox(height: screenHeight * 0.01),
 
-            // صف لاختيار تاريخ البداية والنهاية
             Row(
               children: [
                 Expanded(
@@ -95,7 +92,6 @@ class GeneralSettingsSection extends StatelessWidget {
     );
   }
 
-  // Widget صغير لبناء حقول النصوص بشكل موحد
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -113,7 +109,6 @@ class GeneralSettingsSection extends StatelessWidget {
     );
   }
 
-  // Widget صغير لبناء أزرار اختيار التاريخ
   Widget _buildDateTile(
     BuildContext context, {
     required String label,

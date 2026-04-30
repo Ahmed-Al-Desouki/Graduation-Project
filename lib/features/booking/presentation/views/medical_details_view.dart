@@ -885,9 +885,17 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
+                  // context.pushReplacement(
+                  //   AppRouter.kDoctorSchedule,
+                  //   extra: {
+                  //     'patientName': widget.patientName,
+                  //     'originalAppointmentId': widget.appointmentId,
+                  //   },
+                  // );
                   context.pushReplacement(
-                    AppRouter.kDoctorSchedule,
+                    AppRouter.kBookingCalendar,
                     extra: {
+                      'isPatientView': false,
                       'patientName': widget.patientName,
                       'originalAppointmentId': widget.appointmentId,
                     },

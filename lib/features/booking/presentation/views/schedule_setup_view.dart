@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -16,8 +14,13 @@ import 'package:graduation_project/features/booking/presentation/views/widgets/w
 import 'package:intl/intl.dart';
 
 class ScheduleSetupView extends StatefulWidget {
-  final bool isEditing; // 💡 العلامة الجديدة
-  const ScheduleSetupView({super.key, this.isEditing = false});
+  final bool isEditing;
+  final Map<String, dynamic>? followUpData;
+  const ScheduleSetupView({
+    super.key,
+    this.isEditing = false,
+    this.followUpData,
+  });
 
   @override
   State<ScheduleSetupView> createState() => _ScheduleSetupViewState();
@@ -76,12 +79,18 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
     return BlocConsumer<ScheduleManagementCubit, ScheduleManagementState>(
       listener: (context, state) {
         if (state is SlotsGeneratedSuccess) {
-          context.pushReplacement(AppRouter.kBookingCalendar);
+          context.pushReplacement(
+            AppRouter.kBookingCalendar,
+            extra: {'isPatientView': false, ...?widget.followUpData},
+          );
         } else if (state is ScheduleManagementFailure) {
           showSnackBar(context, state.errMessage, Colors.red);
         } else if (state is ScheduleFetchedSuccess) {
           if (!widget.isEditing) {
-            context.pushReplacement(AppRouter.kBookingCalendar);
+            context.pushReplacement(
+              AppRouter.kBookingCalendar,
+              extra: {'isPatientView': false, ...?widget.followUpData},
+            );
           } else {
             _populateFields(state.schedule);
           }

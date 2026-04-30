@@ -57,7 +57,6 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
   //   );
   // }
 
-  // داخل ScheduleManagementCubit
   Future<void> fetchCurrentSchedule() async {
     emit(ScheduleManagementLoading());
     final doctorId = getIt<SessionManager>().userId;
@@ -72,13 +71,10 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
         }
       },
       (schedule) {
-        // ✅ التحقق من وجود بيانات في الجدول
         if (schedule.timeRanges.isEmpty) {
-          emit(ScheduleManagementInitial()); // يظهر فورم الإعدادات
+          emit(ScheduleManagementInitial());
         } else {
-          emit(
-            ScheduleFetchedSuccess(schedule),
-          ); // هيتم استخدامه للتحويل للكالندر
+          emit(ScheduleFetchedSuccess(schedule));
         }
       },
     );

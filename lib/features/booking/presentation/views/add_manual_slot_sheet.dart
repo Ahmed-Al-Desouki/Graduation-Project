@@ -38,7 +38,6 @@ class _AddManualSlotSheetState extends State<AddManualSlotSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 1️⃣ الهيدر الشيك
           Container(
             width: 40,
             height: 4,
@@ -64,7 +63,6 @@ class _AddManualSlotSheetState extends State<AddManualSlotSheet> {
           ),
           const SizedBox(height: 24),
 
-          // 2️⃣ اختيار الوقت بتنسيق مودرن
           Row(
             children: [
               Expanded(
@@ -100,7 +98,6 @@ class _AddManualSlotSheetState extends State<AddManualSlotSheet> {
           ),
           const SizedBox(height: 20),
 
-          // 3️⃣ خانة التعليمات (بتظهر أكتر في المتابعة)
           isFollowUp
               ? TextField(
                 controller: instructionsController,
@@ -118,7 +115,6 @@ class _AddManualSlotSheetState extends State<AddManualSlotSheet> {
               : const SizedBox.shrink(),
           const SizedBox(height: 24),
 
-          // 4️⃣ زرار التأكيد
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: themeColor,
@@ -147,19 +143,17 @@ class _AddManualSlotSheetState extends State<AddManualSlotSheet> {
     final String endStr = _formatTime(endTime);
 
     if (widget.originalAppointmentId != null) {
-      // ✅ وضع المتابعة: حجز مباشر لمريض سابق
       cubit.bookFollowUp(
         originalId: widget.originalAppointmentId!,
         newDate: widget.selectedDate,
         startTime: startStr,
-        duration: _calculateDuration(), // دالة لحساب المدة تلقائياً
+        duration: _calculateDuration(),
         instructions:
             instructionsController.text.isEmpty
                 ? "Manual Follow-up"
                 : instructionsController.text,
       );
     } else {
-      // 🟢 وضع عادي: فتح سلوت فاضي في الجدول
       cubit.addManualSlot(
         date: widget.selectedDate,
         start: startStr,
@@ -169,7 +163,6 @@ class _AddManualSlotSheetState extends State<AddManualSlotSheet> {
     Navigator.pop(context);
   }
 
-  // ويدجت اختيار الوقت بشكل شيك
   Widget _buildModernTimeTile(
     String label,
     TimeOfDay time,
@@ -210,6 +203,6 @@ class _AddManualSlotSheetState extends State<AddManualSlotSheet> {
     final startMinutes = startTime.hour * 60 + startTime.minute;
     final endMinutes = endTime.hour * 60 + endTime.minute;
     final diff = endMinutes - startMinutes;
-    return diff > 0 ? diff : 30; // لو الوقت غلط، نثبتها 30 دقيقة
+    return diff > 0 ? diff : 30;
   }
 }

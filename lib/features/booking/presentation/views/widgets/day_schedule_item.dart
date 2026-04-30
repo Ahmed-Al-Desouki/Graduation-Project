@@ -17,7 +17,6 @@ class DayScheduleItem extends StatefulWidget {
 }
 
 class _DayScheduleItemState extends State<DayScheduleItem> {
-  // دالة لاختيار الوقت باستخدام الـ Native Time Picker
   Future<void> _selectTime(BuildContext context, bool isStart) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -37,10 +36,8 @@ class _DayScheduleItemState extends State<DayScheduleItem> {
 
   @override
   Widget build(BuildContext context) {
-    // حساب عرض الشاشة عشان نتحكم في الـ Responsive Layout
     double screenWidth = MediaQuery.of(context).size.width;
 
-    // تنسيق الوقت للعرض (مثلاً 09:00 AM)
     final String formattedStart = _formatTimeOfDay(widget.settings.startTime);
     final String formattedEnd = _formatTimeOfDay(widget.settings.endTime);
 
@@ -56,7 +53,6 @@ class _DayScheduleItemState extends State<DayScheduleItem> {
         ),
         child: Row(
           children: [
-            // 1. مفتاح التشغيل (Checkbox)
             Checkbox(
               activeColor: Colors.blue,
               value: widget.settings.isEnabled,
@@ -65,7 +61,6 @@ class _DayScheduleItemState extends State<DayScheduleItem> {
               },
             ),
 
-            // 2. اسم اليوم (Expanded لضمان المساحة)
             Expanded(
               flex: 2,
               child: Text(
@@ -79,7 +74,6 @@ class _DayScheduleItemState extends State<DayScheduleItem> {
               ),
             ),
 
-            // 3. أزرار اختيار الوقت (تظهر فقط لو اليوم مفعل)
             Expanded(
               flex: 5,
               child: Opacity(
@@ -115,7 +109,6 @@ class _DayScheduleItemState extends State<DayScheduleItem> {
     );
   }
 
-  // Widget فرعي لبناء زر اختيار الوقت
   Widget _buildTimeSelector(String label, String time, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -146,6 +139,6 @@ class _DayScheduleItemState extends State<DayScheduleItem> {
   String _formatTimeOfDay(TimeOfDay time) {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    return DateFormat.jm().format(dt); // تنسيق AM/PM
+    return DateFormat.jm().format(dt);
   }
 }

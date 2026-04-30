@@ -135,13 +135,24 @@ abstract class AppRouter {
       // 1. شاشة إعداد الجدول
       GoRoute(
         path: kScheduleSetup,
-        builder:
-            (context, state) => BlocProvider(
-              create:
-                  (context) =>
-                      getIt<ScheduleManagementCubit>(), // سحب النسخة من GetIt
-              child: const ScheduleSetupView(isEditing: true),
-            ),
+
+        // builder:
+        //     (context, state) => BlocProvider(
+        //       create:
+        //           (context) =>
+        //               getIt<ScheduleManagementCubit>(), // سحب النسخة من GetIt
+        //       child: const ScheduleSetupView(isEditing: true),
+        //     ),
+        builder: (context, state) {
+          final Map<String, dynamic>? extra =
+              state.extra as Map<String, dynamic>?;
+
+          return BlocProvider(
+            create: (context) => getIt<ScheduleManagementCubit>(),
+            // 💡 بنبعت الـ extra كله للـ View عشان ميتسحلش
+            child: ScheduleSetupView(isEditing: true, followUpData: extra),
+          );
+        },
       ),
 
       // 2. شاشة الكالندر (تدعم الطبيب والمريض)
@@ -232,6 +243,7 @@ abstract class AppRouter {
           );
         },
       ),
+
       GoRoute(
         path: kDoctorSchedule,
         builder: (context, state) {
@@ -266,6 +278,7 @@ abstract class AppRouter {
           );
         },
       ),
+
       GoRoute(
         path: kOnboarding,
         builder: (context, state) => const OnboardingView(),

@@ -17,7 +17,7 @@ class WeeklyScheduleSection extends StatelessWidget {
           "Weekly Working Hours",
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        SizedBox(height: screenHeight * 0.02), // مسافة ريسبونسيف
+        SizedBox(height: screenHeight * 0.02),
         ...List.generate(7, (index) {
           return DayScheduleItem(
             dayName: _getDayName(index),

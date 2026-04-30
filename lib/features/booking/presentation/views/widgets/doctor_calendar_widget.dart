@@ -38,52 +38,16 @@ class DoctorCalendarWidget extends StatelessWidget {
         onPageChanged(focused);
       },
       calendarStyle: CalendarStyle(
-        // لون اليوم المختار
         selectedDecoration: const BoxDecoration(
           color: Colors.orange,
           shape: BoxShape.circle,
         ),
-        // لون اليوم الحالي (اللي طالع عندك بنفسجي)
         todayDecoration: const BoxDecoration(
           color: Color(0xFF9333EA),
           shape: BoxShape.circle,
         ),
       ),
-      // ✅ تلوين الأيام ريسبونسيف بناءً على الداتا
-      // calendarBuilders: CalendarBuilders(
-      //   defaultBuilder: (context, day, focusedDay) {
-      //     final dayData =
-      //         allDays
-      //             .where(
-      //               (d) =>
-      //                   d.date.year == day.year &&
-      //                   d.date.month == day.month &&
-      //                   d.date.day == day.day,
-      //             )
-      //             .firstOrNull;
 
-      //     if (dayData != null) {
-      //       return Container(
-      //         margin: const EdgeInsets.all(4),
-      //         decoration: BoxDecoration(
-      //           // بنفسجي لو محجوز بالكامل، أخضر لو متاح
-      //           color:
-      //               dayData.isFullyUnavailable
-      //                   ? Colors.purple.withValues(alpha: 0.3)
-      //                   : Colors.green.withValues(alpha: 0.3),
-      //           shape: BoxShape.circle,
-      //           border: Border.all(
-      //             color:
-      //                 dayData.isFullyUnavailable ? Colors.purple : Colors.green,
-      //             width: 1,
-      //           ),
-      //         ),
-      //         child: Center(child: Text('${day.day}')),
-      //       );
-      //     }
-      //     return null;
-      //   },
-      // ),
       calendarBuilders: CalendarBuilders(
         prioritizedBuilder: (context, day, focusedDay) {
           final dayData =

@@ -8,7 +8,6 @@ class CalendarSummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 📊 حساب الإحصائيات من قائمة الأيام
     int totalAvailable = 0;
     int totalBooked = 0;
     int totalBlocked = 0;
@@ -29,21 +28,21 @@ class CalendarSummarySection extends StatelessWidget {
           _buildSummaryCard(
             label: "Available",
             count: totalAvailable,
-            color: const Color(0xFF10B981), // الأخضر
+            color: const Color(0xFF10B981),
             icon: Icons.event_available,
           ),
           const SizedBox(width: 12),
           _buildSummaryCard(
             label: "Booked",
             count: totalBooked,
-            color: const Color(0xFF3B82F6), // الأزرق
+            color: const Color(0xFF3B82F6),
             icon: Icons.bookmark_added,
           ),
           const SizedBox(width: 12),
           _buildSummaryCard(
             label: "Blocked",
             count: totalBlocked,
-            color: const Color(0xFF94A3B8), // الرمادي
+            color: const Color(0xFF94A3B8),
             icon: Icons.block_flipped,
           ),
         ],
