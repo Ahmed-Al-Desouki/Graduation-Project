@@ -22,10 +22,12 @@ class TimeRangeEntity {
   final int dayOfWeek; // 0 for Sunday, 1 for Monday,.....
   final String startTime;
   final String endTime;
+  final bool isActive;
 
   TimeRangeEntity({
     required this.dayOfWeek,
     required this.startTime,
     required this.endTime,
+    this.isActive = true,
   });
 }

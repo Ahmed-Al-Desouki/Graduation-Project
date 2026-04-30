@@ -49,6 +49,7 @@ class TimeRangeModel extends TimeRangeEntity {
     required super.dayOfWeek,
     required super.startTime,
     required super.endTime,
+    required super.isActive,
   });
 
   factory TimeRangeModel.fromJson(Map<String, dynamic> map) {
@@ -58,6 +59,7 @@ class TimeRangeModel extends TimeRangeEntity {
       dayOfWeek: _parseDayToIndex(map['dayOfWeek'] ?? map['day']),
       startTime: map['startTime'] ?? "09:00:00",
       endTime: map['endTime'] ?? "17:00:00",
+      isActive: map['isActive'],
     );
   }
 

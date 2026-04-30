@@ -100,7 +100,8 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
     final res = await removeWorkingDayUseCase(doctorId, dayOfWeek);
     res.fold(
       (f) => emit(ScheduleManagementFailure(f.errmessage)),
-      (_) => fetchCurrentSchedule(),
+      // (_) => fetchCurrentSchedule(),
+      (_) => null,
     );
   }
 

@@ -56,11 +56,17 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
       for (var range in schedule.timeRanges) {
         log("DEBUG: Range DayIndex: ${range.dayOfWeek}");
         int index = range.dayOfWeek;
-        if (index >= 0 && index < 7) {
+        // if (index >= 0 && index < 7) {
+        //   weeklySettings[index].isEnabled = true;
+        //   weeklySettings[index].startTime = _parseTimeString(range.startTime);
+        //   weeklySettings[index].endTime = _parseTimeString(range.endTime);
+
+        //   initiallyEnabledDays.add(index);
+        // }
+        if (range.isActive) {
           weeklySettings[index].isEnabled = true;
           weeklySettings[index].startTime = _parseTimeString(range.startTime);
           weeklySettings[index].endTime = _parseTimeString(range.endTime);
-
           initiallyEnabledDays.add(index);
         }
       }
@@ -139,16 +145,60 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
     );
   }
 
+  // void _onSavePressed() async {
+  //   final cubit = context.read<ScheduleManagementCubit>();
+
+  //   for (int dayIndex in initiallyEnabledDays) {
+  //     if (!weeklySettings[dayIndex].isEnabled) {
+  //       await cubit.deleteDayConfig(dayIndex);
+  //     }
+  //   }
+
+  //   final enabledDays = weeklySettings.where((day) => day.isEnabled).toList();
+  //   if (enabledDays.isEmpty) {
+  //     showSnackBar(
+  //       context,
+  //       "Please enable at least one working day",
+  //       Colors.red,
+  //     );
+  //     return;
+  //   }
+
+  //   final schedule = ScheduleEntity(
+  //     id: getIt<SessionManager>().userId,
+  //     templateName: "Main Schedule",
+  //     slotDurationMinutes: int.tryParse(durationController.text) ?? 30,
+  //     bufferTimeMinutes: int.tryParse(bufferController.text) ?? 5,
+  //     effectiveFromDate: startDate,
+  //     effectiveToDate: endDate,
+  //     timeRanges:
+  //         enabledDays
+  //             .map(
+  //               (day) => TimeRangeEntity(
+  //                 dayOfWeek: day.dayIndex,
+  //                 startTime: _formatTime(day.startTime),
+  //                 endTime: _formatTime(day.endTime),
+  //               ),
+  //             )
+  //             .toList(),
+  //   );
+
+  //   cubit.saveDoctorSchedule(schedule: schedule);
+  // }
+
   void _onSavePressed() async {
     final cubit = context.read<ScheduleManagementCubit>();
 
+    // 1. مسح الأيام غير المفعلة أولاً
     for (int dayIndex in initiallyEnabledDays) {
       if (!weeklySettings[dayIndex].isEnabled) {
         await cubit.deleteDayConfig(dayIndex);
       }
     }
 
+    // 2. تجميع البيانات الجديدة
     final enabledDays = weeklySettings.where((day) => day.isEnabled).toList();
+
     if (enabledDays.isEmpty) {
       showSnackBar(
         context,
@@ -177,7 +227,11 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
               .toList(),
     );
 
-    cubit.saveDoctorSchedule(schedule: schedule);
+    // 3. حفظ الجدول الجديد
+    await cubit.saveDoctorSchedule(schedule: schedule);
+
+    // 4. تحديث البيانات من السيرفر عشان الـ UI ينضف
+    await cubit.fetchCurrentSchedule();
   }
 
   Widget _buildExceptionsSection(BuildContext context) {
