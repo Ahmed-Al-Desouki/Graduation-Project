@@ -9,8 +9,7 @@ class AppointmentsCenterLoading extends AppointmentsCenterState {}
 
 class AppointmentsCenterSuccess extends AppointmentsCenterState {
   final List<AppointmentFullDetailsEntity> appointments;
-  final List<AppointmentFullDetailsEntity>
-  fullAppointments; // 🚨 لازم تكون موجودة
+  final List<AppointmentFullDetailsEntity> fullAppointments;
   final String? currentStatus;
 
   AppointmentsCenterSuccess({

@@ -10,19 +10,14 @@ part 'appointment_center_state.dart';
 class AppointmentsCenterCubit extends Cubit<AppointmentsCenterState> {
   final GetDoctorAppointmentsUseCase getDoctorAppointmentsUseCase;
   final GetPatientAppointmentsUseCase getPatientAppointmentsUseCase;
-  // final CancelByPatientUseCase cancelByPatientUseCase;
-  // final CancelBlockByDoctorUseCase cancelBlockByDoctorUseCase;
+
   final UpdateAppointmentStatusUseCase updateStatusUseCase;
   AppointmentsCenterCubit({
     required this.getDoctorAppointmentsUseCase,
     required this.getPatientAppointmentsUseCase,
-    // required this.cancelByPatientUseCase,
-    // required this.cancelBlockByDoctorUseCase,
     required this.updateStatusUseCase,
   }) : super(AppointmentCenterInitial());
 
-  // 🩺 جلب مواعيد الدكتور
-  // 🩺 جلب مواعيد الدكتور
   Future<void> getDoctorAppointments({DateTime? date, String? status}) async {
     emit(AppointmentsCenterLoading());
     var result = await getDoctorAppointmentsUseCase.call(
@@ -33,11 +28,10 @@ class AppointmentsCenterCubit extends Cubit<AppointmentsCenterState> {
     result.fold(
       (failure) => emit(AppointmentsCenterFailure(failure.errmessage)),
       (appointmentsList) {
-        // 🚨 هنا الزتونة: لازم تبعت appointmentsList في الخانتين أول مرة
         emit(
           AppointmentsCenterSuccess(
             appointments: appointmentsList,
-            fullAppointments: appointmentsList, // عشان لما تبحث تلاقي داتا هنا
+            fullAppointments: appointmentsList,
             currentStatus: status,
           ),
         );
@@ -45,7 +39,6 @@ class AppointmentsCenterCubit extends Cubit<AppointmentsCenterState> {
     );
   }
 
-  // 👤 جلب مواعيد المريض (نفس التعديل)
   Future<void> getPatientAppointments({String? status}) async {
     emit(AppointmentsCenterLoading());
     var result = await getPatientAppointmentsUseCase.call(status: status);
@@ -56,7 +49,7 @@ class AppointmentsCenterCubit extends Cubit<AppointmentsCenterState> {
         emit(
           AppointmentsCenterSuccess(
             appointments: appointmentsList,
-            fullAppointments: appointmentsList, // 🚨 هنا كمان
+            fullAppointments: appointmentsList,
             currentStatus: status,
           ),
         );
@@ -64,12 +57,9 @@ class AppointmentsCenterCubit extends Cubit<AppointmentsCenterState> {
     );
   }
 
-  // جوه الـ Success state، إنت شايل الـ allAppointments
-  // لما تنادي ميثود البحث:
   void searchAppointments(String query) {
     final currentState = state;
     if (currentState is AppointmentsCenterSuccess) {
-      // 💡 نستخدم اللستة الكاملة اللي خزنّاها فوق عشان نفلتر منها
       final List<AppointmentFullDetailsEntity> source =
           currentState.fullAppointments;
 
@@ -92,7 +82,7 @@ class AppointmentsCenterCubit extends Cubit<AppointmentsCenterState> {
         emit(
           AppointmentsCenterSuccess(
             appointments: filteredList,
-            fullAppointments: source, // بنحافظ على المصدر الأصلي زي ما هو
+            fullAppointments: source,
             currentStatus: currentState.currentStatus,
           ),
         );
@@ -113,15 +103,13 @@ class AppointmentsCenterCubit extends Cubit<AppointmentsCenterState> {
 
     result.fold(
       (failure) => emit(AppointmentsCenterFailure(failure.errmessage)),
-      (_) => getPatientAppointments(
-        status: "cancelled",
-      ), // بعد الإلغاء، جلب المواعيد مرة تانية لتحديث الواجهة
+      (_) => getPatientAppointments(status: "cancelled"),
     );
   }
 
   Future<void> doctorCancel(String appointmentId, String reason) async {
     emit(AppointmentsCenterLoading());
-    // نمرر الـ doctorCancel من الـ Enum اللي عدلناه في الـ UseCase
+
     final result = await updateStatusUseCase(
       appointmentId,
       AppointmentAction.doctorCancel,
@@ -130,13 +118,10 @@ class AppointmentsCenterCubit extends Cubit<AppointmentsCenterState> {
 
     result.fold(
       (failure) => emit(AppointmentsCenterFailure(failure.errmessage)),
-      (_) => getDoctorAppointments(
-        status: "cancelled",
-      ), // بعد الإلغاء، جلب المواعيد مرة تانية لتحديث الواجهة
+      (_) => getDoctorAppointments(status: "cancelled"),
     );
   }
 
-  // داخل AppointmentsCenterCubit
   void loadPreFetchedAppointments(List<AppointmentFullDetailsEntity> list) {
     emit(
       AppointmentsCenterSuccess(

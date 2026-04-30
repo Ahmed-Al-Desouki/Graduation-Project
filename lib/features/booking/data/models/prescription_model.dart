@@ -30,7 +30,6 @@ class PrescriptionModel extends PrescriptionEntity {
     );
   }
 
-  // ملاحظة: الـ toJson هنا بنستخدمه في الـ POST لإنشاء روشتة جديدة
   Map<String, dynamic> toJson(String appointmentId) {
     return {
       'appointmentId': appointmentId,

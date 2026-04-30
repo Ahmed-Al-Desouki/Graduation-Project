@@ -39,11 +39,9 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. تحديد الـ Role
-    final String? role = getIt<SessionManager>().userRole;
-    final bool isDoctor = role?.toLowerCase() == 'doctor';
+    final String role = getIt<SessionManager>().userRole;
+    final bool isDoctor = role.toLowerCase() == 'doctor';
 
-    // 2. تحديد حالات الفلتر بناءً على الـ Role
     final List<String> roleBasedStatuses =
         isDoctor
             ? ['Today', 'Pending', 'InProgress', 'Completed', 'Cancelled']
@@ -53,12 +51,8 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
       create: (context) {
         final cubit = getIt<AppointmentsCenterCubit>();
         if (isHistoryMode) {
-          // 🛑 لو باعتين داتا (تاريخ مريض)، اعرضها هي بس وماتروحش تنادي مواعيد الدكتور
           cubit.loadPreFetchedAppointments(widget.initialAppointments!);
         } else {
-          // isDoctor
-          //     ? cubit.getDoctorAppointments()
-          //     : cubit.getPatientAppointments();
           final bool isDoctor =
               getIt<SessionManager>().userRole.toLowerCase() == 'doctor';
           isDoctor
@@ -124,7 +118,6 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                     });
                   },
                 ),
-                // ✅ فلتر التاريخ يظهر للدكتور فقط
                 if (isDoctor && manualSelectedDate != null && !isHistoryMode)
                   IconButton(
                     icon: const Icon(
@@ -151,7 +144,6 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
             ),
             body: Column(
               children: [
-                // 🏷️ Filter Chips
                 if (!isHistoryMode)
                   Container(
                     height: 60.h,
@@ -185,7 +177,6 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                     ),
                   ),
 
-                // 📝 Appointments List
                 Expanded(
                   child: BlocBuilder<
                     AppointmentsCenterCubit,
@@ -225,29 +216,16 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                                 onTap:
                                     () => context.push(
                                       AppRouter.kMedicalDetails,
-                                      // extra: {
-                                      //   'appointmentId': item.appointmentId,
-                                      //   'patientName': item.patientName,
-                                      //   'status': item.status,
-                                      //   'patientId': item.patientId.toString(),
-                                      //   'isReadOnly':
-                                      //       !isDoctor, // المريض يتفرج بس
-                                      //   'doctorName': item.doctorName,
-                                      // },
+
                                       extra: {
                                         'appointmentId': item.appointmentId,
-                                        'patientId':
-                                            item.patientId
-                                                .toString(), // 🚨 لازم String
+                                        'patientId': item.patientId.toString(),
                                         'patientName': item.patientName,
-                                        'doctorName':
-                                            item.doctorName, // 🚨 اتأكد إنها مبعوثة
-                                        'doctorSpecialty':
-                                            'General', // أو من الـ item لو موجودة
+                                        'doctorName': item.doctorName,
+                                        'doctorSpecialty': 'General',
                                         'status': item.status,
                                         'patientNote': item.patientNotes,
-                                        'isReadOnly':
-                                            isHistoryMode, // 🔓 الدكتور يقدر يعدل
+                                        'isReadOnly': isHistoryMode,
                                       },
                                     ),
                                 onCancel:
@@ -255,7 +233,7 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                                       context,
                                       item.appointmentId,
                                       isDoctor,
-                                    ), // ✅ ميثود الإلغاء
+                                    ),
                               );
                             },
                           ),
@@ -272,8 +250,6 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
       ),
     );
   }
-
-  // --- Helper Widgets & Methods ---
 
   Widget _buildEmptyState() {
     return Center(
@@ -367,12 +343,7 @@ class _AppointmentsCenterViewState extends State<AppointmentsCenterView> {
                             reasonController.text,
                           );
                     }
-                    // context
-                    //     .read<AppointmentsCenterCubit>()
-                    //     .cancelAppointmentByPatient(
-                    //       appointmentId,
-                    //       reasonController.text,
-                    //     );
+
                     Navigator.pop(dialogContext);
                   }
                 },

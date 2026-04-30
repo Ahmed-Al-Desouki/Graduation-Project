@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:bloc/bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:graduation_project/core/errors/failures.dart';
@@ -5,11 +7,13 @@ import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/block_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/book_follow_up_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/creat_chat_room_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_appointment_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_manual_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_payment_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/delete_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/update_appointment_status_use_case.dart';
+import 'package:graduation_project/features/chat/domain/entities/chat_entity.dart';
 import 'package:meta/meta.dart';
 
 part 'appointment_action_state.dart';
@@ -22,6 +26,7 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
   final BlockSlotUseCase blockSlotUseCase;
   final CreatePaymentUseCase createPaymentUseCase;
   final CreateAppointmentUseCase createAppointmentUseCase;
+  final CreateChatRoomUseCase createChatRoomUseCase;
 
   AppointmentActionCubit(
     this.updateStatusUseCase,
@@ -31,9 +36,9 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
     this.blockSlotUseCase,
     this.createPaymentUseCase,
     this.createAppointmentUseCase,
+    this.createChatRoomUseCase,
   ) : super(AppointmentActionInitial());
 
-  // 1. تغيير حالة الموعد (Confirm, Start, Complete, Cancel)
   Future<void> updateStatus(
     String id,
     AppointmentAction action, {
@@ -53,10 +58,9 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
     );
   }
 
-  // 2. كنسلة الطبيب (Cancel & Block) - الـ Logic الجديد
   Future<void> doctorCancel(String appointmentId, String reason) async {
     emit(AppointmentActionLoading());
-    // نمرر الـ doctorCancel من الـ Enum اللي عدلناه في الـ UseCase
+
     final result = await updateStatusUseCase(
       appointmentId,
       AppointmentAction.doctorCancel,
@@ -65,11 +69,11 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
 
     result.fold(
       (failure) => emit(AppointmentActionFailure(failure.errmessage)),
-      (_) => emit(AppointmentActionSuccess("تم إلغاء الموعد وحظر الوقت بنجاح")),
+      (_) =>
+          emit(AppointmentActionSuccess("the appointment has been canceled")),
     );
   }
 
-  // 3. كنسلة المريض (Cancel & Available)
   Future<void> patientCancel(String appointmentId, String reason) async {
     emit(AppointmentActionLoading());
     final result = await updateStatusUseCase(
@@ -81,11 +85,10 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
     result.fold(
       (failure) => emit(AppointmentActionFailure(failure.errmessage)),
       (_) =>
-          emit(AppointmentActionSuccess("تم إلغاء الموعد وإعادة إتاحة الوقت")),
+          emit(AppointmentActionSuccess("the appointment has been canceled")),
     );
   }
 
-  // 2. إضافة موعد يدوي (Manual Slot) خارج الجدول
   Future<void> addManualSlot({
     // required String doctorId,
     required DateTime date,
@@ -93,7 +96,7 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
     required String end,
   }) async {
     emit(AppointmentActionLoading());
-    final doctorId = getIt<SessionManager>().userId; // ✅ سحب الـ ID أوتوماتيك
+    final doctorId = getIt<SessionManager>().userId;
     final result = await createManualSlotUseCase(
       doctorId: doctorId,
       date: date,
@@ -103,15 +106,18 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
 
     result.fold(
       (failure) => emit(AppointmentActionFailure(failure.errmessage)),
-      (_) => emit(AppointmentActionSuccess("تم إضافة الموعد اليدوي بنجاح")),
+      (_) => emit(
+        AppointmentActionSuccess(
+          "the slot has been added to the schedule successfully",
+        ),
+      ),
     );
   }
 
-  // 3. حجز موعد متابعة
   Future<void> bookFollowUp({
     required String originalId,
-    String? slotId, // لو هيختار ميعاد موجود
-    DateTime? newDate, // لو هيحدد ميعاد جديد يدوي
+    String? slotId,
+    DateTime? newDate,
     String? startTime,
     int? duration,
     required String instructions,
@@ -121,7 +127,6 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
     late Either<Failure, void> result;
 
     if (slotId != null) {
-      // حالة الـ Existing Slot
       result = await followUpUseCase.existingSlot(
         originalId: originalId,
         slotId: slotId,
@@ -129,7 +134,6 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
         instructions: instructions,
       );
     } else {
-      // حالة الـ New Custom Slot
       result = await followUpUseCase.newSlot(
         originalId: originalId,
         date: newDate!,
@@ -142,23 +146,30 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
 
     result.fold(
       (failure) => emit(AppointmentActionFailure(failure.errmessage)),
-      (_) => emit(AppointmentActionSuccess("تم تحديد موعد المتابعة بنجاح")),
+      (_) => emit(
+        AppointmentActionSuccess(
+          "the follow-up appointment has been booked successfully",
+        ),
+      ),
     );
   }
 
   Future<void> deleteAvailableSlot(String slotId) async {
     emit(AppointmentActionLoading());
-    final doctorId = getIt<SessionManager>().userId; // بنجيب الـ ID من الكاش
+    final doctorId = getIt<SessionManager>().userId;
 
     final result = await deleteSlotUseCase(doctorId, slotId);
 
     result.fold(
       (failure) => emit(AppointmentActionFailure(failure.errmessage)),
-      (_) => emit(AppointmentActionSuccess("تم حذف الموعد من الجدول نهائياً")),
+      (_) => emit(
+        AppointmentActionSuccess(
+          "the appointment slot has been deleted successfully",
+        ),
+      ),
     );
   }
 
-  // --- 2. ميثود الحظر (للسلوت المتاح) ---
   Future<void> blockAvailableSlot(String slotId) async {
     emit(AppointmentActionLoading());
     final doctorId = getIt<SessionManager>().userId;
@@ -167,59 +178,19 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
 
     result.fold(
       (failure) => emit(AppointmentActionFailure(failure.errmessage)),
-      (_) => emit(AppointmentActionSuccess("تم حظر هذا الوقت بنجاح")),
+      (_) => emit(
+        AppointmentActionSuccess(
+          "the appointment slot has been blocked successfully",
+        ),
+      ),
     );
   }
-
-  // ميثود حجز المريض (الدفع)
-  // Future<void> processPayment(String appointmentId) async {
-  //   emit(AppointmentActionLoading());
-
-  //   final result = await createPaymentUseCase(
-  //     appointmentId: appointmentId,
-  //     method: "Card", // الباك مستنيها سترينج كدة
-  //   );
-
-  //   result.fold(
-  //     (failure) => emit(AppointmentActionFailure(failure.errmessage)),
-  //     (paymentResponse) => emit(
-  //       PaymentNavigatedToWebView(
-  //         paymentResponse.paymentUrl,
-  //       ), // ✅ ستيت جديدة تفتح الويب فيو
-  //     ),
-  //   );
-  // }
-
-  // داخل AppointmentActionCubit
-  // Future<void> createBookingAndPay({
-  //   required String slotId,
-  //   required String reason,
-  //   bool grantAccess = true, // ✅ نمرر الاختيار من الـ UI
-  // }) async {
-  //   emit(AppointmentActionLoading());
-
-  //   final bookingResult = await createAppointmentUseCase(
-  //     slotId: slotId,
-  //     reason: reason,
-  //     grantAccess: grantAccess, // ✅ نمرر القيمة اللي المستخدم اختارها
-  //   );
-
-  //   bookingResult.fold(
-  //     (failure) => emit(AppointmentActionFailure(failure.errmessage)),
-  //     (appointmentId) async {
-  //       // بعد ما الـ ID رجع، نطلب الدفع
-  //       processPayment(appointmentId);
-  //     },
-  //   );
-  // }
-
-  // داخل AppointmentActionCubit
 
   Future<void> bookAndPay({
     required String slotId,
     required String reason,
     required bool grantAccess,
-    String paymentMethod = "Card", // القيمة الافتراضية
+    String paymentMethod = "Card",
   }) async {
     emit(AppointmentActionLoading());
 
@@ -233,12 +204,15 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
     result.fold(
       (failure) => emit(AppointmentActionFailure(failure.errmessage)),
       (data) {
-        // سحب الـ URL من الرد اللي راجع
+        log("Booking Response: $data");
+
         final String paymentUrl = data['paymentUrl'];
-        emit(
-          PaymentNavigatedToWebView(paymentUrl, bookingData: data),
-        ); // نفتح الـ WebView فوراً
+        emit(PaymentNavigatedToWebView(paymentUrl, bookingData: data));
       },
     );
+  }
+
+  Future<void> createFirebaseChat(ChatEntity chat) async {
+    await createChatRoomUseCase(chat);
   }
 }

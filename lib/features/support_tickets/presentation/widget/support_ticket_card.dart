@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/color_helper.dart';
-import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/features/support_tickets/domain/entities/ticket_entity.dart';
-import 'package:graduation_project/features/support_tickets/presentation/pages/support_chat_page.dart';
 import 'package:graduation_project/features/support_tickets/presentation/widget/app_padge.dart';
-
-import 'package:intl/intl.dart'; // عشان ننسق التاريخ
+import 'package:intl/intl.dart';
 
 class SupportTicketCard extends StatelessWidget {
   final TicketEntity ticket;
@@ -24,16 +21,9 @@ class SupportTicketCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: () {
-          // context.push(
-          //   '${AppRouter.kTickets}/ticket-chat', // المسار الكامل
-          //   extra: ticket.id, // بنبعت الـ object كامل
-          // );
           context.push(
             '/tickets/ticket-chat',
-            extra: {
-              'id': ticket.id,
-              'status': ticket.status, // الحالة اللي جاية من الـ API بره
-            },
+            extra: {'id': ticket.id, 'status': ticket.status},
           );
         },
         borderRadius: BorderRadius.circular(12),
@@ -42,14 +32,12 @@ class SupportTicketCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Header (ID, Priority, Status, Category)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [_buildLeftHeader(), _buildRightHeader()],
               ),
               const SizedBox(height: 12),
 
-              // 2. Body (Title & Description)
               Text(
                 ticket.title,
                 style: const TextStyle(
@@ -68,7 +56,6 @@ class SupportTicketCard extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // 3. Footer (User Info, Messages Count, Date)
               _buildFooter(),
             ],
           ),
@@ -77,7 +64,6 @@ class SupportTicketCard extends StatelessWidget {
     );
   }
 
-  // --- Header Widgets ---
   Widget _buildLeftHeader() {
     return Row(
       children: [
@@ -90,7 +76,6 @@ class SupportTicketCard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // _PriorityBadge(priority: ticket.priority),
         AppBadge(
           label: ticket.priority,
           color: getPriorityColor(ticket.priority),
@@ -102,7 +87,6 @@ class SupportTicketCard extends StatelessWidget {
   Widget _buildRightHeader() {
     return Row(
       children: [
-        // _StatusBadge(status: ticket.status),
         AppBadge(label: ticket.status, color: getStatusColor(ticket.status)),
         const SizedBox(width: 8),
         _CategoryBadge(category: ticket.category),
@@ -110,7 +94,6 @@ class SupportTicketCard extends StatelessWidget {
     );
   }
 
-  // عدل الـ buildFooter في الفايل بتاعك ليكون كدة:
   Widget _buildFooter() {
     return Row(
       children: [
@@ -120,7 +103,7 @@ class SupportTicketCard extends StatelessWidget {
           ticket.category,
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
-        const Spacer(), // يزق التاريخ والرسائل لليمين
+        const Spacer(),
         const Icon(Icons.message_outlined, size: 14, color: Colors.grey),
         const SizedBox(width: 4),
         Text(
@@ -136,8 +119,6 @@ class SupportTicketCard extends StatelessWidget {
     );
   }
 }
-
-// --- Internal Helper Badges (للتبسيط والنضافة) ---
 
 class _PriorityBadge extends StatelessWidget {
   final String priority;
@@ -162,7 +143,7 @@ class _PriorityBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(

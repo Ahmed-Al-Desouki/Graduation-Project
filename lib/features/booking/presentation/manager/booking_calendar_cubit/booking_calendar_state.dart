@@ -17,7 +17,7 @@ final class BookingCalendarSuccess extends BookingCalendarState {
     required this.allDays,
     required this.selectedDate,
     required this.selectedDaySlots,
-    required this.selectedDayTitle, // كلهم الآن Named
+    required this.selectedDayTitle,
   });
 }
 

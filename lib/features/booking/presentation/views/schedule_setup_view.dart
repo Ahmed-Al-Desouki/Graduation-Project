@@ -27,7 +27,6 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
   DateTime startDate = DateTime.now();
   DateTime endDate = DateTime.now().add(const Duration(days: 90));
 
-  // قائمة الأيام (مبدئياً كلها مقفولة)
   final List<DaySettings> weeklySettings = List.generate(
     7,
     (index) => DaySettings(dayIndex: index),
@@ -36,35 +35,10 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
   @override
   void initState() {
     super.initState();
-    // ✅ نداء جلب البيانات فور فتح الشاشة
     context.read<ScheduleManagementCubit>().fetchCurrentSchedule();
   }
 
   List<int> initiallyEnabledDays = [];
-  // ✅ دالة سحرية لملء البيانات فور وصولها من السيرفر
-  // void _populateFields(ScheduleEntity schedule) {
-  //   setState(() {
-  //     durationController.text = schedule.slotDurationMinutes.toString();
-  //     bufferController.text = schedule.bufferTimeMinutes.toString();
-  //     startDate = schedule.effectiveFromDate;
-  //     endDate = schedule.effectiveToDate;
-
-  //     // تصفير الأيام أولاً
-  //     for (var day in weeklySettings) {
-  //       day.isEnabled = false;
-  //     }
-
-  //     // ملء الأيام بناءً على ما جاء من السيرفر
-  //     for (var range in schedule.timeRanges) {
-  //       int index = range.dayOfWeek;
-  //       if (index >= 0 && index < 7) {
-  //         weeklySettings[index].isEnabled = true;
-  //         weeklySettings[index].startTime = _parseTimeString(range.startTime);
-  //         weeklySettings[index].endTime = _parseTimeString(range.endTime);
-  //       }
-  //     }
-  //   });
-  // }
 
   void _populateFields(ScheduleEntity schedule) {
     setState(() {
@@ -73,7 +47,7 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
       startDate = schedule.effectiveFromDate;
       endDate = schedule.effectiveToDate;
 
-      initiallyEnabledDays.clear(); // تصفير القائمة
+      initiallyEnabledDays.clear();
 
       for (var day in weeklySettings) {
         day.isEnabled = false;
@@ -87,14 +61,12 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
           weeklySettings[index].startTime = _parseTimeString(range.startTime);
           weeklySettings[index].endTime = _parseTimeString(range.endTime);
 
-          // ✅ سجل إن اليوم ده كان موجود فعلاً في السيرفر
           initiallyEnabledDays.add(index);
         }
       }
     });
   }
 
-  // دالة مساعدة لتحويل "09:00" إلى TimeOfDay
   TimeOfDay _parseTimeString(String time) {
     final parts = time.split(':');
     return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
@@ -112,14 +84,11 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
             context.pushReplacement(AppRouter.kDoctorSchedule);
           } else if (state is ScheduleManagementFailure) {
             showSnackBar(context, state.errMessage, Colors.red);
-          }
-          // ✅ أهم جزء: لما الداتا ترجع بنجاح، املأ الـ UI
-          else if (state is ScheduleFetchedSuccess) {
+          } else if (state is ScheduleFetchedSuccess) {
             _populateFields(state.schedule);
           }
         },
         builder: (context, state) {
-          // ✅ لو لسه بيجيب الداتا، اظهر لودينج
           if (state is ScheduleManagementLoading &&
               durationController.text.isEmpty) {
             return const Center(child: CircularProgressIndicator());
@@ -143,7 +112,6 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
                 WeeklyScheduleSection(weeklySettings: weeklySettings),
                 SizedBox(height: screenHeight * 0.03),
 
-                // 3. ✅ إضافة قسم الاستثناءات (إجازات / ساعات خاصة)
                 _buildExceptionsSection(context),
                 SizedBox(height: screenHeight * 0.04),
 
@@ -171,55 +139,15 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
     );
   }
 
-  // void _onSavePressed() {
-  //   final enabledDays = weeklySettings.where((day) => day.isEnabled).toList();
-
-  //   if (enabledDays.isEmpty) {
-  //     showSnackBar(
-  //       context,
-  //       "Please enable at least one working day",
-  //       Colors.red,
-  //     );
-  //     return;
-  //   }
-  //   final doctorId = getIt<SessionManager>().userId;
-  //   // ✅ تجميع البيانات داخل Entity واحدة
-  //   final schedule = ScheduleEntity(
-  //     id: doctorId,
-  //     templateName: "Main Doctor Schedule",
-  //     slotDurationMinutes: int.tryParse(durationController.text) ?? 30,
-  //     bufferTimeMinutes: int.tryParse(bufferController.text) ?? 5,
-  //     effectiveFromDate: startDate,
-  //     effectiveToDate: endDate,
-  //     timeRanges:
-  //         enabledDays
-  //             .map(
-  //               (day) => TimeRangeEntity(
-  //                 dayOfWeek: day.dayIndex,
-  //                 startTime: _formatTime(day.startTime),
-  //                 endTime: _formatTime(day.endTime),
-  //               ),
-  //             )
-  //             .toList(),
-  //   );
-
-  //   // نداء الكيوبت بإرسال الـ Entity فقط
-  //   context.read<ScheduleManagementCubit>().saveDoctorSchedule(
-  //     schedule: schedule,
-  //   );
-  // }
-
   void _onSavePressed() async {
     final cubit = context.read<ScheduleManagementCubit>();
 
-    // 1. تحديد الأيام اللي اتمسحت (كانت enabled وبقت disabled)
     for (int dayIndex in initiallyEnabledDays) {
       if (!weeklySettings[dayIndex].isEnabled) {
         await cubit.deleteDayConfig(dayIndex);
       }
     }
 
-    // 2. تجميع الأيام المفعلة حالياً للحفظ
     final enabledDays = weeklySettings.where((day) => day.isEnabled).toList();
     if (enabledDays.isEmpty) {
       showSnackBar(
@@ -355,8 +283,9 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
                                       context: context,
                                       initialTime: startTime,
                                     );
-                                    if (picked != null)
+                                    if (picked != null) {
                                       setDialogState(() => startTime = picked);
+                                    }
                                   },
                                 ),
                               ),
@@ -372,8 +301,9 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
                                       context: context,
                                       initialTime: endTime,
                                     );
-                                    if (picked != null)
+                                    if (picked != null) {
                                       setDialogState(() => endTime = picked);
+                                    }
                                   },
                                 ),
                               ),
@@ -491,8 +421,9 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
                                 const Duration(days: 365),
                               ),
                             );
-                            if (picked != null)
+                            if (picked != null) {
                               setDialogState(() => selectedDate = picked);
+                            }
                           },
                         ),
                         const SizedBox(height: 15),
@@ -585,30 +516,9 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
     return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
   }
 
-  // // دالة اختيار التاريخ (Start/End Date)
-  // Future<void> _pickDate(bool isStart) async {
-  //   DateTime? picked = await showDatePicker(
-  //     context: context,
-  //     initialDate: isStart ? startDate : endDate,
-  //     firstDate: DateTime.now(),
-  //     lastDate: DateTime.now().add(const Duration(days: 365)),
-  //   );
-  //   if (picked != null) {
-  //     setState(() {
-  //       if (isStart)
-  //         startDate = picked;
-  //       else
-  //         endDate = picked;
-  //     });
-  //   }
-  // }
-  // ابحث عن دالة _pickDate وعدلها لتصبح هكذا:
   Future<void> _pickDate(bool isStart) async {
-    // 1. تحديد التاريخ اللي الكالندر هيبدأ منه (initial)
     DateTime initial = isStart ? startDate : endDate;
 
-    // 2. تحديد "أول تاريخ مسموح" (أيهما أقرب: النهارده ولا تاريخ الجدول؟)
-    // ده عشان لو الدكتور بيعدل جدول قديم، الكالندر يرضى يفتح على التاريخ القديم
     DateTime first =
         initial.isBefore(DateTime.now()) ? initial : DateTime.now();
 
@@ -623,7 +533,6 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
       setState(() {
         if (isStart) {
           startDate = picked;
-          // حماية إضافية: لو تاريخ البداية بقى بعد النهاية، حرك النهاية معاه
           if (startDate.isAfter(endDate)) {
             endDate = startDate.add(const Duration(days: 1));
           }

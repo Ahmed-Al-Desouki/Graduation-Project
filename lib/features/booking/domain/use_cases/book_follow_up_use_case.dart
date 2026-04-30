@@ -6,7 +6,6 @@ class BookFollowUpUseCase {
   final IBookingRepository repository;
   BookFollowUpUseCase(this.repository);
 
-  // للمتابعة في Slot موجودة فعلياً
   Future<Either<Failure, void>> existingSlot({
     required String originalId,
     required String slotId,
@@ -21,7 +20,6 @@ class BookFollowUpUseCase {
     );
   }
 
-  // للمتابعة في موعد جديد يحدده الدكتور يدوياً
   Future<Either<Failure, void>> newSlot({
     required String originalId,
     required DateTime date,

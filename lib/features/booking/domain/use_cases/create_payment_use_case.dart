@@ -9,7 +9,6 @@ class CreatePaymentUseCase {
 
   CreatePaymentUseCase(this.repository);
 
-  // الميثود اللي الكيوبت هيناديها
   Future<Either<Failure, PaymentResponseEntity>> call({
     required String appointmentId,
     String method = "Card",

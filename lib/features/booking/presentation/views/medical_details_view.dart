@@ -42,7 +42,6 @@ class MedicalDetailsView extends StatefulWidget {
 }
 
 class _MedicalDetailsViewState extends State<MedicalDetailsView> {
-  // --- 1. Controllers ---
   final _chiefComplaintController = TextEditingController();
   final _vitalsController = TextEditingController();
   final _physicalExamController = TextEditingController();
@@ -52,7 +51,6 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
   final _doctorNotesController = TextEditingController();
   final _followUpInstructionsController = TextEditingController();
 
-  // --- 2. State Variables ---
   bool _isStarted = false;
   String _currentStatus = "";
   List<MedicationItemEntity> _prescriptionItems = [];
@@ -60,14 +58,12 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
   String? _actualPatientId;
   bool _isAccessGranted = false;
 
-  // --- 3. Logic Core (Getters) ---
   bool get isPatient =>
       getIt<SessionManager>().userRole.toLowerCase() == 'patient';
   bool get isCompleted => _currentStatus.toLowerCase() == 'completed';
   bool get isCancelled => _currentStatus.toLowerCase() == 'cancelled';
   bool get isInProgress => _currentStatus.toLowerCase() == 'inprogress';
 
-  // صلاحيات التعديل
   bool get canEditRecord =>
       !widget.isReadOnly &&
       !isPatient &&
@@ -163,8 +159,6 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
       ),
     );
   }
-
-  // --- 🎨 UI Methods ---
 
   AppBar _buildAppBar() {
     return AppBar(
@@ -284,45 +278,6 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
     );
   }
 
-  // Widget _buildAccessSwitch() {
-  //   return Container(
-  //     margin: EdgeInsets.only(bottom: 16.h),
-  //     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(15.r),
-  //       border: Border.all(color: const Color(0xFF9333EA).withValues(alpha: 0.1)),
-  //     ),
-  //     child: Row(
-  //       children: [
-  //         const Icon(
-  //           Icons.lock_open_outlined,
-  //           color: Color(0xFF9333EA),
-  //           size: 20,
-  //         ),
-  //         SizedBox(width: 12.w),
-  //         const Expanded(
-  //           child: Text(
-  //             "Grant doctor full history access",
-  //             style: TextStyle(fontSize: 13),
-  //           ),
-  //         ),
-  //         Switch(
-  //           value: _isAccessGranted,
-  //           onChanged: (val) {
-  //             // if (val && !_isAccessGranted) {
-  //             context.read<ExamSessionCubit>().grantMedicalAccess(
-  //               widget.appointmentId,
-  //             );
-  //             setState(() => _isAccessGranted = val);
-  //             // }
-  //           },
-  //           activeThumbColor: const Color(0xFF9333EA),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
   Widget _buildAccessSwitch() {
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
@@ -351,16 +306,13 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
           Switch(
             value: _isAccessGranted,
             onChanged: (val) {
-              // 1. تحديث الـ UI فوراً عشان اليوزر يحس بالسرعة
               setState(() => _isAccessGranted = val);
 
-              // 2. نداء الكيوبت بالمنطق الجديد (true للفتح، false للقفل)
               context.read<ExamSessionCubit>().toggleMedicalAccess(
                 widget.appointmentId,
                 val,
               );
 
-              // 3. رسالة تأكيد بسيطة
               _showSnackBar(
                 val ? "Medical access opened" : "Medical access closed",
                 isError: !val,
@@ -463,7 +415,6 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
     );
   }
 
-  // ✅ طلبك الأول: الويدجيت الناقصة _buildSectionTitle
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 12.h),
@@ -609,9 +560,7 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
     );
   }
 
-  // ✅ طلبك الثاني: الويدجيت الناقصة _handleFinishSession
   void _handleFinishSession() async {
-    // التحقق فقط إذا لم تكن الجلسة مكتملة بالفعل
     if (!isCompleted) {
       if (_diagnosisController.text.trim().isEmpty) {
         showSnackBar(
@@ -624,10 +573,8 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
       }
     }
 
-    // حفظ البيانات (Medical Record + Prescription)
     await _onCompletePressed();
 
-    // تحديث الحالة لـ Complete إذا كانت الجلسة قيد التنفيذ
     if (!isCompleted) {
       final sessionState = context.read<ExamSessionCubit>().state;
       if (sessionState is! ExamSessionFailure) {
@@ -681,8 +628,6 @@ class _MedicalDetailsViewState extends State<MedicalDetailsView> {
       }
     }
   }
-
-  // --- 🛠️ Reusable Widgets ---
 
   Widget _buildPatientNoteContainer() {
     return Container(

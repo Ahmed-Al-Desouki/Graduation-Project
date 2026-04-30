@@ -93,10 +93,6 @@ abstract class IBookingRepository {
   Future<Either<Failure, AppointmentFullDetailsEntity>>
   getAppointmentFullDetails(String appointmentId);
 
-  // Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
-  // getDoctorAppointmentsv2({String? date, String? status});
-
-  // جلب مواعيد المريض
   Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
   getPatientAppointments({String? status});
 }

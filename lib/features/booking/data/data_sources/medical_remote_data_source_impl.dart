@@ -26,7 +26,6 @@ class MedicalRemoteDataSourceImpl implements MedicalRemoteDataSource {
       'appointments/$appointmentId/medical-record',
       record.toJson(),
     );
-    // السيرفر بيرجع { "message": "..." }
     return data['message'] ?? "Created Successfully";
   }
 
@@ -49,7 +48,6 @@ class MedicalRemoteDataSourceImpl implements MedicalRemoteDataSource {
     final data = await _apiService.get(
       'prescriptions/appointment/$appointmentId',
     );
-    // بما أن الـ Get بترجع List من الروشتات
     return (data as List).map((e) => PrescriptionModel.fromJson(e)).toList();
   }
 
@@ -78,7 +76,6 @@ class MedicalRemoteDataSourceImpl implements MedicalRemoteDataSource {
     String pId,
     String aId,
   ) async {
-    // GET medical-profile/doctor-view/10?appointmentId=xxx
     final response = await _apiService.get(
       'medical-profile/doctor-view/$pId',
       queryParameters: {'appointmentId': aId},

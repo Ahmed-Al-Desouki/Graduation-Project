@@ -13,7 +13,8 @@ class SignalRService {
   Future<void> init(String token) async {
     try {
       // 1. لو الاتصال موجود وشغال، مابنعملش حاجة
-      if (_hubConnection?.state == HubConnectionState.Connected ||
+      if (_hubConnection != null &&
+              _hubConnection?.state == HubConnectionState.Connected ||
           _hubConnection?.state == HubConnectionState.Connecting ||
           _hubConnection?.state == HubConnectionState.Reconnecting) {
         log("ℹ️ SignalR is already active or connecting.");
@@ -32,6 +33,9 @@ class SignalRService {
               .withAutomaticReconnect()
               .build();
 
+      await _hubConnection!.start();
+      log("✅ SignalR Started Successfully");
+
       // 3. أول ما الـ Connection يجهز، سجل كل الـ Listeners اللي كانت مستنية في الـ Queue
       _pendingListeners.forEach((eventName, callbacks) {
         for (var callback in callbacks) {
@@ -47,20 +51,33 @@ class SignalRService {
 
       // 4. تشغيل الاتصال
       await _hubConnection!.start();
-      print("✅ SignalR Started Successfully");
+      log("✅ SignalR Started Successfully");
     } catch (e) {
       log("❌ SignalR Init Error: $e");
     }
   }
 
   // ✅ ميثود الـ On (مع ميزة الـ Queueing عشان التنبيهات)
+  // void on(String eventName, void Function(List<Object?>?) callback) {
+  //   if (_hubConnection != null) {
+  //     _hubConnection!.on(eventName, callback);
+  //   } else {
+  //     // لو الـ Hub لسه مجهزاش، شيل الـ listener عندك عشان تسجله أول ما يفتح
+  //     _pendingListeners.putIfAbsent(eventName, () => []).add(callback);
+  //     log("ℹ️ SignalR: Listener for '$eventName' queued (Hub not ready yet)");
+  //   }
+  // }
   void on(String eventName, void Function(List<Object?>?) callback) {
-    if (_hubConnection != null) {
+    // 🚀 التعديل: سجل مباشرة فقط لو هو Connected فعلاً
+    if (_hubConnection != null && isConnected) {
       _hubConnection!.on(eventName, callback);
+      log("✅ SignalR: Listener for '$eventName' registered directly.");
     } else {
-      // لو الـ Hub لسه مجهزاش، شيل الـ listener عندك عشان تسجله أول ما يفتح
+      // لو لسه بيعمل Start أو null، حطه في الطابور
       _pendingListeners.putIfAbsent(eventName, () => []).add(callback);
-      log("ℹ️ SignalR: Listener for '$eventName' queued (Hub not ready yet)");
+      log(
+        "ℹ️ SignalR: Listener for '$eventName' queued (Connection not ready yet)",
+      );
     }
   }
 

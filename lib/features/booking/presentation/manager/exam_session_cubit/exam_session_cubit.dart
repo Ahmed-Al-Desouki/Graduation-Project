@@ -33,23 +33,21 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
   ) : super(ExamSessionInitial());
 
   Future<void> fetchAppointmentDetails(String appointmentId) async {
-    emit(MedicalRecordLoading()); // استخدم اللودينج العادي بتاعك
+    emit(MedicalRecordLoading());
 
     final result = await getAppointmentFullDetailsUseCase(appointmentId);
 
     result.fold(
       (failure) => emit(ExamSessionFailure(failure.errmessage)),
-      (details) => emit(AppointmentDetailsFetched(details)), // 👈 ستيت جديدة
+      (details) => emit(AppointmentDetailsFetched(details)),
     );
   }
 
-  // 1. جلب السجل الطبي فور فتح الصفحة
   Future<void> fetchMedicalRecord(String appointmentId) async {
     emit(MedicalRecordLoading());
     final result = await getMedicalRecordUseCase(appointmentId);
 
     result.fold((failure) {
-      // ملحوظة: لو 404 معناها أول مرة كشف، فنرجع للـ Initial عادي مش Failure
       if (failure.errmessage.contains("404")) {
         emit(ExamSessionInitial());
       } else {
@@ -58,7 +56,6 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
     }, (record) => emit(MedicalRecordFetched(record)));
   }
 
-  // 2. حفظ أو تحديث السجل الطبي
   Future<void> saveMedicalRecord({
     required String appointmentId,
     required MedicalRecordEntity record,
@@ -77,7 +74,6 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
     );
   }
 
-  // 3. إنشاء روشتة جديدة
   Future<void> createPrescription({
     required String appointmentId,
     required PrescriptionEntity prescription,
@@ -87,7 +83,6 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
 
     result.fold(
       (failure) => emit(ExamSessionFailure(failure.errmessage)),
-      // (newPrescription) => emit(PrescriptionCreatedSuccess(newPrescription)),
       (newPrescription) =>
           emit(PrescriptionCreatedSuccess("Prescription issued successfully!")),
     );
@@ -95,7 +90,7 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
 
   // داخل ExamSessionCubit
   Future<void> fetchPrescription(String appointmentId) async {
-    emit(MedicalRecordLoading()); // أو حالة Loading خاصة بالروشتة
+    emit(MedicalRecordLoading());
     final result = await getPrescriptionUseCase(appointmentId);
     result.fold(
       (failure) => emit(ExamSessionFailure(failure.errmessage)),
@@ -118,29 +113,18 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
     );
   }
 
-  // Future<void> grantMedicalAccess(String appointmentId) async {
-  //   emit(MedicalRecordLoading());
-  //   final result = await openAccessForMedicalHistoryUseCase(appointmentId);
-  //   result.fold(
-  //     (failure) => emit(ExamSessionFailure(failure.errmessage)),
-  //     (message) => emit(MedicalRecordSavedSuccess(message)),
-  //   );
-  // }
   Future<void> toggleMedicalAccess(
     String appointmentId,
     bool shouldGrant,
   ) async {
-    // ممكن تطلع Loading بسيط أو تسيبها خلف الكواليس
     final result = await openAccessForMedicalHistoryUseCase(
       appointmentId,
       shouldGrant,
     );
 
-    result.fold((failure) => emit(ExamSessionFailure(failure.errmessage)), (
-      message,
-    ) {
-      // إحنا مش هنغير الستيت لـ Success كاملة عشان الشاشة متقفلش
-      // ممكن نطلع Snack bar بس من الـ UI
-    });
+    result.fold(
+      (failure) => emit(ExamSessionFailure(failure.errmessage)),
+      (message) {},
+    );
   }
 }

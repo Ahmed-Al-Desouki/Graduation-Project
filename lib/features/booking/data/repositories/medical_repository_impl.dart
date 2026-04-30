@@ -23,7 +23,6 @@ class MedicalRepositoryImpl implements MedicalRepository {
       return Right(result);
     } catch (e) {
       if (e is DioException) {
-        // ✅ تأمين جلب الرسالة من السيرفر
         String message = "Server Error";
         if (e.response?.data is Map) {
           message =
@@ -57,7 +56,6 @@ class MedicalRepositoryImpl implements MedicalRepository {
     MedicalRecordEntity record,
   ) async {
     try {
-      // تحويل الـ Entity لـ Model قبل الإرسال
       final model = MedicalRecordModel(
         chiefComplaint: record.chiefComplaint,
         vitalSigns: record.vitalSigns,
@@ -203,13 +201,11 @@ class MedicalRepositoryImpl implements MedicalRepository {
     required String appointmentId,
   }) async {
     try {
-      // 1. نداء الداتا سورس
       final response = await remoteDataSource.getPatientProfileForDoctor(
         patientId,
         appointmentId,
       );
 
-      // 2. تحويل الـ JSON للموديل العبقري اللي إنت لسه باعتهولي
       final model = PatientProfileModel.fromJson(response);
 
       return Right(model);
@@ -217,16 +213,6 @@ class MedicalRepositoryImpl implements MedicalRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
-
-  // @override
-  // Future<Either<Failure, String>> grantMedicalAccess(
-  //   String appointmentId,
-  // ) async {
-  //   return await _handleRemoteRequest(() async {
-  //     await remoteDataSource.grantMedicalAccess(appointmentId);
-  //     return "Medical history access granted successfully";
-  //   });
-  // }
 
   @override
   Future<Either<Failure, String>> grantMedicalAccess(
@@ -238,8 +224,7 @@ class MedicalRepositoryImpl implements MedicalRepository {
         "canViewMedicalHistory": isGranting,
         "canViewPrescriptions": isGranting,
         "canViewLabResults": isGranting,
-        "revokeAll":
-            !isGranting, // لو isGranting بـ true يبقا الـ revoke بـ false والعكس
+        "revokeAll": !isGranting,
         "isDuringBooking": false,
       };
       await remoteDataSource.grantMedicalAccess(appointmentId, body);

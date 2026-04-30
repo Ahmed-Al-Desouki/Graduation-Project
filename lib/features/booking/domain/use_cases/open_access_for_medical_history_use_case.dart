@@ -7,9 +7,6 @@ class OpenAccessForMedicalHistoryUseCase {
 
   OpenAccessForMedicalHistoryUseCase(this.repository);
 
-  // Future<Either<Failure, String>> call(String appointmentId) async {
-  //   return await repository.grantMedicalAccess(appointmentId);
-  // }
   Future<Either<Failure, String>> call(
     String appointmentId,
     bool isGranting,

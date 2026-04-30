@@ -1,8 +1,11 @@
 import 'dart:developer';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
+import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/features/notification/presentation/notification_cubit/notification_cubit.dart';
 import 'package:graduation_project/features/reminder/data/data_sources/local_occurrence_data_source.dart';
 
 class NotificationService {
@@ -20,6 +23,18 @@ class NotificationService {
         locked: true,
         defaultRingtoneType: DefaultRingtoneType.Alarm,
         soundSource: 'resource://raw/alarm_sound',
+      ),
+
+      NotificationChannel(
+        channelKey: 'general_channel',
+        channelName: 'General Notifications',
+        importance: NotificationImportance.Max,
+        channelDescription: 'Notifications for tickets, appointments, and chat',
+        defaultColor: const Color(0xFF2563EB),
+        ledColor: Colors.white,
+        channelShowBadge: true,
+        playSound: true,
+        criticalAlerts: true,
       ),
     ]);
   }
@@ -81,26 +96,90 @@ class NotificationService {
   static Future<void> onActionReceivedMethod(
     ReceivedAction receivedAction,
   ) async {
-    final int occurrenceId = int.parse(receivedAction.payload!['id']!);
-    final String actionKey = receivedAction.buttonKeyPressed;
-
-    if (actionKey.isEmpty) {
-      AppRouter.router.push(AppRouter.kRinging, extra: receivedAction.payload);
+    if (receivedAction.channelKey == 'general_channel') {
+      _handleNotificationNavigation(receivedAction.payload ?? {});
+      return;
     }
 
-    if (actionKey == 'TAKEN') {
-      await LocalOccurrenceDataSource().updateOccurrenceActionOffline(
-        id: occurrenceId,
-        newStatus: 2,
+    if (receivedAction.channelKey == 'medication_channel') {
+      final int? occurrenceId = int.tryParse(
+        receivedAction.payload?['id'] ?? '',
       );
-      await AwesomeNotifications().dismiss(receivedAction.id!);
-      log("Action Recorded: TAKEN for ID: $occurrenceId");
-    } else if (actionKey == 'SNOOZE') {
-      await LocalOccurrenceDataSource().updateOccurrenceActionOffline(
-        id: occurrenceId,
-        newStatus: 4,
-      );
-      log("Action Recorded: SNOOZE for ID: $occurrenceId");
+      final String actionKey = receivedAction.buttonKeyPressed;
+
+      if (actionKey.isEmpty) {
+        AppRouter.router.push(
+          AppRouter.kRinging,
+          extra: receivedAction.payload,
+        );
+      }
+
+      if (actionKey == 'TAKEN' && occurrenceId != null) {
+        await LocalOccurrenceDataSource().updateOccurrenceActionOffline(
+          id: occurrenceId,
+          newStatus: 2,
+        );
+        await AwesomeNotifications().dismiss(receivedAction.id!);
+        log("Action Recorded: TAKEN for ID: $occurrenceId");
+      } else if (actionKey == 'SNOOZE' && occurrenceId != null) {
+        await LocalOccurrenceDataSource().updateOccurrenceActionOffline(
+          id: occurrenceId,
+          newStatus: 4,
+        );
+      }
     }
+  }
+
+  static void _handleNotificationNavigation(Map<String, dynamic> data) {
+    final String? type = data['relatedEntityType'];
+    final String? entityId =
+        data['relatedEntityKey'] ?? data['relatedEntityId'];
+
+    if (type?.toLowerCase() == 'ticket') {
+      AppRouter.router.push('/tickets/ticket-chat', extra: entityId);
+    } else if (type?.toLowerCase() == 'appointment') {
+      AppRouter.router.push(AppRouter.kMedicalDetails, extra: entityId);
+    }
+  }
+
+  static Future<void> initFirebaseMessaging() async {
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      log("🚨 SERVER DATA RECEIVED: ${message.data}");
+      log("🚨 NOTIFICATION OBJECT: ${message.notification?.title}");
+
+      String title =
+          message.notification?.title ??
+          message.data['title'] ??
+          message.data['Title'] ??
+          "Wellora Update";
+
+      String body =
+          message.notification?.body ??
+          message.data['message'] ??
+          message.data['Message'] ??
+          message.data['body'] ??
+          "";
+
+      AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: DateTime.now().millisecond,
+          channelKey: 'general_channel',
+          title: title,
+          body: body,
+          payload: message.data.map(
+            (key, value) => MapEntry(key, value.toString()),
+          ),
+          notificationLayout: NotificationLayout.Default,
+        ),
+      );
+
+      getIt<NotificationCubit>().fetchNotifications();
+    });
   }
 }

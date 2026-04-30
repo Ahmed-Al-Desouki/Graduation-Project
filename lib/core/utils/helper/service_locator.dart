@@ -8,11 +8,15 @@ import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/data/repo/auth_repo_impl.dart';
 import 'package:graduation_project/features/booking/booking_injection.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_patient_profile_for_doctor_use_case.dart';
+import 'package:graduation_project/features/chat/data/data_sources/chat_remote_data_source.dart';
+import 'package:graduation_project/features/chat/data/repositories/chat_repository_impl.dart';
 import 'package:graduation_project/features/chat/data/repositories/mock_chat_repository.dart';
 import 'package:graduation_project/features/chat/domain/repositories/i_chat_repository.dart';
-import 'package:graduation_project/features/chat/domain/use_cases/get_chat_previews_use_case.dart';
+import 'package:graduation_project/features/chat/domain/use_cases/get_my_chat_use_case.dart';
 import 'package:graduation_project/features/chat/domain/use_cases/get_messages_use_case.dart';
+import 'package:graduation_project/features/chat/domain/use_cases/mark_as_read_use_case.dart';
 import 'package:graduation_project/features/chat/domain/use_cases/send_messages_use_case.dart';
+import 'package:graduation_project/features/chat/domain/use_cases/upload_chat_file_use_case.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_cubit/chat_cubit.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_details_cubit/chat_details_cubit.dart';
 import 'package:graduation_project/features/doctor_home/data/data_sources/doctor_completion_profile_remote_data_source.dart';
@@ -159,19 +163,19 @@ Future<void> setupServiceLocator() async {
     () => HomeRepositoryImpl(getIt<HomeWebService>()),
   );
 
-  getIt.registerLazySingleton<IChatRepository>(() => MockChatRepository());
-
-  getIt.registerLazySingleton(
-    () => GetChatPreviewsUseCase(getIt<IChatRepository>()),
+  // Data
+  getIt.registerLazySingleton<ChatRemoteDataSource>(
+    () => ChatRemoteDataSourceImpl(),
+  );
+  getIt.registerLazySingleton<ChatRepository>(
+    () => ChatRepositoryImpl(getIt()),
   );
 
-  getIt.registerLazySingleton(
-    () => GetMessagesUseCase(getIt<IChatRepository>()),
-  );
-  getIt.registerLazySingleton(
-    () => SendMessageUseCase(getIt<IChatRepository>()),
-  );
-
+  // UseCases
+  getIt.registerLazySingleton(() => GetMessagesUseCase(getIt()));
+  getIt.registerLazySingleton(() => SendMessageUseCase(getIt()));
+  getIt.registerLazySingleton(() => UploadChatFileUseCase(getIt()));
+  getIt.registerLazySingleton(() => GetMyChatsUseCase(getIt()));
   getIt.registerLazySingleton<GetPatientProfileForDoctorUseCase>(
     () => GetPatientProfileForDoctorUseCase(getIt()),
   );
@@ -195,14 +199,18 @@ Future<void> setupServiceLocator() async {
     () => MedicalqrCubit(getIt<MedicalHistoryQrRepository>()),
   );
 
-  getIt.registerFactory<ChatCubit>(
-    () => ChatCubit(getIt<GetChatPreviewsUseCase>()),
+  getIt.registerFactory<ChatCubit>(() => ChatCubit(getIt<GetMyChatsUseCase>()));
+
+  getIt.registerLazySingleton<MarkAsReadUseCase>(
+    () => MarkAsReadUseCase(getIt()),
   );
 
-  getIt.registerFactory(
+  getIt.registerFactory<ChatDetailsCubit>(
     () => ChatDetailsCubit(
       getIt<GetMessagesUseCase>(),
       getIt<SendMessageUseCase>(),
+      getIt<UploadChatFileUseCase>(),
+      getIt<MarkAsReadUseCase>(),
     ),
   );
 

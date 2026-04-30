@@ -6,7 +6,6 @@ class DeleteSlotUseCase {
   final IBookingRepository repository;
   DeleteSlotUseCase(this.repository);
 
-  // السيرفر بيحتاج الـ doctorId والـ slotId عشان يمسح
   Future<Either<Failure, void>> call(String doctorId, String slotId) async {
     return await repository.deleteSlot(doctorId, slotId);
   }

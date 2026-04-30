@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/features/booking/domain/entities/slot_entity.dart';
+import 'package:graduation_project/features/chat/domain/entities/chat_entity.dart';
 import 'package:lottie/lottie.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
@@ -86,157 +87,10 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
     );
   }
 
-  // void _showBookingDialog(BuildContext context, SlotEntity slot) {
-  //   final reasonController = TextEditingController();
-  //   bool grantAccess = true;
-
-  //   // 1️⃣ خد نسخة من الكيوبت من الـ context بتاع الشاشة الأساسية قبل ما تفتح الدايالوج
-  //   final appointmentCubit = context.read<AppointmentActionCubit>();
-
-  //   showDialog(
-  //     context: context,
-  //     builder:
-  //         (dialogContext) => BlocProvider.value(
-  //           // 2️⃣ "احقن" نسخة الكيوبت عشان الدايالوج يشوفها
-  //           value: appointmentCubit,
-  //           child: StatefulBuilder(
-  //             builder:
-  //                 (context, setDialogState) => AlertDialog(
-  //                   shape: RoundedRectangleBorder(
-  //                     borderRadius: BorderRadius.circular(20),
-  //                   ),
-  //                   title: const Text("Confirm Booking"),
-  //                   content: SingleChildScrollView(
-  //                     child: Column(
-  //                       mainAxisSize: MainAxisSize.min,
-  //                       crossAxisAlignment: CrossAxisAlignment.start,
-  //                       children: [
-  //                         Text(
-  //                           "Doctor: Dr. ${widget.doctorName}",
-  //                           style: const TextStyle(
-  //                             fontWeight: FontWeight.bold,
-  //                             fontSize: 16,
-  //                           ),
-  //                         ),
-  //                         const SizedBox(height: 4),
-  //                         Text("Time: ${slot.startTime}"),
-  //                         Text(
-  //                           "Fees: ${widget.consultationFee} EGP",
-  //                           style: const TextStyle(
-  //                             color: Colors.blue,
-  //                             fontWeight: FontWeight.bold,
-  //                           ),
-  //                         ),
-  //                         const Divider(height: 30),
-  //                         const Text(
-  //                           "Reason for visit",
-  //                           style: TextStyle(fontSize: 12, color: Colors.grey),
-  //                         ),
-  //                         const SizedBox(height: 8),
-  //                         TextField(
-  //                           controller: reasonController,
-  //                           maxLines: 2,
-  //                           decoration: InputDecoration(
-  //                             hintText: "Enter your symptoms or reason...",
-  //                             border: OutlineInputBorder(
-  //                               borderRadius: BorderRadius.circular(12),
-  //                             ),
-  //                             filled: true,
-  //                             fillColor: Colors.grey[50],
-  //                           ),
-  //                         ),
-  //                         const SizedBox(height: 20),
-  //                         Container(
-  //                           padding: const EdgeInsets.all(12),
-  //                           decoration: BoxDecoration(
-  //                             color: const Color(0xFF9333EA).withValues(alpha: 0.05),
-  //                             borderRadius: BorderRadius.circular(12),
-  //                             border: Border.all(
-  //                               color: const Color(0xFF9333EA).withValues(alpha: 0.1),
-  //                             ),
-  //                           ),
-  //                           child: Column(
-  //                             children: [
-  //                               Row(
-  //                                 children: [
-  //                                   const Icon(
-  //                                     Icons.history_edu,
-  //                                     color: Color(0xFF9333EA),
-  //                                     size: 20,
-  //                                   ),
-  //                                   const SizedBox(width: 8),
-  //                                   const Expanded(
-  //                                     child: Text(
-  //                                       "Share Medical History",
-  //                                       style: TextStyle(
-  //                                         fontSize: 13,
-  //                                         fontWeight: FontWeight.w600,
-  //                                       ),
-  //                                     ),
-  //                                   ),
-  //                                   Switch(
-  //                                     value: grantAccess,
-  //                                     activeThumbColor: const Color(0xFF9333EA),
-  //                                     onChanged: (value) {
-  //                                       setDialogState(
-  //                                         () => grantAccess = value,
-  //                                       );
-  //                                     },
-  //                                   ),
-  //                                 ],
-  //                               ),
-  //                               const Text(
-  //                                 "Allowing the doctor to see your past records helps in better diagnosis.",
-  //                                 style: TextStyle(
-  //                                   fontSize: 10,
-  //                                   color: Colors.blueGrey,
-  //                                 ),
-  //                               ),
-  //                             ],
-  //                           ),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                   ),
-  //                   actions: [
-  //                     TextButton(
-  //                       onPressed: () => Navigator.pop(dialogContext),
-  //                       child: const Text("Cancel"),
-  //                     ),
-  //                     ElevatedButton(
-  //                       style: ElevatedButton.styleFrom(
-  //                         backgroundColor: const Color(0xFF9333EA),
-  //                         shape: RoundedRectangleBorder(
-  //                           borderRadius: BorderRadius.circular(10),
-  //                         ),
-  //                       ),
-  //                       onPressed: () {
-  //                         Navigator.pop(dialogContext);
-  //                         // 3️⃣ دلوقتي هتقدر تنادي الكيوبت بأمان
-  //                         context
-  //                             .read<AppointmentActionCubit>()
-  //                             .createBookingAndPay(
-  //                               slotId: slot.slotId,
-  //                               reason: reasonController.text,
-  //                               grantAccess: grantAccess,
-  //                             );
-  //                       },
-  //                       child: const Text(
-  //                         "Confirm & Pay",
-  //                         style: TextStyle(color: Colors.white),
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //           ),
-  //         ),
-  //   );
-  // }
-
   void _showBookingDialog(BuildContext context, SlotEntity slot) {
     final reasonController = TextEditingController();
     bool grantAccess = true;
-    String selectedPaymentMethod = 'Card'; // القيمة الافتراضية
+    String selectedPaymentMethod = 'Card';
 
     final appointmentCubit = context.read<AppointmentActionCubit>();
 
@@ -266,7 +120,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 👨‍⚕️ تفاصيل الدكتور
                           _buildDialogInfoRow(
                             Icons.person_outline,
                             "Doctor",
@@ -286,7 +139,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
 
                           const Divider(height: 30),
 
-                          // 📝 سبب الزيارة
                           const Text(
                             "Reason for visit",
                             style: TextStyle(
@@ -311,7 +163,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
 
                           const SizedBox(height: 20),
 
-                          // 💳 اختيار طريقة الدفع (الجزء الجديد)
                           const Text(
                             "Select Payment Method",
                             style: TextStyle(
@@ -391,7 +242,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
 
                           const SizedBox(height: 20),
 
-                          // 🔐 مشاركة الهيستوري
                           Container(
                             padding: EdgeInsets.all(12.w),
                             decoration: BoxDecoration(
@@ -419,8 +269,7 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                 ),
                                 Switch(
                                   value: grantAccess,
-                                  // activeThumbColor: const Color(0xFF9333EA),
-                                  activeThumbColor:  const Color(0xFF9333EA),
+                                  activeThumbColor: const Color(0xFF9333EA),
                                   onChanged:
                                       (val) => setDialogState(
                                         () => grantAccess = val,
@@ -450,7 +299,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                         ),
                         onPressed: () {
                           Navigator.pop(dialogContext);
-                          // 🚀 نداء الميثود الجديدة الموحدة
                           context.read<AppointmentActionCubit>().bookAndPay(
                             slotId: slot.slotId,
                             reason: reasonController.text,
@@ -473,7 +321,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
     );
   }
 
-  // ويدجت مساعدة للصفوف داخل الدايالوج
   Widget _buildDialogInfoRow(
     IconData icon,
     String label,
@@ -506,8 +353,8 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
   @override
   void initState() {
     super.initState();
-    log("🆔 Current User ID: ${getIt<SessionManager>().userId}");
-    log("👤 Current User Name: ${getIt<SessionManager>().userName}");
+    log(" Current User ID: ${getIt<SessionManager>().userId}");
+    log(" Current User Name: ${getIt<SessionManager>().userName}");
     final now = DateTime.now();
     final String targetDoctorId =
         widget.isPatientView
@@ -559,22 +406,46 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
               showSnackBar(context, state.errMessage, Colors.red);
             }
             if (state is PaymentNavigatedToWebView) {
-              final bool? isSuccess = await context.push<bool>(
+              // final bool? isSuccess = await context.push<bool>(
+              //   AppRouter.kPaymentWebView,
+              //   extra: state.url,
+              // );
+              final dynamic result = await context.push(
                 AppRouter.kPaymentWebView,
                 extra: state.url,
               );
 
-              if (isSuccess == true) {
-                // showSnackBar(
-                //   context,
-                //   "Payment Successful! Your appointment is confirmed.",
-                //   Colors.green,
-                // );
-                // _fetchMonthData(_focusedDay);
-                context.push(
-                  AppRouter.kBookingSuccess,
-                  extra: state.bookingData, // البيانات اللي جاية من الباك
+              // if (isSuccess == true) {
+
+              //   context.push(
+              //     AppRouter.kBookingSuccess,
+              //     extra: state.bookingData,
+              //   );
+              // }
+              if (result is String) {
+                // final String appointmentId = result;
+                final data = state.bookingData;
+
+                final String doctorId = data['doctorId'].toString();
+                final patientId = getIt<SessionManager>().userId;
+                final patientName = getIt<SessionManager>().userName;
+
+                final String unifiedChatId = "doc_${doctorId}_pat_$patientId";
+
+                context.read<AppointmentActionCubit>().createFirebaseChat(
+                  ChatEntity(
+                    chatId: unifiedChatId,
+                    doctorId: data['doctorId'].toString(),
+                    patientId: patientId,
+                    doctorName: data['doctorName'] ?? 'Doctor',
+                    patientName: patientName,
+                    isActive: true,
+                    lastMessage: 'Consultation started',
+                    lastMessageTime: DateTime.now(),
+                  ),
                 );
+
+                context.push(AppRouter.kBookingSuccess, extra: data);
               } else {
                 showSnackBar(
                   context,
@@ -596,7 +467,7 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                       slivers: [
                         SliverAppBar(
                           pinned: true,
-                          expandedHeight: 65.0, // رجعناها لارتفاع منطقي
+                          expandedHeight: 65.0,
                           backgroundColor: Colors.white,
                           elevation: 0.5,
                           centerTitle: true,
@@ -645,14 +516,12 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                           //     ),
                           //   const SizedBox(width: 8),
                           // ],
-                          // ... جوه الـ SliverAppBar في الـ actions ...
                           actions: [
                             if (!widget.isPatientView)
                               PopupMenuButton<String>(
                                 padding: EdgeInsets.zero,
                                 icon: const Icon(
-                                  Icons
-                                      .more_vert, // التلات نقط اللي اتفقنا عليهم
+                                  Icons.more_vert,
                                   color: Colors.blue,
                                   size: 24,
                                 ),
@@ -707,7 +576,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                         SliverToBoxAdapter(
                           child: Column(
                             children: [
-                              // if (widget.followUpPatientName != null)
                               if (_activeFollowUpPatientName != null)
                                 _buildFollowUpBanner(),
                               if (!widget.isPatientView) ...[
@@ -780,7 +648,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                         isFollowUpMode:
                                             _activeFollowUpId != null,
 
-                                        // ✅ الزتونة: السطر ده هو اللي هيشغل زرار الـ Book
                                         onBook:
                                             widget.isPatientView
                                                 ? () => _showBookingDialog(
@@ -802,10 +669,8 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                               extra: {
                                                 'appointmentId':
                                                     slot.appointmentId,
-                                                'patientId':
-                                                    null, // 💡 مش معانا بس عادي مش هيضرب خلاص
-                                                'patientName':
-                                                    slot.patientName, // ✅ الاسم من الـ JSON بتاعك
+                                                'patientId': null,
+                                                'patientName': slot.patientName,
                                                 'doctorName':
                                                     getIt<SessionManager>()
                                                         .userName,
@@ -830,9 +695,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                             () => context
                                                 .read<AppointmentActionCubit>()
                                                 .bookFollowUp(
-                                                  // originalId:
-                                                  //     widget
-                                                  //         .originalAppointmentId!,
                                                   originalId:
                                                       _activeFollowUpId!,
                                                   slotId: slot.slotId,
@@ -840,7 +702,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                                       "Routine follow-up",
                                                 ),
                                         onCancelByDoctor: () {
-                                          // 1️⃣ أول خطوة: خد نسخة من الكيوبت من الـ context بتاع الشاشة الأساسية
                                           final appointmentCubit =
                                               context
                                                   .read<
@@ -850,7 +711,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                           showDialog(
                                             context: context,
                                             builder: (dialogContext) {
-                                              // 2️⃣ ثاني خطوة: غلف الدايالوج بـ BlocProvider.value واديله النسخة اللي معانا
                                               return BlocProvider.value(
                                                 value: appointmentCubit,
                                                 child: AlertDialog(
@@ -892,7 +752,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                                                         Navigator.pop(
                                                           dialogContext,
                                                         );
-                                                        // 3️⃣ استخدم النسخة اللي فوق مباشرة عشان تضمن إنها شغالة
                                                         appointmentCubit
                                                             .doctorCancel(
                                                               slot.appointmentId!,
@@ -941,8 +800,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
     );
   }
 
-  // --- بقية الـ Widgets المساعدة ( Legend, SlotsHeader, etc.) يفضلوا زي ما هما ---
-  // ...
   Widget _buildEmptyStateLottie() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1039,7 +896,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
     String selectedDayTitle,
   ) {
     final buttonColor =
-        // widget.originalAppointmentId != null
         _activeFollowUpId != null ? Colors.orange : const Color(0xFF9333EA);
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -1066,7 +922,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
         ),
         icon: const Icon(Icons.add_circle_outline),
         label: Text(
-          // widget.originalAppointmentId != null
           _activeFollowUpId != null
               ? "Create Follow-up"
               : "Add Slot for ${selectedDayTitle.split(',')[0]}",

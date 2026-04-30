@@ -9,9 +9,9 @@ class PaymentResponseModel extends PaymentResponseEntity {
 
   factory PaymentResponseModel.fromJson(Map<String, dynamic> json) {
     return PaymentResponseModel(
-      paymentUrl: json['paymentUrl'] ?? '', // [cite: 79, 85]
-      paymentId: json['paymentId'] ?? '', // [cite: 81, 85]
-      amount: (json['amount'] as num).toDouble(), // [cite: 83, 85]
+      paymentUrl: json['paymentUrl'] ?? '',
+      paymentId: json['paymentId'] ?? '',
+      amount: (json['amount'] as num).toDouble(),
     );
   }
 }

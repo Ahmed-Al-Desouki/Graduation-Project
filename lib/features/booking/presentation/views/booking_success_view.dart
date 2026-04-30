@@ -17,7 +17,6 @@ class BookingSuccessView extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // ✅ أنيميشن نجاح (استخدم Lottie)
               const Icon(
                 Icons.check_circle_rounded,
                 color: Colors.green,
@@ -36,7 +35,6 @@ class BookingSuccessView extends StatelessWidget {
 
               SizedBox(height: 30.h),
 
-              // 📋 كارت التفاصيل من الـ JSON
               Container(
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
@@ -65,7 +63,6 @@ class BookingSuccessView extends StatelessWidget {
 
               SizedBox(height: 40.h),
 
-              // 🏠 زراير التحكم
               ElevatedButton(
                 onPressed: () => context.go(AppRouter.kHomePatient),
                 style: ElevatedButton.styleFrom(

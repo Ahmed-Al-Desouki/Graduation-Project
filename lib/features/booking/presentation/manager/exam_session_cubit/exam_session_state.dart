@@ -5,7 +5,6 @@ sealed class ExamSessionState {}
 
 final class ExamSessionInitial extends ExamSessionState {}
 
-// حالات السجل الطبي (Medical Record)
 class MedicalRecordLoading extends ExamSessionState {}
 
 class MedicalRecordFetched extends ExamSessionState {
@@ -18,11 +17,9 @@ class MedicalRecordSavedSuccess extends ExamSessionState {
   MedicalRecordSavedSuccess(this.message);
 }
 
-// حالات الروشتة (Prescription)
 class PrescriptionLoading extends ExamSessionState {}
 
 class PrescriptionCreatedSuccess extends ExamSessionState {
-  // final PrescriptionEntity prescription;
   final String message;
   PrescriptionCreatedSuccess(this.message);
 }
@@ -32,13 +29,11 @@ class PrescriptionFetchedSuccess extends ExamSessionState {
   PrescriptionFetchedSuccess(this.prescription);
 }
 
-// حالات عامة
 class ExamSessionFailure extends ExamSessionState {
   final String errMessage;
   ExamSessionFailure(this.errMessage);
 }
 
-// أضف هذا السطر في ملف exam_session_state.dart
 class AppointmentDetailsFetched extends ExamSessionState {
   final AppointmentFullDetailsEntity details;
   AppointmentDetailsFetched(this.details);

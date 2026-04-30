@@ -1,154 +1,28 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:graduation_project/features/chat/presentation/manager/chat_cubit/chat_cubit.dart';
-// import 'package:lottie/lottie.dart'; // بما أنك تستخدم Lottie في الأونبوردينج
-// import 'widgets/chat_item_widget.dart'; // الويدجيت اللي عملناها
-
-// class MessagesListView extends StatefulWidget {
-//   const MessagesListView({super.key});
-
-//   @override
-//   State<MessagesListView> createState() => _MessagesListViewState();
-// }
-
-// class _MessagesListViewState extends State<MessagesListView> {
-//   final TextEditingController _searchController = TextEditingController();
-//   // هنا المفروض يكون عندك قائمة من الـ Entities اللي جاية من الـ Cubit
-//   // List<ChatPreviewEntity> allChats = [];
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.white,
-//       body: SafeArea(
-//         child: Column(
-//           children: [
-//             _buildHeader(),
-//             _buildSearchBar(),
-//             Expanded(
-//               child:
-//                   _buildChatContent(), // هنا بنقرر هنعرض إيه (قائمة ولا Empty)
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildHeader() {
-//     return Padding(
-//       padding: EdgeInsets.all(20.w),
-//       child: Align(
-//         alignment: Alignment.centerLeft,
-//         child: Text(
-//           "Messages",
-//           style: TextStyle(
-//             fontSize: 28.sp,
-//             fontWeight: FontWeight.bold,
-//             color: const Color(0xFF1B4E8C),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildSearchBar() {
-//     return Padding(
-//       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-//       child: TextField(
-//         controller: _searchController,
-//         decoration: InputDecoration(
-//           hintText: "Search for a doctor...",
-//           prefixIcon: const Icon(Icons.search, color: Colors.grey),
-//           filled: true,
-//           fillColor: Colors.grey.shade100,
-//           border: OutlineInputBorder(
-//             borderRadius: BorderRadius.circular(15.r),
-//             borderSide: BorderSide.none,
-//           ),
-//         ),
-//         onChanged: (value) {
-//           // هنا بتنادي على الـ Cubit يعمل Filter للقائمة
-//           context.read<ChatCubit>().filterChats(value);
-//         },
-//       ),
-//     );
-//   }
-
-//   Widget _buildChatContent() {
-//     // محاكاة لحالة القائمة الفارغة (لو الـ Cubit رجع قائمة فاضية)
-//     bool isEmpty = false;
-
-//     if (isEmpty) {
-//       return _buildEmptyState();
-//     }
-
-//     return ListView.separated(
-//       padding: EdgeInsets.only(top: 10.h),
-//       itemCount: 10, // تجريبي
-//       separatorBuilder:
-//           (context, index) =>
-//               Divider(height: 1, color: Colors.grey.shade100, indent: 80.w),
-//       itemBuilder: (context, index) {
-//         // هنا بنباصي الـ Entity للـ Item اللي عملناه
-//         // return ChatItemWidget(chat: chats[index], onTap: () {});
-//         return const SizedBox(); // Placeholder
-//       },
-//     );
-//   }
-
-//   Widget _buildEmptyState() {
-//     return Center(
-//       child: Column(
-//         mainAxisAlignment: MainAxisAlignment.center,
-//         children: [
-//           // استخدم Lottie كما في الـ Onboarding لتوحيد الـ Style
-//           Lottie.asset('assets/lottie/empty_chat.json', height: 200.h),
-//           SizedBox(height: 20.h),
-//           Text(
-//             "No conversations yet",
-//             style: TextStyle(
-//               fontSize: 18.sp,
-//               fontWeight: FontWeight.bold,
-//               color: Colors.grey,
-//             ),
-//           ),
-//           SizedBox(height: 10.h),
-//           Padding(
-//             padding: EdgeInsets.symmetric(horizontal: 40.w),
-//             child: Text(
-//               "Start a consultation with a doctor to see your messages here.",
-//               textAlign: TextAlign.center,
-//               style: TextStyle(color: Colors.grey.shade500),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_cubit/chat_cubit.dart';
-import 'package:lottie/lottie.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'widgets/chat_item_widget.dart';
 
 class MessagesListView extends StatelessWidget {
-  const MessagesListView({super.key});
+  final String currentUserId;
+  final bool isDoctor;
+
+  const MessagesListView({
+    super.key,
+    required this.currentUserId,
+    required this.isDoctor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // ✅ توفير الـ Cubit للشاشة واستدعاء جلب البيانات فوراً
     return BlocProvider(
-      create: (context) => getIt<ChatCubit>()..getChats(),
+      create:
+          (context) => getIt<ChatCubit>()..getMyChats(currentUserId, isDoctor),
       child: Builder(
-        // ✅ ضيفنا Builder هنا عشان نطلع context جديد
         builder: (newContext) {
           return Scaffold(
             backgroundColor: Colors.white,
@@ -156,9 +30,7 @@ class MessagesListView extends StatelessWidget {
               child: Column(
                 children: [
                   _buildHeader(),
-                  _buildSearchBar(
-                    newContext,
-                  ), // ✅ بنبعت الـ newContext اللي شايف الكيوبت
+                  _buildSearchBar(newContext),
                   Expanded(child: _buildBlocBody()),
                 ],
               ),
@@ -171,17 +43,49 @@ class MessagesListView extends StatelessWidget {
 
   Widget _buildHeader() {
     return Padding(
-      padding: EdgeInsets.all(20.w),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          "Messages",
-          style: TextStyle(
-            fontSize: 28.sp,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF1B4E8C),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Messages",
+            style: TextStyle(
+              fontSize: 26.sp,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1E293B),
+            ),
           ),
-        ),
+          BlocBuilder<ChatCubit, ChatState>(
+            builder: (context, state) {
+              if (state is ChatSuccess) {
+                final total = state.chats.fold(
+                  0,
+                  (sum, c) => sum + c.unreadCount,
+                );
+                if (total == 0) return const SizedBox();
+                return Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 5.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Text(
+                    "$total New",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox();
+            },
+          ),
+        ],
       ),
     );
   }
@@ -190,17 +94,15 @@ class MessagesListView extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
       child: TextField(
-        onChanged: (value) {
-          // ✅ تشغيل منطق البحث عند كل حرف يكتبه المستخدم
-          context.read<ChatCubit>().filterChats(value);
-        },
+        onChanged: (value) => context.read<ChatCubit>().filterChats(value),
         decoration: InputDecoration(
-          hintText: "Search for a doctor...",
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+          hintText:
+              isDoctor ? "Search for a patient..." : "Search for a doctor...",
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8)),
           filled: true,
-          fillColor: Colors.grey.shade100,
+          fillColor: const Color(0xFFF8FAFC),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15.r),
+            borderRadius: BorderRadius.circular(16.r),
             borderSide: BorderSide.none,
           ),
         ),
@@ -212,38 +114,43 @@ class MessagesListView extends StatelessWidget {
     return BlocBuilder<ChatCubit, ChatState>(
       builder: (context, state) {
         if (state is ChatLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+          );
         } else if (state is ChatFailure) {
-          return Center(child: Text(state.errMessage));
+          return Center(
+            child: Text(
+              state.errMessage,
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
         } else if (state is ChatSuccess) {
-          if (state.chats.isEmpty) {
-            return _buildEmptyState();
-          }
+          if (state.chats.isEmpty) return _buildEmptyState();
+
           return ListView.separated(
-            padding: EdgeInsets.only(top: 10.h),
+            padding: EdgeInsets.only(top: 10.h, bottom: 20.h),
             itemCount: state.chats.length,
             separatorBuilder:
                 (context, index) => Divider(
                   height: 1,
-                  color: Colors.grey.shade100,
+                  color: Colors.grey.shade50,
                   indent: 80.w,
                 ),
             itemBuilder: (context, index) {
-              // return ChatItemWidget(
-              //   chat: state.chats[index],
-              //   onTap: () {
-              //     // هنا هنروح لشاشة الشات التفصيلية مستقبلاً
-              //   },
-              // );
+              final chat = state.chats[index];
               return ChatItemWidget(
-                chat: state.chats[index],
+                isDoctor: isDoctor,
+                chat: chat,
                 onTap: () {
-                  // ✅ التنقل باستخدام GoRouter
                   context.push(
                     AppRouter.kChatDetails,
                     extra: {
-                      'chatId': state.chats[index].id,
-                      'receiverName': state.chats[index].receiverName,
+                      'chatId': chat.chatId,
+                      'receiverName':
+                          isDoctor ? chat.patientName : chat.doctorName,
+                      'currentUserId': currentUserId,
+                      'isDoctor': isDoctor,
+                      'lastReadTimestamp': chat.lastReadTimestamp,
                     },
                   );
                 },
@@ -261,14 +168,18 @@ class MessagesListView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Lottie.asset('assets/lottie/empty_chat.json', height: 180.h),
+          Icon(
+            Icons.chat_bubble_outline_rounded,
+            size: 100.sp,
+            color: Colors.blue.withValues(alpha: 0.1),
+          ),
           SizedBox(height: 20.h),
           Text(
-            "No doctors found",
+            "No conversations found",
             style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
+              fontSize: 16.sp,
+              color: Colors.blueGrey.shade300,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],

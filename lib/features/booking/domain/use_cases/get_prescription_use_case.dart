@@ -12,7 +12,6 @@ class GetPrescriptionUseCase {
 
     return result.fold(
       (failure) {
-        // ✅ لو السيرفر رجع 404، نعتبرها نجاح لكن بروشتة فاضية بدل ما نطلع أيرور
         if (failure.errmessage.contains("404")) {
           return Right(PrescriptionEntity(items: []));
         }
@@ -22,7 +21,6 @@ class GetPrescriptionUseCase {
         if (prescriptions.isNotEmpty) {
           return Right(prescriptions.first);
         } else {
-          // ✅ برضه هنا نرجع Right فاضي بدل Left
           return Right(PrescriptionEntity(items: []));
         }
       },

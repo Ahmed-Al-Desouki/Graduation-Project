@@ -7,12 +7,10 @@ class MedicationItemEntity {
   final int quantity;
   final String? instructions;
 
-  // --- إعدادات التنبيهات (بناءً على الـ Documentation) ---
-  final int
-  reminderFrequencyType; // 0=Once, 1=Daily, 2=Weekly, 3=Monthly, 4=EveryXHours
-  final List<int>? reminderWeeklyDays; // أيام الأسبوع (0-6)
-  final List<String>? reminderDailyDoseTimes; // مواعيد الجرعات (HH:mm:ss)
-  final int? reminderIntervalHours; // لكل X ساعة
+  final int reminderFrequencyType;
+  final List<int>? reminderWeeklyDays;
+  final List<String>? reminderDailyDoseTimes;
+  final int? reminderIntervalHours;
   final DateTime reminderStartDate;
   final DateTime? reminderEndDate;
   final String? reminderFirstDoseTime;
@@ -34,7 +32,6 @@ class MedicationItemEntity {
     this.reminderFirstDoseTime,
   });
 
-  // ✅ أضف هذه الميثود الآن
   MedicationItemEntity copyWith({
     String? itemId,
     String? medicationName,

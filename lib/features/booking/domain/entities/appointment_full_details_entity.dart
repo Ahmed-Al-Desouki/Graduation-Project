@@ -1,31 +1,3 @@
-// class AppointmentFullDetailsEntity {
-//   final String appointmentId;
-//   final DateTime appointmentDate;
-//   final String startTime;
-//   final String endTime;
-//   final String status; // Pending, Confirmed, InProgress, etc.
-//   final String? patientNotes;
-//   final String doctorName;
-//   final String patientName;
-//   final List<dynamic>? prescriptions;
-//   final int patientId; // ✅ أضفنا هذا السطر
-
-//   AppointmentFullDetailsEntity({
-//     required this.appointmentId,
-//     required this.appointmentDate,
-//     required this.startTime,
-//     required this.endTime,
-//     required this.status,
-//     this.patientNotes,
-//     required this.doctorName,
-//     required this.patientName,
-//     required this.patientId, // ✅ أضفنا هذا السطر
-//     this.prescriptions,
-//   });
-// }
-
-// features/booking/domain/entities/appointment_full_details_entity.dart
-
 import 'medical_record_entity.dart';
 import 'prescription_entity.dart';
 
@@ -38,16 +10,13 @@ class AppointmentFullDetailsEntity {
   final String patientNotes;
   final int doctorId;
   final String doctorName;
-  final int patientId; // 🎯 الكنز اللي كنا بندور عليه
+  final int patientId;
   final String patientName;
-  final MedicalRecordEntity?
-  medicalRecord; // ممكن يرجع null لو لسه السيشن مبدأتش
-  final List<PrescriptionEntity>? prescriptions; // لستة الروشتات
-  final String? cancelBy; // سبب الإلغاء لو تم إلغاء الموعد
+  final MedicalRecordEntity? medicalRecord;
+  final List<PrescriptionEntity>? prescriptions;
+  final String? cancelBy;
   final String? cancellationReason;
-  final bool canViewMedicalHistory; // هل المريض يقدر يشوف تاريخه الطبي؟
-  // final bool canViewPrescriptions; // هل المريض يقدر يشوف روشتاته
-  // final bool canViewLabResults; // هل المريض يقدر يشوف نتائج التحاليل؟
+  final bool canViewMedicalHistory;
 
   AppointmentFullDetailsEntity({
     required this.appointmentId,
@@ -65,7 +34,5 @@ class AppointmentFullDetailsEntity {
     this.cancelBy,
     this.cancellationReason,
     required this.canViewMedicalHistory,
-    // required this.canViewPrescriptions,
-    // required this.canViewLabResults,
   });
 }

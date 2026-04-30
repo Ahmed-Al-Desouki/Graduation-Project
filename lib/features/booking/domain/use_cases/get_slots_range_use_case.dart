@@ -8,7 +8,6 @@ class GetSlotsRangeUseCase {
 
   GetSlotsRangeUseCase(this.repository);
 
-  // البارامترات المطلوبة لجلب بيانات الكالندر
   Future<Either<Failure, List<DaySlotsEntity>>> call({
     required String doctorId,
     required DateTime startDate,

@@ -1,34 +1,3 @@
-// import 'package:hive/hive.dart';
-// import 'package:graduation_project/core/utils/helper/service_locator.dart';
-// import 'data/data_sources/booking_local_data_source.dart';
-// import 'data/data_sources/booking_local_data_source_impl.dart';
-// import 'data/data_sources/booking_remote_data_source.dart';
-// import 'data/data_sources/booking_remote_data_source_impl.dart';
-// import 'data/repositories/booking_repository_impl.dart';
-// import 'domain/repositories/i_booking_repository.dart';
-
-// Future<void> initBookingInjection() async {
-//   final bookingBox = await Hive.openBox('booking_box');
-
-//   getIt.registerLazySingleton<BookingLocalDataSource>(
-//     () => BookingLocalDataSourceImpl(bookingBox),
-//   );
-
-//   getIt.registerLazySingleton<BookingRemoteDataSource>(
-//     () => BookingRemoteDataSourceImpl(getIt()),
-//   );
-
-//   getIt.registerLazySingleton<IBookingRepository>(
-//     () => BookingRepositoryImpl(
-//       remoteDataSource: getIt(),
-//       localDataSource: getIt(),
-//       networkInfo: getIt(),
-//     ),
-//   );
-
-//   // أضف الـ UseCases والـ Cubit هنا لاحقاً بنفس الطريقة
-// }
-
 import 'package:get_it/get_it.dart';
 import 'package:graduation_project/features/booking/data/data_sources/booking_local_data_source.dart';
 import 'package:graduation_project/features/booking/data/data_sources/booking_local_data_source_impl.dart';
@@ -48,6 +17,7 @@ import 'package:graduation_project/features/booking/domain/use_cases/add_prescri
 import 'package:graduation_project/features/booking/domain/use_cases/block_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/book_follow_up_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/cancel_by_patient_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/creat_chat_room_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_appointment_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_manual_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_payment_use_case.dart';
@@ -73,16 +43,12 @@ import 'domain/use_cases/create_schedule_use_case.dart';
 import 'domain/use_cases/generate_slots_use_case.dart';
 import 'domain/use_cases/get_active_schedule_use_case.dart';
 import 'presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
-// ... باقي الـ Imports (DataSources, NetworkInfo)
 
-// ... Imports ...
-
-final sl = GetIt.instance; // تأكد إنه نفس الـ instance المستخدم في المشروع كله
+final sl = GetIt.instance;
 
 Future<void> initBookingInjection() async {
   final bookingBox = await Hive.openBox('booking_box');
 
-  // 1. Data Sources
   sl.registerLazySingleton<BookingLocalDataSource>(
     () => BookingLocalDataSourceImpl(bookingBox),
   );
@@ -90,9 +56,8 @@ Future<void> initBookingInjection() async {
     () => BookingRemoteDataSourceImpl(sl()),
   );
 
-  // ✅ إضافة الـ DataSource الجديد بتاع الميديكال
   sl.registerLazySingleton<MedicalRemoteDataSource>(
-    () => MedicalRemoteDataSourceImpl(sl()), // sl هنا هي الـ ApiService
+    () => MedicalRemoteDataSourceImpl(sl()),
   );
 
   // 2. Repository
@@ -104,16 +69,14 @@ Future<void> initBookingInjection() async {
     ),
   );
 
-  // ✅ إضافة الـ Repository الجديد بتاع الميديكال
   sl.registerLazySingleton<MedicalRepository>(
-    () => MedicalRepositoryImpl(sl()), // sl هنا هي الـ MedicalRemoteDataSource
+    () => MedicalRepositoryImpl(sl()),
   );
 
   sl.registerLazySingleton<PaymentRepository>(
     () => PaymentRepositoryImpl(remoteDataSource: sl(), networkInfo: sl()),
   );
 
-  // 3. ✅ إضافة الـ UseCases الناقصة (تأكد من الـ imports)
   sl.registerLazySingleton(() => CreateScheduleUseCase(sl()));
   sl.registerLazySingleton(() => GenerateSlotsUseCase(sl()));
   sl.registerLazySingleton(() => GetActiveScheduleUseCase(sl()));
@@ -124,10 +87,8 @@ Future<void> initBookingInjection() async {
   sl.registerLazySingleton(() => SaveMedicalRecordUseCase(sl()));
   sl.registerLazySingleton(() => CreatePrescriptionUseCase(sl()));
 
-  // ⬅️ السطر اللي كان ناقص وعامل الإيرور:
   sl.registerLazySingleton(() => CreateManualSlotUseCase(sl()));
   sl.registerLazySingleton(() => BookFollowUpUseCase(sl()));
-  // يفضل تضيف دول كمان لو الكيوبت بيستخدمهم:
   sl.registerLazySingleton(() => BlockSlotUseCase(sl()));
   sl.registerLazySingleton(() => DeleteSlotUseCase(sl()));
   sl.registerLazySingleton(() => GetPrescriptionUseCase(sl()));
@@ -143,8 +104,8 @@ Future<void> initBookingInjection() async {
   sl.registerLazySingleton(() => GetDoctorAppointmentsUseCase(sl()));
   sl.registerLazySingleton(() => CancelByPatientUseCase(sl()));
   sl.registerLazySingleton(() => OpenAccessForMedicalHistoryUseCase(sl()));
+  sl.registerLazySingleton(() => CreateChatRoomUseCase(sl()));
 
-  // 4. Cubits
   sl.registerFactory(
     () => ScheduleManagementCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
   );
@@ -153,17 +114,14 @@ Future<void> initBookingInjection() async {
     () => ExamSessionCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
   );
 
-  // تأكد إن ترتيب الـ sl() هنا مطابق لترتيب الـ parameters في الـ Constructor بتاع الـ Cubit
   sl.registerFactory(
-    () => AppointmentActionCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
+    () =>
+        AppointmentActionCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl(), sl()),
   );
   sl.registerFactory(
     () => AppointmentsCenterCubit(
       getDoctorAppointmentsUseCase: sl(),
       getPatientAppointmentsUseCase: sl(),
-      // cancelByPatientUseCase: sl(),
-      // cancelBlockByDoctorUseCase:
-      //     sl(), // تأكد من إضافة الـ UseCase ده في الأعلى
       updateStatusUseCase: sl(),
     ),
   );

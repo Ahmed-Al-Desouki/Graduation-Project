@@ -18,7 +18,7 @@ class NotificationTile extends StatelessWidget {
       tileColor:
           notification.isRead
               ? Colors.transparent
-              : Colors.teal.withOpacity(0.03),
+              : Colors.teal.withValues(alpha: 0.03),
       leading: _buildIcon(),
       title: Text(
         notification.title,
@@ -75,7 +75,7 @@ class NotificationTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(iconData, color: color, size: 20),
@@ -84,8 +84,8 @@ class NotificationTile extends StatelessWidget {
 
   String _timeAgo(DateTime dateTime) {
     final diff = DateTime.now().difference(dateTime);
-    if (diff.inMinutes < 60) return "منذ ${diff.inMinutes} دقيقة";
-    if (diff.inHours < 24) return "منذ ${diff.inHours} ساعة";
-    return "منذ ${diff.inDays} يوم";
+    if (diff.inMinutes < 60) return "${diff.inMinutes} minutes ago";
+    if (diff.inHours < 24) return " ${diff.inHours} hours ago";
+    return " ${diff.inDays} days ago";
   }
 }

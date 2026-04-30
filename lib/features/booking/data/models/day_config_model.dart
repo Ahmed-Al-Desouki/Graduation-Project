@@ -1,4 +1,3 @@
-// day_config_model.dart
 class DayConfigModel {
   final String startTime;
   final String endTime;

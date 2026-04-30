@@ -21,9 +21,11 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.example.graduation_project"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
+        //
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -45,6 +47,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        //
+        multiDexEnabled = true
     }
 
     signingConfigs {
@@ -89,4 +93,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+//
+dependencies {
+    // 🚀 ده السطر اللي هيحل مشكلة الـ Desugaring ويخلي الإشعارات تشتغل
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

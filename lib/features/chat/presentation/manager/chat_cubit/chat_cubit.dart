@@ -1,42 +1,57 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
-import 'package:graduation_project/features/chat/domain/entities/chat_preview_entity.dart';
-import 'package:graduation_project/features/chat/domain/use_cases/get_chat_previews_use_case.dart';
+import 'package:graduation_project/features/chat/domain/entities/chat_entity.dart';
+import 'package:graduation_project/features/chat/domain/use_cases/get_my_chat_use_case.dart';
 import 'package:meta/meta.dart';
 
 part 'chat_state.dart';
 
 class ChatCubit extends Cubit<ChatState> {
-  final GetChatPreviewsUseCase getChatPreviewsUseCase;
+  final GetMyChatsUseCase getMyChatsUseCase;
+  StreamSubscription? _chatsSubscription;
+  List<ChatEntity> _allChats = []; // القائمة الأصلية للفلترة
 
-  // نفظ قائمة أصلية للفلترة بدون نداء الـ API مرة أخرى
-  List<ChatPreviewEntity> _allChats = [];
-  ChatCubit(this.getChatPreviewsUseCase) : super(ChatInitial());
+  ChatCubit(this.getMyChatsUseCase) : super(ChatInitial());
 
-  Future<void> getChats() async {
+  void getMyChats(String userId, bool isDoctor) {
     emit(ChatLoading());
-    final result = await getChatPreviewsUseCase();
+    _chatsSubscription?.cancel();
 
-    result.fold((failure) => emit(ChatFailure(failure.errmessage)), (chats) {
-      _allChats = chats; // حفظ القائمة الأصلية
+    // بنسمع للـ Stream بتاع الفايربيز
+    _chatsSubscription = getMyChatsUseCase(userId, isDoctor).listen((chats) {
+      _allChats = chats;
       emit(ChatSuccess(chats));
-    });
+    }, onError: (error) => emit(ChatFailure(error.toString())));
+  }
+
+  int getTotalUnreadCount(List<ChatEntity> chats) {
+    return chats.fold(0, (total, chat) => total + chat.unreadCount);
   }
 
   void filterChats(String query) {
-    if (state is ChatSuccess || _allChats.isNotEmpty) {
-      if (query.isEmpty) {
-        emit(ChatSuccess(_allChats));
-      } else {
-        final filteredList =
-            _allChats
-                .where(
-                  (chat) => chat.receiverName.toLowerCase().contains(
-                    query.toLowerCase(),
-                  ),
-                )
-                .toList();
-        emit(ChatSuccess(filteredList));
-      }
+    if (query.isEmpty) {
+      emit(ChatSuccess(_allChats));
+    } else {
+      final filteredList =
+          _allChats
+              .where(
+                (chat) =>
+                    chat.doctorName.toLowerCase().contains(
+                      query.toLowerCase(),
+                    ) ||
+                    chat.patientName.toLowerCase().contains(
+                      query.toLowerCase(),
+                    ),
+              )
+              .toList();
+      emit(ChatSuccess(filteredList));
     }
+  }
+
+  @override
+  Future<void> close() {
+    _chatsSubscription?.cancel();
+    return super.close();
   }
 }

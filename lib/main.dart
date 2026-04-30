@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -12,14 +13,39 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+
+  // 🚀 لازم نظهر الإشعار يدوياً هنا عشان يظهر والأبلكيشن مقفول (Terminated)
+  // لو السيرفر باعت Data Message
+  if (message.data.isNotEmpty) {
+    AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: DateTime.now().millisecond,
+        channelKey: 'general_channel',
+        title:
+            message.data['title'] ??
+            message.notification?.title ??
+            "Wellora Update",
+        body: message.data['message'] ?? message.notification?.body ?? "",
+        payload: message.data.map((k, v) => MapEntry(k, v.toString())),
+        notificationLayout: NotificationLayout.Default,
+      ),
+    );
+  }
+}
+
 void main() async {
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await NotificationService.initialize();
+  await NotificationService.initFirebaseMessaging();
   AwesomeNotifications().setListeners(
     onActionReceivedMethod: NotificationService.onActionReceivedMethod,
   );
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Hive.initFlutter();
   await setupServiceLocator();
   runApp(MyApp());

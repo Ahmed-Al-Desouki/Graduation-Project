@@ -495,6 +495,19 @@ abstract class AppRouter {
         },
       ),
 
+      // GoRoute(
+      //   path: kChatDetails,
+      //   builder: (context, state) {
+      //     final data = state.extra as Map<String, dynamic>;
+      //     return BlocProvider(
+      //       create: (context) => getIt<ChatDetailsCubit>(),
+      //       child: ChatDetailsView(
+      //         chatId: data['chatId'] as String,
+      //         receiverName: data['receiverName'] as String,
+      //       ),
+      //     );
+      //   },
+      // ),
       GoRoute(
         path: kChatDetails,
         builder: (context, state) {
@@ -504,6 +517,10 @@ abstract class AppRouter {
             child: ChatDetailsView(
               chatId: data['chatId'] as String,
               receiverName: data['receiverName'] as String,
+              currentUserId: data['currentUserId'] as String,
+              isDoctor: data['isDoctor'] as bool,
+              // 🚀 زودنا دي عشان الـ Unread Marker يشتغل
+              lastReadTimestamp: data['lastReadTimestamp'] as DateTime?,
             ),
           );
         },

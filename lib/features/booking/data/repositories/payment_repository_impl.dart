@@ -7,8 +7,6 @@ import 'package:graduation_project/features/booking/domain/entities/booking_requ
 import 'package:graduation_project/features/booking/domain/entities/payment_response_entity.dart';
 import 'package:graduation_project/features/booking/domain/repositories/payment_repository.dart';
 
-// features/booking/data/repositories/payment_repository_impl.dart
-
 class PaymentRepositoryImpl implements PaymentRepository {
   final BookingRemoteDataSource
   remoteDataSource; // أو PaymentRemoteDataSource لو حابب تفصلهم
@@ -24,14 +22,6 @@ class PaymentRepositoryImpl implements PaymentRepository {
     PaymentRequestEntity request,
   ) async {
     return await _handleRemoteRequest(() async {
-      // نداء الـ API الخاص بـ Paymob: /api/payment/create
-      // final response = await remoteDataSource.createPayment({
-      //   "appointmentId": request.appointmentId,
-      //   "paymentMethod": "Card", // مبعوتة كـ String زي ما الباك طلب
-      // });
-
-      // تحويل الـ JSON لموديل ومنه لـ Entity
-      // return PaymentResponseModel.fromJson(response);
       return PaymentResponseModel.fromJson({
         "success": true,
         "data": {
@@ -43,7 +33,6 @@ class PaymentRepositoryImpl implements PaymentRepository {
     });
   }
 
-  // استخدام نفس الـ Helper Method بتاعتك لتوحيد الكود
   Future<Either<Failure, T>> _handleRemoteRequest<T>(
     Future<T> Function() action,
   ) async {

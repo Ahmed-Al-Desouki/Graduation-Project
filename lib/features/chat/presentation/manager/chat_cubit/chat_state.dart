@@ -13,6 +13,6 @@ class ChatFailure extends ChatState {
 }
 
 class ChatSuccess extends ChatState {
-  final List<ChatPreviewEntity> chats; // القائمة التي ستظهر في الـ UI
+  final List<ChatEntity> chats; // القائمة التي ستظهر في الـ UI
   ChatSuccess(this.chats);
 }

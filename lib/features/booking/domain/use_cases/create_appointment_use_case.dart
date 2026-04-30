@@ -4,10 +4,9 @@ import 'package:graduation_project/features/booking/domain/entities/booking_enti
 import 'package:graduation_project/features/booking/domain/repositories/i_booking_repository.dart';
 
 class CreateAppointmentUseCase {
-  final IBookingRepository repository; // يفضل إضافة final
+  final IBookingRepository repository;
   CreateAppointmentUseCase(this.repository);
 
-  // ✅ تغيير الـ Return Type ليكون Either
   Future<Either<Failure, Map<String, dynamic>>> call({
     required String slotId,
     required String reason,
@@ -19,8 +18,7 @@ class CreateAppointmentUseCase {
         timeSlotId: slotId,
         patientNotes: reason,
         grantMedicalHistoryAccess: grantAccess,
-        paymentMethod:
-            paymentMethod, // أو أي طريقة دفع أخرى حسب اختيار المستخدم
+        paymentMethod: paymentMethod,
       ),
     );
   }

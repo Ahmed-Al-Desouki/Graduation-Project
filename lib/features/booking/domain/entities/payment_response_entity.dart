@@ -1,6 +1,6 @@
 class PaymentResponseEntity {
   final String paymentUrl;
-  final String paymentId; // الـ ID الداخلي في السيستم [cite: 85]
+  final String paymentId;
   final double amount;
 
   PaymentResponseEntity({

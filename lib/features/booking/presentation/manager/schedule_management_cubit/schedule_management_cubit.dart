@@ -33,7 +33,6 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
     this.removeExceptionUseCase,
   ) : super(ScheduleManagementInitial());
 
-  // 1. جلب الجدول الحالي
   Future<void> fetchCurrentSchedule() async {
     emit(ScheduleManagementLoading());
     final doctorId = getIt<SessionManager>().userId;
@@ -48,7 +47,6 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
     );
   }
 
-  // 2. حفظ الجدول (يوم بيوم) وتوليد المواعيد
   Future<void> saveDoctorSchedule({required ScheduleEntity schedule}) async {
     emit(ScheduleManagementLoading());
     final String currentUserId = getIt<SessionManager>().userId;
@@ -89,12 +87,13 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
       (f) => emit(ScheduleManagementFailure("Saved, but generation failed")),
       (_) async {
         await Hive.box('booking_box').put('isScheduleConfigured', true);
+        //
+        // await fetchCurrentSchedule();
         emit(SlotsGeneratedSuccess("Schedule updated successfully!"));
       },
     );
   }
 
-  // 3. حذف يوم عمل نهائياً
   Future<void> deleteDayConfig(int dayOfWeek) async {
     emit(ScheduleManagementLoading());
     final doctorId = getIt<SessionManager>().userId;
@@ -105,7 +104,6 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
     );
   }
 
-  // 4. إضافة إجازة (Day Off)
   Future<void> setDayOff(DateTime date, String reason) async {
     emit(ScheduleManagementLoading());
     final doctorId = getIt<SessionManager>().userId;
@@ -116,7 +114,6 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
     );
   }
 
-  // 5. إضافة ساعات مخصصة (Custom Hours)
   Future<void> setCustomHours(
     DateTime date,
     String start,
@@ -132,7 +129,6 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
     );
   }
 
-  // 6. مسح استثناء (إلغاء إجازة مثلاً)
   Future<void> clearException(DateTime date) async {
     emit(ScheduleManagementLoading());
     final doctorId = getIt<SessionManager>().userId;

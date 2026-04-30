@@ -31,14 +31,13 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
                 setState(() => isLoading = false);
               },
               onNavigationRequest: (NavigationRequest request) {
-                // 🚨 أهم جزء: مراقبة الـ Redirect URL
-                // قوله لأحمد الدسوقي يبعت المريض على اللينك ده لو نجح
                 if (request.url.contains('payment-success')) {
-                  _finishPayment(context, success: true);
+                  final uri = Uri.parse(request.url);
+                  final id = uri.queryParameters['appointmentId'];
+                  _finishPayment(context, success: true, appointmentId: id);
                   return NavigationDecision.prevent;
                 }
 
-                // ولو فشل يبعته هنا
                 if (request.url.contains('payment-failure')) {
                   _finishPayment(context, success: false);
                   return NavigationDecision.prevent;
@@ -51,9 +50,16 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
           ..loadRequest(Uri.parse(widget.url));
   }
 
-  void _finishPayment(BuildContext context, {required bool success}) {
-    // بنعمل Pop وبنرجع النتيجة للشاشة اللي قبلنا
-    context.pop(success);
+  void _finishPayment(
+    BuildContext context, {
+    String? appointmentId,
+    required bool success,
+  }) {
+    if (success && appointmentId != null) {
+      context.pop(appointmentId);
+    } else {
+      context.pop(null);
+    }
   }
 
   @override
@@ -62,7 +68,6 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
       appBar: AppBar(
         title: const Text("Secure Payment"),
         centerTitle: true,
-        // منع المريض من الرجوع بالزرار قبل ما يخلص الدفع
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => _finishPayment(context, success: false),

@@ -19,7 +19,7 @@ class ScheduleEntity {
 }
 
 class TimeRangeEntity {
-  final int dayOfWeek; // 0 for Sunday, 1 for Monday, etc.
+  final int dayOfWeek; // 0 for Sunday, 1 for Monday,.....
   final String startTime;
   final String endTime;
 

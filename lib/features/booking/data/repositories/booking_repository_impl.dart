@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:graduation_project/core/utils/helper/network_info.dart';
@@ -27,18 +29,13 @@ class BookingRepositoryImpl implements IBookingRepository {
 
   @override
   Future<Either<Failure, String>> createSchedule(
-    ScheduleEntity
-    schedule, // يفضل مستقبلاً تغيير الـ Entity لـ DayConfigEntity
+    ScheduleEntity schedule,
   ) async {
     return await _handleRemoteRequest(() async {
-      // 🚨 التعديل الأهم: بناء الـ Body بناءً على الدوكيومنت الجديد صفحة 3
-      // بما إن الـ Entity القديمة فيها timeRanges (قائمة)،
-      // والباك الجديد بياخد يوم بيوم، هناخد أول عنصر كمثال أو نعدل الـ Entity
-
       final firstRange = schedule.timeRanges.first;
 
       final body = {
-        "dayOfWeek": firstRange.dayOfWeek, // الرقم من 0 لـ 6
+        "dayOfWeek": firstRange.dayOfWeek,
         "startTime": firstRange.startTime,
         "endTime": firstRange.endTime,
         "slotDurationMinutes": schedule.slotDurationMinutes,
@@ -47,7 +44,6 @@ class BookingRepositoryImpl implements IBookingRepository {
 
       final doctorId = getIt<SessionManager>().userId;
 
-      // نداء الـ Remote المحدث اللي بيعمل PUT
       return await remoteDataSource.createSchedule(doctorId, body);
     });
   }
@@ -67,8 +63,6 @@ class BookingRepositoryImpl implements IBookingRepository {
       });
     });
   }
-
-  // --- 2. إدارة المواعيد والـ Slots ---
 
   @override
   Future<Either<Failure, List<DaySlotsEntity>>> getSlotsRange(
@@ -95,7 +89,7 @@ class BookingRepositoryImpl implements IBookingRepository {
     //     final localData = await localDataSource.getCachedDaySlots();
     //     return Right(localData);
     //   } catch (e) {
-    //     return Left(CacheFailure("لا توجد بيانات مخزنة لهذا النطاق"));
+    //     return Left(CacheFailure("مفيش داتا  :("));
     //   }
     // }
   }
@@ -108,7 +102,6 @@ class BookingRepositoryImpl implements IBookingRepository {
         date?.toIso8601String(),
         status,
       );
-      // تحويل الـ JSON لموديلات ثم لـ Entities
       return response
           .map((json) => AppointmentFullDetailsModel.fromJson(json))
           .toList();
@@ -120,14 +113,11 @@ class BookingRepositoryImpl implements IBookingRepository {
   getPatientAppointments({String? status}) async {
     return await _handleRemoteRequest(() async {
       final response = await remoteDataSource.getPatientAppointments(status);
-      // تحويل الـ JSON لموديلات ثم لـ Entities
       return response
           .map((json) => AppointmentFullDetailsModel.fromJson(json))
           .toList();
     });
   }
-
-  // --- 3. الاستثناءات وساعات العمل الخاصة ---
 
   @override
   Future<Either<Failure, void>> addDayOff(
@@ -171,8 +161,6 @@ class BookingRepositoryImpl implements IBookingRepository {
     });
   }
 
-  // --- 4. التحكم في الحجوزات (Actions) ---
-
   @override
   Future<Either<Failure, void>> confirmAppointment(String id) async {
     return await _handleRemoteRequest(
@@ -193,20 +181,6 @@ class BookingRepositoryImpl implements IBookingRepository {
       () => remoteDataSource.updateAppointmentStatus(id, 'complete'),
     );
   }
-
-  // @override
-  // Future<Either<Failure, void>> cancelAppointment(
-  //   String id,
-  //   String reason,
-  // ) async {
-  //   return await _handleRemoteRequest(
-  //     () => remoteDataSource.updateAppointmentStatus(
-  //       id,
-  //       'cancel',
-  //       body: {"reason": reason},
-  //     ),
-  //   );
-  // }
 
   @override
   Future<Either<Failure, void>> blockSlot(
@@ -263,7 +237,6 @@ class BookingRepositoryImpl implements IBookingRepository {
       () => remoteDataSource.cancelByPatient(id, {"reason": reason}),
     );
   }
-  // --- 5. المتابعة (Follow-up) ---
 
   @override
   Future<Either<Failure, void>> bookFollowUpExisting(
@@ -301,28 +274,6 @@ class BookingRepositoryImpl implements IBookingRepository {
     });
   }
 
-  // --- Helper Method ---
-  // Future<Either<Failure, T>> _handleRemoteRequest<T>(
-  //   Future<T> Function() action,
-  // ) async {
-  //   // if (await networkInfo.isConnected) {
-  //   try {
-  //     final result = await action();
-  //     return Right(result);
-  //   } catch (e) {
-  //     // 💡 هنا التعديل السحري
-  //     if (e is DioException) {
-  //       // بنحاول نسحب الرسالة اللي جوه الـ JSON اللي السيرفر بعته
-  //       final serverMessage =
-  //           e.response?.data?['error'] ?? "Something went wrong";
-  //       return Left(ServerFailure(serverMessage));
-  //     }
-  //     return Left(ServerFailure(e.toString()));
-  //   }
-  //   // } else {
-  //   //   return Left(OfflineFailure("لا يوجد اتصال بالإنترنت حالياً"));
-  //   // }
-  // }
   Future<Either<Failure, T>> _handleRemoteRequest<T>(
     Future<T> Function() action,
   ) async {
@@ -331,7 +282,6 @@ class BookingRepositoryImpl implements IBookingRepository {
       return Right(result);
     } catch (e) {
       if (e is DioException) {
-        // ✅ تأمين جلب الرسالة من السيرفر
         String message = "Server Error";
         if (e.response?.data is Map) {
           message =
@@ -346,31 +296,6 @@ class BookingRepositoryImpl implements IBookingRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
-  // @override
-  // Future<Either<Failure, ScheduleEntity>> getActiveSchedule(
-  //   String doctorId,
-  // ) async {
-  //   // if (await networkInfo.isConnected) {
-  //   try {
-  //     final remoteData = await remoteDataSource.getActiveSchedule(doctorId);
-
-  //     // حفظ في الكاش المحلي (Hive)
-  //     await localDataSource.cacheActiveSchedule(remoteData);
-
-  //     // تحويل الـ JSON لـ Entity (بافتراض وجود MapToEntity mapper)
-  //     return Right(ScheduleModel.fromJson(remoteData));
-  //   } catch (e) {
-  //     return Left(ServerFailure(e.toString()));
-  //   }
-  //   // } else {
-  //   //   try {
-  //   //     final localData = await localDataSource.getCachedActiveSchedule();
-  //   //     return Right(ScheduleModel.fromJson(localData));
-  //   //   } catch (e) {
-  //   //     return Left(CacheFailure("لا يوجد جدول مخزن حالياً"));
-  //   //   }
-  //   // }
-  // }
 
   @override
   Future<Either<Failure, ScheduleEntity>> getActiveSchedule(
@@ -379,28 +304,26 @@ class BookingRepositoryImpl implements IBookingRepository {
     try {
       final remoteData = await remoteDataSource.getActiveSchedule(doctorId);
 
-      // حفظ في الكاش المحلي
       await localDataSource.cacheActiveSchedule(remoteData);
 
-      // تحويل الـ JSON (الذي أصبح قائمة أيام في v2.0) لـ Entity
-      // تأكد أن ScheduleModel.fromJson مهيأ لاستقبال الشكل الجديد
       return Right(ScheduleModel.fromV2List(remoteData));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
 
-  // داخل BookingRepositoryImpl
   @override
   Future<Either<Failure, Map<String, dynamic>>> bookAndPay(
     BookingEntity booking,
   ) async {
     return await _handleRemoteRequest(() async {
-      return await remoteDataSource.bookWithPayment({
-        "timeSlotId": booking.timeSlotId, // ✅ الاسم الصحيح
+      final response = await remoteDataSource.bookWithPayment({
+        "timeSlotId": booking.timeSlotId,
         "patientNotes": booking.patientNotes,
-        "grantMedicalHistoryAccess": booking.grantMedicalHistoryAccess, // ✅
-      }, paymentMethod: booking.paymentMethod); // ✅ تمرير طريقة الدفع
+        "grantMedicalHistoryAccess": booking.grantMedicalHistoryAccess,
+      }, paymentMethod: booking.paymentMethod);
+      log("Booking Response: $response");
+      return response;
     });
   }
 
@@ -414,19 +337,14 @@ class BookingRepositoryImpl implements IBookingRepository {
     );
   }
 
-  // داخل class BookingRepositoryImpl
-
   @override
   Future<Either<Failure, AppointmentFullDetailsEntity>>
   getAppointmentFullDetails(String appointmentId) async {
     return await _handleRemoteRequest(() async {
-      // 1. طلب البيانات الخام (JSON) من الـ Remote Data Source
       final response = await remoteDataSource.getAppointmentFullDetails(
         appointmentId,
       );
 
-      // 2. تحويل الـ JSON لموديل (الذي يرث من الـ Entity)
-      // ملاحظة: تأكد إنك عملت ملف الموديل اللي اتفقنا عليه في الرد السابق
       return AppointmentFullDetailsModel.fromJson(response);
     });
   }

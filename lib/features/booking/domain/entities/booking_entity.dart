@@ -1,14 +1,13 @@
-// features/booking/domain/entities/booking_entity.dart
 class BookingEntity {
-  final String timeSlotId; // ✅ تم التعديل حسب الـ JSON
+  final String timeSlotId;
   final String? patientNotes;
-  final bool grantMedicalHistoryAccess; // ✅ إضافة الحقل الجديد
-  final String paymentMethod; // ✅ إضافة حقل طريقة الدفع
+  final bool grantMedicalHistoryAccess;
+  final String paymentMethod;
 
   BookingEntity({
     required this.timeSlotId,
     this.patientNotes,
-    this.grantMedicalHistoryAccess = true, // افتراضياً موافق
-    required this.paymentMethod, // ✅ تمرير طريقة الدفع
+    this.grantMedicalHistoryAccess = true,
+    required this.paymentMethod,
   });
 }

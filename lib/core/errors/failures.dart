@@ -92,3 +92,7 @@ class CacheFailure extends Failure {
 class OfflineFailure extends Failure {
   OfflineFailure(super.errmessage);
 }
+
+class FirebaseFailure extends Failure {
+  FirebaseFailure(super.errmessage);
+}

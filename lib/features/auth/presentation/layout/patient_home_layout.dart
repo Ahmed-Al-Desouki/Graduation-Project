@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/core/utils/helper/session_manager.dart';
 
 import 'package:graduation_project/features/auth/presentation/views/chat_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/profile_view.dart';
@@ -16,13 +18,28 @@ class PatientHomeLayout extends StatefulWidget {
 class _PatientHomeLayoutState extends State<PatientHomeLayout> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    PatientHomeView(),
-    SearchView(),
-    ChatView(),
-    ProfileView(),
-    SettingsScreen(),
-  ];
+  late List<Widget> _screens;
+  // = const [
+  //   PatientHomeView(),
+  //   SearchView(),
+  //   ChatView(),
+  //   ProfileView(),
+  //   SettingsScreen(),
+  // ];
+
+  @override
+  void initState() {
+    super.initState();
+    String userId = getIt<SessionManager>().userId;
+
+    _screens = [
+      PatientHomeView(),
+      SearchView(),
+      ChatView(userId: userId, isDoctor: false), // مشتركة (الباك بيفرق بالتوكن)
+      ProfileView(),
+      SettingsScreen(), // مشتركة
+    ];
+  }
 
   static const Color activeBlue = Color(0xFF1B4E8C);
   static const Color activeGreen = Color(0xFF4CAF50);

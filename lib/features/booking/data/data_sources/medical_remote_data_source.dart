@@ -3,7 +3,6 @@ import '../models/prescription_model.dart';
 import '../models/medication_item_model.dart';
 
 abstract class MedicalRemoteDataSource {
-  // --- Medical Record Operations ---
   Future<MedicalRecordModel> getMedicalRecord(String appointmentId);
   Future<String> createMedicalRecord(
     String appointmentId,
@@ -14,7 +13,6 @@ abstract class MedicalRemoteDataSource {
     MedicalRecordModel record,
   );
 
-  // --- Prescription Operations ---
   Future<List<PrescriptionModel>> getPrescriptionByAppointment(
     String appointmentId,
   );
@@ -30,7 +28,6 @@ abstract class MedicalRemoteDataSource {
     String pId,
     String aId,
   );
-  // Future<void> grantMedicalAccess(String appointmentId);
   Future<void> grantMedicalAccess(
     String appointmentId,
     Map<String, dynamic> body,

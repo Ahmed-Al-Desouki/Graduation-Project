@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:graduation_project/core/database/local_database_service.dart';
+import 'package:graduation_project/core/services/signalr_service.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
@@ -59,7 +60,8 @@ class AuthCubit extends Cubit<AuthState> {
           try {
             await _decodeAndSaveUserData(response);
             await _registerDeviceToken();
-
+            final token = response.accessToken;
+            await getIt<SignalRService>().init(token);
             final uid = await SecureStorageHelper.getUserId();
             final name = await SecureStorageHelper.getUserName();
             final roleData = await SecureStorageHelper.getUserRole();
@@ -109,7 +111,8 @@ class AuthCubit extends Cubit<AuthState> {
           try {
             await _decodeAndSaveUserData(response);
             await _registerDeviceToken();
-
+            final token = response.accessToken;
+            await getIt<SignalRService>().init(token);
             final uid = await SecureStorageHelper.getUserId();
             final name = await SecureStorageHelper.getUserName();
             final role = (await SecureStorageHelper.getUserRole())['role']!;
@@ -267,6 +270,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> _registerDeviceToken() async {
     final deviceId = await _getDeviceToken();
+    log("Device Token: $deviceId");
     if (deviceId != null) {
       try {
         await getIt<AuthWebServices>().registerDevice(deviceId);

@@ -7,10 +7,9 @@ final class AppointmentActionInitial extends AppointmentActionState {}
 
 final class AppointmentActionLoading extends AppointmentActionState {}
 
-// حالة النجاح العامة (بنبعت معاه رسالة عشان نظهرها في SnackBar)
 final class AppointmentActionSuccess extends AppointmentActionState {
   final String message;
-  final String? actionType; // لتمييز أي عملية نجحت (confirm, start, etc.)
+  final String? actionType;
   AppointmentActionSuccess(this.message, {this.actionType});
 }
 

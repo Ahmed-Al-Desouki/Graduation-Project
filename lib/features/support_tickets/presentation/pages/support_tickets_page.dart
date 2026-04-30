@@ -1,6 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/features/support_tickets/presentation/widget/create_ticket_bottom_sheet.dart';
 import '../manager/tickets_cubit/tickets_cubit.dart';
 import '../widget/support_tickets_list_view.dart';
@@ -19,15 +20,12 @@ class _SupportTicketsPageState extends State<SupportTicketsPage> {
   @override
   void initState() {
     super.initState();
-    // نداء أول صفحة
     context.read<TicketsCubit>().fetchTickets(isRefresh: true);
 
-    // إعداد الـ Listener للـ Pagination
     _scrollController.addListener(_onScroll);
   }
 
   void _onScroll() {
-    // لو اليوزر وصل لـ 80% من طول القائمة، حمل الصفحة اللي بعدها
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       context.read<TicketsCubit>().fetchTickets();
@@ -36,18 +34,17 @@ class _SupportTicketsPageState extends State<SupportTicketsPage> {
 
   @override
   void dispose() {
-    _scrollController.dispose(); // مهم جداً عشان الـ Memory Leaks
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // ❌ شيلنا الـ BlocProvider اللي كان هنا عشان أنت عامله في الـ GoRouter أصلاً
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
         title: const Text(
-          "الدعم الفني",
+          "Support Tickets",
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -60,7 +57,6 @@ class _SupportTicketsPageState extends State<SupportTicketsPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // استخدم الـ context الحالي اللي شايف الكيوبت بتاع الـ Router
           final ticketsCubit = context.read<TicketsCubit>();
           showModalBottomSheet(
             context: context,
@@ -80,9 +76,8 @@ class _SupportTicketsPageState extends State<SupportTicketsPage> {
         builder: (context, state) {
           final cubit = context.read<TicketsCubit>();
 
-          // 💡 للتأكد: اطبع عدد التذاكر هنا في الـ Debug Console
-          debugPrint(
-            "🎯 Current state is: $state | Tickets count: ${cubit.allTickets.length}",
+          log(
+            " Current state is: $state | Tickets count: ${cubit.allTickets.length}",
           );
 
           if (state is TicketsLoading && cubit.allTickets.isEmpty) {
