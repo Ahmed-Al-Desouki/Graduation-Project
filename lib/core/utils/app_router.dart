@@ -100,6 +100,7 @@ abstract class AppRouter {
   static const kAllAchievements = '/doctor/profile/all-achievements';
   static const kTickets = '/tickets';
   static const kNotifications = '/notifications';
+  static const kBookingCalendar = '/booking-calendar';
   // static const kMedicalHistory = '/';
   static final router = GoRouter(
     routes: [
@@ -139,20 +140,105 @@ abstract class AppRouter {
               create:
                   (context) =>
                       getIt<ScheduleManagementCubit>(), // سحب النسخة من GetIt
-              child: const ScheduleSetupView(),
+              child: const ScheduleSetupView(isEditing: true),
             ),
       ),
+
       // 2. شاشة الكالندر (تدعم الطبيب والمريض)
+      // GoRoute(
+      //   path: kDoctorSchedule,
+      //   builder: (context, state) {
+      //     // 1️⃣ استلام البيانات من الـ extra
+      //     final Map<String, dynamic>? extra =
+      //         state.extra as Map<String, dynamic>?;
+      //     final bool isPatientView =
+      //         extra?['isPatientView'] ?? false; // الافتراضي دكتور
+
+      //     // 2️⃣ لو "مريض"، افتح الكالندر فوراً بدون فحص الـ Hive (Setup)
+      //     if (isPatientView) {
+      //       return MultiBlocProvider(
+      //         providers: [
+      //           BlocProvider(
+      //             create: (context) => getIt<BookingCalendarCubit>(),
+      //           ),
+      //           BlocProvider(
+      //             create: (context) => getIt<AppointmentActionCubit>(),
+      //           ),
+      //         ],
+      //         child: BookingCalendarView(
+      //           isPatientView: true,
+      //           doctorId:
+      //               extra?['doctorId']
+      //                   ?.toString(), // ID الدكتور اللي المريض اختاره من البحث
+      //           doctorName: extra?['doctorName'],
+      //           consultationFee:
+      //               (extra?['consultationFee'] as num?)?.toDouble(),
+      //         ),
+      //       );
+      //     }
+
+      //     // 3️⃣ لو "دكتور"، كمل اللوجيك القديم بتاع فحص الـ Setup
+      //     var box = Hive.box('booking_box');
+      //     bool isSetupComplete = box.get(
+      //       'isScheduleConfigured',
+      //       defaultValue: false,
+      //     );
+
+      //     if (isSetupComplete) {
+      //       return MultiBlocProvider(
+      //         providers: [
+      //           BlocProvider(
+      //             create: (context) => getIt<BookingCalendarCubit>(),
+      //           ),
+      //           BlocProvider(
+      //             create: (context) => getIt<AppointmentActionCubit>(),
+      //           ),
+      //         ],
+      //         child: BookingCalendarView(
+      //           isPatientView: false,
+      //           followUpPatientName: extra?['patientName'],
+      //           originalAppointmentId: extra?['originalAppointmentId'],
+      //         ),
+      //       );
+      //     } else {
+      //       return BlocProvider(
+      //         create: (context) => getIt<ScheduleManagementCubit>(),
+      //         child: const ScheduleSetupView(),
+      //       );
+      //     }
+      //   },
+      // ),
+      GoRoute(
+        path: kBookingCalendar, // مثلاً '/booking-calendar'
+        builder: (context, state) {
+          final Map<String, dynamic>? extra =
+              state.extra as Map<String, dynamic>?;
+
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(create: (context) => getIt<BookingCalendarCubit>()),
+              BlocProvider(
+                create: (context) => getIt<AppointmentActionCubit>(),
+              ),
+            ],
+            child: BookingCalendarView(
+              isPatientView: extra?['isPatientView'] ?? false,
+              doctorId: extra?['doctorId']?.toString(),
+              doctorName: extra?['doctorName'],
+              consultationFee: (extra?['consultationFee'] as num?)?.toDouble(),
+              followUpPatientName: extra?['patientName'],
+              originalAppointmentId: extra?['originalAppointmentId'],
+            ),
+          );
+        },
+      ),
       GoRoute(
         path: kDoctorSchedule,
         builder: (context, state) {
-          // 1️⃣ استلام البيانات من الـ extra
           final Map<String, dynamic>? extra =
               state.extra as Map<String, dynamic>?;
-          final bool isPatientView =
-              extra?['isPatientView'] ?? false; // الافتراضي دكتور
+          final bool isPatientView = extra?['isPatientView'] ?? false;
 
-          // 2️⃣ لو "مريض"، افتح الكالندر فوراً بدون فحص الـ Hive (Setup)
           if (isPatientView) {
             return MultiBlocProvider(
               providers: [
@@ -165,9 +251,7 @@ abstract class AppRouter {
               ],
               child: BookingCalendarView(
                 isPatientView: true,
-                doctorId:
-                    extra?['doctorId']
-                        ?.toString(), // ID الدكتور اللي المريض اختاره من البحث
+                doctorId: extra?['doctorId']?.toString(),
                 doctorName: extra?['doctorName'],
                 consultationFee:
                     (extra?['consultationFee'] as num?)?.toDouble(),
@@ -175,35 +259,11 @@ abstract class AppRouter {
             );
           }
 
-          // 3️⃣ لو "دكتور"، كمل اللوجيك القديم بتاع فحص الـ Setup
-          var box = Hive.box('booking_box');
-          bool isSetupComplete = box.get(
-            'isScheduleConfigured',
-            defaultValue: false,
+          // 💡 للدكتور: بنبعته دايماً للـ SetupView وهي اللي هتشيك على الـ API
+          return BlocProvider(
+            create: (context) => getIt<ScheduleManagementCubit>(),
+            child: const ScheduleSetupView(),
           );
-
-          if (isSetupComplete) {
-            return MultiBlocProvider(
-              providers: [
-                BlocProvider(
-                  create: (context) => getIt<BookingCalendarCubit>(),
-                ),
-                BlocProvider(
-                  create: (context) => getIt<AppointmentActionCubit>(),
-                ),
-              ],
-              child: BookingCalendarView(
-                isPatientView: false,
-                followUpPatientName: extra?['patientName'],
-                originalAppointmentId: extra?['originalAppointmentId'],
-              ),
-            );
-          } else {
-            return BlocProvider(
-              create: (context) => getIt<ScheduleManagementCubit>(),
-              child: const ScheduleSetupView(),
-            );
-          }
         },
       ),
       GoRoute(

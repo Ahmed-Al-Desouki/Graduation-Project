@@ -297,34 +297,33 @@ class BookingRepositoryImpl implements IBookingRepository {
     }
   }
 
-  // @override
-  // Future<Either<Failure, ScheduleEntity>> getActiveSchedule(
-  //   String doctorId,
-  // ) async {
-  //   try {
-
-  //     final remoteData = await remoteDataSource.getActiveSchedule(doctorId);
-
-  //     await localDataSource.cacheActiveSchedule(remoteData);
-
-  //     return Right(ScheduleModel.fromV2List(remoteData));
-  //   } catch (e) {
-  //     return Left(ServerFailure(e.toString()));
-  //   }
-  // }
   @override
   Future<Either<Failure, ScheduleEntity>> getActiveSchedule(
     String doctorId,
   ) async {
     try {
-      // 💡 شيلنا الكاش خالص، بنجيب من السيرفر علطول
       final remoteData = await remoteDataSource.getActiveSchedule(doctorId);
+
+      await localDataSource.cacheActiveSchedule(remoteData);
 
       return Right(ScheduleModel.fromV2List(remoteData));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
+  // @override
+  // Future<Either<Failure, ScheduleEntity>> getActiveSchedule(
+  //   String doctorId,
+  // ) async {
+  //   try {
+  //     // 💡 شيلنا الكاش خالص، بنجيب من السيرفر علطول
+  //     final remoteData = await remoteDataSource.getActiveSchedule(doctorId);
+
+  //     return Right(ScheduleModel.fromV2List(remoteData));
+  //   } catch (e) {
+  //     return Left(ServerFailure(e.toString()));
+  //   }
+  // }
 
   @override
   Future<Either<Failure, Map<String, dynamic>>> bookAndPay(

@@ -33,17 +33,54 @@ class ScheduleManagementCubit extends Cubit<ScheduleManagementState> {
     this.removeExceptionUseCase,
   ) : super(ScheduleManagementInitial());
 
+  // Future<void> fetchCurrentSchedule() async {
+  //   emit(ScheduleManagementLoading());
+  //   final doctorId = getIt<SessionManager>().userId;
+  //   final result = await getActiveScheduleUseCase(doctorId);
+
+  //   result.fold(
+  //     (failure) =>
+  //         failure.errmessage.contains("404")
+  //             ? emit(ScheduleManagementInitial())
+  //             : emit(ScheduleManagementFailure(failure.errmessage)),
+  //     (schedule) async {
+  //       // await Hive.box('booking_box').put('isScheduleConfigured', true);
+  //       // emit(ScheduleFetchedSuccess(schedule));
+  //       if (schedule.timeRanges.isEmpty) {
+  //         emit(ScheduleManagementInitial());
+  //       } else {
+  //         await Hive.box('booking_box').put('isScheduleConfigured', true);
+
+  //         emit(ScheduleFetchedSuccess(schedule));
+  //       }
+  //     },
+  //   );
+  // }
+
+  // داخل ScheduleManagementCubit
   Future<void> fetchCurrentSchedule() async {
     emit(ScheduleManagementLoading());
     final doctorId = getIt<SessionManager>().userId;
     final result = await getActiveScheduleUseCase(doctorId);
 
     result.fold(
-      (failure) =>
-          failure.errmessage.contains("404")
-              ? emit(ScheduleManagementInitial())
-              : emit(ScheduleManagementFailure(failure.errmessage)),
-      (schedule) => emit(ScheduleFetchedSuccess(schedule)),
+      (failure) {
+        if (failure.errmessage.contains("404")) {
+          emit(ScheduleManagementInitial());
+        } else {
+          emit(ScheduleManagementFailure(failure.errmessage));
+        }
+      },
+      (schedule) {
+        // ✅ التحقق من وجود بيانات في الجدول
+        if (schedule.timeRanges.isEmpty) {
+          emit(ScheduleManagementInitial()); // يظهر فورم الإعدادات
+        } else {
+          emit(
+            ScheduleFetchedSuccess(schedule),
+          ); // هيتم استخدامه للتحويل للكالندر
+        }
+      },
     );
   }
 
