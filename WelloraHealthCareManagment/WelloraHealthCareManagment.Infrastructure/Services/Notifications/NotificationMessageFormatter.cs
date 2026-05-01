@@ -1,11 +1,10 @@
 using System.Globalization;
+using WelloraHealthCareManagment.Application.Common.Localization;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services.Notifications
 {
     public static class NotificationMessageFormatter
     {
-        private static readonly CultureInfo EnCulture = CultureInfo.InvariantCulture;
-
         public static string FormatDoctor(string? fullName, int? doctorId = null)
         {
             var normalizedName = string.IsNullOrWhiteSpace(fullName)
@@ -14,18 +13,23 @@ namespace WelloraHealthCareManagment.Infrastructure.Services.Notifications
 
             if (!string.IsNullOrWhiteSpace(normalizedName))
             {
-                var prefixedName = normalizedName.StartsWith("Dr.", StringComparison.OrdinalIgnoreCase)
+                var prefixedName = normalizedName.StartsWith("Dr.", StringComparison.OrdinalIgnoreCase) ||
+                    normalizedName.StartsWith("د.", StringComparison.OrdinalIgnoreCase)
                     ? normalizedName
-                    : $"Dr. {normalizedName}";
+                    : AppLanguageContext.Language == AppLanguages.Arabic
+                        ? $"د. {normalizedName}"
+                        : $"Dr. {normalizedName}";
 
                 return doctorId.HasValue
-                    ? $"{prefixedName} (Doctor #{doctorId.Value})"
+                    ? AppLanguageContext.Language == AppLanguages.Arabic
+                        ? $"{prefixedName} (الطبيب رقم {doctorId.Value})"
+                        : $"{prefixedName} (Doctor #{doctorId.Value})"
                     : prefixedName;
             }
 
             return doctorId.HasValue
-                ? $"Doctor #{doctorId.Value}"
-                : "the doctor";
+                ? AppLanguageContext.Language == AppLanguages.Arabic ? $"الطبيب رقم {doctorId.Value}" : $"Doctor #{doctorId.Value}"
+                : AppLanguageContext.Language == AppLanguages.Arabic ? "الطبيب" : "the doctor";
         }
 
         public static string FormatPatient(string? fullName, int? patientId = null)
@@ -37,34 +41,48 @@ namespace WelloraHealthCareManagment.Infrastructure.Services.Notifications
             if (!string.IsNullOrWhiteSpace(normalizedName))
             {
                 return patientId.HasValue
-                    ? $"{normalizedName} (Patient #{patientId.Value})"
+                    ? AppLanguageContext.Language == AppLanguages.Arabic
+                        ? $"{normalizedName} (المريض رقم {patientId.Value})"
+                        : $"{normalizedName} (Patient #{patientId.Value})"
                     : normalizedName;
             }
 
             return patientId.HasValue
-                ? $"Patient #{patientId.Value}"
-                : "the patient";
+                ? AppLanguageContext.Language == AppLanguages.Arabic ? $"المريض رقم {patientId.Value}" : $"Patient #{patientId.Value}"
+                : AppLanguageContext.Language == AppLanguages.Arabic ? "المريض" : "the patient";
         }
 
         public static string FormatAppointmentDateTime(DateTime slotDate, TimeSpan startTime)
-            => slotDate.Add(startTime).ToString("dddd, dd MMM yyyy 'at' hh:mm tt", EnCulture);
+            => FormatDateTime(slotDate.Add(startTime));
 
         public static string FormatDateTime(DateTime value)
-            => value.ToString("dddd, dd MMM yyyy 'at' hh:mm tt", EnCulture);
+            => value.ToString(
+                AppLanguageContext.Language == AppLanguages.Arabic
+                    ? "dddd، dd MMM yyyy 'الساعة' hh:mm tt"
+                    : "dddd, dd MMM yyyy 'at' hh:mm tt",
+                CultureInfo.CurrentCulture);
 
         public static string FormatDate(DateTime value)
-            => value.ToString("dddd, dd MMM yyyy", EnCulture);
+            => value.ToString(
+                AppLanguageContext.Language == AppLanguages.Arabic
+                    ? "dddd، dd MMM yyyy"
+                    : "dddd, dd MMM yyyy",
+                CultureInfo.CurrentCulture);
 
         public static string FormatAmount(decimal amount, string currency = "EGP")
-            => $"{amount:F2} {currency}";
+            => AppLanguageContext.Language == AppLanguages.Arabic
+                ? $"{amount.ToString("N2", CultureInfo.CurrentCulture)} {(currency == "EGP" ? "ج.م" : currency)}"
+                : $"{amount.ToString("N2", CultureInfo.CurrentCulture)} {currency}";
 
         public static string FormatQuoted(string? value, string fallback)
             => $"\"{(string.IsNullOrWhiteSpace(value) ? fallback : value.Trim())}\"";
 
         public static string FormatReason(string? reason)
             => string.IsNullOrWhiteSpace(reason)
-                ? "No reason was provided."
-                : $"Reason: {reason.Trim()}.";
+                ? AppLanguageContext.Language == AppLanguages.Arabic ? "لم يتم تقديم سبب." : "No reason was provided."
+                : AppLanguageContext.Language == AppLanguages.Arabic
+                    ? $"السبب: {reason.Trim()}."
+                    : $"Reason: {reason.Trim()}.";
 
         public static string FormatPermissionSummary(
             bool canViewMedicalHistory,
@@ -89,7 +107,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services.Notifications
             }
 
             return permissions.Count == 0
-                ? "no records"
+                ? AppLanguageContext.Language == AppLanguages.Arabic ? "لا توجد سجلات" : "no records"
                 : string.Join(", ", permissions);
         }
     }

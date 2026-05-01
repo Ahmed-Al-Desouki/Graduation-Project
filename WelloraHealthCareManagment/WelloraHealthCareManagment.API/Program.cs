@@ -5,6 +5,7 @@ using HealthCare_.Middleware;
 using HealthCare_.Models.sharedModels.ApplicationsAndSession;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -197,6 +198,31 @@ internal class Program
                 {
                     options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
                 });
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var localizationService = context.HttpContext.RequestServices
+                        .GetRequiredService<WelloraHealthCareManagment.Application.Interfaces.Services.IAppLocalizationService>();
+
+                    var errors = context.ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value!.Errors
+                                .Select(error => localizationService.TranslateText(
+                                    string.IsNullOrWhiteSpace(error.ErrorMessage)
+                                        ? localizationService.Localize("Common.ValidationFailed")
+                                        : error.ErrorMessage))
+                                .ToArray());
+
+                    return new BadRequestObjectResult(new
+                    {
+                        message = localizationService.Localize("Common.ValidationFailed"),
+                        errors
+                    });
+                };
+            });
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
@@ -277,6 +303,8 @@ internal class Program
             });
 
             app.UseAuthentication();
+            app.UseMiddleware<RequestLanguageMiddleware>();
+            app.UseMiddleware<LocalizedJsonResponseMiddleware>();
             app.UseMiddleware<AccountStatusMiddleware>();
             app.UseMiddleware<UpdateLastActivityMiddleware>();
             app.UseAuthorization();

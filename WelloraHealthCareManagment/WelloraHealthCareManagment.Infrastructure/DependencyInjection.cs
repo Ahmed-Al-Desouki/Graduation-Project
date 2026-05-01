@@ -130,6 +130,7 @@ namespace WelloraHealthCareManagement.Infrastructure
             // Auth
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IAppLocalizationService, AppLocalizationService>();
             services.AddScoped<IPasswordService, PasswordService>();
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             services.AddScoped<IAuthCoreService, AuthCoreService>();
@@ -190,6 +191,7 @@ namespace WelloraHealthCareManagement.Infrastructure
             services.AddScoped<IDoctorVerificationService, DoctorVerificationService>();
             services.AddScoped<ITicketService, TicketService>();
             services.AddScoped<IUserManagementService, UserManagementService>();
+            services.AddScoped<IUserLanguagePreferenceService, UserLanguagePreferenceService>();
             services.AddScoped<IUserSearchService, UserSearchService>();
             services.AddScoped<IRealtimeService, AppRealtimeService>();
 

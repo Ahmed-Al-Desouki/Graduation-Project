@@ -25,6 +25,10 @@ namespace HealthCare_.Models.sharedModels.ApplicationsAndSession
         [StringLength(500)]
         public string? Address { get; set; }
 
+        [Required]
+        [StringLength(10)]
+        public string PreferredLanguage { get; set; } = "en";
+
         // ─────────────── Profile Image ───────────────
         public int? ProfileImageId { get; set; }
 

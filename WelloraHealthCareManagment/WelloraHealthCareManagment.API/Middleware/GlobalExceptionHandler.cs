@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagement.Domain.Exceptions;
 
 namespace HealthCare_.Middleware
@@ -18,7 +19,7 @@ namespace HealthCare_.Middleware
             _logger = logger;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async Task InvokeAsync(HttpContext context, IAppLocalizationService localizationService)
         {
             try
             {
@@ -33,7 +34,7 @@ namespace HealthCare_.Middleware
                 // الشكل القديم بالظبط
                 var errorResponse = new
                 {
-                    message = GetFriendlyMessage(ex),
+                    message = GetFriendlyMessage(ex, localizationService),
                     inner = (object?)null
                 };
 
@@ -95,23 +96,23 @@ namespace HealthCare_.Middleware
             }
         }
 
-        private static string GetFriendlyMessage(Exception ex)
+        private static string GetFriendlyMessage(Exception ex, IAppLocalizationService localizationService)
         {
             return ex switch
             {
-                FluentValidation.ValidationException => "Validation failed. Please check your input.",
-                UnauthorizedAccessException when ex.Message.Contains("claim") => "Authentication required.",
-                UnauthorizedAccessException => ex.Message, // "History does not belong..."
+                FluentValidation.ValidationException => localizationService.Localize("Common.ValidationFailed"),
+                UnauthorizedAccessException when ex.Message.Contains("claim") => localizationService.Localize("Common.AuthenticationRequired"),
+                UnauthorizedAccessException => localizationService.TranslateText(ex.Message),
                 NotFoundException => ex.Message,
                 DomainException => ex.Message,
                 KeyNotFoundException => ex.Message ?? "The requested resource was not found.",
                 ArgumentException or ArgumentNullException => ex.Message,
                 InvalidOperationException => ex.Message,
-                DbUpdateConcurrencyException => "The record was modified by another user. Please refresh and try again.",
-                SqlException sqlEx => "Database error occurred. Please try again later.",
-                HttpRequestException => "Failed to connect to an external service.",
-                TimeoutException => "The operation timed out.",
-                _ => "An unexpected error occurred. Please try again later."
+                DbUpdateConcurrencyException => localizationService.Localize("Common.RecordModified"),
+                SqlException => localizationService.Localize("Common.DatabaseError"),
+                HttpRequestException => localizationService.Localize("Common.ExternalServiceFailed"),
+                TimeoutException => localizationService.Localize("Common.Timeout"),
+                _ => localizationService.Localize("Common.AnUnexpectedErrorOccurred")
             };
         }
     }

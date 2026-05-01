@@ -278,6 +278,32 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<string?> GetPreferredLanguageAsync(int userId, CancellationToken ct = default)
+            => await _context.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.PreferredLanguage)
+                .FirstOrDefaultAsync(ct);
+
+        public async Task<string?> GetPreferredLanguageByEmailAsync(string email, CancellationToken ct = default)
+            => await _context.Users
+                .Where(u => u.Email == email)
+                .Select(u => u.PreferredLanguage)
+                .FirstOrDefaultAsync(ct);
+
+        public async Task<Dictionary<int, string>> GetPreferredLanguagesAsync(IEnumerable<int> userIds, CancellationToken ct = default)
+        {
+            var ids = userIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return new Dictionary<int, string>();
+            }
+
+            return await _context.Users
+                .Where(u => ids.Contains(u.Id))
+                .Select(u => new { u.Id, u.PreferredLanguage })
+                .ToDictionaryAsync(x => x.Id, x => x.PreferredLanguage, ct);
+        }
+
         public async Task<List<ApplicationUser>> GetDoctorsFilteredAsync(
             string? searchTerm,
             bool? onlyVerified,

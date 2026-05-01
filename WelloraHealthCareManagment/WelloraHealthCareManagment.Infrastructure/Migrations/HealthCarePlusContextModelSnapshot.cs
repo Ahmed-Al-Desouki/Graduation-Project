@@ -1047,6 +1047,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("PreferredLanguage")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("en");
+
                     b.Property<int?>("ProfileImageId")
                         .HasColumnType("int");
 

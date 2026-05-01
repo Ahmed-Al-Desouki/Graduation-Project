@@ -123,6 +123,10 @@ namespace WelloraHealthCareManagment.Infrastructure.Context
                 entity.Property(u => u.FullName).HasMaxLength(100).IsRequired();
                 entity.Property(u => u.Role).HasMaxLength(50).IsRequired();
                 entity.Property(u => u.Address).HasMaxLength(500);
+                entity.Property(u => u.PreferredLanguage)
+                    .HasMaxLength(10)
+                    .HasDefaultValue("en")
+                    .IsRequired();
                 entity.Property(u => u.CreatedAt).HasDefaultValueSql("GETUTCDATE()").IsRequired();
                 entity.Property(u => u.UpdatedAt).IsConcurrencyToken();
                 entity.Property(u => u.TwoFactorEnabled).HasDefaultValue(false);

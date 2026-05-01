@@ -7,6 +7,7 @@ using WelloraHealthCareManagment.Application.Common;
 using WelloraHealthCareManagment.Application.DTOs.Admin;
 using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Application.Common.Localization;
 using WelloraHealthCareManagment.Domain.Entities.Notifications;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
@@ -22,6 +23,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
         private readonly IFirebaseNotificationService _firebaseService;
         private readonly IRealtimeService _realtimeService;
         private readonly IMapper _mapper;
+        private readonly IAppLocalizationService _localizationService;
         private readonly ILogger<NotificationService> _logger;
 
         public NotificationService(
@@ -31,6 +33,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             IFirebaseNotificationService firebaseService,
             IRealtimeService realtimeService,
             IMapper mapper,
+            IAppLocalizationService localizationService,
             ILogger<NotificationService> logger)
         {
             _notificationRepository = notificationRepository;
@@ -39,12 +42,18 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             _firebaseService = firebaseService;
             _realtimeService = realtimeService;
             _mapper = mapper;
+            _localizationService = localizationService;
             _logger = logger;
         }
 
         public async Task NotifyAsync(NotificationDispatchRequest request, CancellationToken ct = default)
         {
             var normalizedRequest = NormalizeDispatchRequest(request);
+            var userLanguage = await _userRepository.GetPreferredLanguageAsync(normalizedRequest.UserId, ct)
+                ?? AppLanguages.English;
+            using var languageScope = AppLanguageContext.BeginScope(userLanguage);
+            normalizedRequest.Title = _localizationService.TranslateText(normalizedRequest.Title, userLanguage);
+            normalizedRequest.Message = _localizationService.TranslateText(normalizedRequest.Message, userLanguage);
 
             var createResult = await CreateNotificationAsync(new CreateNotificationRequest
             {
@@ -166,7 +175,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating notification for user {UserId}", request.UserId);
-                return ServiceResult<NotificationDto>.Failure("Failed to create notification");
+                return ServiceResult<NotificationDto>.Failure(_localizationService.TranslateText("Failed to create notification"));
             }
         }
 
@@ -200,7 +209,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating bulk notifications");
-                return ServiceResult.Failure("Failed to create notifications");
+                return ServiceResult.Failure(_localizationService.TranslateText("Failed to create notifications"));
             }
         }
 
@@ -211,7 +220,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = doctorId,
-                Title = "Verification Approved",
+                Title = _localizationService.Localize("Notification.VerificationApprovedTitle"),
                 Message =
                     $"Your doctor verification for {NotificationMessageFormatter.FormatDoctor(null, doctorId)} " +
                     "has been approved. You can now access doctor features and start receiving patients.",
@@ -230,7 +239,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = doctorId,
-                Title = "Verification Rejected",
+                Title = _localizationService.Localize("Notification.VerificationRejectedTitle"),
                 Message =
                     $"Your doctor verification for {NotificationMessageFormatter.FormatDoctor(null, doctorId)} " +
                     $"was rejected. {NotificationMessageFormatter.FormatReason(rejectionReason)}",
@@ -253,7 +262,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             await NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = userId,
-                Title = "Account Blocked",
+                Title = _localizationService.Localize("Notification.AccountBlockedTitle"),
                 Message =
                     $"Your account (User #{userId}) has been blocked. " +
                     $"{NotificationMessageFormatter.FormatReason(reason)} Please contact support for more information.",

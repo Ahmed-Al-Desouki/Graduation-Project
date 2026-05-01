@@ -3,13 +3,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using System.Net;
+using WelloraHealthCareManagment.Application.Interfaces.AppRepositories;
 using WelloraHealthCareManagment.Application.Interfaces.Email;
+using WelloraHealthCareManagment.Application.Interfaces.Services;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {
     public class EmailService : IEmailService
     {
         private readonly IConfiguration _configuration;
+        private readonly IUserRepository _userRepository;
+        private readonly IAppLocalizationService _localizationService;
         private readonly ILogger<EmailService> _logger;
         private readonly string _smtpServer;
         private readonly int _smtpPort;
@@ -20,9 +24,13 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public EmailService(
             IConfiguration configuration,
+            IUserRepository userRepository,
+            IAppLocalizationService localizationService,
             ILogger<EmailService> logger)
         {
             _configuration = configuration;
+            _userRepository = userRepository;
+            _localizationService = localizationService;
             _logger = logger;
 
             // Load and validate email settings
@@ -85,8 +93,15 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
         public async Task<bool> SendOtpEmailAsync(string toEmail, string otpCode, string userName)
         {
-            var subject = "Your OTP Code - HealthCare App";
-            var htmlMessage = GenerateOtpEmailTemplate(otpCode, userName);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.OtpSubject", language: language);
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.OtpHeadline", language: language),
+                _localizationService.Localize("Email.OtpBody", language: language),
+                $"<div style='font-size:32px;font-weight:700;letter-spacing:6px;color:#0f766e;background:#f0fdfa;padding:16px 24px;border-radius:14px;display:inline-block'>{WebUtility.HtmlEncode(otpCode)}</div><p style='margin-top:18px'>{_localizationService.Localize("Email.OtpExpires", language: language)}</p><p style='color:#b45309;font-weight:600'>{_localizationService.Localize("Email.OtpWarning", language: language)}</p>",
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
@@ -95,64 +110,136 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             string resetLink,
             string userName)
         {
-            var subject = "Reset Your HealthCare Password";
-            var htmlMessage = GeneratePasswordResetEmailTemplate(resetLink, userName);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.ResetSubject", language: language);
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.ResetHeadline", language: language),
+                _localizationService.Localize("Email.ResetBody", language: language),
+                BuildPrimaryButton(resetLink, _localizationService.Localize("Email.ResetAction", language: language)),
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
         public async Task<bool> SendWelcomeEmailAsync(string toEmail, string userName)
         {
-            var subject = "Welcome to HealthCare App!";
-            var htmlMessage = GenerateWelcomeEmailTemplate(userName);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.WelcomeSubject", language: language);
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.WelcomeHeadline", language: language),
+                _localizationService.Localize("Email.WelcomeBody", language: language),
+                string.Empty,
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
         public async Task<bool> SendEmailVerificationAsync(string toEmail, string verificationToken, string userName)
         {
-            var subject = "Verify Your Email - HealthCare App";
-            var htmlMessage = GenerateEmailVerificationTemplate(verificationToken, userName);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.VerifySubject", language: language);
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.VerifyHeadline", language: language),
+                _localizationService.Localize("Email.VerifyBody", language: language),
+                $"<div style='font-size:16px;font-weight:600;background:#f8fafc;padding:14px 18px;border-radius:12px;word-break:break-all'>{WebUtility.HtmlEncode(verificationToken)}</div>",
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
         public async Task<bool> SendDoctorVerificationApprovedEmailAsync(string toEmail, string userName, string? adminNotes = null)
         {
-            var subject = "Your Doctor Verification Has Been Approved";
-            var htmlMessage = GenerateDoctorVerificationApprovedTemplate(userName, adminNotes);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.DoctorApprovedSubject", language: language);
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.DoctorApprovedHeadline", language: language),
+                _localizationService.Localize("Email.DoctorApprovedBody", language: language),
+                string.IsNullOrWhiteSpace(adminNotes)
+                    ? string.Empty
+                    : BuildInfoBlock(_localizationService.Localize("Email.AdminNotes", language: language), adminNotes),
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
         public async Task<bool> SendDoctorVerificationRejectedEmailAsync(string toEmail, string userName, string rejectionReason, string? adminNotes = null)
         {
-            var subject = "Update About Your Doctor Verification";
-            var htmlMessage = GenerateDoctorVerificationRejectedTemplate(userName, rejectionReason, adminNotes);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.DoctorRejectedSubject", language: language);
+            var extra = BuildInfoBlock(_localizationService.Localize("Email.RejectionReason", language: language), rejectionReason);
+            if (!string.IsNullOrWhiteSpace(adminNotes))
+            {
+                extra += BuildInfoBlock(_localizationService.Localize("Email.AdminNotes", language: language), adminNotes);
+            }
+
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.DoctorRejectedHeadline", language: language),
+                _localizationService.Localize("Email.DoctorRejectedBody", language: language),
+                extra,
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
         public async Task<bool> SendAccountBlockedEmailAsync(string toEmail, string userName, string reason)
         {
-            var subject = "Important Notice About Your Account";
-            var htmlMessage = GenerateAccountBlockedTemplate(userName, reason);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.BlockedSubject", language: language);
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.BlockedHeadline", language: language),
+                _localizationService.Localize("Email.BlockedBody", language: language),
+                BuildInfoBlock(_localizationService.Localize("Email.RejectionReason", language: language), reason),
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
         public async Task<bool> SendAccountUnblockedEmailAsync(string toEmail, string userName)
         {
-            var subject = "Your Account Access Has Been Restored";
-            var htmlMessage = GenerateAccountUnblockedTemplate(userName);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.UnblockedSubject", language: language);
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.UnblockedHeadline", language: language),
+                _localizationService.Localize("Email.UnblockedBody", language: language),
+                string.Empty,
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
         public async Task<bool> SendAccountSuspendedEmailAsync(string toEmail, string userName, DateTime suspensionEnd, string reason)
         {
-            var subject = "Your Account Has Been Temporarily Suspended";
-            var htmlMessage = GenerateAccountSuspendedTemplate(userName, suspensionEnd, reason);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.SuspendedSubject", language: language);
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.SuspendedHeadline", language: language),
+                _localizationService.Localize("Email.SuspendedBody", language: language),
+                BuildInfoBlock(_localizationService.Localize("Email.SuspensionUntil", language: language), _localizationService.FormatDateTime(suspensionEnd, language)) +
+                BuildInfoBlock(_localizationService.Localize("Email.RejectionReason", language: language), reason),
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
         public async Task<bool> SendAccountUnsuspendedEmailAsync(string toEmail, string userName)
         {
-            var subject = "Your Account Is Active Again";
-            var htmlMessage = GenerateAccountUnsuspendedTemplate(userName);
+            var language = await ResolveLanguageAsync(toEmail);
+            var subject = _localizationService.Localize("Email.UnsuspendedSubject", language: language);
+            var htmlMessage = BuildActionEmail(
+                language,
+                subject,
+                _localizationService.Localize("Email.UnsuspendedHeadline", language: language),
+                _localizationService.Localize("Email.UnsuspendedBody", language: language),
+                string.Empty,
+                userName);
             return await SendEmailAsync(toEmail, subject, htmlMessage);
         }
 
@@ -184,6 +271,61 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             // If all retries failed, throw on last attempt
             await client.ConnectAsync(_smtpServer, _smtpPort, MailKit.Security.SecureSocketOptions.StartTls);
         }
+
+        private async Task<string> ResolveLanguageAsync(string toEmail)
+        {
+            var language = await _userRepository.GetPreferredLanguageByEmailAsync(toEmail);
+            return _localizationService.NormalizeLanguage(language);
+        }
+
+        private string BuildActionEmail(
+            string language,
+            string subject,
+            string headline,
+            string body,
+            string contentHtml,
+            string userName)
+        {
+            var isArabic = _localizationService.IsRightToLeft(language);
+            var direction = isArabic ? "rtl" : "ltr";
+            var align = isArabic ? "right" : "left";
+            var greeting = _localizationService.Localize(
+                "Email.Greeting",
+                new Dictionary<string, string> { ["userName"] = WebUtility.HtmlEncode(userName) },
+                language);
+
+            return $@"
+<!DOCTYPE html>
+<html lang='{language}' dir='{direction}'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>{WebUtility.HtmlEncode(subject)}</title>
+</head>
+<body style='margin:0;padding:24px;background:#f3f7fb;font-family:Segoe UI,Arial,sans-serif;color:#0f172a'>
+    <div style='max-width:620px;margin:0 auto;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(15,23,42,.08)'>
+        <div style='background:linear-gradient(135deg,#0f766e,#2563eb);padding:32px 28px;color:#fff;text-align:{align}'>
+            <div style='font-size:14px;opacity:.9'>{WebUtility.HtmlEncode(_localizationService.Localize("Email.Brand", language: language))}</div>
+            <h1 style='margin:10px 0 0;font-size:28px'>{WebUtility.HtmlEncode(headline)}</h1>
+        </div>
+        <div style='padding:32px 28px;text-align:{align};line-height:1.7'>
+            <p style='margin-top:0;font-size:16px;font-weight:600'>{greeting}</p>
+            <p style='font-size:15px;color:#334155'>{WebUtility.HtmlEncode(body)}</p>
+            <div style='margin:24px 0'>{contentHtml}</div>
+        </div>
+        <div style='padding:20px 28px;background:#f8fafc;color:#64748b;font-size:13px;text-align:{align}'>
+            {WebUtility.HtmlEncode(_localizationService.Localize("Email.Footer", language: language))}
+        </div>
+    </div>
+</body>
+</html>";
+        }
+
+        private static string BuildPrimaryButton(string href, string text)
+            => $"<a href='{WebUtility.HtmlEncode(href)}' style='display:inline-block;background:#0f766e;color:#fff;text-decoration:none;padding:14px 22px;border-radius:12px;font-weight:600'>{WebUtility.HtmlEncode(text)}</a>";
+
+        private static string BuildInfoBlock(string label, string value)
+            => $"<div style='margin-top:14px;padding:16px;border-radius:14px;background:#f8fafc'><div style='font-size:12px;color:#64748b;margin-bottom:6px'>{WebUtility.HtmlEncode(label)}</div><div style='font-size:15px;color:#0f172a'>{WebUtility.HtmlEncode(value)}</div></div>";
 
 
         #endregion

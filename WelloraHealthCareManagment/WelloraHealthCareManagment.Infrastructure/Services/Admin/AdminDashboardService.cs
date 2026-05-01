@@ -17,6 +17,7 @@ public class AdminDashboardService : IAdminDashboardService
     private readonly IDoctorVerificationRepository _verificationRepository;
     private readonly ITicketRepository _ticketRepository;
     private readonly IAdminActionLogRepository _auditRepository;
+    private readonly IAppLocalizationService _localizationService;
     private readonly ILogger<AdminDashboardService> _logger;
 
     public AdminDashboardService(
@@ -24,12 +25,14 @@ public class AdminDashboardService : IAdminDashboardService
         IDoctorVerificationRepository verificationRepository,
         ITicketRepository ticketRepository,
         IAdminActionLogRepository auditRepository,
+        IAppLocalizationService localizationService,
         ILogger<AdminDashboardService> logger)
     {
         _userStatusRepository = userStatusRepository;
         _verificationRepository = verificationRepository;
         _ticketRepository = ticketRepository;
         _auditRepository = auditRepository;
+        _localizationService = localizationService;
         _logger = logger;
     }
 
@@ -296,8 +299,8 @@ public class AdminDashboardService : IAdminDashboardService
                 RecentActions = recentActions.Select(log => new RecentActionDto
                 {
                     AdminName = log.Admin?.FullName ?? "Unknown",
-                    ActionType = log.ActionType.ToString(),
-                    TargetEntity = log.TargetEntity,
+                    ActionType = _localizationService.FormatEnumLabel(log.ActionType.ToString()),
+                    TargetEntity = _localizationService.FormatEnumLabel(log.TargetEntity),
                     Timestamp = log.CreatedAt
                 }).ToList(),
 
@@ -356,7 +359,7 @@ public class AdminDashboardService : IAdminDashboardService
             var monthEnd = monthStart.AddMonths(1);
             trends.Add(new UserRegistrationTrendDto
             {
-                Month = monthStart.ToString("MMM yyyy"),
+                Month = monthStart.ToString("MMM yyyy", _localizationService.GetCulture()),
                 Patients = await _userStatusRepository.GetNewPatientsCountAsync(monthStart, monthEnd, ct),
                 Doctors = await _userStatusRepository.GetNewDoctorsCountAsync(monthStart, monthEnd, ct)
             });
