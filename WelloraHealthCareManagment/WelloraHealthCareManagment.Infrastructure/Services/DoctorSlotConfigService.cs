@@ -1272,7 +1272,10 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
             {
                 UserId = patientId,
                 Title = "Appointment Cancelled",
-                Message = $"Your appointment was cancelled because the doctor's schedule changed. Reason: {reason}",
+                Message =
+                    $"Your appointment on {WelloraHealthCareManagment.Infrastructure.Services.Notifications.NotificationMessageFormatter.FormatAppointmentDateTime(slot.SlotDate, slot.StartTime)} " +
+                    $"was cancelled because the doctor's schedule changed. " +
+                    $"{WelloraHealthCareManagment.Infrastructure.Services.Notifications.NotificationMessageFormatter.FormatReason(reason)}",
                 Type = NotificationType.AppointmentCancelledByDoctor,
                 RelatedEntityType = "Appointment",
                 Data = new Dictionary<string, string>

@@ -27,6 +27,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         private readonly ICloudStorageService _cloudStorage;
         private readonly IReviewRepository _reviewRepository;
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IPaymentRepository _paymentRepository;
         private readonly IExternalFileRepository _externalFileRepository;
         private readonly INotificationService _notificationService;
         private readonly ILogger<DoctorProfileService> _logger;
@@ -40,6 +41,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             ICloudStorageService cloudStorage,
             IReviewRepository reviewRepository,
             IAppointmentRepository appointmentRepository,
+            IPaymentRepository paymentRepository,
             IExternalFileRepository externalFileRepository,
             INotificationService notificationService,
             ILogger<DoctorProfileService> logger)
@@ -52,6 +54,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             _cloudStorage = cloudStorage;
             _reviewRepository = reviewRepository;
             _appointmentRepository = appointmentRepository;
+            _paymentRepository = paymentRepository;
             _externalFileRepository = externalFileRepository;
             _notificationService = notificationService;
             _logger = logger;
@@ -71,6 +74,12 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 var achievements = await _achievementRepository.GetByDoctorIdAsync(doctorId);
                 var reviews = await _reviewRepository.GetByDoctorIdActiveAsync(doctorId);
                 var patientCount = await _appointmentRepository.GetDistinctPatientCountByDoctorAsync(doctorId);
+                var currentMonthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+                var nextMonthStart = currentMonthStart.AddMonths(1);
+                var currentMonthRevenue = await _paymentRepository.GetDoctorRevenueForPeriodAsync(
+                    doctorId,
+                    currentMonthStart,
+                    nextMonthStart);
                 var verificationRequestStatus = DoctorVerificationPolicy.DetermineRequestStatus(verifications);
                 var missingRequiredDocuments = DoctorVerificationPolicy.GetMissingRequiredDocuments(verifications);
                 var latestReviewSnapshot = verifications
@@ -97,6 +106,8 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     Bio = doctor.Bio,
                     AverageRating = doctor.AverageRating,
                     PatientCount = patientCount,
+                    RevenueMonth = currentMonthStart.ToString("yyyy-MM"),
+                    RevenueAmount = currentMonthRevenue,
                     IsActive = doctor.IsActive,
                     IsProfileCompleted = doctor.IsProfileCompleted,
                     VerificationRequestStatus = verificationRequestStatus,
@@ -256,7 +267,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 {
                     UserId = doctorId,
                     Title = "Profile Completed",
-                    Message = "Your doctor profile is now complete. The next step is submitting verification documents for admin review.",
+                    Message = $"Your doctor profile for Dr. {doctor.User.FullName} is now complete. The next step is to submit your verification documents for admin review.",
                     Type = NotificationType.DoctorProfileCompleted,
                     RelatedEntityType = "Doctor",
                     RelatedEntityId = doctorId
@@ -352,7 +363,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
         {
             try
             {
-                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
+                var doctor = await _doctorRepository.GetByIdWithUserAsync(doctorId);
                 if (doctor == null)
                     return ServiceResult.Failure("Doctor not found");
 
@@ -447,15 +458,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 {
                     UserId = doctorId,
                     Title = "Verification Document Submitted",
-                    Message = $"Your {request.DocumentType} document has been submitted and is waiting for admin review.",
+                    Message = $"Your {request.DocumentType} verification document has been submitted for Dr. {doctor.User.FullName} and is now waiting for admin review.",
                     Type = NotificationType.DoctorVerificationSubmitted,
                     RelatedEntityType = "DoctorVerification",
                     RelatedEntityId = verification.VerificationId,
-                    Data = new Dictionary<string, string> { ["documentType"] = request.DocumentType.ToString() }
+                    Data = new Dictionary<string, string>
+                    {
+                        ["doctorId"] = doctorId.ToString(),
+                        ["verificationId"] = verification.VerificationId.ToString(),
+                        ["documentType"] = request.DocumentType.ToString()
+                    }
                 });
                 await _notificationService.NotifyAdminsAsync(
                     title: "Doctor Verification Submitted",
-                    message: $"Doctor #{doctorId} submitted a {request.DocumentType} verification document for review.",
+                    message: $"Dr. {doctor.User.FullName} (Doctor #{doctorId}) submitted a {request.DocumentType} verification document for admin review.",
                     type: NotificationType.DoctorVerificationSubmitted,
                     relatedEntityType: "DoctorVerification",
                     relatedEntityId: verification.VerificationId,
@@ -531,15 +547,20 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                 {
                     UserId = doctorId,
                     Title = "Verification Document Re-Submitted",
-                    Message = $"Your {verification.DocumentType} document has been re-submitted and is waiting for admin review.",
+                    Message = $"Your {verification.DocumentType} verification document for Dr. {doctor?.User?.FullName ?? doctorId.ToString()} has been re-submitted and is waiting for admin review.",
                     Type = NotificationType.DoctorVerificationSubmitted,
                     RelatedEntityType = "DoctorVerification",
                     RelatedEntityId = verification.VerificationId,
-                    Data = new Dictionary<string, string> { ["documentType"] = verification.DocumentType.ToString() }
+                    Data = new Dictionary<string, string>
+                    {
+                        ["doctorId"] = doctorId.ToString(),
+                        ["verificationId"] = verification.VerificationId.ToString(),
+                        ["documentType"] = verification.DocumentType.ToString()
+                    }
                 });
                 await _notificationService.NotifyAdminsAsync(
                     title: "Doctor Verification Re-Submitted",
-                    message: $"Doctor #{doctorId} replaced a {verification.DocumentType} document and it is ready for review again.",
+                    message: $"Dr. {doctor?.User?.FullName ?? doctorId.ToString()} (Doctor #{doctorId}) replaced the {verification.DocumentType} verification document and it is ready for admin review again.",
                     type: NotificationType.DoctorVerificationSubmitted,
                     relatedEntityType: "DoctorVerification",
                     relatedEntityId: verification.VerificationId,

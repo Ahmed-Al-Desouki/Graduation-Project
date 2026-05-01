@@ -353,7 +353,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 UserId = user.Id,
                 Title = "Welcome to Wellora",
-                Message = $"Welcome {user.FullName}! Your account is ready to use.",
+                Message = user.Role.Equals("Doctor", StringComparison.OrdinalIgnoreCase)
+                    ? $"Welcome Dr. {user.FullName}. Your doctor account is ready. Complete your profile and upload verification documents to activate doctor workflows."
+                    : $"Welcome {user.FullName}. Your patient account is ready to use, and you can now book doctors and manage your care.",
                 Type = NotificationType.Welcome,
                 RelatedEntityType = "User",
                 RelatedEntityId = user.Id,
@@ -368,7 +370,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 await _notificationService.NotifyAdminsAsync(
                     title: "New Doctor Registration",
-                    message: $"{user.FullName} registered as a doctor and is waiting for review.",
+                    message: $"A doctor account was registered for {user.FullName} (Doctor #{user.Id}) through Google sign-in and is ready for profile completion and review.",
                     type: NotificationType.DoctorRegistrationSubmitted,
                     relatedEntityType: "Doctor",
                     relatedEntityId: user.Id,

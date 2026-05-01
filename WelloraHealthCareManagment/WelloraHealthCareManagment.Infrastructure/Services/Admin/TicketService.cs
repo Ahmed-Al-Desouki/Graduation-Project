@@ -72,7 +72,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 await _ticketMessageRepository.CreateAsync(initialMessage, ct);
                 await _notificationService.NotifyAdminsAsync(
                     title: "New Support Ticket",
-                    message: $"User #{userId} created a new support ticket: {request.Title}",
+                    message: $"User #{userId} created support ticket #{created.Id} titled \"{request.Title}\" in category {request.Category} with priority {request.Priority}.",
                     type: NotificationType.TicketCreated,
                     relatedEntityType: "Ticket",
                     data: new Dictionary<string, string> { ["ticketId"] = created.Id.ToString() },
@@ -197,7 +197,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 
                 await _notificationService.NotifyAdminsAsync(
                     title: "Ticket Updated",
-                    message: $"User #{userId} sent a new message on ticket {request.TicketId}.",
+                    message: $"User #{userId} sent a new message on support ticket #{request.TicketId} titled \"{ticket.Title}\".",
                     type: NotificationType.TicketCreated,
                     relatedEntityType: "Ticket",
                     data: new Dictionary<string, string> { ["ticketId"] = request.TicketId.ToString() },

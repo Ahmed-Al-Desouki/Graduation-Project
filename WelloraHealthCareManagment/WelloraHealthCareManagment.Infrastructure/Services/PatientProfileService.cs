@@ -223,7 +223,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     {
                         UserId = patient.PatientID,
                         Title = "Profile Completed",
-                        Message = "Your patient profile has been completed successfully.",
+                        Message = $"Your patient profile for {patient.User?.FullName ?? $"Patient #{patient.PatientID}"} has been completed successfully. You can now continue using appointment and medical features.",
                         Type = NotificationType.PatientProfileCompleted,
                         RelatedEntityType = "Patient",
                         RelatedEntityId = patient.PatientID,

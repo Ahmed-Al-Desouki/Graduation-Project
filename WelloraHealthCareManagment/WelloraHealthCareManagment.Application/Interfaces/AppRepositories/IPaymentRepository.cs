@@ -32,5 +32,11 @@ namespace WelloraHealthCareManagment.Application.Interfaces.AppRepositories
             DateTime? toDate = null,
             CancellationToken cancellationToken = default);
 
+        Task<decimal> GetDoctorRevenueForPeriodAsync(
+            int doctorId,
+            DateTime fromDate,
+            DateTime toDate,
+            CancellationToken cancellationToken = default);
+
     }
 }

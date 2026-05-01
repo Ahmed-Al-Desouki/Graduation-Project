@@ -563,8 +563,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 UserId = user.Id,
                 Title = "Welcome to Wellora",
                 Message = user.Role.Equals("Doctor", StringComparison.OrdinalIgnoreCase)
-                    ? "Your account has been created. Complete your profile and submit your verification documents to start receiving patients."
-                    : "Your account has been created successfully. You can now book doctors, manage appointments, and receive updates.",
+                    ? $"Welcome Dr. {user.FullName}. Your doctor account has been created. Complete your profile and submit your verification documents to start receiving patients."
+                    : $"Welcome {user.FullName}. Your patient account is ready, and you can now book doctors, manage appointments, and receive updates.",
                 Type = NotificationType.Welcome,
                 RelatedEntityType = "User",
                 RelatedEntityId = user.Id,
@@ -575,7 +575,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 await _notificationService.NotifyAdminsAsync(
                     title: "New Doctor Registered",
-                    message: $"{user.FullName} has registered as a doctor and may submit verification documents soon.",
+                    message: $"A new doctor account was created for {user.FullName} (Doctor #{user.Id}). The doctor can now complete the profile and submit verification documents.",
                     type: NotificationType.DoctorRegistrationSubmitted,
                     relatedEntityType: "Doctor",
                     relatedEntityId: user.Id,

@@ -12,6 +12,7 @@ using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBo
 using WelloraHealthCareManagement.Domain.Enums;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Enums;
+using WelloraHealthCareManagment.Infrastructure.Services.Notifications;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {
@@ -194,8 +195,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 await NotifyPrescriptionChangedAsync(
                     prescription.PatientId,
                     prescription.Id,
+                    prescription.AppointmentId,
                     "New Prescription",
-                    "Your doctor added a new prescription to your treatment plan.",
+                    "added a new prescription to your treatment plan",
                     NotificationType.PrescriptionCreated,
                     cancellationToken);
                 await BroadcastPrescriptionUpdatedAsync(prescription, "PrescriptionCreated", cancellationToken);
@@ -339,8 +341,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 await NotifyPrescriptionChangedAsync(
                     prescription.PatientId,
                     prescription.Id,
+                    prescription.AppointmentId,
                     "Prescription Updated",
-                    "Your doctor added a medication item to your prescription.",
+                    "added a medication item to your prescription",
                     NotificationType.PrescriptionUpdated,
                     cancellationToken);
                 await BroadcastPrescriptionUpdatedAsync(prescription, "PrescriptionUpdated", cancellationToken);
@@ -425,8 +428,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 await NotifyPrescriptionChangedAsync(
                     prescription.PatientId,
                     prescription.Id,
+                    prescription.AppointmentId,
                     "Prescription Updated",
-                    "Your doctor updated one of your prescription items.",
+                    "updated one of your prescription items",
                     NotificationType.PrescriptionUpdated,
                     cancellationToken);
                 await BroadcastPrescriptionUpdatedAsync(prescription, "PrescriptionUpdated", cancellationToken);
@@ -531,8 +535,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 await NotifyPrescriptionChangedAsync(
                     prescription.PatientId,
                     prescription.Id,
+                    prescription.AppointmentId,
                     "Prescription Updated",
-                    "Your doctor added new medications to your prescription.",
+                    "added new medications to your prescription",
                     NotificationType.PrescriptionUpdated,
                     cancellationToken);
                 await BroadcastPrescriptionUpdatedAsync(prescription, "PrescriptionUpdated", cancellationToken);
@@ -579,11 +584,28 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private async Task NotifyPrescriptionChangedAsync(
             int patientId,
             Guid prescriptionId,
+            Guid appointmentId,
             string title,
-            string message,
+            string actionDescription,
             NotificationType type,
             CancellationToken cancellationToken)
         {
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(
+                appointmentId,
+                cancellationToken);
+
+            var doctorLabel = NotificationMessageFormatter.FormatDoctor(
+                appointment?.Doctor?.User?.FullName,
+                appointment?.DoctorId);
+            var appointmentDateTime = appointment?.TimeSlot == null
+                ? null
+                : NotificationMessageFormatter.FormatAppointmentDateTime(
+                    appointment.TimeSlot.SlotDate,
+                    appointment.TimeSlot.StartTime);
+            var message = appointmentDateTime == null
+                ? $"{doctorLabel} {actionDescription}. Open the prescription to review your medications and instructions."
+                : $"{doctorLabel} {actionDescription} for your appointment on {appointmentDateTime}. Open the prescription to review your medications and instructions.";
+
             await _notificationService.NotifyAsync(new NotificationDispatchRequest
             {
                 UserId = patientId,
@@ -591,7 +613,12 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 Message = message,
                 Type = type,
                 RelatedEntityType = "Prescription",
-                Data = new Dictionary<string, string> { ["prescriptionId"] = prescriptionId.ToString() }
+                RelatedEntityKey = appointmentId.ToString(),
+                Data = new Dictionary<string, string>
+                {
+                    ["prescriptionId"] = prescriptionId.ToString(),
+                    ["appointmentId"] = appointmentId.ToString()
+                }
             }, cancellationToken);
         }
 

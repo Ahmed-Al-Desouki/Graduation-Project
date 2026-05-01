@@ -28,9 +28,30 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             return verification;
         }
 
+        //public async Task UpdateAsync(DoctorVerification verification, CancellationToken ct = default)
+        //{
+        //    _context.DoctorVerifications.Update(verification);
+        //    await _context.SaveChangesAsync(ct);
+        //}
         public async Task UpdateAsync(DoctorVerification verification, CancellationToken ct = default)
         {
-            _context.DoctorVerifications.Update(verification);
+            var existing = await _context.DoctorVerifications
+                .FirstOrDefaultAsync(v => v.VerificationId == verification.VerificationId, ct);
+
+            if (existing == null)
+                return;
+
+            existing.Status = verification.Status;
+            existing.ReviewedByAdminId = verification.ReviewedByAdminId;
+            existing.ReviewedAt = verification.ReviewedAt;
+            existing.AdminNotes = verification.AdminNotes;
+            existing.RejectionReason = verification.RejectionReason;
+            existing.UpdatedAt = verification.UpdatedAt;
+            existing.FileId = verification.FileId;
+            existing.SubmittedAt = verification.SubmittedAt;
+            existing.DocumentType = verification.DocumentType;
+            existing.DoctorId = verification.DoctorId;
+
             await _context.SaveChangesAsync(ct);
         }
 
@@ -335,6 +356,39 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             return await query.CountAsync(ct);
         }
 
+        //public async Task<List<Doctor>> GetDoctorsWithVerificationsAsync(
+        //    VerificationStatus? status = null,
+        //    DateTime? fromDate = null,
+        //    DateTime? toDate = null,
+        //    int page = 1,
+        //    int pageSize = 10,
+        //    CancellationToken ct = default)
+        //{
+        //    var doctorsQuery = _context.Doctors
+        //        .Where(d => d.Verifications.Any(dv =>
+        //            (!status.HasValue || dv.Status == status.Value) &&
+        //            (!fromDate.HasValue || dv.SubmittedAt >= fromDate.Value) &&
+        //            (!toDate.HasValue || dv.SubmittedAt <= toDate.Value)));
+
+        //    return await doctorsQuery
+        //        .OrderByDescending(d => d.Verifications
+        //            .Where(dv =>
+        //                (!status.HasValue || dv.Status == status.Value) &&
+        //                (!fromDate.HasValue || dv.SubmittedAt >= fromDate.Value) &&
+        //                (!toDate.HasValue || dv.SubmittedAt <= toDate.Value))
+        //            .Max(dv => dv.SubmittedAt))
+        //        .ThenBy(d => d.DoctorId)
+        //        .Skip((page - 1) * pageSize)
+        //        .Take(pageSize)
+        //        .Include(d => d.User)
+        //        .Include(d => d.Verifications)
+        //            .ThenInclude(v => v.File)
+        //        .Include(d => d.Verifications)
+        //            .ThenInclude(v => v.ReviewedByAdmin)
+        //        .AsSplitQuery()
+        //        .AsNoTracking()
+        //        .ToListAsync(ct);
+        //}
         public async Task<List<Doctor>> GetDoctorsWithVerificationsAsync(
             VerificationStatus? status = null,
             DateTime? fromDate = null,
@@ -343,13 +397,13 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             int pageSize = 10,
             CancellationToken ct = default)
         {
-            var doctorsQuery = _context.Doctors
+            var filteredDoctorsQuery = _context.Doctors
                 .Where(d => d.Verifications.Any(dv =>
                     (!status.HasValue || dv.Status == status.Value) &&
                     (!fromDate.HasValue || dv.SubmittedAt >= fromDate.Value) &&
                     (!toDate.HasValue || dv.SubmittedAt <= toDate.Value)));
 
-            return await doctorsQuery
+            var doctorIds = await filteredDoctorsQuery
                 .OrderByDescending(d => d.Verifications
                     .Where(dv =>
                         (!status.HasValue || dv.Status == status.Value) &&
@@ -359,20 +413,26 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
                 .ThenBy(d => d.DoctorId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(d => d.DoctorId)
+                .ToListAsync(ct);
+
+            if (doctorIds.Count == 0)
+                return new List<Doctor>();
+
+            var doctors = await _context.Doctors
+                .Where(d => doctorIds.Contains(d.DoctorId))
                 .Include(d => d.User)
-                .Include(d => d.Verifications.Where(dv =>
-                    (!status.HasValue || dv.Status == status.Value) &&
-                    (!fromDate.HasValue || dv.SubmittedAt >= fromDate.Value) &&
-                    (!toDate.HasValue || dv.SubmittedAt <= toDate.Value)))
+                .Include(d => d.Verifications)
                     .ThenInclude(v => v.File)
-                .Include(d => d.Verifications.Where(dv =>
-                    (!status.HasValue || dv.Status == status.Value) &&
-                    (!fromDate.HasValue || dv.SubmittedAt >= fromDate.Value) &&
-                    (!toDate.HasValue || dv.SubmittedAt <= toDate.Value)))
+                .Include(d => d.Verifications)
                     .ThenInclude(v => v.ReviewedByAdmin)
                 .AsSplitQuery()
                 .AsNoTracking()
                 .ToListAsync(ct);
+
+            return doctors
+                .OrderBy(d => doctorIds.IndexOf(d.DoctorId))
+                .ToList();
         }
 
         public async Task<List<Doctor>> GetAllDoctorsWithVerificationsAsync(CancellationToken ct = default)

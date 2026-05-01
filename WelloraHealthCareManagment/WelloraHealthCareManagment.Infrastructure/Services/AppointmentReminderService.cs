@@ -72,13 +72,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 string formattedTime = FormatTimeSpan(timeSlot.StartTime);
 
                 // PATIENT REMINDERS
-                if (appointmentUtc > nowUtc.AddDays(1))
-                {
-                    await CreateReminderAsync(patientId, false, appointment.Id,
-                        "Appointment Tomorrow",
-                        $"Reminder: Your appointment is tomorrow at {formattedTime}",
-                        appointmentDateTime.AddDays(-1), timeZoneId, cancellationToken);
-                }
 
                 if (appointmentUtc > nowUtc.AddHours(1))
                 {
@@ -94,13 +87,6 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     appointmentDateTime, timeZoneId, cancellationToken);
 
                 // DOCTOR REMINDERS
-                if (appointmentUtc > nowUtc.AddMinutes(30))
-                {
-                    await CreateReminderAsync(doctorId, true, appointment.Id,
-                        "Upcoming Appointment",
-                        "You have an appointment in 30 minutes",
-                        appointmentDateTime.AddMinutes(-30), timeZoneId, cancellationToken);
-                }
 
                 if (appointmentUtc > nowUtc.AddMinutes(5))
                 {

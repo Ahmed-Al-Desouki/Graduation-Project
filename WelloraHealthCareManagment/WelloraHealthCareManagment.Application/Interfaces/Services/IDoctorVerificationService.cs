@@ -30,7 +30,7 @@ namespace WelloraHealthCareManagment.Application.Interfaces.Services
         // Admin: Approve doctor
         Task<ServiceResult> ApproveDoctorAsync(
             int doctorId,
-            ApproveDoctorVerificationRequest request,
+            ApproveDoctorVerificationRequest? request,
             int adminId,
             string? ipAddress = null,
             CancellationToken ct = default);

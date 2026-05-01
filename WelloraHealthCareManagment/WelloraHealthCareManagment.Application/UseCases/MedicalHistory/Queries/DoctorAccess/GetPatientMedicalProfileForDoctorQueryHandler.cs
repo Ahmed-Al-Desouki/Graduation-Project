@@ -47,15 +47,28 @@ public class GetPatientMedicalProfileForDoctorQueryHandler
         _logger.LogInformation("Grant found: {GrantFound}, IsActive: {IsActive}, CanView: {CanView}",
             grant != null, grant?.IsActive(), grant?.CanViewMedicalHistory);
 
+        var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(query.AppointmentId, ct);
+        var doctorName = appointment?.Doctor?.User?.FullName;
+        var doctorLabel = string.IsNullOrWhiteSpace(doctorName)
+            ? $"Doctor #{query.DoctorId}"
+            : doctorName.StartsWith("Dr.", StringComparison.OrdinalIgnoreCase)
+                ? $"{doctorName} (Doctor #{query.DoctorId})"
+                : $"Dr. {doctorName} (Doctor #{query.DoctorId})";
+        var appointmentDateTime = appointment?.TimeSlot == null
+            ? null
+            : appointment.TimeSlot.SlotDate
+                .Add(appointment.TimeSlot.StartTime)
+                .ToString("dddd, dd MMM yyyy 'at' hh:mm tt", System.Globalization.CultureInfo.InvariantCulture);
+
         if (grant == null || !grant.IsActive())
         {
-            await TryNotifyPatientAboutAccessRequestAsync(query, ct);
+            await TryNotifyPatientAboutAccessRequestAsync(query, appointment, doctorLabel, appointmentDateTime, ct);
             throw new UnauthorizedAccessException("No active grant");
         }
 
         if (!grant.CanViewMedicalHistory)
         {
-            await TryNotifyPatientAboutAccessRequestAsync(query, ct);
+            await TryNotifyPatientAboutAccessRequestAsync(query, appointment, doctorLabel, appointmentDateTime, ct);
             throw new UnauthorizedAccessException("No medical history permission");
         }
 
@@ -76,7 +89,9 @@ public class GetPatientMedicalProfileForDoctorQueryHandler
         {
             UserId = query.PatientId,
             Title = "Medical History Viewed",
-            Message = "Your doctor viewed your medical history for the current appointment.",
+            Message = appointmentDateTime == null
+                ? $"{doctorLabel} viewed your medical history for appointment #{query.AppointmentId}."
+                : $"{doctorLabel} viewed your medical history for your appointment on {appointmentDateTime}.",
             Type = NotificationType.MedicalHistoryViewed,
             RelatedEntityType = "Appointment",
             Data = new Dictionary<string, string>
@@ -93,11 +108,13 @@ public class GetPatientMedicalProfileForDoctorQueryHandler
 
     private async Task TryNotifyPatientAboutAccessRequestAsync(
         GetPatientMedicalProfileForDoctorQuery query,
+        Appointment? appointment,
+        string doctorLabel,
+        string? appointmentDateTime,
         CancellationToken ct)
     {
         try
         {
-            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(query.AppointmentId, ct);
             if (appointment == null ||
                 appointment.PatientId != query.PatientId ||
                 appointment.DoctorId != query.DoctorId ||
@@ -117,7 +134,9 @@ public class GetPatientMedicalProfileForDoctorQueryHandler
             {
                 UserId = query.PatientId,
                 Title = "Doctor Needs Medical History Access",
-                Message = "Your doctor tried to open your medical history and needs your permission to continue.",
+                Message = appointmentDateTime == null
+                    ? $"{doctorLabel} tried to open your medical history and needs your permission to continue."
+                    : $"{doctorLabel} tried to open your medical history for your appointment on {appointmentDateTime} and needs your permission to continue.",
                 Type = NotificationType.MedicalHistoryAccessRequested,
                 RelatedEntityType = "Appointment",
                 Data = new Dictionary<string, string>

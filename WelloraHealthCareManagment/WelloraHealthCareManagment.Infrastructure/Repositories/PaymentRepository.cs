@@ -138,6 +138,27 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories
             return await query.SumAsync(p => p.RefundAmount ?? 0, cancellationToken);
         }
 
+        public async Task<decimal> GetDoctorRevenueForPeriodAsync(
+            int doctorId,
+            DateTime fromDate,
+            DateTime toDate,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Payments
+                .AsNoTracking()
+                .Where(p =>
+                    p.DoctorId == doctorId &&
+                    p.PaidAt.HasValue &&
+                    p.PaidAt.Value >= fromDate &&
+                    p.PaidAt.Value < toDate &&
+                    (p.Status == PaymentStatus.Paid ||
+                     p.Status == PaymentStatus.Refunded ||
+                     p.Status == PaymentStatus.PartialRefund))
+                .SumAsync(
+                    p => p.Amount - (p.RefundAmount ?? 0m),
+                    cancellationToken);
+        }
+
         public async Task AddAsync(
             Payment payment,
             CancellationToken cancellationToken = default)

@@ -193,7 +193,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 {
                     UserId = user.Id,
                     Title = "Password Changed",
-                    Message = "Your account password was reset successfully and all sessions were revoked.",
+                    Message = $"The password for your account (User #{user.Id}) was changed successfully, and all active sessions were revoked for security.",
                     Type = NotificationType.PasswordReset,
                     RelatedEntityType = "User",
                     RelatedEntityId = user.Id,

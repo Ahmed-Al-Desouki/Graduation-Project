@@ -16,5 +16,6 @@ namespace WelloraHealthCareManagment.Application.DTOs.Payment
         public DateTime AppointmentDate { get; set; }
         public TimeSpan AppointmentTime { get; set; }
         public string DoctorName { get; set; } = string.Empty;
+        public int? DoctorId { get; set; }
     }
 }

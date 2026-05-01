@@ -23,18 +23,18 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
         /// <summary>
         /// Get pending doctor verifications (with pagination)
         /// </summary>
-        [HttpGet("pending")]
-        public async Task<IActionResult> GetPendingVerifications(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
-            CancellationToken ct = default)
-        {
-            var result = await _verificationService.GetPendingVerificationsAsync(page, pageSize, ct);
+        //[HttpGet("pending")]
+        //public async Task<IActionResult> GetPendingVerifications(
+        //    [FromQuery] int page = 1,
+        //    [FromQuery] int pageSize = 10,
+        //    CancellationToken ct = default)
+        //{
+        //    var result = await _verificationService.GetPendingVerificationsAsync(page, pageSize, ct);
 
-            return result.IsSuccess
-                ? Ok(result.Data)
-                : BadRequest(new { error = result.Error });
-        }
+        //    return result.IsSuccess
+        //        ? Ok(result.Data)
+        //        : BadRequest(new { error = result.Error });
+        //}
 
         /// <summary>
         /// Get all verifications with optional filtering and pagination
@@ -75,7 +75,7 @@ namespace WelloraHealthCareManagment.Presentation.Controllers.Admin
         [HttpPost("{doctorId}/approve")]
         public async Task<IActionResult> ApproveDoctor(
             int doctorId,
-            [FromBody] ApproveDoctorVerificationRequest request,
+            [FromBody] ApproveDoctorVerificationRequest? request,
             CancellationToken ct = default)
         {
             if (!ModelState.IsValid)

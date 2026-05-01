@@ -14,6 +14,7 @@ using WelloraHealthCareManagment.Domain.EnumForModels;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.Repositories.ReminderRepo;
 using WelloraHealthCareManagment.Infrastructure.Helpers;
+using WelloraHealthCareManagment.Infrastructure.Services.Notifications;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services
 {
@@ -166,7 +167,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             {
                 UserId = patientId,
                 Title = "Reminder Created",
-                Message = $"A new reminder \"{reminder.Title}\" has been created.",
+                Message =
+                    $"Your reminder {NotificationMessageFormatter.FormatQuoted(reminder.Title, "Reminder")} " +
+                    $"has been created and is scheduled for {FormatReminderSchedule(reminder)}.",
                 Type = NotificationType.ReminderCreated,
                 RelatedEntityType = "Reminder",
                 Data = BuildReminderPayload(reminder)
@@ -242,7 +245,9 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             {
                 UserId = patientId,
                 Title = "Reminder Updated",
-                Message = $"Your reminder \"{reminder.Title}\" has been updated.",
+                Message =
+                    $"Your reminder {NotificationMessageFormatter.FormatQuoted(reminder.Title, "Reminder")} " +
+                    $"has been updated. Current schedule: {FormatReminderSchedule(reminder)}.",
                 Type = NotificationType.ReminderUpdated,
                 RelatedEntityType = "Reminder",
                 Data = BuildReminderPayload(reminder)
@@ -981,6 +986,15 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             }
 
             return data;
+        }
+
+        private string FormatReminderSchedule(ReminderV2 reminder)
+        {
+            var localStart = _timezoneHelper.ConvertUtcToUserTimezone(
+                _timezoneHelper.EnsureUtc(reminder.StartDateUtc),
+                reminder.TimeZoneId);
+
+            return $"{NotificationMessageFormatter.FormatDateTime(localStart)} ({reminder.TimeZoneId})";
         }
 
         private async Task<ReminderV2> ValidateReminderAccess(int reminderId, int patientId)

@@ -10,6 +10,7 @@ using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
+using WelloraHealthCareManagment.Infrastructure.Services.Notifications;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {
@@ -53,7 +54,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     appointmentId, doctorId);
 
                 // 1. Verify appointment exists and belongs to doctor
-                var appointment = await _appointmentRepository.GetByIdAsync(
+                var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(
                     appointmentId, cancellationToken);
 
                 if (appointment == null)
@@ -96,11 +97,19 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
+                var doctorLabel = NotificationMessageFormatter.FormatDoctor(
+                    appointment.Doctor?.User?.FullName,
+                    appointment.DoctorId);
+                var appointmentDateTime = NotificationMessageFormatter.FormatAppointmentDateTime(
+                    appointment.TimeSlot.SlotDate,
+                    appointment.TimeSlot.StartTime);
+
                 await _notificationService.NotifyAsync(new NotificationDispatchRequest
                 {
                     UserId = appointment.PatientId,
                     Title = "Medical Record Added",
-                    Message = "Your doctor added a new medical record for your appointment.",
+                    Message =
+                        $"{doctorLabel} added a medical record for your appointment on {appointmentDateTime}.",
                     Type = NotificationType.MedicalRecordCreated,
                     RelatedEntityType = "Appointment",
                     Data = BuildMedicalRecordPayload(record.Id, appointmentId, appointment.DoctorId, appointment.PatientId, request.FollowUpDate)
@@ -145,7 +154,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     throw new NotFoundException("Medical record not found for this appointment");
 
                 // 2. Verify doctor authorization
-                var appointment = await _appointmentRepository.GetByIdAsync(
+                var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(
                     appointmentId, cancellationToken);
 
                 if (appointment == null || appointment.DoctorId != doctorId)
@@ -177,11 +186,19 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
+                var doctorLabel = NotificationMessageFormatter.FormatDoctor(
+                    appointment.Doctor?.User?.FullName,
+                    appointment.DoctorId);
+                var appointmentDateTime = NotificationMessageFormatter.FormatAppointmentDateTime(
+                    appointment.TimeSlot.SlotDate,
+                    appointment.TimeSlot.StartTime);
+
                 await _notificationService.NotifyAsync(new NotificationDispatchRequest
                 {
                     UserId = appointment.PatientId,
                     Title = "Medical Record Updated",
-                    Message = "Your doctor updated your medical record.",
+                    Message =
+                        $"{doctorLabel} updated your medical record for the appointment on {appointmentDateTime}.",
                     Type = NotificationType.MedicalRecordUpdated,
                     RelatedEntityType = "Appointment",
                     Data = BuildMedicalRecordPayload(record.Id, appointmentId, appointment.DoctorId, appointment.PatientId, record.FollowUpDate)

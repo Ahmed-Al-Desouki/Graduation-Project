@@ -10,6 +10,7 @@ using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
+using WelloraHealthCareManagment.Infrastructure.Services.Notifications;
 
 namespace WelloraHealthCareManagment.Infrastructure.Services
 {
@@ -44,7 +45,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
             try
             {
                 // 1. تحقق إن الدكتور موجود
-                var doctor = await _doctorRepository.GetByIdAsync(request.DoctorId);
+                var doctor = await _doctorRepository.GetByIdWithUserAsync(request.DoctorId);
                 if (doctor == null)
                     return ServiceResult<ReviewResponse>.Failure("Doctor not found");
 
@@ -84,7 +85,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     patientId,
                     review.ReviewID,
                     "New Review",
-                    $"Patient #{patientId} added a new review to your profile.",
+                    $"{NotificationMessageFormatter.FormatPatient(null, patientId)} added a new {request.Rating}-star review to your profile.",
                     NotificationType.ReviewCreated);
 
                 _logger.LogInformation(
@@ -141,7 +142,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     patientId,
                     review.ReviewID,
                     "Review Updated",
-                    $"Patient #{patientId} updated a review on your profile.",
+                    $"{NotificationMessageFormatter.FormatPatient(null, patientId)} updated a review on your profile.",
                     NotificationType.ReviewUpdated);
 
                 _logger.LogInformation(
@@ -177,7 +178,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Services
                     patientId,
                     review.ReviewID,
                     "Review Deleted",
-                    $"Patient #{patientId} deleted a review from your profile.",
+                    $"{NotificationMessageFormatter.FormatPatient(null, patientId)} deleted a review from your profile.",
                     NotificationType.ReviewDeletedByPatient);
 
                 _logger.LogInformation(

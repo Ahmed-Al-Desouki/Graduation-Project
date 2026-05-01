@@ -161,7 +161,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 {
                     UserId = userId,
                     Title = "MFA Enabled",
-                    Message = "Multi-factor authentication has been enabled on your account.",
+                    Message = $"Multi-factor authentication has been enabled on your account (User #{userId}). A verification code was also sent to your email.",
                     Type = NotificationType.MfaEnabled,
                     RelatedEntityType = "User",
                     RelatedEntityId = userId,
@@ -201,7 +201,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 {
                     UserId = userId,
                     Title = "MFA Disabled",
-                    Message = "Multi-factor authentication has been disabled on your account.",
+                    Message = $"Multi-factor authentication has been disabled on your account (User #{userId}). Existing OTP codes were invalidated.",
                     Type = NotificationType.MfaDisabled,
                     RelatedEntityType = "User",
                     RelatedEntityId = userId,

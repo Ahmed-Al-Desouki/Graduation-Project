@@ -137,7 +137,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 
         public async Task<ServiceResult> ApproveDoctorAsync(
             int doctorId,
-            ApproveDoctorVerificationRequest request,
+            ApproveDoctorVerificationRequest? request,
             int adminId,
             string? ipAddress = null,
             CancellationToken ct = default)
@@ -170,7 +170,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     pendingVerification.Status = VerificationStatus.Approved;
                     pendingVerification.ReviewedByAdminId = adminId;
                     pendingVerification.ReviewedAt = DateTime.UtcNow;
-                    pendingVerification.AdminNotes = request.AdminNotes;
+                    pendingVerification.AdminNotes = request?.AdminNotes;
                     pendingVerification.RejectionReason = null;
                     pendingVerification.UpdatedAt = DateTime.UtcNow;
 
@@ -178,7 +178,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                 }
 
                 // Activate doctor only after the whole request becomes approved
-                doctor.IsActive = DoctorVerificationPolicy.IsDoctorEligibleForActivation(await _verificationRepository.GetByDoctorIdAsync(doctorId, ct));
+                doctor.IsActive = DoctorVerificationPolicy.IsDoctorEligibleForActivation(
+                    await _verificationRepository.GetByDoctorIdAsync(doctorId, ct));
                 doctor.UpdatedAt = DateTime.UtcNow;
                 await _doctorRepository.UpdateAsync(doctor);
 
@@ -187,7 +188,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     doctorId,
                     ct);
 
-                await SendDoctorApprovalEmailAsync(doctor, request.AdminNotes);
+                await SendDoctorApprovalEmailAsync(doctor, request?.AdminNotes);
 
                 // Log action
                 await _auditService.LogActionAsync(
@@ -198,7 +199,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
                     new
                     {
                         ApprovedVerificationIds = pendingVerifications.Select(v => v.VerificationId).ToList(),
-                        AdminNotes = request.AdminNotes
+                        AdminNotes = request?.AdminNotes
                     },
                     ipAddress,
                     ct: ct);

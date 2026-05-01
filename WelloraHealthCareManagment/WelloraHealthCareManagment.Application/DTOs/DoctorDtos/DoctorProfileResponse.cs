@@ -26,6 +26,8 @@ namespace WelloraHealthCareManagment.Application.DTOs.DoctorDtos
         public string? Bio { get; set; }
         public double AverageRating { get; set; }
         public int PatientCount { get; set; }
+        public string RevenueMonth { get; set; } = string.Empty;
+        public decimal RevenueAmount { get; set; }
         public bool IsActive { get; set; }
         public bool IsProfileCompleted { get; set; }
         public DoctorVerificationRequestStatus VerificationRequestStatus { get; set; }

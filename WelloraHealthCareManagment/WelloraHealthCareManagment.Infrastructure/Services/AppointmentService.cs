@@ -16,6 +16,7 @@ using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Domain.ValueObjects;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
+using WelloraHealthCareManagment.Infrastructure.Services.Notifications;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
 {
@@ -236,7 +237,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     Amount = paymentResult.Amount,
                     AppointmentDate = timeSlot.SlotDate,
                     AppointmentTime = timeSlot.StartTime,
-                    DoctorName = timeSlot.Doctor.User?.FullName ?? "Dr. (Name unavailable)"
+                    DoctorName = timeSlot.Doctor.User?.FullName ?? "Dr. (Name unavailable)",
+                    DoctorId = timeSlot.Doctor.User?.Id
                 };
             }
             catch (Exception ex)
@@ -695,7 +697,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
                 var appointment = await _appointmentRepository
-                    .GetByIdAsync(appointmentId, cancellationToken);
+                    .GetByIdWithDetailsAsync(appointmentId, cancellationToken);
 
                 if (appointment == null)
                     throw new NotFoundException("Appointment", appointmentId);
@@ -719,11 +721,19 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
+                var completedAppointmentAt = appointment.TimeSlot.SlotDate.Add(appointment.TimeSlot.StartTime);
+                var doctorLabel = NotificationMessageFormatter.FormatDoctor(
+                    appointment.Doctor?.User?.FullName,
+                    appointment.DoctorId);
+
                 await _notificationService.NotifyAsync(new NotificationDispatchRequest
                 {
                     UserId = appointment.PatientId,
                     Title = "Appointment Completed",
-                    Message = "Your appointment is completed. Share your feedback and review your doctor.",
+                    Message =
+                        $"Your appointment with {doctorLabel} was completed on " +
+                        $"{NotificationMessageFormatter.FormatDateTime(completedAppointmentAt)}. " +
+                        "You can now review your doctor and share feedback about this visit.",
                     Type = NotificationType.ReviewRequested,
                     RelatedEntityType = "Appointment",
                     Data = new Dictionary<string, string>
@@ -998,7 +1008,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         appointmentId: appointment.Id,
                         type: NotificationType.MedicalHistoryAccessRevoked,
                         title: "Medical History Access Revoked",
-                        message: "The patient revoked your access to their medical history for this appointment.",
+                        message: "The patient revoked your access to their medical records for this appointment.",
                         accessGrantId: existingGrant.Id,
                         expiresAt: existingGrant.ExpiresAt,
                         canViewMedicalHistory: false,
@@ -1037,7 +1047,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                         appointmentId: appointment.Id,
                         type: NotificationType.MedicalHistoryAccessUpdated,
                         title: "Medical History Access Updated",
-                        message: "The patient updated your medical history access permissions.",
+                        message: "The patient updated your medical record access permissions for this appointment.",
                         accessGrantId: existingGrant.Id,
                         expiresAt: existingGrant.ExpiresAt,
                         canViewMedicalHistory: request.CanViewMedicalHistory,
@@ -1112,7 +1122,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 appointmentId: appointment.Id,
                 type: NotificationType.MedicalHistoryAccessExtended,
                 title: "Medical History Access Extended",
-                message: "The patient extended your medical history access period.",
+                message: "The patient extended your medical record access period for this appointment.",
                 accessGrantId: grant.Id,
                 expiresAt: request.NewExpiryDate,
                 canViewMedicalHistory: grant.CanViewMedicalHistory,
@@ -1387,7 +1397,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 appointmentId: appointmentId,
                 type: NotificationType.MedicalHistoryAccessGranted,
                 title: "Medical History Access Granted",
-                message: "The patient granted you access to their medical history for this appointment.",
+                message: "The patient granted you access to their medical records for this appointment.",
                 accessGrantId: grant.Id,
                 expiresAt: expiresAt,
                 canViewMedicalHistory: canViewMedicalHistory,
@@ -1415,6 +1425,23 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             bool canViewLabResults,
             CancellationToken ct)
         {
+            var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(appointmentId, ct);
+            var patientLabel = NotificationMessageFormatter.FormatPatient(
+                appointment?.Patient?.User?.FullName,
+                patientId);
+            var appointmentDateTime = appointment?.TimeSlot == null
+                ? null
+                : NotificationMessageFormatter.FormatAppointmentDateTime(
+                    appointment.TimeSlot.SlotDate,
+                    appointment.TimeSlot.StartTime);
+            var permissions = NotificationMessageFormatter.FormatPermissionSummary(
+                canViewMedicalHistory,
+                canViewPrescriptions,
+                canViewLabResults);
+            var detailedMessage = appointmentDateTime == null
+                ? $"{patientLabel}: {message} Allowed records: {permissions}."
+                : $"{patientLabel}: {message} Appointment time: {appointmentDateTime}. Allowed records: {permissions}.";
+
             var data = new Dictionary<string, string>
             {
                 ["appointmentId"] = appointmentId.ToString(),
@@ -1435,7 +1462,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             {
                 UserId = doctorId,
                 Title = title,
-                Message = message,
+                Message = detailedMessage,
                 Type = type,
                 RelatedEntityType = "Appointment",
                 Data = data
@@ -1474,8 +1501,18 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             TimeSlot timeSlot,
             CancellationToken cancellationToken)
         {
-            var appointmentDateTime = timeSlot.SlotDate.Add(timeSlot.StartTime);
-            var formattedDate = appointmentDateTime.ToString("yyyy-MM-dd HH:mm");
+            var appointmentWithDetails = await _appointmentRepository.GetByIdWithDetailsAsync(
+                appointmentId,
+                cancellationToken);
+            var formattedDate = NotificationMessageFormatter.FormatAppointmentDateTime(
+                timeSlot.SlotDate,
+                timeSlot.StartTime);
+            var doctorLabel = NotificationMessageFormatter.FormatDoctor(
+                appointmentWithDetails?.Doctor?.User?.FullName,
+                doctorId);
+            var patientLabel = NotificationMessageFormatter.FormatPatient(
+                appointmentWithDetails?.Patient?.User?.FullName,
+                patientId);
 
             await _notificationService.NotifyManyAsync(new[]
             {
@@ -1483,7 +1520,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 {
                     UserId = patientId,
                     Title = "Appointment Booked",
-                    Message = $"Your appointment has been booked for {formattedDate}.",
+                    Message = $"Your appointment with {doctorLabel} has been booked for {formattedDate}.",
                     Type = NotificationType.AppointmentBooked,
                     RelatedEntityType = "Appointment",
                     Data = new Dictionary<string, string> { ["appointmentId"] = appointmentId.ToString() }
@@ -1492,7 +1529,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 {
                     UserId = doctorId,
                     Title = "New Appointment",
-                    Message = $"A patient booked an appointment for {formattedDate}.",
+                    Message = $"{patientLabel} booked an appointment with you for {formattedDate}.",
                     Type = NotificationType.AppointmentBooked,
                     RelatedEntityType = "Appointment",
                     Data = new Dictionary<string, string> { ["appointmentId"] = appointmentId.ToString() }
@@ -1516,8 +1553,23 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 : NotificationType.AppointmentCancelledByDoctor;
 
             var actorLabel = cancelledBy == CancelledBy.Patient ? "patient" : "doctor";
-            var refundSuffix = refundAmount.HasValue ? $" Refund amount: {refundAmount:F2} EGP." : string.Empty;
-            var reasonSuffix = string.IsNullOrWhiteSpace(reason) ? string.Empty : $" Reason: {reason}.";
+            var appointmentWithDetails = await _appointmentRepository.GetByIdWithDetailsAsync(
+                appointment.Id,
+                cancellationToken);
+            var slot = appointmentWithDetails?.TimeSlot ?? appointment.TimeSlot;
+            var appointmentDateTime = slot == null
+                ? "the scheduled appointment time"
+                : NotificationMessageFormatter.FormatAppointmentDateTime(slot.SlotDate, slot.StartTime);
+            var doctorLabel = NotificationMessageFormatter.FormatDoctor(
+                appointmentWithDetails?.Doctor?.User?.FullName,
+                appointment.DoctorId);
+            var patientLabel = NotificationMessageFormatter.FormatPatient(
+                appointmentWithDetails?.Patient?.User?.FullName,
+                appointment.PatientId);
+            var refundSuffix = refundAmount.HasValue
+                ? $" Refund amount: {NotificationMessageFormatter.FormatAmount(refundAmount.Value)}."
+                : string.Empty;
+            var reasonSuffix = $" {NotificationMessageFormatter.FormatReason(reason)}";
 
             await _notificationService.NotifyManyAsync(new[]
             {
@@ -1526,8 +1578,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     UserId = appointment.PatientId,
                     Title = "Appointment Cancelled",
                     Message = cancelledBy == CancelledBy.Patient
-                        ? $"Your appointment has been cancelled successfully.{reasonSuffix}{refundSuffix}"
-                        : $"Your doctor cancelled the appointment.{reasonSuffix}{refundSuffix}",
+                        ? $"Your appointment with {doctorLabel} on {appointmentDateTime} was cancelled successfully.{reasonSuffix}{refundSuffix}"
+                        : $"{doctorLabel} cancelled your appointment scheduled for {appointmentDateTime}.{reasonSuffix}{refundSuffix}",
                     Type = patientType,
                     RelatedEntityType = "Appointment",
                     Data = new Dictionary<string, string>
@@ -1541,8 +1593,8 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     UserId = appointment.DoctorId,
                     Title = "Appointment Cancelled",
                     Message = cancelledBy == CancelledBy.Patient
-                        ? $"A patient cancelled the appointment.{reasonSuffix}"
-                        : $"You cancelled the appointment successfully.{reasonSuffix}",
+                        ? $"{patientLabel} cancelled the appointment scheduled for {appointmentDateTime}.{reasonSuffix}"
+                        : $"You cancelled {patientLabel}'s appointment scheduled for {appointmentDateTime}.{reasonSuffix}",
                     Type = doctorType,
                     RelatedEntityType = "Appointment",
                     Data = new Dictionary<string, string>

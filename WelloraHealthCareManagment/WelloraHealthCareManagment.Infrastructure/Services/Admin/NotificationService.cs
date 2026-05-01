@@ -10,6 +10,7 @@ using WelloraHealthCareManagment.Application.Interfaces.Services;
 using WelloraHealthCareManagment.Domain.Entities.Notifications;
 using WelloraHealthCareManagment.Domain.Enums;
 using WelloraHealthCareManagment.Infrastructure.Repositories.Authentication;
+using WelloraHealthCareManagment.Infrastructure.Services.Notifications;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
 {
@@ -211,7 +212,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 UserId = doctorId,
                 Title = "Verification Approved",
-                Message = "Congratulations! Your doctor verification has been approved. You can now access all doctor features.",
+                Message =
+                    $"Your doctor verification for {NotificationMessageFormatter.FormatDoctor(null, doctorId)} " +
+                    "has been approved. You can now access doctor features and start receiving patients.",
                 Type = NotificationType.DoctorApproved,
                 RelatedEntityType = "Doctor",
                 RelatedEntityId = doctorId,
@@ -228,7 +231,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 UserId = doctorId,
                 Title = "Verification Rejected",
-                Message = $"Your doctor verification has been rejected. Reason: {rejectionReason}",
+                Message =
+                    $"Your doctor verification for {NotificationMessageFormatter.FormatDoctor(null, doctorId)} " +
+                    $"was rejected. {NotificationMessageFormatter.FormatReason(rejectionReason)}",
                 Type = NotificationType.DoctorRejected,
                 RelatedEntityType = "Doctor",
                 RelatedEntityId = doctorId,
@@ -249,7 +254,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 UserId = userId,
                 Title = "Account Blocked",
-                Message = $"Your account has been blocked. Reason: {reason}. Please contact support for more information.",
+                Message =
+                    $"Your account (User #{userId}) has been blocked. " +
+                    $"{NotificationMessageFormatter.FormatReason(reason)} Please contact support for more information.",
                 Type = NotificationType.AccountBlocked,
                 Data = new Dictionary<string, string> { ["reason"] = reason }
             }, ct);
@@ -265,7 +272,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 UserId = userId,
                 Title = "Account Suspended",
-                Message = $"Your account has been suspended until {suspensionEnd:yyyy-MM-dd}. Reason: {reason}",
+                Message =
+                    $"Your account (User #{userId}) has been suspended until {NotificationMessageFormatter.FormatDateTime(suspensionEnd)}. " +
+                    $"{NotificationMessageFormatter.FormatReason(reason)}",
                 Type = NotificationType.AccountSuspended,
                 Data = new Dictionary<string, string>
                 {
@@ -283,7 +292,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 UserId = userId,
                 Title = "Account Restored",
-                Message = "Your account suspension has ended and your access has been restored.",
+                Message = $"Your account suspension for User #{userId} has ended and your access has been restored.",
                 Type = NotificationType.AccountUnsuspended
             }, ct);
         }
@@ -296,7 +305,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 UserId = userId,
                 Title = "Account Unblocked",
-                Message = "Your account has been unblocked. You can now access all features.",
+                Message = $"Your account (User #{userId}) has been unblocked. You can now access all available features again.",
                 Type = NotificationType.AccountUnblocked
             }, ct);
         }
@@ -310,7 +319,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 UserId = userId,
                 Title = "New Ticket Response",
-                Message = "An admin has responded to your support ticket.",
+                Message = $"An admin responded to your support ticket #{ticketId}. Open the ticket to review the latest reply.",
                 Type = NotificationType.TicketResponse,
                 RelatedEntityType = "Ticket",
                 Data = new Dictionary<string, string> { ["ticketId"] = ticketId.ToString() }
@@ -326,7 +335,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 UserId = userId,
                 Title = "Ticket Closed",
-                Message = "Your support ticket has been closed. If you need further assistance, feel free to create a new ticket.",
+                Message = $"Your support ticket #{ticketId} has been closed. If you still need help, you can create a new ticket at any time.",
                 Type = NotificationType.TicketClosed,
                 RelatedEntityType = "Ticket",
                 Data = new Dictionary<string, string> { ["ticketId"] = ticketId.ToString() }
@@ -343,7 +352,9 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             {
                 UserId = userId,
                 Title = "Review Removed",
-                Message = $"Your review for Dr. {doctorName} has been removed. Reason: {reason}",
+                Message =
+                    $"Your review for {NotificationMessageFormatter.FormatDoctor(doctorName)} was removed. " +
+                    $"{NotificationMessageFormatter.FormatReason(reason)}",
                 Type = NotificationType.ReviewDeleted,
                 Data = new Dictionary<string, string>
                 {
@@ -656,6 +667,19 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             Dictionary<string, string> data)
         {
             if (!string.IsNullOrWhiteSpace(relatedEntityType) &&
+                ParentContextKeyPriorityMap.TryGetValue(relatedEntityType, out var parentKeyPriority))
+            {
+                foreach (var candidateKey in parentKeyPriority)
+                {
+                    if (data.TryGetValue(candidateKey, out var candidateValue) &&
+                        !string.IsNullOrWhiteSpace(candidateValue))
+                    {
+                        return candidateValue;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(relatedEntityType) &&
                 PrimaryEntityKeyMap.TryGetValue(relatedEntityType, out var primaryKeyName) &&
                 data.TryGetValue(primaryKeyName, out var primaryKeyValue) &&
                 !string.IsNullOrWhiteSpace(primaryKeyValue))
@@ -711,6 +735,22 @@ namespace WelloraHealthCareManagement.Infrastructure.Services.Admin
             ["Reminder"] = "reminderId",
             ["MedicalRecord"] = "medicalRecordId",
             ["DoctorVerification"] = "verificationId"
+        };
+
+        private static readonly Dictionary<string, string[]> ParentContextKeyPriorityMap =
+            new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Appointment"] = new[] { "appointmentId" },
+            ["Payment"] = new[] { "appointmentId", "paymentId" },
+            ["Prescription"] = new[] { "appointmentId", "prescriptionId" },
+            ["MedicalRecord"] = new[] { "appointmentId", "medicalRecordId" },
+            ["Reminder"] = new[] { "appointmentId", "prescriptionId", "reminderId" },
+            ["Review"] = new[] { "appointmentId", "doctorId", "reviewId" },
+            ["Ticket"] = new[] { "ticketId" },
+            ["DoctorVerification"] = new[] { "doctorId", "verificationId" },
+            ["Doctor"] = new[] { "doctorId" },
+            ["Patient"] = new[] { "patientId" },
+            ["User"] = new[] { "userId" }
         };
 
         public async Task SendPushToTokenAsync(
