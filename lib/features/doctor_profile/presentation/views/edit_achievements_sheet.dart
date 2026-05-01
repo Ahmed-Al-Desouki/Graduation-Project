@@ -76,7 +76,6 @@ class _EditAchievementSheetState extends State<EditAchievementSheet> {
               ),
               SizedBox(height: 10.h),
 
-              // Image Preview / Upload
               if (newImage != null)
                 Image.file(newImage!, height: 120.h)
               else if (widget.achievement.imageUrl != null)
@@ -117,32 +116,15 @@ class _EditAchievementSheetState extends State<EditAchievementSheet> {
                     ),
                     elevation: 2,
                   ),
-                  // onPressed: () {
-                  //   final cubit = context.read<DoctorRealProfileCubit>();
-                  //   Navigator.of(context).pop();
-
-                  //   WidgetsBinding.instance.addPostFrameCallback((_) async {
-                  //     await cubit.updateAchievement(
-                  //       achievementId: widget.achievement.achievementId!,
-                  //       title: titleController.text,
-                  //       description: descriptionController.text,
-                  //       image: newImage,
-                  //     );
-
-                  //     await cubit.getDoctorProfile();
-                  //   });
-                  // },
                   onPressed: () async {
                     final cubit = context.read<DoctorRealProfileCubit>();
 
-                    // ✅ أول حاجة: عمل التعديل
                     await cubit.updateAchievement(
                       achievementId: widget.achievement.achievementId,
                       title: titleController.text,
                       description: descriptionController.text,
                       image: newImage,
                     );
-                    // ✅ في الآخر: اقفل الـ sheet
                     if (mounted) Navigator.of(context).pop();
                   },
                   child: const Text(

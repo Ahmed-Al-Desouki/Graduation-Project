@@ -6,6 +6,7 @@ import 'package:graduation_project/core/utils/helper/api.dart';
 import 'package:graduation_project/features/doctor_profile/data/data_sources/doctor_profile_remote_data_source.dart';
 import 'package:graduation_project/features/doctor_profile/data/models/doctor_profile_model.dart';
 import 'package:graduation_project/features/doctor_profile/data/models/profile_image_model.dart';
+import 'package:graduation_project/features/doctor_profile/data/models/public_doctor_profile_model.dart';
 import 'package:graduation_project/features/doctor_profile/data/models/slot_config_model.dart';
 
 class DoctorProfileRemoteDataSourceImpl
@@ -62,7 +63,6 @@ class DoctorProfileRemoteDataSourceImpl
     Map<String, dynamic>? body,
     File? image,
   }) async {
-    // ✅ دايماً multipart حتى لو مفيش image
     final formDataMap = <String, dynamic>{};
 
     if (body != null) {
@@ -82,37 +82,6 @@ class DoctorProfileRemoteDataSourceImpl
     );
     return response != null;
   }
-
-  // @override
-  // Future<bool> updateAchievement({
-  //   required int achievementId,
-  //   Map<String, dynamic>? body,
-  //   File? image,
-  // }) async {
-  //   if (image != null) {
-  //     // ✅ لو فيه image، نستخدم multipart
-  //     final formDataMap = <String, dynamic>{};
-  //     if (body != null) {
-  //       formDataMap.addAll(body);
-  //     }
-  //     formDataMap['image'] = await MultipartFile.fromFile(
-  //       image.path,
-  //       filename: image.path.split('/').last,
-  //     );
-  //     final response = await _apiService.patchMultipart(
-  //       'doctor/profile/achievements/$achievementId',
-  //       FormData.fromMap(formDataMap),
-  //     );
-  //     return response != null;
-  //   } else {
-  //     // ✅ لو مفيش image، نستخدم JSON
-  //     final response = await _apiService.patch(
-  //       'doctor/profile/achievements/$achievementId',
-  //       body: body ?? {}, // ✅ لو body null، نبعت empty map
-  //     );
-  //     return response != null;
-  //   }
-  // }
 
   @override
   Future<bool> deleteAchievement(int achievementId) async {
@@ -136,10 +105,7 @@ class DoctorProfileRemoteDataSourceImpl
       formData,
     );
 
-    // ✅ هنا مهم: شوف شكل الـ response من الـ backend
-    log('📸 Profile Image Response: $response');
-
-    // لو الـ response راجع object مباشرة (مش داخل 'file')
+    log('Profile Image Response: $response');
     return ProfileImageModel.fromJson(response as Map<String, dynamic>);
   }
 
@@ -150,5 +116,11 @@ class DoctorProfileRemoteDataSourceImpl
     return data
         .map((e) => SlotConfigModel.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  @override
+  Future<PublicDoctorProfileModel> getPublicDoctorProfile(int doctorId) async {
+    final response = await _apiService.get('doctor/profile/$doctorId/public');
+    return PublicDoctorProfileModel.fromJson(response as Map<String, dynamic>);
   }
 }

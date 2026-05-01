@@ -14,7 +14,7 @@ class UpdateBasicInfoUseCase {
     String? specialization,
     int? yearsOfExperience,
     double? consultationFee,
-    String? description,
+    String? bio,
     String? nationalId,
   }) async {
     return await repository.updateBasicInfo(
@@ -24,7 +24,7 @@ class UpdateBasicInfoUseCase {
       specialization: specialization,
       yearsOfExperience: yearsOfExperience,
       consultationFee: consultationFee,
-      description: description,
+      bio: bio,
       nationalId: nationalId,
     );
   }

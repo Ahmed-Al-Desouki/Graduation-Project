@@ -1,4 +1,5 @@
 import 'package:graduation_project/features/doctor_profile/domain/entities/profile_image_entity.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/public_doctor_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/slot_config_entity.dart';
 import 'package:meta/meta.dart';
 import '../../domain/entities/doctor_profile_entity.dart';
@@ -20,7 +21,6 @@ final class DoctorProfileFailure extends DoctorRealProfileState {
   DoctorProfileFailure(this.errorMessage);
 }
 
-// ✅ Update States
 final class UpdateBasicInfoLoading extends DoctorRealProfileState {}
 
 final class UpdateBasicInfoSuccess extends DoctorRealProfileState {}
@@ -57,6 +57,15 @@ final class UpdateAchievementFailure extends DoctorRealProfileState {
   UpdateAchievementFailure(this.errorMessage);
 }
 
+final class AddAchievementLoading extends DoctorRealProfileState {}
+
+final class AddAchievementSuccess extends DoctorRealProfileState {}
+
+final class AddAchievementFailure extends DoctorRealProfileState {
+  final String errorMessage;
+  AddAchievementFailure(this.errorMessage);
+}
+
 final class DeleteAchievementLoading extends DoctorRealProfileState {}
 
 final class DeleteAchievementSuccess extends DoctorRealProfileState {}
@@ -88,4 +97,16 @@ final class GetSlotConfigSuccess extends DoctorRealProfileState {
 final class GetSlotConfigFailure extends DoctorRealProfileState {
   final String errorMessage;
   GetSlotConfigFailure(this.errorMessage);
+}
+
+final class PublicDoctorProfileLoading extends DoctorRealProfileState {}
+
+final class PublicDoctorProfileSuccess extends DoctorRealProfileState {
+  final PublicDoctorProfileEntity profile;
+  PublicDoctorProfileSuccess(this.profile);
+}
+
+final class PublicDoctorProfileFailure extends DoctorRealProfileState {
+  final String errorMessage;
+  PublicDoctorProfileFailure(this.errorMessage);
 }

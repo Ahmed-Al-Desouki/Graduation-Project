@@ -136,7 +136,7 @@ class _SplashBodyState extends State<SplashBody>
     }
 
     if (role == 'doctor') {
-      AppRouter.router.go(AppRouter.kHomeDoctor);
+      AppRouter.router.go(AppRouter.kDoctorProfileGate);
     } else {
       AppRouter.router.go(AppRouter.kHomePatient);
     }

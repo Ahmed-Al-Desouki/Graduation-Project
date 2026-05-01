@@ -1,3 +1,4 @@
+import 'package:graduation_project/features/doctor_profile/domain/entities/review_entity.dart';
 import 'verification_document_profile_entity.dart';
 import 'achievement_profile_entity.dart';
 
@@ -12,8 +13,11 @@ class DoctorProfileEntity {
   final String specialization;
   final int yearsOfExperience;
   final double consultationFee;
-  final String? description;
+  final String? bio;
   final double averageRating;
+  final int patientCount;
+  final double revenueAmount;
+  final String? revenueMonth;
   final bool isActive;
   final bool isProfileCompleted;
   final String? clinicAddress;
@@ -22,6 +26,7 @@ class DoctorProfileEntity {
   final String? hospitalName;
   final List<VerificationDocumentProfileEntity> verificationDocuments;
   final List<AchievementProfileEntity> achievements;
+  final List<ReviewEntity> reviews;
 
   DoctorProfileEntity({
     required this.doctorId,
@@ -34,8 +39,11 @@ class DoctorProfileEntity {
     required this.specialization,
     required this.yearsOfExperience,
     required this.consultationFee,
-    this.description,
+    this.bio,
     required this.averageRating,
+    required this.patientCount,
+    required this.revenueAmount,
+    this.revenueMonth,
     required this.isActive,
     required this.isProfileCompleted,
     this.clinicAddress,
@@ -44,6 +52,7 @@ class DoctorProfileEntity {
     this.hospitalName,
     required this.verificationDocuments,
     required this.achievements,
+    required this.reviews,
   });
 
   DoctorProfileEntity copyWith({
@@ -57,8 +66,11 @@ class DoctorProfileEntity {
     String? specialization,
     int? yearsOfExperience,
     double? consultationFee,
-    String? description,
+    String? bio,
     double? averageRating,
+    int? patientCount,
+    double? revenueAmount,
+    String? revenueMonth,
     bool? isActive,
     bool? isProfileCompleted,
     String? clinicAddress,
@@ -67,6 +79,7 @@ class DoctorProfileEntity {
     String? hospitalName,
     List<VerificationDocumentProfileEntity>? verificationDocuments,
     List<AchievementProfileEntity>? achievements,
+    List<ReviewEntity>? reviews,
   }) {
     return DoctorProfileEntity(
       doctorId: doctorId ?? this.doctorId,
@@ -79,8 +92,11 @@ class DoctorProfileEntity {
       specialization: specialization ?? this.specialization,
       yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
       consultationFee: consultationFee ?? this.consultationFee,
-      description: description ?? this.description,
+      bio: bio ?? this.bio,
       averageRating: averageRating ?? this.averageRating,
+      patientCount: patientCount ?? this.patientCount,
+      revenueAmount: revenueAmount ?? this.revenueAmount,
+      revenueMonth: revenueMonth ?? this.revenueMonth,
       isActive: isActive ?? this.isActive,
       isProfileCompleted: isProfileCompleted ?? this.isProfileCompleted,
       clinicAddress: clinicAddress ?? this.clinicAddress,
@@ -90,6 +106,7 @@ class DoctorProfileEntity {
       verificationDocuments:
           verificationDocuments ?? this.verificationDocuments,
       achievements: achievements ?? this.achievements,
+      reviews: reviews ?? this.reviews,
     );
   }
 }

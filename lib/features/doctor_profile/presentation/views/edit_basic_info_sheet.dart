@@ -34,7 +34,7 @@ class _EditBasicInfoSheetState extends State<EditBasicInfoSheet> {
       text: widget.profile.nationalId,
     );
     experienceController = TextEditingController(
-      text: widget.profile.yearsOfExperience?.toString() ?? '',
+      text: widget.profile.yearsOfExperience.toString(),
     );
     selectedDateOfBirth = widget.profile.dateOfBirth;
   }

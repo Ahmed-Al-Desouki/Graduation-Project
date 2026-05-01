@@ -1,13 +1,16 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/functions/confirm_delete.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/widgets/achievement_item.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/widgets/existing_achievement_card.dart';
+import 'package:graduation_project/features/doctor_home/presentation/views/widgets/selected_achievement_image_card.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/achievement_profile_entity.dart';
 import 'package:image_picker/image_picker.dart';
 import 'custom_form_text_field.dart';
 
-// ✅ Achievement Model
 class AchievementModel {
   final String title;
   final String description;
@@ -25,45 +28,31 @@ class AchievementModel {
 class OptionalDetailsSection extends StatefulWidget {
   final TextEditingController titleController;
   final TextEditingController descriptionController;
-  final Function({
-    // ✅ أضف الـ callback ده
-    required String title,
-    String? description,
-    File? image,
-  })?
-  onAddAchievement; // ✅ اختياري
+  final List<AchievementProfileEntity> existingAchievements;
+  final Function({required String title, String? description, File? image})?
+  onAddAchievement;
 
   const OptionalDetailsSection({
     super.key,
     required this.titleController,
     required this.descriptionController,
-    this.onAddAchievement, // ✅ أضف الـ parameter ده
+    this.existingAchievements = const [],
+    this.onAddAchievement,
   });
 
   @override
-  State<OptionalDetailsSection> createState() => _OptionalDetailsSectionState();
+  State<OptionalDetailsSection> createState() => OptionalDetailsSectionState();
 }
 
-class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
+class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
   final List<AchievementModel> _achievements = [];
   final ImagePicker _imagePicker = ImagePicker();
-
-  // ✅ Get file extension
-  String _getFileExtension() {
-    if (_selectedAchievementImage == null) return '';
-    return _selectedAchievementImage!.path.split('.').last.toUpperCase();
-  }
-
-  // ✅ Get file name
-  String _getFileName() {
-    if (_selectedAchievementImage == null) return '';
-    return _selectedAchievementImage!.path.split('/').last;
-  }
-
-  // ✅ Controllers للـ Achievement الجديد
   final _achievementTitleController = TextEditingController();
   final _achievementDescriptionController = TextEditingController();
+
   File? _selectedAchievementImage;
+
+  List<AchievementModel> get achievements => _achievements;
 
   @override
   void dispose() {
@@ -72,15 +61,12 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
     super.dispose();
   }
 
-  // ✅ Pick Image Function
   Future<void> _pickAchievementImage() async {
-    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+    final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ), // حواف دائرية من فوق
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
           (context) => SafeArea(
@@ -98,7 +84,6 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   const Text(
                     'Select Image Source',
                     style: TextStyle(
@@ -108,7 +93,6 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                     ),
                   ),
                   const SizedBox(height: 10),
-
                   ListTile(
                     leading: Container(
                       padding: const EdgeInsets.all(8),
@@ -127,7 +111,6 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                     ),
                     onTap: () => Navigator.pop(context, ImageSource.camera),
                   ),
-
                   ListTile(
                     leading: Container(
                       padding: const EdgeInsets.all(8),
@@ -152,55 +135,60 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
           ),
     );
 
-    if (source == null) return;
+    if (source == null) {
+      return;
+    }
 
     try {
-      final XFile? pickedFile = await _imagePicker.pickImage(
+      final pickedFile = await _imagePicker.pickImage(
         source: source,
         maxWidth: 1920,
         maxHeight: 1080,
         imageQuality: 85,
       );
 
-      if (pickedFile != null) {
-        final fileSize = await pickedFile.length();
-
-        if (fileSize > 5 * 1024 * 1024) {
-          showSnackBar(context, 'File size must be less than 5MB', Colors.red);
-          return;
-        }
-        setState(() {
-          _selectedAchievementImage = File(pickedFile.path);
-        });
+      if (pickedFile == null) {
+        return;
       }
+
+      final fileSize = await pickedFile.length();
+      if (!mounted) {
+        return;
+      }
+
+      if (fileSize > 5 * 1024 * 1024) {
+        showSnackBar(context, 'File size must be less than 5MB', Colors.red);
+        return;
+      }
+
+      setState(() {
+        _selectedAchievementImage = File(pickedFile.path);
+      });
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
       showSnackBar(context, 'Error picking image: $e', Colors.red);
     }
   }
 
-  // ✅ Add Achievement Function
   void _addAchievement() {
-    if (_achievementTitleController.text.isEmpty) {
+    if (_achievementTitleController.text.trim().isEmpty) {
       showSnackBar(context, 'Please enter achievement title', Colors.red);
       return;
     }
 
-    // ✅ Call Cubit if callback exists
-    if (widget.onAddAchievement != null) {
-      widget.onAddAchievement!(
-        title: _achievementTitleController.text,
-        description: _achievementDescriptionController.text,
-        image: _selectedAchievementImage,
-      );
-    }
+    final title = _achievementTitleController.text.trim();
+    final description = _achievementDescriptionController.text.trim();
+    final image = _selectedAchievementImage;
 
-    // ✅ Add to local list for UI preview
     setState(() {
       _achievements.add(
         AchievementModel(
-          title: _achievementTitleController.text,
-          description: _achievementDescriptionController.text,
-          image: _selectedAchievementImage,
+          title: title,
+          description: description,
+          image: image,
           createdAt: DateTime.now(),
         ),
       );
@@ -209,32 +197,14 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
       _selectedAchievementImage = null;
     });
 
-    showSnackBar(context, 'Achievement added successfully', Colors.green);
+    widget.onAddAchievement?.call(
+      title: title,
+      description: description.isEmpty ? null : description,
+      image: image,
+    );
+
+    showSnackBar(context, 'Achievement added to list', Colors.green);
   }
-  // void _addAchievement() {
-  //   if (_achievementTitleController.text.isEmpty) {
-  //     showSnackBar(context, 'Please enter achievement title', Colors.red);
-  //     return;
-  //   }
-
-  //   setState(() {
-  //     _achievements.add(
-  //       AchievementModel(
-  //         title: _achievementTitleController.text,
-  //         description: _achievementDescriptionController.text,
-  //         image: _selectedAchievementImage,
-  //         createdAt: DateTime.now(),
-  //       ),
-  //     );
-
-  //     // Reset fields
-  //     _achievementTitleController.clear();
-  //     _achievementDescriptionController.clear();
-  //     _selectedAchievementImage = null;
-  //   });
-
-  //   showSnackBar(context, 'Achievement added successfully', Colors.green);
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +233,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
               ),
               SizedBox(width: 12.w),
               Text(
-                "Optional Details",
+                'Optional Details',
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
@@ -281,20 +251,48 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
               ),
             ],
           ),
+          if (widget.existingAchievements.isNotEmpty) ...[
+            SizedBox(height: 24.h),
+            Text(
+              'Existing Achievements',
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1B4E8C),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: widget.existingAchievements.length,
+              separatorBuilder: (_, _) => SizedBox(height: 12.h),
+              itemBuilder: (context, index) {
+                return ExistingAchievementCard(
+                  achievement: widget.existingAchievements[index],
+                );
+              },
+            ),
+          ],
           SizedBox(height: 24.h),
-
-          // ✅ Achievement Title
+          Text(
+            'Add New Achievement',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1B4E8C),
+            ),
+          ),
+          SizedBox(height: 16.h),
           CustomFormTextField(
             label: 'Achievement Title',
             hintText: 'e.g. Best Cardiologist Award 2024',
             fieldType: FieldType.achievementTitle,
             controller: _achievementTitleController,
             prefixIcon: Icons.emoji_events,
-            maxLength: 200, // ✅ API: max 200 chars
+            maxLength: 200,
           ),
           SizedBox(height: 16.h),
-
-          // ✅ Achievement Description
           CustomFormTextField(
             label: 'Description',
             hintText: 'Brief description about your achievements and awards...',
@@ -303,11 +301,9 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
             prefixIcon: Icons.text_fields_outlined,
             minLines: 2,
             maxLines: 4,
-            maxLength: 1000, // ✅ API: max 1000 chars
+            maxLength: 1000,
           ),
           SizedBox(height: 16.h),
-
-          // ✅ Image Upload
           Row(
             children: [
               Icon(Icons.image, color: const Color(0xFF1B4E8C), size: 20.sp),
@@ -323,102 +319,15 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
             ],
           ),
           SizedBox(height: 12.h),
-
-          if (_selectedAchievementImage != null) ...[
-            // ✅ File Info Card (نفس ستايل Verification)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 20.h),
-              decoration: BoxDecoration(
-                color: _getBackgroundColor(),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _getBorderColor(),
-                  width: 1.5,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 16.w),
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: const Color(0xFFE5E7EB),
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(height: 12.h),
-                    // ✅ File Icon
-                    Container(
-                      padding: EdgeInsets.all(8.w),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDBEAFE),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.image,
-                        size: 24.sp,
-                        color: const Color(0xFF1B4E8C),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                    // ✅ File Name
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _getFileName(),
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF1F2937),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 4.h),
-                          Text(
-                            _getFileExtension(),
-                            style: TextStyle(
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1B4E8C),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // ✅ Remove Button (نفس ستايل Verification)
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedAchievementImage = null;
-                        });
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(6.w),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 12.h),
-          ] else ...[
-            // ✅ Upload Button
+          if (_selectedAchievementImage != null)
+            SelectedAchievementImageCard(
+              image: _selectedAchievementImage!,
+              onRemove:
+                  () => setState(() {
+                    _selectedAchievementImage = null;
+                  }),
+            )
+          else
             GestureDetector(
               onTap: _pickAchievementImage,
               child: Container(
@@ -430,7 +339,6 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                   border: Border.all(
                     color: const Color(0xFFE5E7EB),
                     width: 1.5,
-                    style: BorderStyle.solid,
                   ),
                 ),
                 child: Column(
@@ -461,10 +369,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                 ),
               ),
             ),
-          ],
           SizedBox(height: 16.h),
-
-          // ✅ Add Achievement Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -481,10 +386,8 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
               ),
             ),
           ),
-          SizedBox(height: 24.h),
-
-          // ✅ Added Achievements List
           if (_achievements.isNotEmpty) ...[
+            SizedBox(height: 24.h),
             Row(
               children: [
                 Icon(
@@ -494,7 +397,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                 ),
                 SizedBox(width: 8.w),
                 Text(
-                  'Added Achievements (${_achievements.length})',
+                  'New Achievements (${_achievements.length})',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
@@ -511,6 +414,7 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
               separatorBuilder: (_, _) => SizedBox(height: 12.h),
               itemBuilder: (context, index) {
                 final achievement = _achievements[index];
+
                 return AchievementItem(
                   achievement: achievement,
                   onDelete: () {
@@ -533,123 +437,4 @@ class _OptionalDetailsSectionState extends State<OptionalDetailsSection> {
       ),
     );
   }
-
-  // ✅ Helper Methods
-  Color _getBackgroundColor() {
-    if (_selectedAchievementImage != null) return const Color(0xFFDBEAFE);
-    return const Color(0xFFF3F4F6);
-  }
-
-  Color _getBorderColor() {
-    if (_selectedAchievementImage != null) return const Color(0xFF1B4E8C);
-    return const Color(0xFFE5E7EB);
-  }
 }
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'custom_form_text_field.dart';
-
-// class OptionalDetailsSection extends StatelessWidget {
-//   final TextEditingController titleController;
-//   final TextEditingController descriptionController;
-
-//   const OptionalDetailsSection({
-//     super.key,
-//     required this.titleController,
-//     required this.descriptionController,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       padding: EdgeInsets.all(20.w),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(16),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black.withValues(alpha: 0.05),
-//             blurRadius: 10,
-//             offset: const Offset(0, 2),
-//           ),
-//         ],
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             children: [
-//               Icon(
-//                 Icons.more_horiz,
-//                 color: const Color(0xFF1B4E8C),
-//                 size: 25.sp,
-//               ),
-//               SizedBox(width: 12.w),
-//               Text(
-//                 "Optional Details",
-//                 style: TextStyle(
-//                   fontSize: 18.sp,
-//                   fontWeight: FontWeight.bold,
-//                   color: Colors.black,
-//                 ),
-//               ),
-//               const Spacer(),
-//               Text(
-//                 'OPTIONAL',
-//                 style: TextStyle(
-//                   fontSize: 11.sp,
-//                   fontWeight: FontWeight.w600,
-//                   color: const Color(0xFF9CA3AF),
-//                 ),
-//               ),
-//             ],
-//           ),
-//           SizedBox(height: 24.h),
-//           CustomFormTextField(
-//             label: 'Title',
-//             hintText: 'e.g. Best Cardiologist Award 2024',
-//             fieldType: FieldType.text,
-//             controller: titleController,
-//             prefixIcon: Icons.title,
-//           ),
-//           SizedBox(height: 16.h),
-//           CustomFormTextField(
-//             label: 'Description',
-//             hintText: 'Brief description about your achievements and awards...',
-//             fieldType: FieldType.bio,
-//             controller: descriptionController,
-//             prefixIcon: Icons.text_fields_outlined,
-//             minLines: 3,
-//             maxLines: 5,
-//           ),
-//           SizedBox(height: 16.h),
-//           SizedBox(
-//             width: double.infinity,
-//             child: TextButton.icon(
-//               onPressed: () {
-//                 // TODO: Add achievement functionality
-//               },
-//               icon: const Icon(Icons.add_circle, color: Color(0xFF1B4E8C)),
-//               label: Text(
-//                 'Add Achievement',
-//                 style: TextStyle(
-//                   fontSize: 14.sp,
-//                   fontWeight: FontWeight.w600,
-//                   color: const Color(0xFF1B4E8C),
-//                 ),
-//               ),
-//               style: TextButton.styleFrom(
-//                 padding: EdgeInsets.symmetric(vertical: 12.h),
-//                 backgroundColor: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-//                 shape: RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.circular(10),
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }

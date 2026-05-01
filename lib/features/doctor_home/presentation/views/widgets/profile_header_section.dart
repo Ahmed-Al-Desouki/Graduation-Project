@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:graduation_project/core/utils/app_images.dart';
+import 'package:lottie/lottie.dart';
 
 class ProfileHeaderSection extends StatelessWidget {
   const ProfileHeaderSection({super.key});
@@ -11,37 +11,11 @@ class ProfileHeaderSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Center(
-          child: Container(
-            height: 170.h,
-            width: 200.w,
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 10,
-                  offset: const Offset(10, 10),
-                ),
-              ],
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(30.r),
-                bottomRight: Radius.circular(30.r),
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(30.r),
-                bottomRight: Radius.circular(30.r),
-              ),
-              child: Image.asset(
-                Assets.imagesDoctorAnalyzingData,
-                height: 170.h,
-                width: 200.w,
-                fit: BoxFit.cover,
-              ),
-            ),
+          child: Lottie.asset(
+            'assets/lottie/Doctor Profile Completion.json',
+            height: 220.h,
           ),
         ),
-        SizedBox(height: 16.h),
 
         Text(
           "Let's build your\nprofile!",

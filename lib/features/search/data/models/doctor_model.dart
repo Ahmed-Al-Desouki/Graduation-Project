@@ -12,6 +12,13 @@ class DoctorModel extends DoctorEntity {
     super.description,
     super.profileImageUrl,
     required super.isActive,
+    super.clinicAddress,
+    super.clinicLatitude,
+    super.clinicLongitude,
+    super.hospitalName,
+    super.distanceKm,
+    super.clinicMapUrl,
+    super.directionsMapUrl,
   });
 
   factory DoctorModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +33,13 @@ class DoctorModel extends DoctorEntity {
       description: json['description'],
       profileImageUrl: json['profileImageUrl'],
       isActive: json['isActive'] ?? false,
+      clinicAddress: json['clinicAddress'],
+      clinicLatitude: json['clinicLatitude']?.toDouble(),
+      clinicLongitude: json['clinicLongitude']?.toDouble(),
+      hospitalName: json['hospitalName'],
+      distanceKm: json['distanceKm']?.toDouble(),
+      clinicMapUrl: json['clinicMapUrl'],
+      directionsMapUrl: json['directionsMapUrl'],
     );
   }
 
@@ -41,6 +55,13 @@ class DoctorModel extends DoctorEntity {
       'description': description,
       'profileImageUrl': profileImageUrl,
       'isActive': isActive,
+      'clinicAddress': clinicAddress,
+      'clinicLatitude': clinicLatitude,
+      'clinicLongitude': clinicLongitude,
+      'hospitalName': hospitalName,
+      'distanceKm': distanceKm,
+      'clinicMapUrl': clinicMapUrl,
+      'directionsMapUrl': directionsMapUrl,
     };
   }
 }

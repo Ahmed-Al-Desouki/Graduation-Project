@@ -1,3 +1,4 @@
+import 'package:graduation_project/features/doctor_profile/data/models/review_model.dart';
 import '../../domain/entities/doctor_profile_entity.dart';
 import 'verification_document_profile_model.dart';
 import 'achievement_profile_model.dart';
@@ -14,8 +15,11 @@ class DoctorProfileModel extends DoctorProfileEntity {
     required super.specialization,
     required super.yearsOfExperience,
     required super.consultationFee,
-    super.description,
+    super.bio,
     required super.averageRating,
+    required super.patientCount,
+    required super.revenueAmount,
+    super.revenueMonth,
     required super.isActive,
     required super.isProfileCompleted,
     super.clinicAddress,
@@ -24,6 +28,7 @@ class DoctorProfileModel extends DoctorProfileEntity {
     super.hospitalName,
     required super.verificationDocuments,
     required super.achievements,
+    required super.reviews,
   });
 
   factory DoctorProfileModel.fromJson(Map<String, dynamic> json) {
@@ -41,8 +46,11 @@ class DoctorProfileModel extends DoctorProfileEntity {
       specialization: json['specialization'],
       yearsOfExperience: json['yearsOfExperience'],
       consultationFee: (json['consultationFee'] as num).toDouble(),
-      description: json['description'],
+      bio: json['bio'],
       averageRating: (json['averageRating'] as num).toDouble(),
+      patientCount: json['patientCount'] ?? 0,
+      revenueAmount: (json['revenueAmount'] as num?)?.toDouble() ?? 0.0,
+      revenueMonth: json['revenueMonth'] as String?,
       isActive: json['isActive'],
       isProfileCompleted: json['isProfileCompleted'],
       clinicAddress: json['clinicAddress'],
@@ -57,6 +65,11 @@ class DoctorProfileModel extends DoctorProfileEntity {
           (json['achievements'] as List)
               .map((e) => AchievementModel.fromJson(e))
               .toList(),
+      reviews:
+          (json['reviews'] as List?)
+              ?.map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }

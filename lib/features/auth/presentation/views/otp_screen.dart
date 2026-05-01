@@ -78,10 +78,16 @@ class _OtpScreenState extends State<OtpScreen> {
             final role = state.role;
             if (role == 'doctor') {
               await _showBiometricDialog();
+              if (!context.mounted) {
+                return;
+              }
 
-              AppRouter.router.go(AppRouter.kHomeDoctor);
+              AppRouter.router.go(AppRouter.kDoctorProfileGate);
             } else {
               await _showBiometricDialog();
+              if (!context.mounted) {
+                return;
+              }
 
               AppRouter.router.go(AppRouter.kHomePatient);
             }

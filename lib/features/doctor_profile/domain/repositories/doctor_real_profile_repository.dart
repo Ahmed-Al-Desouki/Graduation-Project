@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dartz/dartz.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/profile_image_entity.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/public_doctor_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/slot_config_entity.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/doctor_profile_entity.dart';
@@ -16,7 +17,7 @@ abstract class DoctorRealProfileRepository {
     String? specialization,
     int? yearsOfExperience,
     double? consultationFee,
-    String? description,
+    String? bio,
     String? nationalId,
   });
 
@@ -46,6 +47,10 @@ abstract class DoctorRealProfileRepository {
   );
 
   Future<Either<Failure, List<SlotConfigEntity>>> getDoctorSlotConfig(
+    int doctorId,
+  );
+
+  Future<Either<Failure, PublicDoctorProfileEntity>> getPublicDoctorProfile(
     int doctorId,
   );
 }

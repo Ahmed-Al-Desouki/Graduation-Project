@@ -35,6 +35,7 @@ import 'package:graduation_project/features/doctor_profile/domain/repositories/d
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/delete_achievement_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_doctor_profile_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_doctor_slot_config_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_public_doctor_profile_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/replace_verification_document_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_achievement_use_case.dart';
 import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_basic_info_use_case.dart';
@@ -64,6 +65,14 @@ import 'package:graduation_project/features/review/data/repos/review_repo_impl.d
 import 'package:graduation_project/features/review/data/web_services/review_web_service.dart';
 import 'package:graduation_project/features/review/domain/repos/review_repo.dart';
 import 'package:graduation_project/features/review/presentation/review_cubit/review_cubit.dart';
+import 'package:graduation_project/features/patient_profile/data/data_sources/patient_account_profile_remote_data_source.dart';
+import 'package:graduation_project/features/patient_profile/data/data_sources/patient_account_profile_remote_data_source_impl.dart';
+import 'package:graduation_project/features/patient_profile/data/repositories/patient_account_profile_repository_impl.dart';
+import 'package:graduation_project/features/patient_profile/domain/repositories/patient_account_profile_repository.dart';
+import 'package:graduation_project/features/patient_profile/domain/use_cases/get_patient_account_profile_use_case.dart';
+import 'package:graduation_project/features/patient_profile/domain/use_cases/update_patient_onboarding_profile_use_case.dart';
+import 'package:graduation_project/features/patient_profile/domain/use_cases/update_patient_profile_image_use_case.dart';
+import 'package:graduation_project/features/patient_profile/presentation/manager/patient_account_profile_cubit.dart';
 import 'package:graduation_project/features/search/data/data_sources/search_remote_data_source.dart';
 import 'package:graduation_project/features/search/data/data_sources/search_remote_data_source_impl.dart';
 import 'package:graduation_project/features/search/data/repositories/search_repo_impl.dart';
@@ -134,6 +143,10 @@ Future<void> setupServiceLocator() async {
     () => PatientWebServices(getIt<ApiService>()),
   );
 
+  getIt.registerLazySingleton<PatientAccountProfileRemoteDataSource>(
+    () => PatientAccountProfileRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+
   getIt.registerLazySingleton<MedicalHistoryQrService>(
     () => MedicalHistoryQrService(getIt<ApiService>()),
   );
@@ -157,6 +170,12 @@ Future<void> setupServiceLocator() async {
 
   getIt.registerLazySingleton<PatientRepositoryImpl>(
     () => PatientRepositoryImpl(getIt<PatientWebServices>()),
+  );
+
+  getIt.registerLazySingleton<PatientAccountProfileRepository>(
+    () => PatientAccountProfileRepositoryImpl(
+      getIt<PatientAccountProfileRemoteDataSource>(),
+    ),
   );
 
   getIt.registerLazySingleton<MedicalHistoryQrRepository>(
@@ -198,6 +217,24 @@ Future<void> setupServiceLocator() async {
     () => GetPatientProfileForDoctorUseCase(getIt()),
   );
 
+  getIt.registerLazySingleton<GetPatientAccountProfileUseCase>(
+    () => GetPatientAccountProfileUseCase(
+      getIt<PatientAccountProfileRepository>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<UpdatePatientOnboardingProfileUseCase>(
+    () => UpdatePatientOnboardingProfileUseCase(
+      getIt<PatientAccountProfileRepository>(),
+    ),
+  );
+
+  getIt.registerLazySingleton<UpdatePatientProfileImageUseCase>(
+    () => UpdatePatientProfileImageUseCase(
+      getIt<PatientAccountProfileRepository>(),
+    ),
+  );
+
   getIt.registerFactory<AuthCubit>(
     () => AuthCubit(getIt<AuthRepositoryimpl>()),
   );
@@ -210,6 +247,14 @@ Future<void> setupServiceLocator() async {
     () => PatientProfileCubit(
       getIt<PatientRepositoryImpl>(),
       getIt<GetPatientProfileForDoctorUseCase>(),
+    ),
+  );
+
+  getIt.registerFactory<PatientAccountProfileCubit>(
+    () => PatientAccountProfileCubit(
+      getIt<GetPatientAccountProfileUseCase>(),
+      getIt<UpdatePatientOnboardingProfileUseCase>(),
+      getIt<UpdatePatientProfileImageUseCase>(),
     ),
   );
 
@@ -293,6 +338,9 @@ Future<void> setupServiceLocator() async {
       getIt<UpdateLocationUseCase>(),
       getIt<AddAchievementUseCase>(),
       getIt<DoctorProfileRepository>(),
+      getIt<GetDoctorProfileUseCase>(),
+      getIt<UpdateBasicInfoUseCase>(),
+      getIt<ReplaceVerificationDocumentUseCase>(),
     ),
   );
 
@@ -339,6 +387,10 @@ Future<void> setupServiceLocator() async {
     () => GetDoctorSlotConfigUseCase(getIt<DoctorRealProfileRepository>()),
   );
 
+  getIt.registerLazySingleton<GetPublicDoctorProfileUseCase>(
+    () => GetPublicDoctorProfileUseCase(getIt<DoctorRealProfileRepository>()),
+  );
+
   getIt.registerFactory<DoctorRealProfileCubit>(
     () => DoctorRealProfileCubit(
       getIt<GetDoctorProfileUseCase>(),
@@ -349,6 +401,8 @@ Future<void> setupServiceLocator() async {
       getIt<DeleteAchievementUseCase>(),
       getIt<UpdateProfileImageUseCase>(),
       getIt<GetDoctorSlotConfigUseCase>(),
+      getIt<GetPublicDoctorProfileUseCase>(),
+      getIt<AddAchievementUseCase>(),
     ),
   );
 

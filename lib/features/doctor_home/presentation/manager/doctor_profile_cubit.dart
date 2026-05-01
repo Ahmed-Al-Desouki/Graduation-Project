@@ -1,15 +1,26 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
+
 import 'package:bloc/bloc.dart';
+import 'package:dartz/dartz.dart';
+import 'package:graduation_project/core/errors/failures.dart';
+import 'package:graduation_project/features/doctor_home/domain/entities/doctor_profile_status_entity.dart';
 import 'package:graduation_project/features/doctor_home/domain/repositories/doctor_profile_repository.dart';
-import '../../domain/entities/complete_profile_request_entity.dart';
-import '../../domain/entities/verification_document_entity.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/doctor_profile_entity.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/verification_document_profile_entity.dart'
+    as profile_document;
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/get_doctor_profile_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/replace_verification_document_use_case.dart';
+import 'package:graduation_project/features/doctor_profile/domain/use_cases/update_basic_info_use_case.dart';
 import '../../domain/entities/achievement_entity.dart';
+import '../../domain/entities/complete_profile_request_entity.dart';
 import '../../domain/entities/location_entity.dart';
-import '../../domain/use_cases/complete_profile_use_case.dart';
-import '../../domain/use_cases/upload_verification_document_use_case.dart';
-import '../../domain/use_cases/update_location_use_case.dart';
+import '../../domain/entities/verification_document_entity.dart';
 import '../../domain/use_cases/add_achievement_use_case.dart';
+import '../../domain/use_cases/complete_profile_use_case.dart';
+import '../../domain/use_cases/update_location_use_case.dart';
+import '../../domain/use_cases/upload_verification_document_use_case.dart';
 import 'doctor_profile_state.dart';
 
 class DoctorProfileCubit extends Cubit<DoctorProfileState> {
@@ -18,6 +29,12 @@ class DoctorProfileCubit extends Cubit<DoctorProfileState> {
   final UpdateLocationUseCase updateLocationUseCase;
   final AddAchievementUseCase addAchievementUseCase;
   final DoctorProfileRepository repository;
+  final GetDoctorProfileUseCase getDoctorProfileUseCase;
+  final UpdateBasicInfoUseCase updateBasicInfoUseCase;
+  final ReplaceVerificationDocumentUseCase replaceVerificationDocumentUseCase;
+
+  DoctorProfileStatusEntity? _cachedStatus;
+  DoctorProfileEntity? _cachedProfile;
 
   DoctorProfileCubit(
     this.completeProfileUseCase,
@@ -25,10 +42,49 @@ class DoctorProfileCubit extends Cubit<DoctorProfileState> {
     this.updateLocationUseCase,
     this.addAchievementUseCase,
     this.repository,
+    this.getDoctorProfileUseCase,
+    this.updateBasicInfoUseCase,
+    this.replaceVerificationDocumentUseCase,
   ) : super(DoctorProfileInitial());
 
-  // ✅ 1. Complete Profile
-  Future<void> completeProfile({
+  DoctorProfileStatusEntity? get cachedStatus => _cachedStatus;
+  DoctorProfileEntity? get cachedProfile => _cachedProfile;
+
+  Future<void> loadDoctorFlow() async {
+    emit(DoctorFlowLoading());
+
+    final result = await repository.checkProfileStatus();
+
+    result.fold((failure) => emit(DoctorFlowFailure(failure.errmessage)), (
+      status,
+    ) {
+      _cachedStatus = status;
+      emit(DoctorFlowSuccess(status));
+    });
+  }
+
+  Future<void> loadDoctorProfile() async {
+    if (isClosed) return;
+    emit(DoctorProfileDataLoading());
+
+    final result = await getDoctorProfileUseCase();
+
+    result.fold(
+      (failure) {
+        if (!isClosed) {
+          emit(DoctorProfileDataFailure(failure.errmessage));
+        }
+      },
+      (profile) {
+        _cachedProfile = profile;
+        if (!isClosed) {
+          emit(DoctorProfileDataSuccess(profile));
+        }
+      },
+    );
+  }
+
+  Future<void> submitProfile({
     required String fullName,
     required String phoneNumber,
     required DateTime dateOfBirth,
@@ -37,190 +93,200 @@ class DoctorProfileCubit extends Cubit<DoctorProfileState> {
     required double consultationFee,
     required String nationalId,
     String? bio,
-  }) async {
-    emit(CompleteProfileLoading());
-
-    final request = CompleteProfileRequestEntity(
-      fullName: fullName,
-      phoneNumber: phoneNumber,
-      dateOfBirth: dateOfBirth,
-      specialization: specialization,
-      yearsOfExperience: yearsOfExperience,
-      consultationFee: consultationFee,
-      nationalId: nationalId,
-      bio: bio,
-    );
-
-    final result = await completeProfileUseCase(request);
-
-    result.fold(
-      (failure) => emit(CompleteProfileFailure(failure.errmessage)),
-      (success) => emit(CompleteProfileSuccess()),
-    );
-  }
-
-  // ✅ 2. Upload Verification Document
-  Future<void> uploadVerificationDocument({
-    required DocumentType documentType,
-    required File file,
-  }) async {
-    emit(VerificationDocumentLoading());
-
-    final document = VerificationDocumentEntity(
-      documentType: documentType,
-      status: VerificationStatus.pending,
-      file: file,
-    );
-
-    final result = await uploadDocumentUseCase(document);
-
-    result.fold(
-      (failure) => emit(VerificationDocumentFailure(failure.errmessage)),
-      (success) => emit(VerificationDocumentSuccess()),
-    );
-  }
-
-  // ✅ 3. Update Location
-  Future<void> updateLocation({
     String? clinicAddress,
     double? latitude,
     double? longitude,
     String? hospitalName,
+    required Map<DocumentType, File?> verificationFiles,
+    List<AchievementEntity> achievements = const [],
+    DoctorProfileEntity? existingProfile,
   }) async {
-    emit(UpdateLocationLoading());
+    emit(ProfileSubmissionLoading());
 
-    final location = LocationEntity(
-      clinicAddress: clinicAddress,
-      latitude: latitude,
-      longitude: longitude,
-      hospitalName: hospitalName,
-    );
+    final profile = existingProfile ?? _cachedProfile;
+    Either<Failure, bool> result;
 
-    final result = await updateLocationUseCase(location);
-
-    result.fold(
-      (failure) => emit(UpdateLocationFailure(failure.errmessage)),
-      (success) => emit(UpdateLocationSuccess()),
-    );
-  }
-
-  // ✅ 4. Add Achievement
-  Future<void> addAchievement({
-    required String title,
-    String? description,
-    File? image,
-  }) async {
-    emit(AddAchievementLoading());
-
-    final achievement = AchievementEntity(
-      title: title,
-      description: description,
-      image: image,
-    );
-
-    final result = await addAchievementUseCase(achievement);
-
-    result.fold(
-      (failure) => emit(AddAchievementFailure(failure.errmessage)),
-      (success) => emit(AddAchievementSuccess()),
-    );
-  }
-
-  // ✅ 5. Check Profile Status (للـ Loading Screen)
-  Future<void> checkProfileStatus() async {
-    emit(ProfileStatusLoading());
-
-    final result = await repository.checkProfileStatus();
-
-    result.fold((failure) => emit(ProfileStatusFailure(failure.errmessage)), (
-      data,
-    ) {
-      final isProfileCompleted = data['isProfileCompleted'] as bool;
-      final isActive = data['isActive'] as bool;
-      emit(
-        ProfileStatusSuccess(
-          isProfileCompleted: isProfileCompleted,
-          isActive: isActive,
+    if (profile != null) {
+      result = await updateBasicInfoUseCase(
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        dateOfBirth: dateOfBirth,
+        specialization: specialization,
+        yearsOfExperience: yearsOfExperience,
+        consultationFee: consultationFee,
+        bio: bio,
+        nationalId: nationalId,
+      );
+    } else {
+      result = await completeProfileUseCase(
+        CompleteProfileRequestEntity(
+          fullName: fullName,
+          phoneNumber: phoneNumber,
+          dateOfBirth: dateOfBirth,
+          specialization: specialization,
+          yearsOfExperience: yearsOfExperience,
+          consultationFee: consultationFee,
+          nationalId: nationalId,
+          bio: bio,
         ),
       );
-    });
+    }
+
+    if (_handleSubmissionResult(result)) {
+      return;
+    }
+
+    result = await updateLocationUseCase(
+      LocationEntity(
+        clinicAddress: clinicAddress,
+        latitude: latitude,
+        longitude: longitude,
+        hospitalName: hospitalName,
+      ),
+    );
+
+    if (_handleSubmissionResult(result)) {
+      return;
+    }
+
+    for (final entry in verificationFiles.entries) {
+      final file = entry.value;
+      if (file == null) {
+        continue;
+      }
+
+      final existingDocument = _findExistingDocument(profile, entry.key);
+
+      if (existingDocument?.verificationId != null) {
+        result = await replaceVerificationDocumentUseCase(
+          verificationId: existingDocument!.verificationId,
+          newFile: file,
+        );
+      } else {
+        result = await uploadDocumentUseCase(
+          VerificationDocumentEntity(
+            documentType: entry.key,
+            status: VerificationStatus.pending,
+            file: file,
+          ),
+        );
+      }
+
+      if (_handleSubmissionResult(result)) {
+        return;
+      }
+    }
+
+    for (final achievement in achievements) {
+      result = await addAchievementUseCase(achievement);
+
+      if (_handleSubmissionResult(result)) {
+        return;
+      }
+    }
+
+    final statusResult = await repository.checkProfileStatus();
+
+    statusResult.fold(
+      (failure) {
+        if (!isClosed) {
+          emit(ProfileSubmissionFailure(failure.errmessage));
+        }
+      },
+      (status) {
+        _cachedStatus = status;
+        if (!isClosed) {
+          emit(ProfileSubmissionSuccess(status));
+        }
+      },
+    );
   }
 
-  // ✅ 6. Admin Review Check (Polling every 5 seconds)
+  profile_document.VerificationDocumentProfileEntity? _findExistingDocument(
+    DoctorProfileEntity? profile,
+    DocumentType documentType,
+  ) {
+    if (profile == null) {
+      return null;
+    }
+
+    for (final document in profile.verificationDocuments) {
+      if (_matchesDocumentType(document.documentType, documentType)) {
+        return document;
+      }
+    }
+
+    return null;
+  }
+
+  bool _matchesDocumentType(
+    profile_document.DocumentType profileType,
+    DocumentType formType,
+  ) {
+    switch (formType) {
+      case DocumentType.license:
+        return profileType == profile_document.DocumentType.license;
+      case DocumentType.graduationCertificate:
+        return profileType ==
+            profile_document.DocumentType.graduationCertificate;
+      case DocumentType.nationalId:
+        return profileType == profile_document.DocumentType.nationalId;
+      case DocumentType.other:
+        return profileType == profile_document.DocumentType.other;
+    }
+  }
+
+  bool _handleSubmissionResult(Either<Failure, bool> result) {
+    var hasFailure = false;
+
+    result.fold((failure) {
+      hasFailure = true;
+      if (!isClosed) {
+        emit(ProfileSubmissionFailure(failure.errmessage));
+      }
+    }, (_) {});
+
+    return hasFailure;
+  }
+
   Timer? _pollingTimer;
 
-  Future<void> startAdminReviewPolling() async {
-    emit(AdminReviewLoading());
-
-    _pollingTimer?.cancel(); // ✅ ألغِ أي timer سابق
+  void startPolling({
+    required VoidCallback onApproved,
+    required void Function(DoctorProfileStatusEntity) onRejected,
+  }) {
+    _pollingTimer?.cancel();
 
     _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      try {
-        final result = await repository.checkProfileStatus();
-
-        result.fold(
-          (failure) {
-            timer.cancel();
-            emit(AdminReviewRejected(failure.errmessage));
-          },
-          (data) {
-            if (data['isActive'] == true) {
-              timer.cancel();
-              emit(AdminReviewApproved());
-            }
-            // لو isActive = false، كمل الـ polling
-          },
-        );
-      } catch (e) {
+      if (isClosed) {
         timer.cancel();
-        emit(AdminReviewRejected(e.toString()));
+        return;
       }
+
+      final result = await repository.checkProfileStatus();
+
+      result.fold((_) {}, (status) {
+        _cachedStatus = status;
+
+        if (status.isApproved || status.isActive) {
+          timer.cancel();
+          onApproved();
+        } else if (status.isRejected) {
+          timer.cancel();
+          onRejected(status);
+        }
+      });
     });
   }
 
-  // ✅ أضف الدالة دي عشان توقف الـ polling
-  void stopAdminReviewPolling() {
+  void stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
   }
 
-  // ✅ نظّف الـ timer لما الـ Cubit يتقفل
   @override
   Future<void> close() {
-    stopAdminReviewPolling();
+    stopPolling();
     return super.close();
   }
-  // Future<void> startAdminReviewPolling() async {
-  //   emit(AdminReviewLoading());
-
-  //   Timer.periodic(const Duration(seconds: 5), (timer) async {
-  //     final result = await repository.checkProfileStatus();
-
-  //     result.fold(
-  //       (failure) {
-  //         timer.cancel();
-  //         emit(AdminReviewRejected(failure.errmessage));
-  //       },
-  //       (data) {
-  //         if (data['isActive'] == true) {
-  //           timer.cancel();
-  //           emit(AdminReviewApproved());
-  //         }
-  //       },
-  //     );
-  //   });
-  //   // TODO: Implement polling logic
-  //   // Timer.periodic(Duration(seconds: 5), (timer) async {
-  //   //   final result = await checkProfileStatus();
-  //   //   result.fold(
-  //   //     (failure) => emit(AdminReviewRejected(failure.errmessage)),
-  //   //     (data) {
-  //   //       if (data['isActive'] == true) {
-  //   //         timer.cancel();
-  //   //         emit(AdminReviewApproved());
-  //   //       }
-  //   //     },
-  //   //   );
-  //   // });
-  // }
 }

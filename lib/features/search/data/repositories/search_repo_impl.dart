@@ -14,6 +14,9 @@ class SearchRepositoryImpl implements SearchRepo {
   Future<Either<Failure, SearchResponseEntity>> searchDoctors({
     String? query,
     String? specialization,
+    double? patientLatitude,
+    double? patientLongitude,
+    double? radiusKm,
     int page = 1,
     int pageSize = 10,
   }) async {
@@ -21,11 +24,13 @@ class SearchRepositoryImpl implements SearchRepo {
       final response = await remoteDataSource.searchDoctors(
         query: query,
         specialization: specialization,
+        patientLatitude: patientLatitude,
+        patientLongitude: patientLongitude,
+        radiusKm: radiusKm,
         page: page,
         pageSize: pageSize,
       );
 
-      // استخراج الدكاترة من حقل doctors
       List<dynamic> doctorsData = [];
       if (response.containsKey('doctors')) {
         doctorsData = response['doctors'] as List;
@@ -38,7 +43,6 @@ class SearchRepositoryImpl implements SearchRepo {
               )
               .toList();
 
-      // استخراج معلومات الـ Pagination
       final hasNextPage = response['hasNextPage'] as bool? ?? false;
       final totalCount = response['totalCount'] as int? ?? 0;
 

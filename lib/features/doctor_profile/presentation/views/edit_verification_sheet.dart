@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/verification_document_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
 import 'dart:io';
@@ -19,7 +20,7 @@ class EditVerificationSheet extends StatelessWidget {
         children: [
           ...documents.map((doc) {
             return _buildDocumentItem(context, doc);
-          }).toList(),
+          }),
           SizedBox(height: 20.h),
         ],
       ),
@@ -84,7 +85,7 @@ class EditVerificationSheet extends StatelessWidget {
             ),
             child: IconButton(
               icon: const Icon(Icons.upload_file),
-              onPressed: () {
+              onPressed: () async {
                 final cubit = context.read<DoctorRealProfileCubit>();
                 Navigator.of(context).pop();
 
@@ -94,13 +95,14 @@ class EditVerificationSheet extends StatelessWidget {
                   );
                   if (result != null && result.files.single.path != null) {
                     final file = File(result.files.single.path!);
+
                     await cubit.replaceVerificationDocument(
-                      verificationId: doc.verificationId!,
+                      verificationId: doc.verificationId,
                       newFile: file,
                     );
-                  }
 
-                  await cubit.getDoctorProfile();
+                    AppRouter.router.go(AppRouter.kDoctorProfileGate);
+                  }
                 });
               },
             ),

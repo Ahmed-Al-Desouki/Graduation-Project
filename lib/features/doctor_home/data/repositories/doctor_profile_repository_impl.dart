@@ -1,11 +1,14 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:graduation_project/features/doctor_home/data/models/doctor_profile_status_model.dart';
 import 'package:graduation_project/features/doctor_home/data/models/location_model.dart';
+import 'package:graduation_project/features/doctor_home/domain/entities/doctor_profile_status_entity.dart';
 import 'package:graduation_project/features/doctor_home/domain/entities/location_entity.dart';
+
 import '../../../../core/errors/failures.dart';
+import '../../domain/entities/achievement_entity.dart';
 import '../../domain/entities/complete_profile_request_entity.dart';
 import '../../domain/entities/verification_document_entity.dart';
-import '../../domain/entities/achievement_entity.dart';
 import '../../domain/repositories/doctor_profile_repository.dart';
 import '../data_sources/doctor_completion_profile_remote_data_source.dart';
 import '../models/complete_profile_request_model.dart';
@@ -34,7 +37,6 @@ class DoctorProfileRepositoryImpl implements DoctorProfileRepository {
       final result = await remoteDataSource.completeProfile(model);
       return Right(result);
     } on DioException catch (e) {
-      // ✅ استخدم الـ method الجديد
       return Left(
         ServerFailure.fromPlainStringResponse(
           e.response?.statusCode,
@@ -99,15 +101,16 @@ class DoctorProfileRepositoryImpl implements DoctorProfileRepository {
   }
 
   @override
-  Future<Either<Failure, Map<String, dynamic>>> checkProfileStatus() async {
+  Future<Either<Failure, DoctorProfileStatusEntity>>
+  checkProfileStatus() async {
     try {
       final result = await remoteDataSource.checkProfileStatus();
-      return Right(result);
+      return Right(DoctorProfileStatusModel.fromJson(result));
     } on DioException catch (e) {
-      // ✅ لو الـ doctor لسه مفيش ليه profile، ده مش error
       if (e.response?.statusCode == 404) {
-        return Right({'isProfileCompleted': false, 'isActive': false});
+        return Right(DoctorProfileStatusModel.incomplete());
       }
+
       return Left(ServerFailure.fromDioException(e));
     } catch (e) {
       return Left(ServerFailure(e.toString()));

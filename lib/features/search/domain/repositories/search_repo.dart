@@ -6,6 +6,9 @@ abstract class SearchRepo {
   Future<Either<Failure, SearchResponseEntity>> searchDoctors({
     String? query,
     String? specialization,
+    double? patientLatitude,
+    double? patientLongitude,
+    double? radiusKm,
     int page = 1,
     int pageSize,
   });

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:graduation_project/core/utils/helper/api.dart';
 import 'package:graduation_project/features/booking/data/models/requests/day_slots_model.dart';
@@ -186,6 +188,7 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     String appointmentId,
   ) async {
     final response = await _apiService.get('appointments/$appointmentId');
+    log('appointments $response');
     return response as Map<String, dynamic>;
   }
 

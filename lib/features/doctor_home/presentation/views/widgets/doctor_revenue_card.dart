@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class DoctorRevenueCard extends StatelessWidget {
   final String title;
   final String amount;
-  final String percentage;
   final bool isIncrease;
   final IconData icon;
   final Color color;
@@ -12,7 +11,6 @@ class DoctorRevenueCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.amount,
-    required this.percentage,
     required this.isIncrease,
     required this.icon,
     required this.color,
@@ -55,38 +53,6 @@ class DoctorRevenueCard extends StatelessWidget {
               SizedBox(height: 2.h),
               Text(title, style: TextStyle(fontSize: 14.sp)),
             ],
-          ),
-          Spacer(flex: 1),
-
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              color:
-                  isIncrease
-                      ? const Color(0xFFDCFCE7)
-                      : const Color(0xFFFFEDD5),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  isIncrease
-                      ? Icons.arrow_upward_rounded
-                      : Icons.arrow_downward_rounded,
-                  color:
-                      isIncrease ? const Color(0xFF4CAF50) : Colors.redAccent,
-                  size: 18.sp,
-                ),
-                SizedBox(width: 4.w),
-                Text(
-                  percentage,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14.sp,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),

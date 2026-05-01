@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/profile_image_entity.dart';
+import 'package:graduation_project/features/doctor_profile/domain/entities/public_doctor_profile_entity.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/slot_config_entity.dart';
 import 'package:graduation_project/features/doctor_profile/domain/repositories/doctor_real_profile_repository.dart';
 import '../../../../core/errors/failures.dart';
@@ -34,7 +35,7 @@ class DoctorRealProfileRepositoryImpl implements DoctorRealProfileRepository {
     String? specialization,
     int? yearsOfExperience,
     double? consultationFee,
-    String? description,
+    String? bio,
     String? nationalId,
   }) async {
     try {
@@ -49,10 +50,10 @@ class DoctorRealProfileRepositoryImpl implements DoctorRealProfileRepository {
         body['yearsOfExperience'] = yearsOfExperience;
       }
       if (consultationFee != null) body['consultationFee'] = consultationFee;
-      if (description != null) body['description'] = description;
+      if (bio != null) body['bio'] = bio;
       if (nationalId != null) body['nationalId'] = nationalId;
 
-      if (body.isEmpty) return Right(true); // No changes to update
+      if (body.isEmpty) return Right(true);
 
       final result = await remoteDataSource.updateBasicInfo(body);
       return Right(result);
@@ -167,6 +168,23 @@ class DoctorRealProfileRepositoryImpl implements DoctorRealProfileRepository {
       final result = await remoteDataSource.getDoctorSlotConfig(doctorId);
       return Right(result);
     } on DioException catch (e) {
+      return Left(ServerFailure.fromDioException(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PublicDoctorProfileEntity>> getPublicDoctorProfile(
+    int doctorId,
+  ) async {
+    try {
+      final result = await remoteDataSource.getPublicDoctorProfile(doctorId);
+      return Right(result);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return Left(ServerFailure('This doctor profile is not available.'));
+      }
       return Left(ServerFailure.fromDioException(e));
     } catch (e) {
       return Left(ServerFailure(e.toString()));

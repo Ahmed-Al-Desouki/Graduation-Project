@@ -11,12 +11,18 @@ class SearchDoctorsUseCase {
   Future<Either<Failure, SearchResponseEntity>> call({
     String? query,
     String? specialization,
+    double? patientLatitude,
+    double? patientLongitude,
+    double? radiusKm,
     int page = 1,
     int pageSize = 10,
   }) async {
     return await repository.searchDoctors(
       query: query,
       specialization: specialization,
+      patientLatitude: patientLatitude,
+      patientLongitude: patientLongitude,
+      radiusKm: radiusKm,
       page: page,
       pageSize: pageSize,
     );
