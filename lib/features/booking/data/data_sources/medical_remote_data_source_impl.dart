@@ -66,7 +66,8 @@ class MedicalRemoteDataSourceImpl implements MedicalRemoteDataSource {
   ) async {
     final data = await _apiService.post(
       'prescriptions/$prescriptionId/items/bulk',
-      {'items': items.map((e) => e.toJson()).toList()},
+      // {'items': items.map((e) => e.toJson()).toList()},
+      {'request': items.map((e) => e.toJson()).toList()},
     );
     return data['message'] ?? "Items Added Successfully";
   }
