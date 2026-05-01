@@ -33,8 +33,8 @@ class PrescriptionModel extends PrescriptionEntity {
   Map<String, dynamic> toJson(String appointmentId) {
     return {
       'appointmentId': appointmentId,
-      'validUntil': validUntil?.toIso8601String(),
-      'specialInstructions': specialInstructions,
+      'validUntil': validUntil?.toIso8601String().split('.').first,
+      'specialInstructions': specialInstructions ?? "",
       'items': items.map((e) => (e as MedicationItemModel).toJson()).toList(),
     };
   }

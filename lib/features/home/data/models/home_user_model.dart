@@ -7,7 +7,8 @@ class HomeUserModel {
   factory HomeUserModel.fromJson(Map<String, dynamic> json) {
     return HomeUserModel(
       fullName: json['fullName'] ?? 'User',
-      imageUrl: json['imageUrl'],
+      // 💡 التعديل هنا ليتناسب مع الـ JSON بتاعك
+      imageUrl: json['profileImageUrl'],
     );
   }
 }

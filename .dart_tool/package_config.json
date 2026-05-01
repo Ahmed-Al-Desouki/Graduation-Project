@@ -464,6 +464,12 @@
       "languageVersion": "3.9"
     },
     {
+      "name": "flutter_rating_bar",
+      "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_rating_bar-4.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.14"
+    },
+    {
       "name": "flutter_screenutil",
       "rootUri": "file:///C:/Users/Mahmoud%20Ashraf/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_screenutil-5.9.3",
       "packageUri": "lib/",

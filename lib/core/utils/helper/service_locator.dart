@@ -60,6 +60,10 @@ import 'package:graduation_project/features/reminder/presentation/manager/remind
 import 'package:graduation_project/features/medical_history/data/repository/patient_repo/patient_repo_impl.dart';
 import 'package:graduation_project/features/medical_history/data/service/patient_web_service.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
+import 'package:graduation_project/features/review/data/repos/review_repo_impl.dart';
+import 'package:graduation_project/features/review/data/web_services/review_web_service.dart';
+import 'package:graduation_project/features/review/domain/repos/review_repo.dart';
+import 'package:graduation_project/features/review/presentation/review_cubit/review_cubit.dart';
 import 'package:graduation_project/features/search/data/data_sources/search_remote_data_source.dart';
 import 'package:graduation_project/features/search/data/data_sources/search_remote_data_source_impl.dart';
 import 'package:graduation_project/features/search/data/repositories/search_repo_impl.dart';
@@ -161,6 +165,20 @@ Future<void> setupServiceLocator() async {
 
   getIt.registerLazySingleton<HomeRepository>(
     () => HomeRepositoryImpl(getIt<HomeWebService>()),
+  );
+
+  getIt.registerLazySingleton<ReviewWebService>(
+    () => ReviewWebService(getIt<ApiService>()),
+  );
+
+  // Repository
+  getIt.registerLazySingleton<ReviewRepository>(
+    () => ReviewRepositoryImpl(getIt<ReviewWebService>()),
+  );
+
+  // Cubit
+  getIt.registerFactory<ReviewCubit>(
+    () => ReviewCubit(getIt<ReviewRepository>()),
   );
 
   // Data

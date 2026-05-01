@@ -23,22 +23,21 @@ class HomeQuickActionsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildShowcaseAction(
-          context,
-          key: searchDoctorKey,
-          step: 2,
-          title: 'Find a Doctor',
-          desc: 'Book appointments with specialists.',
-          child: QuickActionCard(
-            onTap: () {},
-            title: 'Search for Doctors',
-            subtitle: 'Schedule with your doctor',
-            gradientColor: const Color(0xFF9333EA),
-            imageAsset: Assets.imagesClipartDoctorPerson1,
-            isSvg: false,
-          ),
-        ),
-
+        // _buildShowcaseAction(
+        //   context,
+        //   key: searchDoctorKey,
+        //   step: 2,
+        //   title: 'Find a Doctor',
+        //   desc: 'Book appointments with specialists.',
+        //   child: QuickActionCard(
+        //     onTap: () {},
+        //     title: 'Search for Doctors',
+        //     subtitle: 'Schedule with your doctor',
+        //     gradientColor: const Color(0xFF9333EA),
+        //     imageAsset: Assets.imagesClipartDoctorPerson1,
+        //     isSvg: false,
+        //   ),
+        // ),
         SizedBox(height: 20.h),
 
         _buildShowcaseAction(

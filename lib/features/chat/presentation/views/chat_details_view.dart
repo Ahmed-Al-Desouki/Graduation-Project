@@ -30,10 +30,12 @@ class ChatDetailsView extends StatefulWidget {
 
 class _ChatDetailsViewState extends State<ChatDetailsView> {
   final TextEditingController _messageController = TextEditingController();
+  late DateTime _entryTime;
 
   @override
   void initState() {
     super.initState();
+    _entryTime = DateTime.now(); // 👈 سجل وقت دخولك الشات حالاً
     context.read<ChatDetailsCubit>().listenToMessages(widget.chatId);
   }
 
@@ -81,7 +83,8 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
           ),
           body: Column(
             children: [
-              Expanded(child: _buildMessagesList(state)),
+              // Expanded(child: _buildMessagesList(state)),
+              Expanded(child: _buildMessagesList(state, isActive)),
               if (state is ChatDetailsUploading)
                 const LinearProgressIndicator(),
 
@@ -93,26 +96,85 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
     );
   }
 
-  Widget _buildMessagesList(ChatDetailsState state) {
+  // Widget _buildMessagesList(ChatDetailsState state) {
+  //   if (state is ChatDetailsSuccess) {
+  //     if (state.messages.isEmpty) return _buildChatClosedWidget();
+
+  //     return ListView.builder(
+  //       reverse: true,
+  //       padding: EdgeInsets.symmetric(vertical: 10.h),
+  //       itemCount: state.messages.length,
+  //       itemBuilder: (context, index) {
+  //         final message = state.messages[index];
+
+  //         bool showMarker = false;
+  //         if (widget.lastReadTimestamp != null) {
+  //           final isNew = message.timestamp.isAfter(widget.lastReadTimestamp!);
+  //           if (isNew &&
+  //               (index == state.messages.length - 1 ||
+  //                   !state.messages[index + 1].timestamp.isAfter(
+  //                     widget.lastReadTimestamp!,
+  //                   ))) {
+  //             showMarker = true;
+  //           }
+  //         }
+
+  //         return Column(
+  //           children: [
+  //             if (showMarker) _buildUnreadMarker(),
+  //             MessageBubble(
+  //               message: message,
+  //               currentUserId: widget.currentUserId,
+  //             ),
+  //           ],
+  //         );
+  //       },
+  //     );
+  //   }
+  //   return const Center(child: CircularProgressIndicator());
+  // }
+  Widget _buildMessagesList(ChatDetailsState state, bool isActive) {
     if (state is ChatDetailsSuccess) {
-      if (state.messages.isEmpty) return _buildChatClosedWidget();
+      final messages = state.messages;
+
+      // 💡 الحل: لو الشات فاضي، بنشوف هو مفتوح ولا مقفول
+      if (messages.isEmpty) {
+        return isActive
+            ? _buildEmptyChatPlaceholder() // شاشة ترحيب بسيطة
+            : Center(child: _buildChatClosedWidget()); // رسالة القفل الحقيقية
+      }
 
       return ListView.builder(
-        reverse: true,
+        reverse: true, // لأن الأحدث تحت
         padding: EdgeInsets.symmetric(vertical: 10.h),
-        itemCount: state.messages.length,
+        itemCount: messages.length,
         itemBuilder: (context, index) {
-          final message = state.messages[index];
+          final message = messages[index];
 
+          // 💡 منطق الـ Unread Marker الصحيح
           bool showMarker = false;
           if (widget.lastReadTimestamp != null) {
+            // الشرط 1: الرسالة مش مبعوتة مني
+            final isFromOther = message.senderId != widget.currentUserId;
+            // الشرط 2: الرسالة مبعوتة بعد آخر وقت قراءة
             final isNew = message.timestamp.isAfter(widget.lastReadTimestamp!);
-            if (isNew &&
-                (index == state.messages.length - 1 ||
-                    !state.messages[index + 1].timestamp.isAfter(
-                      widget.lastReadTimestamp!,
-                    ))) {
-              showMarker = true;
+            final safeEntryTime = _entryTime.subtract(
+              const Duration(seconds: 3),
+            );
+            final arrivedBeforeIJoined = message.timestamp.isBefore(
+              safeEntryTime,
+            );
+
+            // الشرط 3: تظهر مرة واحدة فقط فوق أول رسالة جديدة
+            // بما إن الـ List مقلوبة (Reverse)، فأول رسالة جديدة هي اللي الـ index بتاعها أكبر
+            if (isFromOther && isNew && arrivedBeforeIJoined) {
+              // نتحقق إن الرسالة اللي قبلها (يعني الأقدم منها في الترتيب الزمني) مكنتش جديدة
+              if (index == messages.length - 1 ||
+                  !messages[index + 1].timestamp.isAfter(
+                    widget.lastReadTimestamp!,
+                  )) {
+                showMarker = true;
+              }
             }
           }
 
@@ -129,6 +191,23 @@ class _ChatDetailsViewState extends State<ChatDetailsView> {
       );
     }
     return const Center(child: CircularProgressIndicator());
+  }
+
+  // 2. ويدجت تظهر لما الشات يكون لسه جديد وفاضي
+  Widget _buildEmptyChatPlaceholder() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.chat_bubble_outline, size: 50.sp, color: Colors.grey[300]),
+          SizedBox(height: 10.h),
+          Text(
+            "Say hello to start the conversation!",
+            style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildUnreadMarker() {

@@ -3,9 +3,13 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:graduation_project/core/utils/app_router.dart';
+import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/features/notification/domain/entities/notification_entity.dart';
 import 'package:graduation_project/features/notification/presentation/notification_cubit/notification_cubit.dart';
 import 'package:graduation_project/features/notification/presentation/pages/notification_tile.dart';
+import 'package:graduation_project/features/review/presentation/review_cubit/review_cubit.dart';
+import 'package:graduation_project/features/review/presentation/widgets/doctor_review_sheet.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -95,42 +99,114 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
+  // void _handleNotificationClick(BuildContext context, NotificationEntity noti) {
+  //   context.read<NotificationCubit>().markAsRead(noti.id);
+  //   final String? entityId = noti.relatedEntityId ?? noti.relatedEntityKey;
+
+  //   if (entityId == null) {
+  //     log("⚠️ No ID found in notification payload");
+  //     return;
+  //   }
+
+  //   switch (noti.relatedEntityType?.toLowerCase()) {
+  //     case 'ticket':
+  //       String? estimatedStatus;
+
+  //       if (noti.type == 'TicketClosed') {
+  //         estimatedStatus = 'Closed';
+  //       } else if (noti.type == 'TicketResponse') {
+  //         estimatedStatus = 'InProgress';
+  //       }
+
+  //       context.push(
+  //         '/tickets/ticket-chat',
+  //         extra: {'id': noti.relatedEntityKey, 'status': estimatedStatus},
+  //       );
+  //       break;
+  //     case 'appointment':
+  //       context.push('/appointments/details/${noti.relatedEntityId}');
+  //       break;
+  //     case 'prescription':
+  //       context.push('/prescriptions/${noti.relatedEntityId}');
+  //       break;
+  //     case 'medicalrecord':
+  //       context.push('/medical-records/${noti.relatedEntityId}');
+  //       break;
+  //     default:
+  //       log("Unknown target: ${noti.navigationTarget}");
+  //   }
+  // }
+
   void _handleNotificationClick(BuildContext context, NotificationEntity noti) {
     context.read<NotificationCubit>().markAsRead(noti.id);
-    final String? entityId = noti.relatedEntityId ?? noti.relatedEntityKey;
+
+    // 1. استخراج الـ ID الصحيح (بنشيك على الـ Key والـ Id)
+    final String? entityId = noti.relatedEntityKey ?? noti.relatedEntityId;
+
+    // 2. 🚀 الحل السحري: بنشيك على نوع التنبيه لو "طلب تقييم"
+    // بنبص على الـ type أو الـ navigationTarget
+    if (noti.type == 'ReviewRequested' ||
+        noti.navigationTarget == 'review_create') {
+      // بنجيب الـ doctorId من الـ payload اللي جاي مع التنبيه
+      // تأكد إن الـ NotificationEntity عندك فيها حقل للـ payload أو الـ metadata
+      final doctorId = noti.navigationPayload?['doctorId'];
+
+      if (doctorId != null) {
+        _showReviewSheet(context, int.tryParse(doctorId.toString()) ?? 0);
+        return; // بنوقف هنا مش عاوزينه يكمل للـ switch
+      }
+    }
 
     if (entityId == null) {
       log("⚠️ No ID found in notification payload");
       return;
     }
 
+    // 3. تصليح المسارات باستخدام AppRouter (بلاش كتابة الـ Path يدوي)
     switch (noti.relatedEntityType?.toLowerCase()) {
       case 'ticket':
         String? estimatedStatus;
-
         if (noti.type == 'TicketClosed') {
           estimatedStatus = 'Closed';
         } else if (noti.type == 'TicketResponse') {
           estimatedStatus = 'InProgress';
         }
-
         context.push(
           '/tickets/ticket-chat',
-          extra: {'id': noti.relatedEntityKey, 'status': estimatedStatus},
+          extra: {'id': entityId, 'status': estimatedStatus},
         );
         break;
+
       case 'appointment':
-        context.push('/appointments/details/${noti.relatedEntityId}');
-        break;
       case 'prescription':
-        context.push('/prescriptions/${noti.relatedEntityId}');
+        // ✅ تصليح: استخدم الـ Constant والـ extra بدل الـ Path اليدوي
+        context.push(
+          AppRouter.kMedicalDetails,
+          extra: {'appointmentId': entityId, 'isReadOnly': true},
+        );
         break;
-      case 'medicalrecord':
-        context.push('/medical-records/${noti.relatedEntityId}');
-        break;
+
+      // لو عندك شاشة أدوية، استخدم الـ Route بتاعها
+      // context.push('/prescriptions/$entityId');
+      // break;
+
       default:
         log("Unknown target: ${noti.navigationTarget}");
     }
+  }
+
+  // ميثود مساعدة لفتح الشيت
+  void _showReviewSheet(BuildContext context, int doctorId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => BlocProvider(
+            create: (context) => getIt<ReviewCubit>(),
+            child: DoctorReviewSheet(doctorId: doctorId),
+          ),
+    );
   }
 
   @override

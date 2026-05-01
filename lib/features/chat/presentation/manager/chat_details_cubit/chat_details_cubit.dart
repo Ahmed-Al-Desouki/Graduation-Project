@@ -54,11 +54,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       if (doc.exists) {
         final data = doc.data();
         final isActive = data?['isActive'] ?? true;
-
-        // 💡 تحديد مين الـ recipientId بناءً على مين اللي فاتح الأبلكيشن
         final docId = data?['doctorId'].toString();
         final patId = data?['patientId'].toString();
-
         _recipientId = (currentUserId == docId) ? patId : docId;
 
         if (state is ChatDetailsSuccess) {
@@ -72,6 +69,15 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     // 2. مراقبة الرسائل (كما هي)
     _messagesSub?.cancel();
     _messagesSub = getMessagesUseCase(chatId).listen((messages) {
+      if (messages.isNotEmpty) {
+        final lastMessage =
+            messages.first; // أول رسالة في اللستة هي الأحدث زمنياً
+
+        if (lastMessage.senderId != currentUserId) {
+          // لو الرسالة الأخيرة مش بتاعتي، يبقى أنا "قريتها" حالاً لأني فاتح الشات
+          _markChatAsRead(chatId, currentUserId);
+        }
+      }
       if (state is ChatDetailsSuccess) {
         emit((state as ChatDetailsSuccess).copyWith(messages: messages));
       } else {

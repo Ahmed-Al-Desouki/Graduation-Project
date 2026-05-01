@@ -3,10 +3,13 @@ import 'dart:developer';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/features/notification/presentation/notification_cubit/notification_cubit.dart';
 import 'package:graduation_project/features/reminder/data/data_sources/local_occurrence_data_source.dart';
+import 'package:graduation_project/features/review/presentation/review_cubit/review_cubit.dart';
+import 'package:graduation_project/features/review/presentation/widgets/doctor_review_sheet.dart';
 
 class NotificationService {
   static Future<void> initialize() async {
@@ -130,15 +133,137 @@ class NotificationService {
     }
   }
 
-  static void _handleNotificationNavigation(Map<String, dynamic> data) {
-    final String? type = data['relatedEntityType'];
-    final String? entityId =
-        data['relatedEntityKey'] ?? data['relatedEntityId'];
+  // static void _handleNotificationNavigation(Map<String, dynamic> data) {
+  //   final String? type = data['relatedEntityType'];
+  //   final String? navigationTarget = data['navigationTarget'];
+  //   final String? entityId =
+  //       data['relatedEntityKey'] ?? data['relatedEntityId'];
 
-    if (type?.toLowerCase() == 'ticket') {
+  //   if (type?.toLowerCase() == 'ticket') {
+  //     AppRouter.router.push('/tickets/ticket-chat', extra: entityId);
+  //   } else if (type?.toLowerCase() == 'appointment') {
+  //     AppRouter.router.push(AppRouter.kMedicalDetails, extra: entityId);
+  //   }
+
+  //   if (type == 'ReviewRequested' || navigationTarget == 'review_create') {
+  //     // استخراج الـ doctorId من الداتا
+  //     // ملحوظة: الـ FCM بيحول كل القيم لـ Strings فبناخدها ونحولها int
+  //     final String? doctorIdStr = data['doctorId'];
+
+  //     if (doctorIdStr != null) {
+  //       final int doctorId = int.tryParse(doctorIdStr) ?? 0;
+  //       if (doctorId != 0) {
+  //         _showReviewDialog(doctorId);
+  //       }
+  //     }
+  //   }
+  // }
+
+  // static void _handleNotificationNavigation(Map<String, dynamic> data) {
+  //   // 1. استخراج الداتا الأساسية
+  //   final String? type = data['type']?.toString();
+  //   final String? navigationTarget = data['navigationTarget']?.toString();
+
+  //   // 💡 السيرفر باعت الـ doctorId جوه الـ navigationPayload
+  //   final dynamic payload = data['navigationPayload'];
+
+  //   // 2. فحص هل دي نتوفيكشن ريفيو؟
+  //   if (type == 'ReviewRequested' || navigationTarget == 'review_create') {
+  //     int? doctorId;
+
+  //     if (payload is Map) {
+  //       doctorId = int.tryParse(payload['doctorId']?.toString() ?? '');
+  //     }
+
+  //     if (doctorId != null && doctorId != 0) {
+  //       _showReviewDialog(doctorId);
+  //       return; // بنوقف هنا عشان ميروحش لصفحة المواعيد
+  //     }
+  //   }
+
+  //   // 3. لو مش ريفيو، كمل اللوجيك العادي بتاعك
+  //   final String? entityType =
+  //       data['relatedEntityType']?.toString().toLowerCase();
+  //   final String? entityId =
+  //       data['relatedEntityKey']?.toString() ??
+  //       data['relatedEntityId']?.toString();
+
+  //   if (entityType == 'ticket') {
+  //     AppRouter.router.push('/tickets/ticket-chat', extra: entityId);
+  //   } else if (entityType == 'appointment') {
+  //     // التأكد من الذهاب لـ kMedicalDetails المعرف في الراوتر
+  //     AppRouter.router.push(
+  //       AppRouter.kMedicalDetails,
+  //       extra: {
+  //         'appointmentId': entityId,
+  //         // ممكن تزود داتا هنا لو محتاج
+  //       },
+  //     );
+  //   }
+  // }
+
+  static void _handleNotificationNavigation(Map<String, dynamic> data) {
+    log("🧭 Handling Navigation with payload: $data");
+
+    // 1. 🚨 أولويّة الريفيو (تتحط في أول الميثود)
+    // بنشيك على الـ navigationTarget أو الـ type اللي جاي من السيرفر
+    final String? navTarget = data['navigationTarget']?.toString();
+    final String? notiType = data['type']?.toString();
+
+    if (navTarget == 'review_create' || notiType == 'ReviewRequested') {
+      // السيرفر باعت الـ doctorId جوه الـ navigationPayload كـ String
+      // أحياناً الداتا بتيجي flattened (مباشرة) وأحياناً جوه الـ payload
+      String? doctorIdStr = data['doctorId']?.toString();
+
+      if (doctorIdStr == null && data['navigationPayload'] != null) {
+        // محاولة سحب الـ doctorId لو الداتا مش مفرودة (Flattened)
+        // بنستخدم Regex بسيط عشان نجيب الرقم من الـ String بتاع الـ payload
+        final match = RegExp(
+          r'doctorId:\s*(\d+)',
+        ).firstMatch(data['navigationPayload'].toString());
+        doctorIdStr = match?.group(1);
+      }
+
+      if (doctorIdStr != null) {
+        log("🌟 Review Requested for Doctor ID: $doctorIdStr");
+        _showReviewDialog(int.parse(doctorIdStr));
+        return; // 🔥 مهم جداً: بنوقف التنفيذ هنا عشان ميروحش لصفحة المواعيد
+      }
+    }
+
+    // 2. اللوجيك العادي للمواعيد والتذاكر (بيشتغل لو مفيش ريفيو)
+    final String? type = data['relatedEntityType']?.toString().toLowerCase();
+    final String? entityId =
+        data['relatedEntityKey']?.toString() ??
+        data['relatedEntityId']?.toString();
+
+    if (type == 'ticket') {
       AppRouter.router.push('/tickets/ticket-chat', extra: entityId);
-    } else if (type?.toLowerCase() == 'appointment') {
-      AppRouter.router.push(AppRouter.kMedicalDetails, extra: entityId);
+    } else if (type == 'appointment') {
+      // هنا هيروح للميديكال ديتالز لو التنبيه موعد عادي مش طلب ريفيو
+      AppRouter.router.push(
+        AppRouter.kMedicalDetails,
+        extra: {'appointmentId': entityId, 'isReadOnly': true},
+      );
+    }
+  }
+
+  static void _showReviewDialog(int doctorId) {
+    // نستخدم الـ Global Key عشان نضمن إننا بنفتح فوق الشاشة اللي ظاهرة حالياً
+    final context = AppRouter.navigatorKey.currentContext;
+
+    if (context != null) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor:
+            Colors.transparent, // عشان الـ Container بتاعنا واخد Decoration
+        builder:
+            (context) => BlocProvider(
+              create: (context) => getIt<ReviewCubit>(),
+              child: DoctorReviewSheet(doctorId: doctorId),
+            ),
+      );
     }
   }
 

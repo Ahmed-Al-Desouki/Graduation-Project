@@ -27,19 +27,19 @@ class HomeRepositoryImpl implements HomeRepository {
   Future<Either<Failure, HomeUserModel>> fetchHomeUserInfo() async {
     return _taskWrapper(() async {
       final response = await _homeWebService.fetchHomeUserInfo();
-      if (response['success'] == true) {
-        // ✅ إضافة الـ Versioning للرابط عشان نكسر الكاش
-        String? imageUrl = response['imageUrl'];
-        if (imageUrl != null && imageUrl.isNotEmpty) {
-          imageUrl = "$imageUrl?v=${DateTime.now().millisecondsSinceEpoch}";
-        }
 
-        return HomeUserModel(
-          fullName: response['fullName'] ?? 'User',
-          imageUrl: imageUrl,
-        );
+      // 💡 بما إن الداتا راجعة مباشرة كـ Object:
+      String? imageUrl = response['profileImageUrl'];
+
+      // حركة كسر الكاش (Cache Breaking) اللي انت عاملها ممتازة سيبها زي ما هي
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        imageUrl = "$imageUrl?v=${DateTime.now().millisecondsSinceEpoch}";
       }
-      throw Exception(response['message'] ?? 'Failed to load user info');
+
+      return HomeUserModel(
+        fullName: response['fullName'] ?? 'User',
+        imageUrl: imageUrl,
+      );
     });
   }
 }

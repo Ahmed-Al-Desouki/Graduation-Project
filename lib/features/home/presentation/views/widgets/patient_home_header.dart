@@ -2,9 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/core/widgets/tutorial_tooltip_widget.dart';
 import 'package:graduation_project/features/notification/presentation/notification_cubit/notification_cubit.dart';
@@ -57,28 +55,26 @@ class PatientHomeHeader extends StatelessWidget {
       radius: 33.r,
       backgroundColor: Colors.white,
       child: ClipOval(
-        child: CachedNetworkImage(
-          key: ValueKey(imageUrl),
-          imageUrl: imageUrl ?? '',
-          width: 66.r,
-          height: 66.r,
-          fit: BoxFit.cover,
-          cacheKey: imageUrl,
-          placeholder:
-              (context, url) => const CircularProgressIndicator(strokeWidth: 2),
-          errorWidget: (context, url, error) => _buildErrorIcon(),
-        ),
+        child:
+            (imageUrl != null && imageUrl!.isNotEmpty)
+                ? CachedNetworkImage(
+                  key: ValueKey(imageUrl),
+                  imageUrl: imageUrl!,
+                  width: 66.r,
+                  height: 66.r,
+                  fit: BoxFit.cover,
+                  placeholder:
+                      (context, url) =>
+                          const CircularProgressIndicator(strokeWidth: 2),
+                  errorWidget: (context, url, error) => _buildErrorIcon(),
+                )
+                : _buildErrorIcon(), // لو الصورة null اعرض الأيقونة الافتراضية
       ),
     );
   }
 
   Widget _buildErrorIcon() {
-    return SvgPicture.asset(
-      Assets.imagesHeartRate,
-      height: 35.h,
-      width: 35.w,
-      colorFilter: const ColorFilter.mode(Color(0xff26A69A), BlendMode.srcIn),
-    );
+    return Icon(Icons.account_circle, size: 66.r, color: Colors.grey[400]);
   }
 
   Widget _buildWelcomeText() {

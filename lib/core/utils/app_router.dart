@@ -56,11 +56,9 @@ import 'package:graduation_project/features/search/presentation/views/search_vie
 import 'package:graduation_project/features/splash/presentation/views/widgets/onboarding_view.dart';
 import 'package:graduation_project/features/reminder/presentation/views/widgets/all_reminders_view.dart';
 import 'package:graduation_project/features/splash/presentation/views/widgets/splash_body.dart';
-import 'package:graduation_project/features/support_tickets/domain/entities/ticket_entity.dart';
 import 'package:graduation_project/features/support_tickets/presentation/manager/tickets_cubit/tickets_cubit.dart';
 import 'package:graduation_project/features/support_tickets/presentation/pages/support_chat_page.dart';
 import 'package:graduation_project/features/support_tickets/presentation/pages/support_tickets_page.dart';
-import 'package:hive/hive.dart';
 
 abstract class AppRouter {
   static const kSplash = '/';
@@ -87,22 +85,24 @@ abstract class AppRouter {
   static const kRinging = '/ringing';
   static const kAllReminders = '/allReminders';
   static const kAddReminder = '/addReminder';
-  static const kChatDetails = '/chatDetails'; // ✅ أضف هذا الثابت
+  static const kChatDetails = '/chatDetails';
   static const kDoctorSchedule = '/doctorSchedule';
   static const kScheduleSetup = '/scheduleSetup';
-  static const kMedicalDetails = '/medicalDetails'; // ✅ أضف هذا الثابت
+  static const kMedicalDetails = '/medicalDetails';
   static const kSearch = '/search';
-  static const kPaymentWebView = '/paymentWebView'; // ✅ أضف هذا الثابت
+  static const kPaymentWebView = '/paymentWebView';
   static const kAppointmentsCenter = '/appointmentsCenter';
-  static const kBookingSuccess = '/bookingSuccess'; // ✅ شاشة نجاح الحجز
+  static const kBookingSuccess = '/bookingSuccess';
   static const kDoctorProfileCompletion = '/doctor/profile-completion';
   static const kProfileCompletionLoading = '/doctor/profile-completion/loading';
   static const kAllAchievements = '/doctor/profile/all-achievements';
   static const kTickets = '/tickets';
   static const kNotifications = '/notifications';
   static const kBookingCalendar = '/booking-calendar';
-  // static const kMedicalHistory = '/';
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
   static final router = GoRouter(
+    navigatorKey: navigatorKey,
     routes: [
       GoRoute(path: kSplash, builder: (context, state) => const SplashBody()),
       GoRoute(
@@ -116,8 +116,6 @@ abstract class AppRouter {
         path: kNotifications,
         builder:
             (context, state) => BlocProvider.value(
-              // 🚀 بنستخدم .value وبنجيب النسخة اللي في getIt
-              // عشان نضمن إنه يفتح "نفس النسخة" اللي بدأت تسمع للـ SignalR في الهوم
               value: getIt<NotificationCubit>(),
               child: const NotificationsPage(),
             ),
@@ -136,13 +134,6 @@ abstract class AppRouter {
       GoRoute(
         path: kScheduleSetup,
 
-        // builder:
-        //     (context, state) => BlocProvider(
-        //       create:
-        //           (context) =>
-        //               getIt<ScheduleManagementCubit>(), // سحب النسخة من GetIt
-        //       child: const ScheduleSetupView(isEditing: true),
-        //     ),
         builder: (context, state) {
           final Map<String, dynamic>? extra =
               state.extra as Map<String, dynamic>?;
@@ -155,70 +146,6 @@ abstract class AppRouter {
         },
       ),
 
-      // 2. شاشة الكالندر (تدعم الطبيب والمريض)
-      // GoRoute(
-      //   path: kDoctorSchedule,
-      //   builder: (context, state) {
-      //     // 1️⃣ استلام البيانات من الـ extra
-      //     final Map<String, dynamic>? extra =
-      //         state.extra as Map<String, dynamic>?;
-      //     final bool isPatientView =
-      //         extra?['isPatientView'] ?? false; // الافتراضي دكتور
-
-      //     // 2️⃣ لو "مريض"، افتح الكالندر فوراً بدون فحص الـ Hive (Setup)
-      //     if (isPatientView) {
-      //       return MultiBlocProvider(
-      //         providers: [
-      //           BlocProvider(
-      //             create: (context) => getIt<BookingCalendarCubit>(),
-      //           ),
-      //           BlocProvider(
-      //             create: (context) => getIt<AppointmentActionCubit>(),
-      //           ),
-      //         ],
-      //         child: BookingCalendarView(
-      //           isPatientView: true,
-      //           doctorId:
-      //               extra?['doctorId']
-      //                   ?.toString(), // ID الدكتور اللي المريض اختاره من البحث
-      //           doctorName: extra?['doctorName'],
-      //           consultationFee:
-      //               (extra?['consultationFee'] as num?)?.toDouble(),
-      //         ),
-      //       );
-      //     }
-
-      //     // 3️⃣ لو "دكتور"، كمل اللوجيك القديم بتاع فحص الـ Setup
-      //     var box = Hive.box('booking_box');
-      //     bool isSetupComplete = box.get(
-      //       'isScheduleConfigured',
-      //       defaultValue: false,
-      //     );
-
-      //     if (isSetupComplete) {
-      //       return MultiBlocProvider(
-      //         providers: [
-      //           BlocProvider(
-      //             create: (context) => getIt<BookingCalendarCubit>(),
-      //           ),
-      //           BlocProvider(
-      //             create: (context) => getIt<AppointmentActionCubit>(),
-      //           ),
-      //         ],
-      //         child: BookingCalendarView(
-      //           isPatientView: false,
-      //           followUpPatientName: extra?['patientName'],
-      //           originalAppointmentId: extra?['originalAppointmentId'],
-      //         ),
-      //       );
-      //     } else {
-      //       return BlocProvider(
-      //         create: (context) => getIt<ScheduleManagementCubit>(),
-      //         child: const ScheduleSetupView(),
-      //       );
-      //     }
-      //   },
-      // ),
       GoRoute(
         path: kBookingCalendar, // مثلاً '/booking-calendar'
         builder: (context, state) {

@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
+import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/features/booking/presentation/manager/appointments_center_cubit/appointment_center_cubit.dart';
 import 'package:graduation_project/features/home/presentation/views/widgets/next_reminder_card.dart';
 import 'package:graduation_project/features/home/presentation/views/widgets/upcoming_appointments.dart';
 import 'package:graduation_project/features/home/presentation/manager/home_cubit/home_cubit.dart';
@@ -73,6 +75,7 @@ class _PatientHomeViewState extends State<PatientHomeView> {
     final patientId = await SecureStorageHelper.getUserId();
     if (mounted) {
       context.read<HomeCubit>().getHomeUserInfo();
+      // context.read<AppointmentsCenterCubit>().getPatientAppointments();
       if (patientId != null) {
         context.read<ReminderCubit>().getUpcomingReminders(
           patientId: patientId,
@@ -82,47 +85,111 @@ class _PatientHomeViewState extends State<PatientHomeView> {
     }
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   return ShowCaseWidget(
+  //     autoPlay: false,
+  //     enableAutoScroll: true,
+  //     blurValue: 1,
+  //     builder: (context) {
+  //       WidgetsBinding.instance.addPostFrameCallback((_) {
+  //         _checkAndStartShowcase(context);
+  //       });
+
+  //       return Builder(
+  //         builder: (context) {
+  //           return Scaffold(
+  //             backgroundColor: const Color(0xffE8F7F2),
+  //             body: BlocListener<HomeCubit, HomeState>(
+  //               listener: (context, state) {
+  //                 if (state is HomeFailure) {
+  //                   showSnackBar(context, state.errMessage, Colors.red);
+  //                 }
+  //               },
+  //               child: SingleChildScrollView(
+  //                 padding: EdgeInsets.only(bottom: 20.h),
+  //                 child: Column(
+  //                   crossAxisAlignment: CrossAxisAlignment.start,
+  //                   children: [
+  //                     _buildHeaderSection(),
+
+  //                     SizedBox(height: 20.h),
+  //                     const UpcomingAppointments(),
+  //                     const NextReminderCard(),
+  //                     SizedBox(height: 30.h),
+  //                     HomeQuickActionsList(
+  //                       searchDoctorKey: _searchDoctorKey,
+  //                       remindersKey: _remindersKey,
+  //                       historyKey: _historyKey,
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
+  // في ملف patient_home_view.dart
+
   @override
   Widget build(BuildContext context) {
-    return ShowCaseWidget(
-      autoPlay: false,
-      enableAutoScroll: true,
-      blurValue: 1,
-      builder: (context) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _checkAndStartShowcase(context);
-        });
+    return BlocProvider(
+      // 💡 بنوفر الكيوبت هنا عشان كل اللي تحت يشوفوه
+      create:
+          (context) =>
+              getIt<AppointmentsCenterCubit>()..getPatientAppointments(),
+      child: ShowCaseWidget(
+        autoPlay: false,
+        enableAutoScroll: true,
+        blurValue: 1,
+        builder: (context) {
+          // 💡 بنستخدم الـ context اللي جاي من الـ builder ده
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _checkAndStartShowcase(context);
+          });
 
-        return Scaffold(
-          backgroundColor: const Color(0xffE8F7F2),
-          body: BlocListener<HomeCubit, HomeState>(
-            listener: (context, state) {
-              if (state is HomeFailure) {
-                showSnackBar(context, state.errMessage, Colors.red);
-              }
-            },
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: 20.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeaderSection(),
+          return Scaffold(
+            backgroundColor: const Color(0xffE8F7F2),
+            body: MultiBlocListener(
+              // لو حابب تضيف أكتر من Listener
+              listeners: [
+                BlocListener<HomeCubit, HomeState>(
+                  listener: (context, state) {
+                    if (state is HomeFailure) {
+                      showSnackBar(context, state.errMessage, Colors.red);
+                    }
+                  },
+                ),
+                // ممكن تضيف Listener للـ Appointments هنا لو حابب
+              ],
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: 20.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeaderSection(),
+                    SizedBox(height: 20.h),
 
-                  SizedBox(height: 20.h),
-                  const UpcomingAppointments(),
-                  const NextReminderCard(),
-                  SizedBox(height: 30.h),
-                  HomeQuickActionsList(
-                    searchDoctorKey: _searchDoctorKey,
-                    remindersKey: _remindersKey,
-                    historyKey: _historyKey,
-                  ),
-                ],
+                    // 💡 الويدجت دي دلوقتي هتلاقي الـ Cubit فوقيها علطول
+                    const UpcomingAppointments(),
+
+                    const NextReminderCard(),
+                    SizedBox(height: 30.h),
+                    HomeQuickActionsList(
+                      searchDoctorKey: _searchDoctorKey,
+                      remindersKey: _remindersKey,
+                      historyKey: _historyKey,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
