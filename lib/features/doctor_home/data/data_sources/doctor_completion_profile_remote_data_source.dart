@@ -5,15 +5,19 @@ import '../models/complete_profile_request_model.dart';
 
 abstract class DoctorCompletionProfileRemoteDataSource {
   Future<bool> completeProfile(CompleteProfileRequestModel request);
+
   Future<bool> uploadVerificationDocument({
     required int documentType,
     required File file,
   });
+
   Future<bool> updateLocation(LocationModel location);
+
   Future<bool> addAchievement({
     required String title,
     String? description,
     File? image,
   });
+
   Future<Map<String, dynamic>> checkProfileStatus();
 }

@@ -16,6 +16,8 @@ class DoctorProfileEntity {
   final String? bio;
   final double averageRating;
   final int patientCount;
+  final double revenueAmount;
+  final String? revenueMonth;
   final bool isActive;
   final bool isProfileCompleted;
   final String? clinicAddress;
@@ -40,6 +42,8 @@ class DoctorProfileEntity {
     this.bio,
     required this.averageRating,
     required this.patientCount,
+    required this.revenueAmount,
+    this.revenueMonth,
     required this.isActive,
     required this.isProfileCompleted,
     this.clinicAddress,
@@ -65,6 +69,8 @@ class DoctorProfileEntity {
     String? bio,
     double? averageRating,
     int? patientCount,
+    double? revenueAmount,
+    String? revenueMonth,
     bool? isActive,
     bool? isProfileCompleted,
     String? clinicAddress,
@@ -89,6 +95,8 @@ class DoctorProfileEntity {
       bio: bio ?? this.bio,
       averageRating: averageRating ?? this.averageRating,
       patientCount: patientCount ?? this.patientCount,
+      revenueAmount: revenueAmount ?? this.revenueAmount,
+      revenueMonth: revenueMonth ?? this.revenueMonth,
       isActive: isActive ?? this.isActive,
       isProfileCompleted: isProfileCompleted ?? this.isProfileCompleted,
       clinicAddress: clinicAddress ?? this.clinicAddress,

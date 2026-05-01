@@ -326,6 +326,7 @@ class _DoctorProfileCompletionViewBodyState
             children: [
               const ProfileHeaderSection(),
               SizedBox(height: 15.h),
+
               PersonalInfoSection(
                 formKey: _personalInfoKey,
                 fullNameController: _fullNameController,
@@ -334,6 +335,7 @@ class _DoctorProfileCompletionViewBodyState
                 onDateSelected: _selectDateOfBirth,
               ),
               SizedBox(height: 20.h),
+
               ProfessionalDetailsSection(
                 formKey: _professionalInfoKey,
                 experienceController: _experienceController,
@@ -342,14 +344,17 @@ class _DoctorProfileCompletionViewBodyState
                 specializationController: _specializationController,
               ),
               SizedBox(height: 20.h),
+
               VerificationSection(
                 key: _verificationSectionKey,
                 existingDocuments:
                     widget.initialProfile?.verificationDocuments ?? const [],
               ),
               SizedBox(height: 20.h),
+
               BioSection(bioController: _bioController),
               SizedBox(height: 20.h),
+
               LocationSection(
                 clinicNameController: _clinicNameController,
                 addressController: _addressController,
@@ -359,6 +364,7 @@ class _DoctorProfileCompletionViewBodyState
                 longitude: _selectedLongitude,
               ),
               SizedBox(height: 20.h),
+
               OptionalDetailsSection(
                 key: _optionalDetailsKey,
                 titleController: _titleController,
@@ -367,6 +373,7 @@ class _DoctorProfileCompletionViewBodyState
                     widget.initialProfile?.achievements ?? const [],
               ),
               SizedBox(height: 20.h),
+
               ProfileCompletionButton(
                 onPressed: isSubmitting ? null : _validateAndSubmit,
                 isLoading: isSubmitting,

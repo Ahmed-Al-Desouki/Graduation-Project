@@ -7,10 +7,8 @@ class ProfessionalDetailsSection extends StatelessWidget {
   final TextEditingController experienceController;
   final TextEditingController feeController;
   final TextEditingController nationalIdController;
-  final TextEditingController
-  specializationController; // ✅ تغير من String? لـ Controller
-  final Function(String)?
-  onSpecializationChanged; // ✅ اختياري لو عايز تتبع التغيير
+  final TextEditingController specializationController;
+  final Function(String)? onSpecializationChanged;
 
   const ProfessionalDetailsSection({
     super.key,

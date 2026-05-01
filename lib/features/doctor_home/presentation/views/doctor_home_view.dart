@@ -81,7 +81,6 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                         ),
                         TextButton(
                           onPressed: () {
-                            // Navigate to past appointments screen
                             AppRouter.router.push(
                               AppRouter.kAppointmentsCenter,
                             );
@@ -151,7 +150,7 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                             Expanded(
                               child: DoctorStatCard(
                                 title: "Total \nPatients",
-                                value: "1,505",
+                                value: profile.patientCount.toString(),
                                 icon: Icons.groups_rounded,
                                 color: Colors.blueAccent,
                               ),
@@ -160,7 +159,7 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                             Expanded(
                               child: DoctorStatCard(
                                 title: "Avg \nRating",
-                                value: "4.8",
+                                value: profile.averageRating.toStringAsFixed(2),
                                 icon: Icons.star_rounded,
                                 color: Colors.yellow.shade600,
                               ),
@@ -169,9 +168,10 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                         ),
                         SizedBox(height: 15.h),
                         DoctorRevenueCard(
-                          title: "Monthly Revenue",
-                          amount: "\$12,450",
-                          percentage: "15%",
+                          title:
+                              "Monthly Revenue (${profile.revenueMonth ?? ''})",
+                          amount:
+                              "${profile.revenueAmount.toStringAsFixed(0)} EGP",
                           isIncrease: true,
                           icon: Icons.attach_money_rounded,
                           color: Colors.green,
@@ -199,7 +199,6 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                     imageAsset: Assets.imagesSchedule,
                     isSvg: false,
                     onTap: () {
-                      // Navigate to past appointments screen
                       AppRouter.router.push(AppRouter.kDoctorSchedule);
                     },
                   ),

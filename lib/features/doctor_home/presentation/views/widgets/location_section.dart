@@ -69,19 +69,6 @@ class LocationSection extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
 
-          // CustomFormTextField(
-          //   label: 'Clinic Address',
-          //   hintText: 'Building number, street name, floor',
-          //   fieldType: FieldType.text,
-          //   controller: addressController,
-          //   prefixIcon: Icons.home,
-          //   minLines: 1,
-          //   maxLines: 3,
-          //   maxLength: 500,
-          // ),
-          // SizedBox(height: 16.h),
-
-          // ✅ Pick from Map Button
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -112,7 +99,6 @@ class LocationSection extends StatelessWidget {
             ),
           ),
 
-          // ✅ Location Info (لو فيه موقع مختار)
           if (selectedLocation != null) ...[
             SizedBox(height: 12.h),
             Container(
@@ -145,7 +131,6 @@ class LocationSection extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // ✅ اعرض الـ Coordinates لو موجودة
                   if (latitude != null && longitude != null) ...[
                     SizedBox(height: 8.h),
                     Text(
