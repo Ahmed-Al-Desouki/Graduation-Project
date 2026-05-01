@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:graduation_project/features/auth/presentation/views/chat_view.dart';
-import 'package:graduation_project/features/auth/presentation/views/profile_view.dart';
+import 'package:graduation_project/features/patient_profile/presentation/views/patient_profile_view.dart';
 import 'package:graduation_project/features/search/presentation/views/search_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
 import 'package:graduation_project/features/home/presentation/views/patient_home_view.dart';
@@ -20,7 +20,7 @@ class _PatientHomeLayoutState extends State<PatientHomeLayout> {
     PatientHomeView(),
     SearchView(),
     ChatView(),
-    ProfileView(),
+    PatientProfileView(),
     SettingsScreen(),
   ];
 

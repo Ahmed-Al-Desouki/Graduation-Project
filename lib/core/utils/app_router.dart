@@ -38,7 +38,7 @@ import 'package:graduation_project/features/medical_history/presentation/view/al
 import 'package:graduation_project/features/medical_history/presentation/view/all_lab_results_view.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/all_medications_view.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/all_surgeries_view.dart';
-import 'package:graduation_project/features/auth/presentation/layout/patient_home_layout.dart';
+import 'package:graduation_project/features/home/presentation/views/patient_home_layout.dart';
 import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/shared_history_view.dart';
 import 'package:graduation_project/features/reminder/presentation/manager/reminder_cubit/reminder_cubit.dart';
