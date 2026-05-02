@@ -48,7 +48,7 @@ class HomeQuickActionsList extends StatelessWidget {
           desc: 'Track your medications.',
           child: QuickActionCard(
             iconColor: const Color(0xFF0852F3),
-            onTap: () => context.push(AppRouter.kReminder),l
+            onTap: () => context.push(AppRouter.kReminder),
             title: 'Reminders',
             subtitle: 'Update your Reminders',
             gradientColor: const Color(0xFF0852F3),
