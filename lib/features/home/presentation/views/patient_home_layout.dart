@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
-
 import 'package:graduation_project/features/auth/presentation/views/chat_view.dart';
 import 'package:graduation_project/features/patient_profile/presentation/views/patient_profile_view.dart';
 import 'package:graduation_project/features/search/presentation/views/search_view.dart';
@@ -17,15 +16,7 @@ class PatientHomeLayout extends StatefulWidget {
 
 class _PatientHomeLayoutState extends State<PatientHomeLayout> {
   int _currentIndex = 0;
-
   late List<Widget> _screens;
-  // = const [
-  //   PatientHomeView(),
-  //   SearchView(),
-  //   ChatView(),
-  //   ProfileView(),
-  //   SettingsScreen(),
-  // ];
 
   @override
   void initState() {
@@ -35,9 +26,9 @@ class _PatientHomeLayoutState extends State<PatientHomeLayout> {
     _screens = [
       PatientHomeView(),
       SearchView(),
-      ChatView(userId: userId, isDoctor: false), // مشتركة (الباك بيفرق بالتوكن)
+      ChatView(userId: userId, isDoctor: false),
       PatientProfileView(),
-      SettingsScreen(), // مشتركة
+      SettingsScreen(),
     ];
   }
 

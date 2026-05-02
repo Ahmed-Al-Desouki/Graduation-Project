@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:graduation_project/core/utils/app_images.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/features/notification/presentation/notification_cubit/notification_cubit.dart';
-import 'package:graduation_project/core/utils/app_styles.dart';
 import 'package:graduation_project/features/doctor_profile/domain/entities/doctor_profile_entity.dart';
 
 class DoctorHomeHeader extends StatelessWidget {
@@ -80,7 +77,6 @@ class DoctorHomeHeader extends StatelessWidget {
               color: Colors.white,
               iconSize: 28.sp,
               onPressed: () {
-                // التوجه لصفحة الإشعارات الموحدة
                 AppRouter.router.push(AppRouter.kNotifications);
               },
             ),

@@ -76,6 +76,7 @@ class UploadDocumentItem extends StatelessWidget {
             ],
           ),
           SizedBox(height: 14.h),
+
           if (hasSelectedFile)
             SelectedFileCard(
               file: selectedFile!,
@@ -86,6 +87,7 @@ class UploadDocumentItem extends StatelessWidget {
           else
             EmptyDocumentCard(onUpload: onUpload),
           SizedBox(height: 12.h),
+
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -110,6 +112,7 @@ class UploadDocumentItem extends StatelessWidget {
               ),
             ),
           ),
+
           if (hasSelectedFile) ...[
             SizedBox(height: 8.h),
             Text(

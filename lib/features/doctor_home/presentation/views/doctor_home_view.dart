@@ -68,6 +68,7 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                     ),
                   );
                 }
+
                 if (state is DoctorProfileSuccess) {
                   final profile = state.profile;
                   return SingleChildScrollView(
@@ -77,10 +78,13 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                       children: [
                         DoctorHomeHeader(profile: profile),
                         SizedBox(height: 20.h),
+
                         _buildAppointmentsHeader(),
                         SizedBox(height: 10.h),
+
                         _buildDynamicAppointmentsList(),
                         SizedBox(height: 10.h),
+
                         Padding(
                           padding: const EdgeInsets.only(left: 20),
                           child: Text(
@@ -93,6 +97,7 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                           ),
                         ),
                         SizedBox(height: 10.h),
+
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 25),
                           child: Column(
@@ -133,6 +138,7 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                           ),
                         ),
                         SizedBox(height: 10.h),
+
                         Padding(
                           padding: const EdgeInsets.only(left: 20),
                           child: Text(
@@ -145,6 +151,7 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                           ),
                         ),
                         SizedBox(height: 10.h),
+
                         QuickActionCard(
                           title: 'Appointment Center',
                           subtitle: 'Check your Appointments',
@@ -156,12 +163,14 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                           },
                         ),
                         SizedBox(height: 20.h),
+
                         QuickActionCard(
                           title: 'Reminders',
                           subtitle: 'Update your Reminders',
                           iconColor: const Color(0xFF0852F3),
                           gradientColor: const Color(0xFF0852F3),
                           imageAsset: Assets.imagesReminderSvgrepoCom,
+                          onTap: () => context.push(AppRouter.kReminder),
                         ),
                       ],
                     ),
@@ -184,7 +193,6 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
         }
 
         if (state is AppointmentsCenterSuccess) {
-          // 1. فلترة المواعيد: تاريخ اليوم + حالة Pending
           final now = DateTime.now();
           final todaysPending =
               state.appointments.where((app) {
@@ -195,12 +203,10 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                 return isToday && app.status.toLowerCase() == 'pending';
               }).toList();
 
-          // 2. لو مفيش مواعيد النهاردة
           if (todaysPending.isEmpty) {
             return _buildEmptyTodayState();
           }
 
-          // 3. عرض أول 3 مواعيد فقط
           final displayList = todaysPending.take(3).toList();
 
           return ListView.builder(
@@ -211,7 +217,7 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
             itemBuilder: (context, index) {
               final item = displayList[index];
               return DoctorAppointmentsCard(
-                appointment: item, // هنعدل الكارد تحت عشان يستقبل الـ Entity
+                appointment: item,
                 onTap: () => _navigateToDetails(context, item),
               );
             },

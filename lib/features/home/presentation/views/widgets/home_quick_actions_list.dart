@@ -38,7 +38,7 @@ class HomeQuickActionsList extends StatelessWidget {
         //     isSvg: false,
         //   ),
         // ),
-        SizedBox(height: 20.h),
+        // SizedBox(height: 20.h),
 
         _buildShowcaseAction(
           context,
@@ -48,7 +48,7 @@ class HomeQuickActionsList extends StatelessWidget {
           desc: 'Track your medications.',
           child: QuickActionCard(
             iconColor: const Color(0xFF0852F3),
-            onTap: () => context.go(AppRouter.kReminder),
+            onTap: () => context.push(AppRouter.kReminder),l
             title: 'Reminders',
             subtitle: 'Update your Reminders',
             gradientColor: const Color(0xFF0852F3),
