@@ -159,17 +159,24 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
             }
 
             var connection = _context.Database.GetDbConnection();
+            var stageTableName = $"#ReminderOccurrencesCacheStage_{Guid.NewGuid():N}";
+            var connectionOpenedHere = false;
 
-            if (connection.State != ConnectionState.Open)
-                await connection.OpenAsync();
-
-            await using var transaction = await connection.BeginTransactionAsync();
-
-            await using (var createStageCommand = connection.CreateCommand())
+            try
             {
-                createStageCommand.Transaction = transaction;
-                createStageCommand.CommandText = @"
-                    CREATE TABLE #ReminderOccurrencesCacheStage
+                if (connection.State != ConnectionState.Open)
+                {
+                    await connection.OpenAsync();
+                    connectionOpenedHere = true;
+                }
+
+                await using var transaction = await connection.BeginTransactionAsync();
+
+                await using (var createStageCommand = connection.CreateCommand())
+                {
+                    createStageCommand.Transaction = transaction;
+                    createStageCommand.CommandText = $@"
+                    CREATE TABLE {stageTableName}
                     (
                         CreatedAt DATETIME2 NOT NULL,
                         PatientId INT NULL,
@@ -184,35 +191,35 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
                         Dosage NVARCHAR(100) NULL,
                         Status TINYINT NOT NULL
                     );";
-                await createStageCommand.ExecuteNonQueryAsync();
-            }
+                    await createStageCommand.ExecuteNonQueryAsync();
+                }
 
-            using var bulkCopy = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.Default, (SqlTransaction)transaction)
-            {
-                DestinationTableName = "#ReminderOccurrencesCacheStage",
-                EnableStreaming = true,
-                BatchSize = 1000
-            };
+                using var bulkCopy = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.Default, (SqlTransaction)transaction)
+                {
+                    DestinationTableName = stageTableName,
+                    EnableStreaming = true,
+                    BatchSize = 1000
+                };
 
-            bulkCopy.ColumnMappings.Add("CreatedAt", "CreatedAt");
-            bulkCopy.ColumnMappings.Add("PatientId", "PatientId");
-            bulkCopy.ColumnMappings.Add("DoctorId", "DoctorId");
-            bulkCopy.ColumnMappings.Add("ReminderId", "ReminderId");
-            bulkCopy.ColumnMappings.Add("DueDateTimeUtc", "DueDateTimeUtc");
-            bulkCopy.ColumnMappings.Add("DueDateTime", "DueDateTime");
-            bulkCopy.ColumnMappings.Add("TimeZoneId", "TimeZoneId");
-            bulkCopy.ColumnMappings.Add("Title", "Title");
-            bulkCopy.ColumnMappings.Add("Message", "Message");
-            bulkCopy.ColumnMappings.Add("Type", "Type");
-            bulkCopy.ColumnMappings.Add("Dosage", "Dosage");
-            bulkCopy.ColumnMappings.Add("Status", "Status");
+                bulkCopy.ColumnMappings.Add("CreatedAt", "CreatedAt");
+                bulkCopy.ColumnMappings.Add("PatientId", "PatientId");
+                bulkCopy.ColumnMappings.Add("DoctorId", "DoctorId");
+                bulkCopy.ColumnMappings.Add("ReminderId", "ReminderId");
+                bulkCopy.ColumnMappings.Add("DueDateTimeUtc", "DueDateTimeUtc");
+                bulkCopy.ColumnMappings.Add("DueDateTime", "DueDateTime");
+                bulkCopy.ColumnMappings.Add("TimeZoneId", "TimeZoneId");
+                bulkCopy.ColumnMappings.Add("Title", "Title");
+                bulkCopy.ColumnMappings.Add("Message", "Message");
+                bulkCopy.ColumnMappings.Add("Type", "Type");
+                bulkCopy.ColumnMappings.Add("Dosage", "Dosage");
+                bulkCopy.ColumnMappings.Add("Status", "Status");
 
-            await bulkCopy.WriteToServerAsync(dataTable);
+                await bulkCopy.WriteToServerAsync(dataTable);
 
-            await using (var mergeCommand = connection.CreateCommand())
-            {
-                mergeCommand.Transaction = transaction;
-                mergeCommand.CommandText = @"
+                await using (var mergeCommand = connection.CreateCommand())
+                {
+                    mergeCommand.Transaction = transaction;
+                    mergeCommand.CommandText = $@"
                     INSERT INTO ReminderOccurrencesCache
                     (
                         CreatedAt,
@@ -256,7 +263,7 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
                             Type,
                             Dosage,
                             Status
-                        FROM #ReminderOccurrencesCacheStage
+                        FROM {stageTableName}
                     ) s
                     WHERE NOT EXISTS
                     (
@@ -268,10 +275,23 @@ namespace WelloraHealthCareManagment.Infrastructure.Repositories.ReminderRepo
                           AND ((t.DoctorId = s.DoctorId) OR (t.DoctorId IS NULL AND s.DoctorId IS NULL))
                     );";
 
-                await mergeCommand.ExecuteNonQueryAsync();
-            }
+                    await mergeCommand.ExecuteNonQueryAsync();
+                }
 
-            await transaction.CommitAsync();
+                await using (var dropStageCommand = connection.CreateCommand())
+                {
+                    dropStageCommand.Transaction = transaction;
+                    dropStageCommand.CommandText = $"DROP TABLE IF EXISTS {stageTableName};";
+                    await dropStageCommand.ExecuteNonQueryAsync();
+                }
+
+                await transaction.CommitAsync();
+            }
+            finally
+            {
+                if (connectionOpenedHere && connection.State == ConnectionState.Open)
+                    await connection.CloseAsync();
+            }
         }
 
         public async Task DeleteByReminderIdAsync(int reminderId)

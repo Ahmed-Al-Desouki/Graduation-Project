@@ -993,20 +993,14 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
                 .GetSlotsForDaysInRangeAsync(
                     doctorId, new List<DayOfWeek> { day }, fromDate, toDate, ct);
 
-            // ✅ query واحدة لكل الـ appointments
-            await CancelAppointmentsForSlotsAsync(
-                slots, "Doctor removed this day from their schedule", ct);
+            var transientSlotsToDelete = slots
+                .Where(slot =>
+                    slot.Status == SlotStatus.Available ||
+                    slot.Status == SlotStatus.Blocked)
+                .ToList();
 
-            foreach (var slot in slots)
-            {
-                if (slot.Status == SlotStatus.Booked)
-                    slot.MakeAvailable();
-
-                if (slot.Status == SlotStatus.Available)
-                    slot.Block();
-
-                await _timeSlotRepository.UpdateAsync(slot, ct);
-            }
+            if (transientSlotsToDelete.Any())
+                await _timeSlotRepository.DeleteRangeAsync(transientSlotsToDelete, ct);
 
             await _unitOfWork.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
@@ -1015,12 +1009,15 @@ public class DoctorSlotConfigService : IDoctorSlotConfigService
                 "DayRemoved",
                 day.ToString(),
                 null,
-                "Doctor removed this day from their schedule",
+                "Doctor removed this day from their schedule. Future transient slots were deleted.",
                 ct);
 
             _logger.LogInformation(
-                "Removed day {Day} for doctor {DoctorId}. Blocked {Count} slots",
-                day, doctorId, slots.Count);
+                "Removed day {Day} for doctor {DoctorId}. Deleted {DeletedCount} transient slots and preserved {PreservedCount} booked/completed/history slots",
+                day,
+                doctorId,
+                transientSlotsToDelete.Count,
+                slots.Count - transientSlotsToDelete.Count);
         }
         catch (Exception ex)
         {

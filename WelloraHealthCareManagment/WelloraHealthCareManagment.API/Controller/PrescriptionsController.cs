@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WelloraHealthCareManagement.Application.Interfaces;
+using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.Common.Security;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.Prescriptions;
 
@@ -22,7 +23,6 @@ namespace WelloraHealthCareManagement.API.Controllers
             _prescriptionService = prescriptionService;
             _logger = logger;
         }
-
 
         /// Create prescription for appointment (Doctor only)
         [HttpPost]
@@ -47,13 +47,32 @@ namespace WelloraHealthCareManagement.API.Controllers
             {
                 return Forbid(ex.Message);
             }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (FormatException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating prescription");
                 return StatusCode(500, new { error = "An error occurred" });
             }
         }
-
 
         /// Get prescription by ID
         [HttpGet("{id}")]
@@ -71,13 +90,16 @@ namespace WelloraHealthCareManagement.API.Controllers
 
                 return Ok(prescription);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving prescription");
                 return StatusCode(500, new { error = "An error occurred" });
             }
         }
-
 
         /// Get all prescriptions for appointment
         [HttpGet("appointment/{appointmentId}")]
@@ -92,13 +114,20 @@ namespace WelloraHealthCareManagement.API.Controllers
 
                 return Ok(prescriptions);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving prescriptions");
                 return StatusCode(500, new { error = "An error occurred" });
             }
         }
-
 
         /// Get all patient prescriptions (Patient only)
         [HttpGet("my-prescriptions")]
@@ -121,7 +150,6 @@ namespace WelloraHealthCareManagement.API.Controllers
             }
         }
 
-
         /// Add item to prescription (Doctor only)
         [HttpPost("{prescriptionId}/items/bulk")]
         [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOnlyPolicy)]
@@ -134,16 +162,36 @@ namespace WelloraHealthCareManagement.API.Controllers
                 var doctorId = GetCurrentDoctorId();
 
                 await _prescriptionService.AddPrescriptionItemsAsync(
-                      prescriptionId,
-                      doctorId,
-                      request,
-                      CancellationToken.None);
+                    prescriptionId,
+                    doctorId,
+                    request,
+                    CancellationToken.None);
 
                 return Ok(new { message = "Item added successfully" });
             }
             catch (UnauthorizedAccessException ex)
             {
                 return Forbid(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (FormatException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
@@ -176,6 +224,26 @@ namespace WelloraHealthCareManagement.API.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return Forbid(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (DomainException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (FormatException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {

@@ -123,6 +123,36 @@ namespace WelloraHealthCareManagement.API.Controllers
             }
         }
 
+        [HttpPatch("restore-blocked")]
+        [Authorize(Policy = DoctorAuthorizationConstants.ApprovedDoctorOrAdminPolicy)]
+        public async Task<IActionResult> RestoreBlockedSlots(
+            int doctorId,
+            [FromBody] RestoreBlockedSlotsRequest request)
+        {
+            try
+            {
+                var restoredCount = await _timeSlotService.RestoreBlockedSlotsAsync(
+                    doctorId,
+                    request.SlotIds,
+                    GetUserId(),
+                    GetUserRole(),
+                    HttpContext.RequestAborted);
+
+                return Ok(new
+                {
+                    restoredCount,
+                    message = restoredCount == 1
+                        ? "Blocked slot restored successfully"
+                        : "Blocked slots restored successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error restoring blocked slots for doctor {DoctorId}", doctorId);
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
         private int GetUserId()
         {
             var value = User.FindFirst("UserID")?.Value

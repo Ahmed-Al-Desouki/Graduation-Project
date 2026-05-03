@@ -6,6 +6,7 @@ using WelloraHealthCareManagement.Domain.Exceptions;
 using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.TimeSlots;
 using WelloraHealthCareManagment.Application.DTOs.Realtime;
 using WelloraHealthCareManagment.Application.Interfaces.Services;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 namespace WelloraHealthCareManagement.Infrastructure.Services
@@ -14,6 +15,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
     {
         private readonly ITimeSlotRepository _timeSlotRepository;
         private readonly IScheduleExceptionRepository _exceptionRepository;
+        private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRealtimeService _realtimeService;
         private readonly ILogger<TimeSlotService> _logger;
@@ -21,12 +23,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         public TimeSlotService(
             ITimeSlotRepository timeSlotRepository,
             IScheduleExceptionRepository exceptionRepository,
+            IAppointmentRepository appointmentRepository,
             IUnitOfWork unitOfWork,
             IRealtimeService realtimeService,
             ILogger<TimeSlotService> logger)
         {
             _timeSlotRepository = timeSlotRepository;
             _exceptionRepository = exceptionRepository;
+            _appointmentRepository = appointmentRepository;
             _unitOfWork = unitOfWork;
             _realtimeService = realtimeService;
             _logger = logger;
@@ -136,6 +140,70 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             await BroadcastSlotUpdatedAsync(slot, cancellationToken);
 
             _logger.LogInformation("Slot {SlotId} blocked", slotId);
+        }
+
+        public async Task<int> RestoreBlockedSlotsAsync(
+            int doctorId,
+            List<Guid> slotIds,
+            int requesterUserId,
+            string requesterRole,
+            CancellationToken cancellationToken = default)
+        {
+            EnsureDoctorAccess(doctorId, requesterUserId, requesterRole);
+
+            var normalizedSlotIds = slotIds
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            if (!normalizedSlotIds.Any())
+                throw new DomainException("At least one valid slot id is required");
+
+            var restoredSlots = new List<TimeSlot>();
+
+            foreach (var slotId in normalizedSlotIds)
+            {
+                var slot = await _timeSlotRepository.GetByIdAsync(slotId, cancellationToken);
+
+                if (slot == null)
+                    throw new NotFoundException("TimeSlot", slotId);
+
+                if (slot.DoctorId != doctorId)
+                    throw new DomainException($"Slot {slotId} does not belong to doctor {doctorId}");
+
+                if (slot.Status != SlotStatus.Blocked)
+                    throw new DomainException($"Slot {slotId} is not blocked");
+
+                if (slot.IsExpired())
+                    throw new DomainException($"Slot {slotId} is in the past or already ended");
+
+                var appointment = await _appointmentRepository
+                    .GetByTimeSlotIdAsync(slotId, cancellationToken);
+
+                if (appointment != null)
+                {
+                    throw new DomainException(
+                        $"Slot {slotId} cannot be restored because it is linked to appointment {appointment.Id}");
+                }
+
+                slot.MakeAvailable();
+                await _timeSlotRepository.UpdateAsync(slot, cancellationToken);
+                restoredSlots.Add(slot);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            foreach (var slot in restoredSlots)
+            {
+                await BroadcastSlotUpdatedAsync(slot, cancellationToken);
+            }
+
+            _logger.LogInformation(
+                "Restored {Count} blocked slots for doctor {DoctorId}",
+                restoredSlots.Count,
+                doctorId);
+
+            return restoredSlots.Count;
         }
 
         public async Task<GetDoctorTimeSlotsResponse> GetDoctorTimeSlotsInRangeAsync(

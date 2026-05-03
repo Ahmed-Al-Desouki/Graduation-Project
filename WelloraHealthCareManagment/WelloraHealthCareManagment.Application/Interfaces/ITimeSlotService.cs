@@ -40,6 +40,14 @@ namespace WelloraHealthCareManagement.Application.Interfaces
             int requesterUserId,
             string requesterRole,
             CancellationToken cancellationToken = default);
+
+        /// إعادة فتح خانات محظورة محددة
+        Task<int> RestoreBlockedSlotsAsync(
+            int doctorId,
+            List<Guid> slotIds,
+            int requesterUserId,
+            string requesterRole,
+            CancellationToken cancellationToken = default);
         // بترجع ال slots كلها ولاكن مجتمعه تحت اليوم الخاصه بيها 
         Task<GetDoctorTimeSlotsResponse> GetDoctorTimeSlotsInRangeAsync(
             int doctorId,

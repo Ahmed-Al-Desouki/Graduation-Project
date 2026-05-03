@@ -8,6 +8,7 @@ using WelloraHealthCareManagment.Application.DTOs.DoctorDtos.DoctorBooking.TimeS
 using WelloraHealthCareManagment.Application.Interfaces;
 using WelloraHealthCareManagment.Domain.Constants;
 using WelloraHealthCareManagment.Domain.Entities.DoctorModels;
+using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorBooking;
 using WelloraHealthCareManagment.Infrastructure.Repositories.DoctorRepo.DoctorBooking;
 
 
@@ -18,6 +19,7 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
         private readonly IDoctorSlotConfigRepository _configRepository;
         private readonly ITimeSlotRepository _timeSlotRepository;
         private readonly IScheduleExceptionRepository _exceptionRepository;
+        private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<SlotGenerationService> _logger;
 
@@ -25,12 +27,14 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             IDoctorSlotConfigRepository configRepository,
             ITimeSlotRepository timeSlotRepository,
             IScheduleExceptionRepository exceptionRepository,
+            IAppointmentRepository appointmentRepository,
             IUnitOfWork unitOfWork,
             ILogger<SlotGenerationService> logger)
         {
             _configRepository = configRepository;
             _timeSlotRepository = timeSlotRepository;
             _exceptionRepository = exceptionRepository;
+            _appointmentRepository = appointmentRepository;
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
@@ -126,15 +130,18 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 .GetSlotsForDaysInRangeAsync(
                     doctorId, new List<DayOfWeek> { day }, fromDate, toDate, ct);
 
-            // 2. امسح Available + Blocked — سيّب Booked للـ conflict check
+            // 2. امسح Available + Blocked غير المرتبطة بأي Appointment
+            var protectedSlotIds = await GetProtectedSlotIdsAsync(allSlots, ct);
+
             var slotsToDelete = allSlots
                 .Where(s =>
-                    s.Status == SlotStatus.Available ||
-                    s.Status == SlotStatus.Blocked)
+                    (s.Status == SlotStatus.Available ||
+                     s.Status == SlotStatus.Blocked) &&
+                    !protectedSlotIds.Contains(s.Id))
                 .ToList();
 
             var occupiedByDate = allSlots
-                .Where(s => s.Status == SlotStatus.Booked)
+                .Where(s => s.Status == SlotStatus.Booked || protectedSlotIds.Contains(s.Id))
                 .GroupBy(s => s.SlotDate.Date)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
@@ -197,15 +204,18 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                     doctorId, new List<DayOfWeek> { date.DayOfWeek },
                     date.Date, date.Date, ct);
 
-            // 3. امسح Available + Blocked
+            // 3. امسح Available + Blocked غير المرتبطة بأي Appointment
+            var protectedSlotIds = await GetProtectedSlotIdsAsync(allSlots, ct);
+
             var slotsToDelete = allSlots
                 .Where(s =>
-                    s.Status == SlotStatus.Available ||
-                    s.Status == SlotStatus.Blocked)
+                    (s.Status == SlotStatus.Available ||
+                     s.Status == SlotStatus.Blocked) &&
+                    !protectedSlotIds.Contains(s.Id))
                 .ToList();
 
             var occupiedByDate = allSlots
-                .Where(s => s.Status == SlotStatus.Booked)
+                .Where(s => s.Status == SlotStatus.Booked || protectedSlotIds.Contains(s.Id))
                 .GroupBy(s => s.SlotDate.Date)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
@@ -272,6 +282,26 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
             }
 
             return result;
+        }
+
+        private async Task<HashSet<Guid>> GetProtectedSlotIdsAsync(
+            IEnumerable<TimeSlot> slots,
+            CancellationToken ct)
+        {
+            var slotIds = slots
+                .Select(s => s.Id)
+                .Distinct()
+                .ToList();
+
+            if (!slotIds.Any())
+                return new HashSet<Guid>();
+
+            var appointments = await _appointmentRepository
+                .GetByTimeSlotIdsAsync(slotIds, ct);
+
+            return appointments
+                .Select(a => a.TimeSlotId)
+                .ToHashSet();
         }
 
         //private async Task<GenerateSlotsResponse> ProcessSlotsInBatchesAsync(
@@ -440,25 +470,32 @@ namespace WelloraHealthCareManagement.Infrastructure.Services
                 return new GenerateSlotsResponse { SlotsGenerated = 0, SlotsSkipped = 0, BatchesProcessed = 0 };
             }
 
-            // ── RegenerateExisting: نحذف Available slots فقط (ممنوع حذف Booked أو Blocked) ──
+            // ── RegenerateExisting: نحذف Available + Blocked ونسيب Booked كما هي ──
             if (regenerateExisting)
             {
                 var allDates = generatedSlots.Select(s => s.SlotDate.Date).Distinct().ToList();
                 var existingSlots = await _timeSlotRepository.GetSlotsForDatesAsync(doctorId, allDates, ct);
+                var protectedSlotIds = await GetProtectedSlotIdsAsync(existingSlots, ct);
 
                 var toDelete = existingSlots
-                    .Where(s => s.Status == SlotStatus.Available)   // ← فقط Available (ممنوع Booked نهائياً)
+                    .Where(s =>
+                        (s.Status == SlotStatus.Available ||
+                         s.Status == SlotStatus.Blocked) &&
+                        !protectedSlotIds.Contains(s.Id))
                     .ToList();
 
                 if (toDelete.Any())
                 {
                     await _timeSlotRepository.DeleteRangeAsync(toDelete, ct);
                     await _unitOfWork.SaveChangesAsync(ct);
-                    _logger.LogInformation("Deleted {Count} Available slots before regeneration (Booked slots preserved)", toDelete.Count);
+                    _logger.LogInformation(
+                        "Deleted {Count} Available/Blocked slots before regeneration (Booked slots preserved)",
+                        toDelete.Count);
                 }
                 else
                 {
-                    _logger.LogInformation("No Available slots to delete for regeneration (all Booked slots preserved)");
+                    _logger.LogInformation(
+                        "No Available/Blocked slots to delete for regeneration (Booked slots preserved)");
                 }
             }
 
