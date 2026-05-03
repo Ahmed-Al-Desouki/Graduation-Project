@@ -1,3 +1,303 @@
+# Wellora Healthcare Management System
+
+## Graduation Project Repository
+
+Wellora Healthcare Management System is a healthcare service platform designed to connect patients, doctors, and administrators through one integrated digital ecosystem. The project focuses on improving access to care, simplifying medical coordination, and digitizing important healthcare workflows such as onboarding, appointment scheduling, payment handling, prescription management, reminders, notifications, and administrative review processes.
+
+The system is implemented as a layered backend solution using ASP.NET Core Web API and is designed to integrate with a Flutter mobile application. In its intended full form, the project serves three main actors: patients who need accessible and organized healthcare services, doctors who need a reliable way to manage their professional workflow, and administrators who supervise quality, verification, moderation, and operational control.
+
+## Team Members
+
+- Ahmed Al-Desouki
+- Ibrahim Ashraf
+- Mahmoud Ashraf
+
+## Repository Status
+
+This repository currently contains the full backend source code, deployment-related files, and backend-to-Flutter integration documentation.
+
+Important note:
+
+- The current repository snapshot clearly includes the ASP.NET Core backend source code.
+- It also includes multiple documents prepared for Flutter integration.
+- A standalone Flutter source project is not present in this snapshot.
+- If your final academic submission requires the complete mobile source code as well, the Flutter project should be added under `src/` before the final hand-in.
+
+## Required Repository Structure
+
+This repository has been organized to match the required submission format:
+
+```text
+/src   -> Source code
+/exe   -> Executable / published files
+README.md
+```
+
+Current structure:
+
+```text
+.
+|-- src
+|   `-- WelloraHealthCareManagment
+|       |-- WelloraHealthCareManagment.API
+|       |-- WelloraHealthCareManagment.Application
+|       |-- WelloraHealthCareManagment.Domain
+|       |-- WelloraHealthCareManagment.Infrastructure
+|       `-- docs
+|-- exe
+|   `-- README.md
+`-- README.md
+```
+
+## Project Overview
+
+Wellora is a multi-role healthcare management platform built to support real-world medical service workflows. The backend exposes REST APIs for authentication, patient management, doctor onboarding and verification, doctor search, scheduling, slot generation, appointment booking, payments, reminders, prescriptions, notifications, reviews, support workflows, and administrative operations.
+
+The architecture follows an Onion Architecture style with separated layers for API, application logic, domain logic, and infrastructure. The project is structured for maintainability, modularity, and future mobile integration through Flutter.
+
+## Core Features
+
+- Patient registration, login, and onboarding
+- Doctor registration, onboarding, and verification workflow
+- Role-based access for Patient, Doctor, and Admin
+- JWT authentication with MFA and OTP-related flows
+- Public doctor discovery, search, filtering, and ranking
+- Doctor scheduling, slot configuration, and slot generation
+- Appointment booking and cancellation workflows
+- Payment integration using Paymob
+- Prescription and medical record management
+- Reminder creation, scheduling, and occurrence tracking
+- Push notifications with Firebase integration
+- Cloudinary-based file and image handling
+- Admin dashboard, moderation, audit logging, and support ticket flows
+- Swagger-based API exploration and testing
+
+## Technology Stack
+
+### Backend
+
+- C#
+- ASP.NET Core Web API
+- .NET 9 SDK
+- Entity Framework Core 9
+- SQL Server
+- ASP.NET Core Identity
+- JWT Bearer Authentication
+- Hangfire
+- Swagger / Swashbuckle
+
+### External Integrations
+
+- Firebase Cloud Messaging
+- Cloudinary
+- SMTP Email Provider
+- Google Authentication
+- Paymob Payment Gateway
+- OpenStreetMap / Nominatim location lookup
+
+### Frontend Integration Target
+
+- Flutter mobile application
+
+## Architecture Summary
+
+The source code is divided into four main projects:
+
+- `WelloraHealthCareManagment.API`
+  Presentation layer, controllers, middleware, Swagger, authentication pipeline, SignalR endpoints, and application startup
+- `WelloraHealthCareManagment.Application`
+  DTOs, interfaces, contracts, use-case handlers, and application-level abstractions
+- `WelloraHealthCareManagment.Domain`
+  Core entities, enums, value objects, and domain rules
+- `WelloraHealthCareManagment.Infrastructure`
+  Database context, repositories, services, external integrations, background jobs, and persistence concerns
+
+## Prerequisites and Dependencies
+
+The following prerequisites are recommended for a successful local setup by a user with no prior knowledge of the project.
+
+### Programming Languages and Versions
+
+- C#
+- .NET SDK 9.x
+
+### Frameworks and Libraries
+
+- ASP.NET Core
+- Entity Framework Core
+- ASP.NET Core Identity
+- Hangfire
+- Swashbuckle / Swagger
+- Firebase Admin SDK
+- Cloudinary SDK
+- MailKit-compatible SMTP integration
+
+### Required Software and Tools
+
+- Git
+- Visual Studio Community 2022 or later
+- Visual Studio Code as an optional editor
+- .NET 9 SDK
+- SQL Server
+- Optional: SQL Server Management Studio
+- Optional: Postman for API testing
+
+### System Requirements
+
+Recommended minimum environment:
+
+- OS: Windows 10 or Windows 11
+- RAM: 8 GB minimum
+- RAM: 16 GB recommended
+- Free storage: at least 5 GB
+- Internet connection for NuGet restore and external integrations
+
+### External Services
+
+The backend depends on the following external services and configurations:
+
+- SQL Server database
+- Firebase service account file
+- Cloudinary credentials
+- SMTP email credentials
+- Google OAuth credentials
+- Paymob API credentials
+
+## Installation Steps
+
+### 1. Clone the Repository
+
+```powershell
+git clone -b onion-architecture https://github.com/Ahmed-Al-Desouki/Graduation-Project.git
+cd Graduation-Project
+```
+
+### 2. Open the Source Folder
+
+```powershell
+cd .\src\WelloraHealthCareManagment
+```
+
+### 3. Open the Solution
+
+The main solution file is:
+
+```text
+src\WelloraHealthCareManagment\WelloraHealthCareManagment.API\WelloraHealthCareManagment.API.sln
+```
+
+You can open it using:
+
+- Visual Studio Community 2022
+- Visual Studio Code with the C# extension
+
+### 4. Restore Dependencies
+
+From PowerShell:
+
+```powershell
+cd .\src\WelloraHealthCareManagment\WelloraHealthCareManagment.API
+dotnet restore
+```
+
+Or from Visual Studio:
+
+1. Open the solution.
+2. Wait for NuGet restore to complete automatically.
+3. If necessary, run `Restore NuGet Packages`.
+
+### 5. Configure the Environment
+
+Copy the template configuration file:
+
+```powershell
+Copy-Item ".\src\WelloraHealthCareManagment\WelloraHealthCareManagment.API\appsettings.Template.json" ".\src\WelloraHealthCareManagment\WelloraHealthCareManagment.API\appsettings.Local.json"
+```
+
+Then edit `appsettings.Local.json` with your real values.
+
+## Environment Setup and Configuration
+
+The application loads configuration from:
+
+- `appsettings.json`
+- `appsettings.Development.json`
+- `appsettings.Local.json`
+- `appsettings.{Environment}.Local.json`
+- environment variables
+
+### Required Configuration Sections
+
+You should review and configure the following sections before running the system:
+
+- `ConnectionStrings`
+- `Jwt`
+- `JwtShare`
+- `EmailSettings`
+- `Cloudinary`
+- `Google`
+- `Auth`
+- `FCM`
+- `Firebase`
+- `Paymob`
+- `AppUrl`
+- `App`
+- `CancellationPolicy`
+
+### Example Database Connection
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=.;Database=HealthCareDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;"
+}
+```
+
+If you use SQL Server Express:
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=.\\SQLEXPRESS;Database=HealthCareDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;"
+}
+```
+
+### Required Secrets and Keys
+
+At minimum, local setup may require:
+
+- JWT signing key
+- JWT refresh token keys
+- JWT share token key
+- Google client ID and secret
+- SMTP username and password
+- Cloudinary API credentials
+- Firebase service account JSON file path
+- Paymob API key, HMAC secret, integration ID, and iframe ID
+
+### Firebase Configuration
+
+The project expects a Firebase service account path in configuration. Make sure the referenced file exists locally before testing notification features.
+
+### Database Setup
+
+The project uses EF Core migrations stored in:
+
+```text
+src\WelloraHealthCareManagment\WelloraHealthCareManagment.Infrastructure\Migrations
+```
+
+To apply the latest schema:
+
+```powershell
+dotnet ef database update --project ".\src\WelloraHealthCareManagment\WelloraHealthCareManagment.Infrastructure\WelloraHealthCareManagment.Infrastructure.csproj" --startup-project ".\src\WelloraHealthCareManagment\WelloraHealthCareManagment.API\WelloraHealthCareManagment.API.csproj"
+```
+
+### Roles and Initial Data
+
+The application is designed around three core roles:
+
+- `Patient`
+- `Doctor`
+- `Admin`
 
 For a correct first-time setup, these roles must exist in the database. If they are not created automatically by your local workflow, they must be inserted or seeded before full role-based testing can be completed.
 
