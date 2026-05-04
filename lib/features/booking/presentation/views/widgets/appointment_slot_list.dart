@@ -77,6 +77,10 @@ class AppointmentSlotList extends StatelessWidget {
                 slotId: slot.slotId,
                 instructions: "Follow-up",
               ),
+          unblock:
+              () => context.read<AppointmentActionCubit>().restoreSlot(
+                slot.slotId,
+              ),
         );
       },
     );

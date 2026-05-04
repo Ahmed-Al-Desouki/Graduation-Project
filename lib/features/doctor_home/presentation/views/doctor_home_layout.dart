@@ -23,11 +23,6 @@ class DoctorHomeLayout extends StatefulWidget {
 class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
   int _currentIndex = 0;
 
-  bool _isProfileComplete = false;
-  bool _isLoadingStatus = true;
-
-  bool _hasShownDialog = false;
-
   late List<Widget> _screens;
 
   bool _isCheckingAccess = true;
@@ -43,7 +38,7 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
 
     _screens = [
       DoctorHomeView(),
-      ScheduleView(),
+      // ScheduleView(),
       ChatView(userId: userId, isDoctor: true),
       DoctorProfileView(),
       SettingsScreen(),
@@ -78,44 +73,84 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
     );
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   if (_isCheckingAccess) {
+  //     return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  //   }
+
+  //   return BlocProvider.value(
+  //     value: getIt<DoctorRealProfileCubit>(),
+  //     child: Scaffold(
+  //       body: _screens[_currentIndex],
+  //       bottomNavigationBar: Container(
+  //         decoration: BoxDecoration(
+  //           color: Colors.white,
+  //           boxShadow: [
+  //             BoxShadow(
+  //               color: Colors.black.withValues(alpha: 0.05),
+  //               blurRadius: 5,
+  //               offset: const Offset(0, -2),
+  //             ),
+  //           ],
+  //         ),
+  //         child: BottomNavigationBar(
+  //           type: BottomNavigationBarType.fixed,
+  //           backgroundColor: Colors.white,
+  //           elevation: 0,
+  //           currentIndex: _currentIndex,
+  //           selectedItemColor: activeBlue,
+  //           unselectedItemColor: inactiveGray,
+  //           showUnselectedLabels: true,
+  //           onTap: (index) => setState(() => _currentIndex = index),
+  //           items: [
+  //             _buildNavItem(Icons.home_filled, 'Home', 0),
+  //             _buildNavItem(Icons.schedule, 'Schedule', 1),
+  //             _buildNavItem(Icons.chat, 'Chats', 2),
+  //             _buildNavItem(Icons.account_circle_outlined, 'Profile', 3),
+  //             _buildNavItem(Icons.settings, 'Settings', 4),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
   @override
   Widget build(BuildContext context) {
     if (_isCheckingAccess) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return BlocProvider.value(
-      value: getIt<DoctorRealProfileCubit>(),
-      child: Scaffold(
-        body: _screens[_currentIndex],
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 5,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            currentIndex: _currentIndex,
-            selectedItemColor: activeBlue,
-            unselectedItemColor: inactiveGray,
-            showUnselectedLabels: true,
-            onTap: (index) => setState(() => _currentIndex = index),
-            items: [
-              _buildNavItem(Icons.home_filled, 'Home', 0),
-              _buildNavItem(Icons.schedule, 'Schedule', 1),
-              _buildNavItem(Icons.chat, 'Chats', 2),
-              _buildNavItem(Icons.account_circle_outlined, 'Profile', 3),
-              _buildNavItem(Icons.settings, 'Settings', 4),
-            ],
-          ),
+    // 💡 شيلنا الـ BlocProvider.value من هنا لأننا نقلناه للـ Router
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 5,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          currentIndex: _currentIndex,
+          selectedItemColor: activeBlue,
+          unselectedItemColor: inactiveGray,
+          showUnselectedLabels: true,
+          onTap: (index) => setState(() => _currentIndex = index),
+          items: [
+            _buildNavItem(Icons.home_filled, 'Home', 0),
+            // _buildNavItem(Icons.schedule, 'Schedule', 1),
+            _buildNavItem(Icons.chat, 'Chats', 1),
+            _buildNavItem(Icons.account_circle_outlined, 'Profile', 2),
+            _buildNavItem(Icons.settings, 'Settings', 3),
+          ],
         ),
       ),
     );

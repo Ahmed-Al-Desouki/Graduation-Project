@@ -225,6 +225,34 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
       ],
     );
   }
+  // Widget _buildAppBar() {
+  //   return SliverAppBar(
+  //     pinned: true,
+  //     backgroundColor: Colors.white,
+  //     elevation: 0.5,
+  //     leading: IconButton(
+  //       icon: const Icon(
+  //         Icons.arrow_back_ios_new,
+  //         color: Colors.black,
+  //         size: 20,
+  //       ),
+  //       onPressed: () {
+  //         // 💡 بدلاً من pop()، بنستخدم go() للمسار الصحيح
+  //         if (widget.isPatientView) {
+  //           context.go(AppRouter.kHomePatient);
+  //         } else {
+  //           context.go(AppRouter.kHomeDoctor);
+  //         }
+  //       },
+  //     ),
+  //     title: _buildAppBarTitle(),
+  //     centerTitle: true,
+  //     actions: [
+  //       if (!widget.isPatientView) _buildDoctorMenu(),
+  //       const SizedBox(width: 8),
+  //     ],
+  //   );
+  // }
 
   Widget _buildSlotsList(BookingCalendarSuccess state) {
     return SliverPadding(
@@ -252,6 +280,10 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
                         () => context
                             .read<AppointmentActionCubit>()
                             .blockAvailableSlot(slot.slotId),
+                    unblock:
+                        () => context
+                            .read<AppointmentActionCubit>()
+                            .restoreSlot(slot.slotId),
                     onCancelByDoctor: () => _showCancelConfirmDialog(slot),
                     onBookFollowUp: () => _bookFollowUp(slot),
                   );

@@ -58,4 +58,5 @@ abstract class BookingRemoteDataSource {
   Future<Map<String, dynamic>> getAppointmentFullDetails(String appointmentId);
 
   Future<void> createChatRoom(ChatModel chatModel);
+  Future<void> restoreBlockedSlots(String doctorId, List<String> slotIds);
 }

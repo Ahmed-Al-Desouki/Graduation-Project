@@ -95,4 +95,9 @@ abstract class IBookingRepository {
 
   Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
   getPatientAppointments({String? status});
+
+  Future<Either<Failure, void>> restoreBlockedSlots(
+    String doctorId,
+    List<String> slotIds,
+  );
 }

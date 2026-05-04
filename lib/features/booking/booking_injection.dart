@@ -30,6 +30,7 @@ import 'package:graduation_project/features/booking/domain/use_cases/get_prescri
 import 'package:graduation_project/features/booking/domain/use_cases/open_access_for_medical_history_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/remove_exception_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/remove_working_day_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/restore_blocked_slots_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/save_medical_record_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/update_appointment_status_use_case.dart';
 import 'package:graduation_project/features/booking/presentation/manager/appointment_action_cubit/appointment_action_cubit.dart';
@@ -91,6 +92,7 @@ Future<void> initBookingInjection() async {
   sl.registerLazySingleton(() => BookFollowUpUseCase(sl()));
   sl.registerLazySingleton(() => BlockSlotUseCase(sl()));
   sl.registerLazySingleton(() => DeleteSlotUseCase(sl()));
+  sl.registerLazySingleton(() => RestoreBlockedSlotsUseCase(sl()));
   sl.registerLazySingleton(() => GetPrescriptionUseCase(sl()));
   sl.registerLazySingleton(() => AddPrescriptionItemsUseCase(sl()));
   sl.registerLazySingleton(() => CreatePaymentUseCase(sl()));
@@ -115,8 +117,17 @@ Future<void> initBookingInjection() async {
   );
 
   sl.registerFactory(
-    () =>
-        AppointmentActionCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl(), sl()),
+    () => AppointmentActionCubit(
+      sl(),
+      sl(),
+      sl(),
+      sl(),
+      sl(),
+      sl(),
+      sl(),
+      sl(),
+      sl(),
+    ),
   );
   sl.registerFactory(
     () => AppointmentsCenterCubit(

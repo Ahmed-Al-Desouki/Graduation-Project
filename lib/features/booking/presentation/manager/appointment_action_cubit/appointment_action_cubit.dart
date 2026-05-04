@@ -12,6 +12,7 @@ import 'package:graduation_project/features/booking/domain/use_cases/create_appo
 import 'package:graduation_project/features/booking/domain/use_cases/create_manual_slot_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/create_payment_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/delete_slot_use_case.dart';
+import 'package:graduation_project/features/booking/domain/use_cases/restore_blocked_slots_use_case.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/update_appointment_status_use_case.dart';
 import 'package:graduation_project/features/chat/domain/entities/chat_entity.dart';
 import 'package:meta/meta.dart';
@@ -27,6 +28,7 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
   final CreatePaymentUseCase createPaymentUseCase;
   final CreateAppointmentUseCase createAppointmentUseCase;
   final CreateChatRoomUseCase createChatRoomUseCase;
+  final RestoreBlockedSlotsUseCase restoreBlockedSlotsUseCase;
 
   AppointmentActionCubit(
     this.updateStatusUseCase,
@@ -37,7 +39,24 @@ class AppointmentActionCubit extends Cubit<AppointmentActionState> {
     this.createPaymentUseCase,
     this.createAppointmentUseCase,
     this.createChatRoomUseCase,
+    this.restoreBlockedSlotsUseCase,
   ) : super(AppointmentActionInitial());
+
+  Future<void> restoreSlot(String slotId) async {
+    emit(AppointmentActionLoading());
+    final doctorId = getIt<SessionManager>().userId;
+
+    final result = await restoreBlockedSlotsUseCase(doctorId, [slotId]);
+
+    result.fold(
+      (failure) => emit(AppointmentActionFailure(failure.errmessage)),
+      (_) => emit(
+        AppointmentActionSuccess(
+          "The blocked slot has been restored successfully",
+        ),
+      ),
+    );
+  }
 
   Future<void> updateStatus(
     String id,

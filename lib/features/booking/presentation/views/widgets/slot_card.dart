@@ -12,6 +12,7 @@ class SlotCard extends StatelessWidget {
   final VoidCallback? onBlock;
   final VoidCallback? onDelete;
   final VoidCallback? onBookFollowUp;
+  final VoidCallback? unblock;
 
   const SlotCard({
     super.key,
@@ -25,6 +26,7 @@ class SlotCard extends StatelessWidget {
     this.onCancelByDoctor,
     this.onCancelByPatient,
     this.onBookFollowUp,
+    this.unblock,
   });
 
   @override
@@ -91,6 +93,7 @@ class SlotCard extends StatelessWidget {
               isCompleted: isCompleted,
               isBlocked: isBlocked,
               isCancelled: isCancelled,
+              context: context,
             ),
             const SizedBox(width: 10),
           ],
@@ -105,6 +108,7 @@ class SlotCard extends StatelessWidget {
     required bool isCompleted,
     required bool isBlocked,
     required bool isCancelled,
+    required BuildContext context,
   }) {
     if (isPatientView) {
       if (isAvailable) {
@@ -151,6 +155,52 @@ class SlotCard extends StatelessWidget {
           ),
         ],
       );
+    }
+
+    if (isBlocked) {
+      // لو السلوت معمول لها بلوك يدوي (مفيش موعد مرتبط بيها)
+      if (slot.appointmentId == null) {
+        return IconButton(
+          onPressed: unblock, // 👈 الزرار الجديد
+          icon: const Icon(
+            Icons.settings_backup_restore_rounded,
+            color: Colors.green,
+            size: 24,
+          ),
+          tooltip: "Restore Slot",
+        );
+      } else {
+        // 💡 لو فيه appointmentId يبقى دي اتعمل لها بلوك عشان الدكتور كنسل ميعاد هناك
+        return Padding(
+          padding: EdgeInsets.only(right: 8.0),
+          child: Tooltip(
+            message: "Blocked due to appointment cancellation",
+            child: IconButton(
+              onPressed: () {
+                // إظهار رسالة توضيحية عند الضغط العادي
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text(
+                      "Blocked due to appointment cancellation",
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: Colors.orange.shade700,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.info_outline_rounded,
+                color: Colors.orange,
+                size: 22,
+              ),
+            ),
+          ),
+        );
+      }
     }
 
     if (isBooked || isCompleted) {
