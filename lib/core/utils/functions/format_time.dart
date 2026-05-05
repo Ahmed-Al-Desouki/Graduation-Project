@@ -1,5 +1,4 @@
 String formatTimeTo12Hour(String time24) {
-  // time24 format: "09:00:00"
   final parts = time24.split(':');
   int hour = int.parse(parts[0]);
   int minute = int.parse(parts[1]);

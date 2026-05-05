@@ -65,7 +65,6 @@ class ServerFailure extends Failure {
     int? statusCode,
     dynamic response,
   ) {
-    // الـ API بيبعت string مش JSON
     final message = response?.toString() ?? 'Unknown error';
 
     switch (statusCode) {

@@ -78,6 +78,7 @@ class _EditPatientHealthInfoSheetState
                 ),
               ),
               SizedBox(height: 24.h),
+
               DropdownField(
                 label: 'Gender',
                 value: _selectedGender,
@@ -87,6 +88,7 @@ class _EditPatientHealthInfoSheetState
                 onChanged: (value) => setState(() => _selectedGender = value),
               ),
               SizedBox(height: 16.h),
+
               DropdownField(
                 label: 'Blood Type',
                 value: _selectedBloodType,
@@ -97,6 +99,7 @@ class _EditPatientHealthInfoSheetState
                     (value) => setState(() => _selectedBloodType = value),
               ),
               SizedBox(height: 16.h),
+
               CustomFormTextField(
                 label: 'Height (cm)',
                 hintText: 'Enter height',
@@ -107,6 +110,7 @@ class _EditPatientHealthInfoSheetState
                 validator: (value) => _validateNumber(value, 'Height'),
               ),
               SizedBox(height: 16.h),
+
               CustomFormTextField(
                 label: 'Weight (kg)',
                 hintText: 'Enter weight',
@@ -117,6 +121,7 @@ class _EditPatientHealthInfoSheetState
                 validator: (value) => _validateNumber(value, 'Weight'),
               ),
               SizedBox(height: 32.h),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

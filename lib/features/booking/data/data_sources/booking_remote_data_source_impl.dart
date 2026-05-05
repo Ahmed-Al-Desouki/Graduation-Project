@@ -199,4 +199,15 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
         .doc(chatModel.chatId)
         .set(chatModel.toFirestore(), SetOptions(merge: true));
   }
+
+  @override
+  Future<void> restoreBlockedSlots(
+    String doctorId,
+    List<String> slotIds,
+  ) async {
+    await _apiService.patch(
+      'doctors/$doctorId/time-slots/restore-blocked',
+      body: {'slotIds': slotIds},
+    );
+  }
 }

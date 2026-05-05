@@ -361,4 +361,14 @@ class BookingRepositoryImpl implements IBookingRepository {
       return AppointmentFullDetailsModel.fromJson(response);
     });
   }
+
+  @override
+  Future<Either<Failure, void>> restoreBlockedSlots(
+    String doctorId,
+    List<String> slotIds,
+  ) async {
+    return await _handleRemoteRequest(
+      () => remoteDataSource.restoreBlockedSlots(doctorId, slotIds),
+    );
+  }
 }

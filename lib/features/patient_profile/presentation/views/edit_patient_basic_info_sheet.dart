@@ -71,6 +71,7 @@ class _EditPatientBasicInfoSheetState extends State<EditPatientBasicInfoSheet> {
                 ),
               ),
               SizedBox(height: 24.h),
+
               CustomFormTextField(
                 label: 'Full Name',
                 hintText: 'Enter full name',
@@ -80,6 +81,7 @@ class _EditPatientBasicInfoSheetState extends State<EditPatientBasicInfoSheet> {
                 maxLength: 100,
               ),
               SizedBox(height: 16.h),
+
               CustomFormTextField(
                 label: 'Phone Number',
                 hintText: 'Enter phone number',
@@ -98,6 +100,7 @@ class _EditPatientBasicInfoSheetState extends State<EditPatientBasicInfoSheet> {
                 },
               ),
               SizedBox(height: 16.h),
+
               CustomFormTextField(
                 label: 'Date of Birth',
                 hintText: 'Select date of birth',
@@ -109,6 +112,7 @@ class _EditPatientBasicInfoSheetState extends State<EditPatientBasicInfoSheet> {
                 onTap: () => _selectDate(context),
               ),
               SizedBox(height: 32.h),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

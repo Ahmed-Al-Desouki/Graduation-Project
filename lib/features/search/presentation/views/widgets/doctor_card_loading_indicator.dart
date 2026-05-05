@@ -41,11 +41,13 @@ class DoctorCardLoadingIndicator extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
+
                 Padding(
                   padding: const EdgeInsets.only(left: 60),
                   child: SkeletonGreyBox(width: 180, height: 14),
                 ),
                 const SizedBox(height: 12),
+
                 Row(
                   children: [
                     Padding(
@@ -57,6 +59,7 @@ class DoctorCardLoadingIndicator extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 15),
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 15),
                   child: Container(

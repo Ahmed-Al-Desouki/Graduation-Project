@@ -12,6 +12,7 @@ class DoctorsListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final doctors =
         state is SearchSuccess ? (state as SearchSuccess).doctors : [];
+
     if (state is SearchLoading && doctors.isEmpty) {
       return ListView.builder(
         shrinkWrap: true,
@@ -25,6 +26,7 @@ class DoctorsListView extends StatelessWidget {
         },
       );
     }
+
     if (state is SearchFailure) {
       return Center(
         child: Text(
@@ -34,6 +36,7 @@ class DoctorsListView extends StatelessWidget {
         ),
       );
     }
+
     if (doctors.isEmpty && state is SearchSuccess) {
       return Padding(
         padding: EdgeInsets.all(40.h),

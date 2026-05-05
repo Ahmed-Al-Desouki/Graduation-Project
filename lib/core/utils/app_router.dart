@@ -77,7 +77,6 @@ abstract class AppRouter {
   static const kRegisterAsDoctor = '/registerAsDoctor';
   static const kForgotPassword = '/forgotPasswordView';
   static const kCreatAcount = '/createAcountView';
-  // static const kHome = '/home';
   static const kHomePatient = '/home/patient';
   static const kHomeDoctor = '/home/doctor';
   static const kDoctorProfileGate = '/doctor/profile-gate';
@@ -113,7 +112,6 @@ abstract class AppRouter {
       GlobalKey<NavigatorState>();
   static const kPublicDoctorProfile = '/doctor/public-profile';
   static const kAllReviews = '/doctor/profile/all-reviews';
-  // static const kMedicalHistory = '/';
   static final router = GoRouter(
     navigatorKey: navigatorKey,
     routes: [
@@ -265,49 +263,100 @@ abstract class AppRouter {
             ),
       ),
 
-      GoRoute(
-        path: kHomePatient,
-        builder:
-            (context, state) => MultiBlocProvider(
-              providers: [
-                // BlocProvider(
-                //   create:
-                //       (context) =>
-                //           getIt<NotificationCubit>()..fetchNotifications(),
-                // ),
-                // BlocProvider(create: (context) => getIt<ReminderCubit>()),
-                // BlocProvider(create: (context) => getIt<HomeCubit>()),
-                BlocProvider.value(
-                  value: getIt<NotificationCubit>()..fetchNotifications(),
-                ),
-                BlocProvider(create: (context) => getIt<ReminderCubit>()),
-                BlocProvider(create: (context) => getIt<HomeCubit>()),
-              ],
-              child: const PatientHomeLayout(),
-            ),
-      ),
+      // GoRoute(
+      //   path: kHomePatient,
+      //   builder:
+      //       (context, state) => MultiBlocProvider(
+      //         providers: [
+      //           // BlocProvider(
+      //           //   create:
+      //           //       (context) =>
+      //           //           getIt<NotificationCubit>()..fetchNotifications(),
+      //           // ),
+      //           // BlocProvider(create: (context) => getIt<ReminderCubit>()),
+      //           // BlocProvider(create: (context) => getIt<HomeCubit>()),
+      //           BlocProvider.value(
+      //             value: getIt<NotificationCubit>()..fetchNotifications(),
+      //           ),
+      //           BlocProvider(create: (context) => getIt<ReminderCubit>()),
+      //           BlocProvider(create: (context) => getIt<HomeCubit>()),
+      //         ],
+      //         child: const PatientHomeLayout(),
+      //       ),
+      // ),
 
+      // // GoRoute(
+      // //   path: kHomeDoctor,
+      // //   builder: (context, state) => const DoctorHomeLayout(),
+      // // ),
       // GoRoute(
       //   path: kHomeDoctor,
-      //   builder: (context, state) => const DoctorHomeLayout(),
+      //   builder: (context, state) {
+      //     final userID = getIt<SessionManager>().userId;
+      //     return MultiBlocProvider(
+      //       providers: [
+      //         // 🚀 توفير ChatCubit وجلب المحادثات فوراً
+      //         BlocProvider(
+      //           create:
+      //               (context) => getIt<ChatCubit>()..getMyChats(userID, true),
+      //         ),
+      //         // 🚀 توفير NotificationCubit (اختياري لو محتاج إشعارات في الهوم)
+      //         BlocProvider.value(
+      //           value: getIt<NotificationCubit>()..fetchNotifications(),
+      //         ),
+      //         // 🚀 توفير DoctorRealProfileCubit هنا بدل ما توفره جوه الـ Layout
+      //         BlocProvider.value(value: getIt<DoctorRealProfileCubit>()),
+      //       ],
+      //       child: const DoctorHomeLayout(),
+      //     );
+      //   },
       // ),
+      GoRoute(
+        path: kHomePatient,
+        builder: (context, state) {
+          // 1. استخراج الـ ID للمريض
+          final userID = getIt<SessionManager>().userId;
+
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider.value(
+                value: getIt<NotificationCubit>()..fetchNotifications(),
+              ),
+              BlocProvider(create: (context) => getIt<ReminderCubit>()),
+              BlocProvider(create: (context) => getIt<HomeCubit>()),
+              // 🚀 إضافة الـ ChatCubit للمريض (مهم جداً عشان الـ Badge)
+              BlocProvider(
+                create:
+                    (context) =>
+                        getIt<ChatCubit>()
+                          ..getMyChats(userID, false), // false للمريض
+              ),
+            ],
+            child: const PatientHomeLayout(),
+          );
+        },
+      ),
+
       GoRoute(
         path: kHomeDoctor,
         builder: (context, state) {
           final userID = getIt<SessionManager>().userId;
+
           return MultiBlocProvider(
             providers: [
-              // 🚀 توفير ChatCubit وجلب المحادثات فوراً
+              // 🚀 الـ ChatCubit للدكتور
               BlocProvider(
                 create:
-                    (context) => getIt<ChatCubit>()..getMyChats(userID, true),
+                    (context) =>
+                        getIt<ChatCubit>()
+                          ..getMyChats(userID, true), // true للدكتور
               ),
-              // 🚀 توفير NotificationCubit (اختياري لو محتاج إشعارات في الهوم)
               BlocProvider.value(
                 value: getIt<NotificationCubit>()..fetchNotifications(),
               ),
-              // 🚀 توفير DoctorRealProfileCubit هنا بدل ما توفره جوه الـ Layout
-              BlocProvider.value(value: getIt<DoctorRealProfileCubit>()),
+              BlocProvider.value(
+                value: getIt<DoctorRealProfileCubit>()..getDoctorProfile(),
+              ),
             ],
             child: const DoctorHomeLayout(),
           );

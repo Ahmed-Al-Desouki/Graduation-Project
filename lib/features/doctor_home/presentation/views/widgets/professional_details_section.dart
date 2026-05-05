@@ -59,6 +59,7 @@ class ProfessionalDetailsSection extends StatelessWidget {
               ],
             ),
             SizedBox(height: 24.h),
+
             CustomFormTextField(
               label: 'Specialization',
               hintText: 'e.g. Cardiologist',
@@ -69,6 +70,7 @@ class ProfessionalDetailsSection extends StatelessWidget {
               maxLength: 100,
             ),
             SizedBox(height: 16.h),
+
             Row(
               children: [
                 Expanded(
@@ -93,6 +95,7 @@ class ProfessionalDetailsSection extends StatelessWidget {
               ],
             ),
             SizedBox(height: 16.h),
+
             CustomFormTextField(
               label: 'National ID / License Number',
               hintText: 'Enter ID number',

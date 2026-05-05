@@ -8,7 +8,6 @@ import 'package:graduation_project/features/auth/presentation/views/test_setting
 import 'package:graduation_project/features/chat/presentation/manager/chat_cubit/chat_cubit.dart';
 import 'package:graduation_project/features/doctor_home/domain/repositories/doctor_profile_repository.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_view.dart';
-import 'package:graduation_project/features/doctor_profile/presentation/manager/doctor_real_profile_cubit.dart';
 import 'package:graduation_project/features/doctor_profile/presentation/views/doctor_profile_view.dart';
 
 class DoctorHomeLayout extends StatefulWidget {
@@ -73,37 +72,34 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return BlocProvider.value(
-      value: getIt<DoctorRealProfileCubit>(),
-      child: Scaffold(
-        body: _screens[_currentIndex],
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 5,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            currentIndex: _currentIndex,
-            selectedItemColor: activeBlue,
-            unselectedItemColor: inactiveGray,
-            showUnselectedLabels: true,
-            onTap: (index) => setState(() => _currentIndex = index),
-            items: [
-              _buildNavItem(Icons.home_filled, 'Home', 0),
-              _buildNavItem(Icons.chat, 'Chats', 1),
-              _buildNavItem(Icons.account_circle_outlined, 'Profile', 2),
-              _buildNavItem(Icons.settings, 'Settings', 3),
-            ],
-          ),
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 5,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          currentIndex: _currentIndex,
+          selectedItemColor: activeBlue,
+          unselectedItemColor: inactiveGray,
+          showUnselectedLabels: true,
+          onTap: (index) => setState(() => _currentIndex = index),
+          items: [
+            _buildNavItem(Icons.home_filled, 'Home', 0),
+            _buildNavItem(Icons.chat, 'Chats', 1),
+            _buildNavItem(Icons.account_circle_outlined, 'Profile', 2),
+            _buildNavItem(Icons.settings, 'Settings', 3),
+          ],
         ),
       ),
     );

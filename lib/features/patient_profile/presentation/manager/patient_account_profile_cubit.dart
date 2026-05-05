@@ -34,7 +34,8 @@ class PatientAccountProfileCubit extends Cubit<PatientAccountProfileState> {
     }
 
     result.fold(
-      (failure) => _emitIfOpen(PatientAccountProfileFailure(failure.errmessage)),
+      (failure) =>
+          _emitIfOpen(PatientAccountProfileFailure(failure.errmessage)),
       (profile) {
         _cachedProfile = profile;
         _emitIfOpen(PatientAccountProfileLoaded(profile));

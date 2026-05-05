@@ -118,6 +118,7 @@ class _SearchCardState extends State<SearchCard> {
                 ],
               ),
               SizedBox(height: 10),
+
               Row(
                 children: [
                   TextButton(
@@ -154,6 +155,7 @@ class _SearchCardState extends State<SearchCard> {
                       ],
                     ),
                   ),
+
                   if (_selectedRadius != null)
                     IconButton(
                       icon: Icon(
@@ -225,6 +227,7 @@ class _SearchCardState extends State<SearchCard> {
                           ),
                         ),
                         const SizedBox(height: 10),
+
                         Slider(
                           value: _selectedRadius ?? 10,
                           min: 1,
@@ -237,6 +240,7 @@ class _SearchCardState extends State<SearchCard> {
                             setState(() => _selectedRadius = value);
                           },
                         ),
+
                         Text(
                           "${(_selectedRadius ?? 10).toStringAsFixed(0)} km radius",
                           style: TextStyle(
@@ -245,6 +249,7 @@ class _SearchCardState extends State<SearchCard> {
                           ),
                         ),
                         const SizedBox(height: 20),
+
                         Row(
                           children: [
                             Expanded(
@@ -267,6 +272,7 @@ class _SearchCardState extends State<SearchCard> {
                               ),
                             ),
                             SizedBox(width: 10),
+
                             Expanded(
                               child: ElevatedButton(
                                 style: TextButton.styleFrom(

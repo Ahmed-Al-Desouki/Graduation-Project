@@ -14,6 +14,7 @@ class MedicalRemoteDataSourceImpl implements MedicalRemoteDataSource {
     final data = await _apiService.get(
       'appointments/$appointmentId/medical-record',
     );
+
     return MedicalRecordModel.fromJson(data);
   }
 
@@ -67,7 +68,7 @@ class MedicalRemoteDataSourceImpl implements MedicalRemoteDataSource {
     final data = await _apiService.post(
       'prescriptions/$prescriptionId/items/bulk',
       // {'items': items.map((e) => e.toJson()).toList()},
-      {'request': items.map((e) => e.toJson()).toList()},
+      {'items': items.map((e) => e.toJson()).toList()},
     );
     return data['message'] ?? "Items Added Successfully";
   }

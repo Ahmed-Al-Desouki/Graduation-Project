@@ -147,6 +147,7 @@ class _ProfileCompletionLoadingContentState
                                 ),
                       ),
                       SizedBox(height: 24.h),
+
                       Text(
                         isRejected
                             ? 'Profile Update Required'
@@ -159,6 +160,7 @@ class _ProfileCompletionLoadingContentState
                         ),
                       ),
                       SizedBox(height: 14.h),
+
                       Text(
                         isRejected
                             ? 'Your profile needs changes before it can be approved. You can update the submitted information and resubmit it now.'
@@ -170,6 +172,7 @@ class _ProfileCompletionLoadingContentState
                           height: 1.6,
                         ),
                       ),
+
                       if (effectiveStatus
                               ?.missingRequiredVerificationDocuments
                               .isNotEmpty ==
@@ -192,6 +195,7 @@ class _ProfileCompletionLoadingContentState
                           ),
                         ),
                       ],
+
                       if (isRejected &&
                           effectiveStatus?.verificationRejectionReason
                                   ?.trim()
@@ -213,6 +217,7 @@ class _ProfileCompletionLoadingContentState
                           ),
                         ),
                       ],
+
                       if (isRejected &&
                           effectiveStatus?.verificationAdminNotes
                                   ?.trim()
@@ -235,6 +240,7 @@ class _ProfileCompletionLoadingContentState
                         ),
                       ],
                       SizedBox(height: 28.h),
+
                       SizedBox(
                         width: double.infinity,
                         height: 52.h,
@@ -267,6 +273,7 @@ class _ProfileCompletionLoadingContentState
                         ),
                       ),
                       SizedBox(height: 12.h),
+
                       SizedBox(
                         width: double.infinity,
                         height: 52.h,
