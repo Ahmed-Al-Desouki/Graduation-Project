@@ -67,6 +67,7 @@ class DoctorCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,6 +94,7 @@ class DoctorCard extends StatelessWidget {
                       ],
                     ),
                   ),
+
                   if (directionsMapUrl != null)
                     Container(
                       decoration: BoxDecoration(
@@ -112,6 +114,7 @@ class DoctorCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
+
               Padding(
                 padding: const EdgeInsets.only(left: 60),
                 child: Row(
@@ -140,6 +143,7 @@ class DoctorCard extends StatelessWidget {
                           );
                         }),
                         SizedBox(width: 3.w),
+
                         Text(
                           rating.toStringAsFixed(2),
                           style: TextStyle(
@@ -151,6 +155,7 @@ class DoctorCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(width: 5),
+
                     Text(
                       '($totalReviews reviews)',
                       style: const TextStyle(color: Colors.grey),
@@ -160,6 +165,7 @@ class DoctorCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
+
               Padding(
                 padding: const EdgeInsets.only(left: 60),
                 child: Row(
@@ -188,6 +194,7 @@ class DoctorCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 15),
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 child: SizedBox(

@@ -1,5 +1,3 @@
-// core/utils/color_helper.dart
-
 import 'package:flutter/material.dart';
 
 Color getStatusColor(String status) {

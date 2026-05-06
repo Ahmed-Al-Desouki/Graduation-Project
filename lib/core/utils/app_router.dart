@@ -77,7 +77,6 @@ abstract class AppRouter {
   static const kRegisterAsDoctor = '/registerAsDoctor';
   static const kForgotPassword = '/forgotPasswordView';
   static const kCreatAcount = '/createAcountView';
-  // static const kHome = '/home';
   static const kHomePatient = '/home/patient';
   static const kHomeDoctor = '/home/doctor';
   static const kDoctorProfileGate = '/doctor/profile-gate';
@@ -113,7 +112,6 @@ abstract class AppRouter {
       GlobalKey<NavigatorState>();
   static const kPublicDoctorProfile = '/doctor/public-profile';
   static const kAllReviews = '/doctor/profile/all-reviews';
-  // static const kMedicalHistory = '/';
   static final router = GoRouter(
     navigatorKey: navigatorKey,
     routes: [

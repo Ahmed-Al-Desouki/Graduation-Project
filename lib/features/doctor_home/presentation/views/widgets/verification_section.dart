@@ -129,6 +129,7 @@ class VerificationSectionState extends State<VerificationSection> {
             ],
           ),
           SizedBox(height: 24.h),
+
           Text(
             'Upload the required documents for verification. Existing documents stay on your profile unless you replace them.',
             style: TextStyle(
@@ -138,6 +139,7 @@ class VerificationSectionState extends State<VerificationSection> {
             ),
           ),
           SizedBox(height: 24.h),
+
           UploadDocumentItem(
             icon: Icons.description,
             label: 'Medical License',
@@ -152,6 +154,7 @@ class VerificationSectionState extends State<VerificationSection> {
                 () => _clearSelection(onboarding_document.DocumentType.license),
           ),
           SizedBox(height: 20.h),
+
           UploadDocumentItem(
             icon: Icons.school,
             label: 'Graduation Certificate',
@@ -172,6 +175,7 @@ class VerificationSectionState extends State<VerificationSection> {
                 ),
           ),
           SizedBox(height: 20.h),
+
           UploadDocumentItem(
             icon: Icons.badge,
             label: 'National ID',
@@ -189,6 +193,7 @@ class VerificationSectionState extends State<VerificationSection> {
                 ),
           ),
           SizedBox(height: 16.h),
+
           Center(
             child: Text(
               'All 3 documents are required for admin approval',

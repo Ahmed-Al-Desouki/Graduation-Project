@@ -10,7 +10,6 @@ import 'package:graduation_project/features/booking/booking_injection.dart';
 import 'package:graduation_project/features/booking/domain/use_cases/get_patient_profile_for_doctor_use_case.dart';
 import 'package:graduation_project/features/chat/data/data_sources/chat_remote_data_source.dart';
 import 'package:graduation_project/features/chat/data/repositories/chat_repository_impl.dart';
-import 'package:graduation_project/features/chat/data/repositories/mock_chat_repository.dart';
 import 'package:graduation_project/features/chat/domain/repositories/i_chat_repository.dart';
 import 'package:graduation_project/features/chat/domain/use_cases/get_my_chat_use_case.dart';
 import 'package:graduation_project/features/chat/domain/use_cases/get_messages_use_case.dart';

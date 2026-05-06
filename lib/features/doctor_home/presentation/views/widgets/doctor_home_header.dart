@@ -77,7 +77,6 @@ class DoctorHomeHeader extends StatelessWidget {
               color: Colors.white,
               iconSize: 28.sp,
               onPressed: () {
-                // التوجه لصفحة الإشعارات الموحدة
                 AppRouter.router.push(AppRouter.kNotifications);
               },
             ),

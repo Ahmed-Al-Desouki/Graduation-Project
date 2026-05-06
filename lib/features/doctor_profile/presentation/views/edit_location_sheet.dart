@@ -59,6 +59,7 @@ class _EditLocationSheetState extends State<EditLocationSheet> {
               maxLength: 200,
             ),
             SizedBox(height: 16.h),
+
             CustomFormTextField(
               label: 'Clinic Address',
               hintText: 'Building number, street name, floor',
@@ -67,8 +68,8 @@ class _EditLocationSheetState extends State<EditLocationSheet> {
               prefixIcon: Icons.home,
               maxLines: 2,
             ),
-
             SizedBox(height: 16.h),
+
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -113,8 +114,8 @@ class _EditLocationSheetState extends State<EditLocationSheet> {
                 ),
               ),
             ),
-
             SizedBox(height: 32.h),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

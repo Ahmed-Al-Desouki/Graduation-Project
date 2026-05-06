@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/helper/secure_storage_helper.dart';
 import 'package:graduation_project/core/widgets/tutorial_tooltip_widget.dart';
@@ -86,7 +87,7 @@ class _ReminderViewState extends State<ReminderView> {
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-              onPressed: () => AppRouter.router.go(AppRouter.kHomePatient),
+              onPressed: () => context.pop(),
             ),
             actions: [
               _buildShowcase(

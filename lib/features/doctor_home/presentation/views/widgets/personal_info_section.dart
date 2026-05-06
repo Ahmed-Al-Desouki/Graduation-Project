@@ -53,6 +53,7 @@ class PersonalInfoSection extends StatelessWidget {
               ],
             ),
             SizedBox(height: 24.h),
+
             CustomFormTextField(
               label: 'Full Name',
               hintText: 'Full Name',
@@ -62,6 +63,7 @@ class PersonalInfoSection extends StatelessWidget {
               maxLength: 100,
             ),
             SizedBox(height: 16.h),
+
             Row(
               children: [
                 Expanded(

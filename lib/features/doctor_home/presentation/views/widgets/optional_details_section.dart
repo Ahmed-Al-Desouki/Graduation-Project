@@ -232,6 +232,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                 size: 25.sp,
               ),
               SizedBox(width: 12.w),
+
               Text(
                 'Optional Details',
                 style: TextStyle(
@@ -241,6 +242,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
                 ),
               ),
               const Spacer(),
+
               Text(
                 'OPTIONAL',
                 style: TextStyle(
@@ -251,6 +253,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
               ),
             ],
           ),
+
           if (widget.existingAchievements.isNotEmpty) ...[
             SizedBox(height: 24.h),
             Text(
@@ -275,6 +278,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
             ),
           ],
           SizedBox(height: 24.h),
+
           Text(
             'Add New Achievement',
             style: TextStyle(
@@ -284,6 +288,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
             ),
           ),
           SizedBox(height: 16.h),
+
           CustomFormTextField(
             label: 'Achievement Title',
             hintText: 'e.g. Best Cardiologist Award 2024',
@@ -293,6 +298,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
             maxLength: 200,
           ),
           SizedBox(height: 16.h),
+
           CustomFormTextField(
             label: 'Description',
             hintText: 'Brief description about your achievements and awards...',
@@ -304,6 +310,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
             maxLength: 1000,
           ),
           SizedBox(height: 16.h),
+
           Row(
             children: [
               Icon(Icons.image, color: const Color(0xFF1B4E8C), size: 20.sp),
@@ -319,6 +326,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
             ],
           ),
           SizedBox(height: 12.h),
+
           if (_selectedAchievementImage != null)
             SelectedAchievementImageCard(
               image: _selectedAchievementImage!,
@@ -370,6 +378,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
               ),
             ),
           SizedBox(height: 16.h),
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -386,6 +395,7 @@ class OptionalDetailsSectionState extends State<OptionalDetailsSection> {
               ),
             ),
           ),
+
           if (_achievements.isNotEmpty) ...[
             SizedBox(height: 24.h),
             Row(
