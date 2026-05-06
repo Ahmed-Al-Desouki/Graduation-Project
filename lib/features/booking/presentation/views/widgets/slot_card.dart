@@ -31,14 +31,33 @@ class SlotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // final String status = slot.status.trim().toLowerCase();
+    // final bool isAvailable = status == 'available';
+    // final bool isBooked = status == 'booked' || status == 'confirmed';
+    // final bool isCompleted = status == 'completed';
+    // final bool isBlocked = status == 'blocked';
+    // final bool isCancelled = status == 'cancelled';
+
+    // final Color statusColor = _getStatusColor(status);
     final String status = slot.status.trim().toLowerCase();
-    final bool isAvailable = status == 'available';
+
+    // 🚀 اللوجيك الجديد بناءً على بيانات السيرفر
+    final bool isExpired = slot.isExpired;
+    final bool canBook = slot.canBook;
+    // حالة خاصة: لو الوقت عدي ومفيش ID موعد (يعني السلوت ضاعت)
+    final bool isTimePassed = isExpired && slot.appointmentId == null;
+
+    final bool isAvailable = status == 'available' && !isExpired;
     final bool isBooked = status == 'booked' || status == 'confirmed';
     final bool isCompleted = status == 'completed';
     final bool isBlocked = status == 'blocked';
-    final bool isCancelled = status == 'cancelled';
+    // الـ Cancelled الحقيقي هو اللي فيه مريض اتكنسل له
+    final bool isDoctorCancelled =
+        status == 'cancelled' && slot.appointmentId != null;
 
-    final Color statusColor = _getStatusColor(status);
+    // اللون هيبقى رمادي لو الوقت عدي
+    final Color statusColor =
+        isTimePassed ? Colors.grey.shade400 : _getStatusColor(status);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -83,7 +102,7 @@ class SlotCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
-                  _buildStatusBadge(statusColor, status),
+                  _buildStatusBadge(statusColor, status, isTimePassed),
                 ],
               ),
             ),
@@ -92,7 +111,9 @@ class SlotCard extends StatelessWidget {
               isBooked: isBooked,
               isCompleted: isCompleted,
               isBlocked: isBlocked,
-              isCancelled: isCancelled,
+              isCancelled: isDoctorCancelled,
+              isTimePassed: isTimePassed,
+              canBook: canBook,
               context: context,
             ),
             const SizedBox(width: 10),
@@ -108,10 +129,13 @@ class SlotCard extends StatelessWidget {
     required bool isCompleted,
     required bool isBlocked,
     required bool isCancelled,
+    required bool isTimePassed, // 👈 مررها هنا
+    required bool canBook,
     required BuildContext context,
   }) {
     if (isPatientView) {
-      if (isAvailable) {
+      // if (isAvailable) {
+      if (canBook && !isTimePassed) {
         return ElevatedButton(
           onPressed: onBook,
           style: ElevatedButton.styleFrom(
@@ -129,6 +153,10 @@ class SlotCard extends StatelessWidget {
         );
       }
       return const SizedBox();
+    }
+
+    if (isTimePassed) {
+      return SizedBox();
     }
 
     if (isAvailable) {
@@ -203,7 +231,34 @@ class SlotCard extends StatelessWidget {
       }
     }
 
-    if (isBooked || isCompleted) {
+    // if (isBooked || isCompleted) {
+    //   return Row(
+    //     mainAxisSize: MainAxisSize.min,
+    //     children: [
+    //       IconButton(
+    //         onPressed: onDetails,
+    //         icon: const Icon(
+    //           Icons.visibility_outlined,
+    //           color: Color(0xFF3B82F6),
+    //           size: 22,
+    //         ),
+    //       ),
+    //       if (!isCompleted)
+    //         IconButton(
+    //           onPressed: onCancelByDoctor,
+    //           icon: const Icon(
+    //             Icons.delete_outline,
+    //             color: Color(0xFFEF4444),
+    //             size: 22,
+    //           ),
+    //         ),
+    //     ],
+    //   );
+    // }
+    if (isBooked ||
+        isCompleted ||
+        (slot.status.toLowerCase() == 'cancelled' &&
+            slot.appointmentId != null)) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -215,7 +270,7 @@ class SlotCard extends StatelessWidget {
               size: 22,
             ),
           ),
-          if (!isCompleted)
+          if (isBooked) // الدكتور يكنسل المحجوز بس، ميكنسلش اللي خلص أو اتكنسل أصلاً
             IconButton(
               onPressed: onCancelByDoctor,
               icon: const Icon(
@@ -231,6 +286,7 @@ class SlotCard extends StatelessWidget {
   }
 
   String _getTitle(String status) {
+    if (slot.isExpired && slot.appointmentId == null) return "Time Expired";
     if (isPatientView) {
       if (status == 'available') return "Available Slot";
       if (status == 'blocked') return "Unavailable";
@@ -242,7 +298,7 @@ class SlotCard extends StatelessWidget {
     return slot.patientName ?? "Reserved Session";
   }
 
-  Widget _buildStatusBadge(Color color, String statusText) {
+  Widget _buildStatusBadge(Color color, String statusText, bool isTimePassed) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -250,7 +306,7 @@ class SlotCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        statusText.toUpperCase(),
+        isTimePassed ? "UnAVAILABLE" : statusText.toUpperCase(),
         style: TextStyle(
           color: color,
           fontSize: 9,

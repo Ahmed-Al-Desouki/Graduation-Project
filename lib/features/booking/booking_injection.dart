@@ -111,7 +111,7 @@ Future<void> initBookingInjection() async {
   sl.registerFactory(
     () => ScheduleManagementCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
   );
-  sl.registerFactory(() => BookingCalendarCubit(sl()));
+  sl.registerFactory(() => BookingCalendarCubit(sl(), sl()));
   sl.registerFactory(
     () => ExamSessionCubit(sl(), sl(), sl(), sl(), sl(), sl(), sl()),
   );

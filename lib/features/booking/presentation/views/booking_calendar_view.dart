@@ -57,13 +57,17 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
   }
 
   void _initializeData() {
-    final String targetDoctorId =
+    // final String targetDoctorId =
+    //     widget.isPatientView
+    //         ? widget.doctorId!
+    //         : getIt<SessionManager>().userId;
+    _getDisplayName =
         widget.isPatientView
-            ? widget.doctorId!
-            : getIt<SessionManager>().userId;
-    _getDisplayName = getIt<SessionManager>().userName;
+            ? widget.doctorName
+            : getIt<SessionManager>().userName;
 
     _fetchMonthData(DateTime.now());
+    context.read<BookingCalendarCubit>().listenToRealTimeUpdates();
 
     _activeFollowUpId = widget.originalAppointmentId;
     _activeFollowUpPatientName = widget.followUpPatientName;
@@ -341,13 +345,16 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
   }
 
   Widget _buildSlotsHeader(BookingCalendarSuccess state) {
+    final String formattedDate =
+        "${state.selectedDate.day}/${state.selectedDate.month}";
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            "Slots: ${state.selectedDayTitle.split(',')[0]}",
+            // "Slots: ${state.selectedDayTitle.split(',')[0]}",
+            "Slots: ${state.selectedDayTitle.split(',')[0]} $formattedDate",
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           Container(

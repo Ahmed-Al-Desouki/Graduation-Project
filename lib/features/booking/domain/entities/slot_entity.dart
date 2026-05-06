@@ -6,6 +6,8 @@ class SlotEntity {
   final String? patientName;
   final String? appointmentId;
   final String? patientNote;
+  final bool isExpired; // 👈 جديد
+  final bool canBook;
 
   SlotEntity({
     required this.slotId,
@@ -15,5 +17,7 @@ class SlotEntity {
     this.patientName,
     this.appointmentId,
     this.patientNote,
+    required this.isExpired, // 👈 قيمة افتراضية
+    required this.canBook,
   });
 }
