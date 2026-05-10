@@ -20,7 +20,6 @@ Important note:
 - The current repository snapshot clearly includes the ASP.NET Core backend source code.
 - It also includes multiple documents prepared for Flutter integration.
 - A standalone Flutter source project is not present in this snapshot.
-- If your final academic submission requires the complete mobile source code as well, the Flutter project should be added under `src/` before the final hand-in.
 - for backend use onion-architecture branch.
 
 ## Required Repository Structure
