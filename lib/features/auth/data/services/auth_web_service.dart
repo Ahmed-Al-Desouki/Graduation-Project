@@ -94,17 +94,11 @@ class AuthWebServices {
   }
 
   Future<Map<String, dynamic>> checkToken() async {
-    return await _apiService.get(
-      'auth/token-status-v2',
-      // bearerToken: accessToken,
-    );
+    return await _apiService.get('auth/token-status-v2');
   }
 
   Future<Map<String, dynamic>> checkRefreshToken(String token) async {
-    return await _apiService.get(
-      'auth/token-status-v2',
-      // , refreshCookie: token
-    );
+    return await _apiService.get('auth/token-status-v2');
   }
 
   Future<Map<String, dynamic>> resendOtp({required String mfaToken}) async {

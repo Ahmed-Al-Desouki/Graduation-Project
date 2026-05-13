@@ -92,7 +92,7 @@ class NotificationCubit extends Cubit<NotificationState> {
         title: allNotifications[index].title,
         message: allNotifications[index].message,
         type: allNotifications[index].type,
-        isRead: true, // حدثنا الحالة
+        isRead: true,
         createdAt: allNotifications[index].createdAt,
         relatedEntityId: allNotifications[index].relatedEntityId,
         relatedEntityType: allNotifications[index].relatedEntityType,

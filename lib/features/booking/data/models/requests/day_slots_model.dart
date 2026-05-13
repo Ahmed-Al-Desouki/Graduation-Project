@@ -10,7 +10,7 @@ class SlotModel extends SlotEntity {
     super.patientName,
     super.appointmentId,
     super.patientNote,
-    required super.isExpired, // 👈
+    required super.isExpired,
     required super.canBook,
   });
 
@@ -23,7 +23,7 @@ class SlotModel extends SlotEntity {
       patientName: json['patientFullName'],
       appointmentId: json['appointmentId'],
       patientNote: json['patientNotes'],
-      isExpired: json['isExpired'] ?? false, // 👈 مابينج من الـ JSON
+      isExpired: json['isExpired'] ?? false,
       canBook: json['canBook'] ?? false,
     );
   }

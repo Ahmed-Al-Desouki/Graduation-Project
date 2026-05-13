@@ -8,8 +8,7 @@ import 'package:graduation_project/features/booking/domain/entities/payment_resp
 import 'package:graduation_project/features/booking/domain/repositories/payment_repository.dart';
 
 class PaymentRepositoryImpl implements PaymentRepository {
-  final BookingRemoteDataSource
-  remoteDataSource; // أو PaymentRemoteDataSource لو حابب تفصلهم
+  final BookingRemoteDataSource remoteDataSource;
   final NetworkInfo networkInfo;
 
   PaymentRepositoryImpl({

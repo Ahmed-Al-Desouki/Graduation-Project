@@ -6,7 +6,6 @@ class HomeWebService {
   HomeWebService(this._apiService);
 
   Future<Map<String, dynamic>> fetchHomeUserInfo() async {
-    // 💡 الرابط الجديد اللي انت بعته
     return await _apiService.get('patient/profile');
   }
 }

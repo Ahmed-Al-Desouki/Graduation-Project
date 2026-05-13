@@ -11,7 +11,6 @@ class TicketsCubit extends Cubit<TicketsState> {
   final GetMyTicketsUseCase getMyTicketsUseCase;
   final CreateTicketUseCase createTicketUseCase;
 
-  // أضف متغيرات لحفظ حالة الفلتر الحالية
   String? status;
   String? priority;
   String? category;
@@ -33,7 +32,6 @@ class TicketsCubit extends Cubit<TicketsState> {
     if (isRefresh) {
       currentPage = 1;
       allTickets.clear();
-      // تحديث القيم المحفوظة في الكيوبت
       this.status = status == "All" ? null : status ?? this.status;
       this.priority = priority == "All" ? null : priority ?? this.priority;
       this.category = category == "All" ? null : category ?? this.category;
@@ -50,7 +48,6 @@ class TicketsCubit extends Cubit<TicketsState> {
       priority: this.priority,
       category: this.category,
       dateRange: this.dateRange,
-      // الـ UseCase والـ Repo محتاجين نحدثهم يستلموا التواريخ لو حبيت
     );
 
     result.fold((failure) => emit(TicketsFailure(failure.errmessage)), (
@@ -87,7 +84,7 @@ class TicketsCubit extends Cubit<TicketsState> {
     required String category,
     required String priority,
   }) async {
-    emit(TicketsLoading()); // نظهر لودر أثناء الإنشاء
+    emit(TicketsLoading());
     final result = await createTicketUseCase(
       title: title,
       description: description,
@@ -98,7 +95,6 @@ class TicketsCubit extends Cubit<TicketsState> {
     result.fold((failure) => emit(TicketsFailure(failure.errmessage)), (
       ticketEntity,
     ) {
-      // بعد النجاح، بنعمل ريفريش للقائمة عشان التذكرة الجديدة تظهر
       fetchTickets(isRefresh: true);
     });
   }

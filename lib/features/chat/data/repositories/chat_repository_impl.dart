@@ -38,7 +38,6 @@ class ChatRepositoryImpl implements ChatRepository {
       await remoteDataSource.sendMessage(chatId, model, recipientId);
       return right(null);
     } on FirebaseException catch (e) {
-      // استخدمنا الـ FirebaseFailure اللي زودناه
       return left(FirebaseFailure(e.message ?? 'Firebase Error occurred'));
     } catch (e) {
       return left(FirebaseFailure('An unexpected error: ${e.toString()}'));

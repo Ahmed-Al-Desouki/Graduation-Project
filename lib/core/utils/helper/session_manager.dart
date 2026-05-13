@@ -10,14 +10,12 @@ enum SessionStatus { valid, invalid, error }
 class SessionManager {
   final AuthRepository _authRepository;
 
-  // ✅ متغير لتخزين الـ ID في الذاكرة (Memory Cache)
   String? _cachedUserId;
   String? _cachedName;
   String? _cachedRole;
 
   SessionManager(this._authRepository);
 
-  // ✅ Getter للحصول على الـ ID فوراً بدون Future
   String get userId => _cachedUserId ?? '';
   String get userName => _cachedName ?? '';
   String get userRole => _cachedRole ?? '';
@@ -40,7 +38,6 @@ class SessionManager {
         return SessionStatus.invalid;
       }
 
-      // ✅ تحميل الـ ID من الـ Storage للذاكرة بمجرد التأكد من وجود التوكنز
       _cachedUserId = await SecureStorageHelper.getUserId();
       _cachedName = await SecureStorageHelper.getUserName();
       _cachedRole = await SecureStorageHelper.getUserRole1();
@@ -75,7 +72,7 @@ class SessionManager {
         (failure) async {
           log("❌ Refresh failed: ${failure.errmessage}");
           await SecureStorageHelper.clearAll();
-          _cachedUserId = null; // تفريغ الـ ID عند الفشل
+          _cachedUserId = null;
           _cachedName = null;
           _cachedRole = null;
           return SessionStatus.invalid;
@@ -106,7 +103,6 @@ class SessionManager {
 
     Map<String, dynamic> payload = JwtDecoder.decode(tokenModel.accessToken);
 
-    // ✅ استخراج الـ ID وتحديث الكاش فوراً
     final String newUserId =
         (payload['UserID'] ?? payload['uid'] ?? '').toString();
     _cachedUserId = newUserId;
@@ -133,5 +129,28 @@ class SessionManager {
     log(
       "💡 SessionManager: Memory Cache updated - ID: $id, Name: $name, Role: $role",
     );
+  }
+
+  Future<bool> forceManualRefresh() async {
+    try {
+      final accessToken = await SecureStorageHelper.getAccessToken();
+      final refreshToken = await SecureStorageHelper.getRefreshToken();
+
+      if (accessToken == null || refreshToken == null) return false;
+
+      log("🔄 Force Refreshing token to update permissions...");
+      final result = await _authRepository.refreshToken(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+      );
+
+      return await result.fold((failure) => false, (tokenModel) async {
+        await _saveNewTokensAndUserData(tokenModel);
+        return true;
+      });
+    } catch (e) {
+      log("❌ Force Refresh Error: $e");
+      return false;
+    }
   }
 }

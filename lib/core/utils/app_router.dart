@@ -81,7 +81,9 @@ abstract class AppRouter {
   static const kHomeDoctor = '/home/doctor';
   static const kDoctorProfileGate = '/doctor/profile-gate';
   static const kReminder = '/reminder';
-  static const kResetPassword = '/resetPassword';
+  // static const kResetPassword = '/resetPassword';
+  static const kResetPassword = '/reset-password';
+
   static const kResetSuccess = '/resetSuccess';
   static const kSettings = '/settings';
   static const kBiometric = '/biometric';
@@ -135,13 +137,11 @@ abstract class AppRouter {
         path: kAppointmentsCenter,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          // هنا هننادي الشاشة الجديدة اللي هنعملها
           return AppointmentsCenterView(
             initialAppointments: extra?['initialAppointments'],
           );
         },
       ),
-      // 1. شاشة إعداد الجدول
       GoRoute(
         path: kScheduleSetup,
 
@@ -151,14 +151,13 @@ abstract class AppRouter {
 
           return BlocProvider(
             create: (context) => getIt<ScheduleManagementCubit>(),
-            // 💡 بنبعت الـ extra كله للـ View عشان ميتسحلش
             child: ScheduleSetupView(isEditing: true, followUpData: extra),
           );
         },
       ),
 
       GoRoute(
-        path: kBookingCalendar, // مثلاً '/booking-calendar'
+        path: kBookingCalendar,
         builder: (context, state) {
           final Map<String, dynamic>? extra =
               state.extra as Map<String, dynamic>?;
@@ -209,7 +208,6 @@ abstract class AppRouter {
             );
           }
 
-          // 💡 للدكتور: بنبعته دايماً للـ SetupView وهي اللي هتشيك على الـ API
           return BlocProvider(
             create: (context) => getIt<ScheduleManagementCubit>(),
             child: const ScheduleSetupView(),
@@ -263,58 +261,9 @@ abstract class AppRouter {
             ),
       ),
 
-      // GoRoute(
-      //   path: kHomePatient,
-      //   builder:
-      //       (context, state) => MultiBlocProvider(
-      //         providers: [
-      //           // BlocProvider(
-      //           //   create:
-      //           //       (context) =>
-      //           //           getIt<NotificationCubit>()..fetchNotifications(),
-      //           // ),
-      //           // BlocProvider(create: (context) => getIt<ReminderCubit>()),
-      //           // BlocProvider(create: (context) => getIt<HomeCubit>()),
-      //           BlocProvider.value(
-      //             value: getIt<NotificationCubit>()..fetchNotifications(),
-      //           ),
-      //           BlocProvider(create: (context) => getIt<ReminderCubit>()),
-      //           BlocProvider(create: (context) => getIt<HomeCubit>()),
-      //         ],
-      //         child: const PatientHomeLayout(),
-      //       ),
-      // ),
-
-      // // GoRoute(
-      // //   path: kHomeDoctor,
-      // //   builder: (context, state) => const DoctorHomeLayout(),
-      // // ),
-      // GoRoute(
-      //   path: kHomeDoctor,
-      //   builder: (context, state) {
-      //     final userID = getIt<SessionManager>().userId;
-      //     return MultiBlocProvider(
-      //       providers: [
-      //         // 🚀 توفير ChatCubit وجلب المحادثات فوراً
-      //         BlocProvider(
-      //           create:
-      //               (context) => getIt<ChatCubit>()..getMyChats(userID, true),
-      //         ),
-      //         // 🚀 توفير NotificationCubit (اختياري لو محتاج إشعارات في الهوم)
-      //         BlocProvider.value(
-      //           value: getIt<NotificationCubit>()..fetchNotifications(),
-      //         ),
-      //         // 🚀 توفير DoctorRealProfileCubit هنا بدل ما توفره جوه الـ Layout
-      //         BlocProvider.value(value: getIt<DoctorRealProfileCubit>()),
-      //       ],
-      //       child: const DoctorHomeLayout(),
-      //     );
-      //   },
-      // ),
       GoRoute(
         path: kHomePatient,
         builder: (context, state) {
-          // 1. استخراج الـ ID للمريض
           final userID = getIt<SessionManager>().userId;
 
           return MultiBlocProvider(
@@ -324,12 +273,9 @@ abstract class AppRouter {
               ),
               BlocProvider(create: (context) => getIt<ReminderCubit>()),
               BlocProvider(create: (context) => getIt<HomeCubit>()),
-              // 🚀 إضافة الـ ChatCubit للمريض (مهم جداً عشان الـ Badge)
               BlocProvider(
                 create:
-                    (context) =>
-                        getIt<ChatCubit>()
-                          ..getMyChats(userID, false), // false للمريض
+                    (context) => getIt<ChatCubit>()..getMyChats(userID, false),
               ),
             ],
             child: const PatientHomeLayout(),
@@ -344,12 +290,9 @@ abstract class AppRouter {
 
           return MultiBlocProvider(
             providers: [
-              // 🚀 الـ ChatCubit للدكتور
               BlocProvider(
                 create:
-                    (context) =>
-                        getIt<ChatCubit>()
-                          ..getMyChats(userID, true), // true للدكتور
+                    (context) => getIt<ChatCubit>()..getMyChats(userID, true),
               ),
               BlocProvider.value(
                 value: getIt<NotificationCubit>()..fetchNotifications(),
@@ -366,27 +309,15 @@ abstract class AppRouter {
       GoRoute(
         path: kDoctorProfileGate,
         builder:
-            // <<<<<<< HEAD
             (context, state) => MultiBlocProvider(
               providers: [
-                // BlocProvider(create: (_) => getIt<DoctorProfileCubit>()),
-                // BlocProvider(
-                //   create:
-                //       (context) =>
-                //           getIt<NotificationCubit>()..fetchNotifications(),
-                // ),
                 BlocProvider(create: (_) => getIt<DoctorProfileCubit>()),
-                // 🚀 التعديل هنا: استخدم .value عشان الـ Provider ميقفلش الكيوبت
                 BlocProvider.value(
                   value: getIt<NotificationCubit>()..fetchNotifications(),
                 ),
               ],
-              //               child: const DoctorHomeLayout(),
-              // // =======
-              //             (context, state) => BlocProvider(
-              //               create: (_) => getIt<DoctorProfileCubit>(),
+
               child: const DoctorProfileGateView(),
-              // >>>>>>> stable-v2
             ),
       ),
 
@@ -456,10 +387,7 @@ abstract class AppRouter {
           );
         },
       ),
-      // GoRoute(
-      //   path: kMedicalHistory,
-      //   builder: (context, state) => const MedicalHistoryView(),
-      // ),
+
       GoRoute(
         path: kMedicalHistory,
         builder: (context, state) {
@@ -586,19 +514,6 @@ abstract class AppRouter {
         },
       ),
 
-      // GoRoute(
-      //   path: kChatDetails,
-      //   builder: (context, state) {
-      //     final data = state.extra as Map<String, dynamic>;
-      //     return BlocProvider(
-      //       create: (context) => getIt<ChatDetailsCubit>(),
-      //       child: ChatDetailsView(
-      //         chatId: data['chatId'] as String,
-      //         receiverName: data['receiverName'] as String,
-      //       ),
-      //     );
-      //   },
-      // ),
       GoRoute(
         path: kChatDetails,
         builder: (context, state) {
@@ -610,7 +525,6 @@ abstract class AppRouter {
               receiverName: data['receiverName'] as String,
               currentUserId: data['currentUserId'] as String,
               isDoctor: data['isDoctor'] as bool,
-              // 🚀 زودنا دي عشان الـ Unread Marker يشتغل
               lastReadTimestamp: data['lastReadTimestamp'] as DateTime?,
             ),
           );
@@ -619,7 +533,6 @@ abstract class AppRouter {
       GoRoute(
         path: kMedicalDetails,
         builder: (context, state) {
-          // ✅ تأمين الـ extra عشان ميعملش Crash لو مبعوتش
           final extra = state.extra as Map<String, dynamic>? ?? {};
 
           return MultiBlocProvider(
@@ -629,23 +542,9 @@ abstract class AppRouter {
                 create: (context) => getIt<AppointmentActionCubit>(),
               ),
             ],
-            child:
-            // MedicalDetailsView(
-            //   appointmentId: extra['appointmentId'] ?? '',
-            //   patientId: extra['patientId'] ?? '',
-            //   patientName: extra['patientName'] ?? 'Unknown Patient',
-            //   patientNote: extra['patientNote'],
-            //   // ✅ تمرير الحالة (ضروري جداً للوجيك الـ Read-only)
-            //   initialStatus: extra['status'] ?? 'booked',
-            //   // doctorName: getIt<SessionManager>().userName,
-            //   doctorName: extra['doctorName'], // 🚨 لازم دي تتضاف هنا
-            //   doctorSpecialty: "Specialist",
-            // ),
-            MedicalDetailsView(
+            child: MedicalDetailsView(
               appointmentId: extra['appointmentId'] ?? '',
-              patientId:
-                  extra['patientId']
-                      ?.toString(), // ✅ مفيش Default value هنا عشان يقبل الـ Null
+              patientId: extra['patientId']?.toString(),
               patientName: extra['patientName'] ?? 'Patient',
               doctorName: extra['doctorName'] ?? 'Doctor',
               initialStatus: extra['status'] ?? 'Pending',
@@ -742,7 +641,6 @@ abstract class AppRouter {
           );
         },
       ),
-      // inside your GoRouter configuration
       GoRoute(
         path: kTickets,
         builder:
@@ -751,24 +649,12 @@ abstract class AppRouter {
               child: const SupportTicketsPage(),
             ),
         routes: [
-          // 🚀 صفحة الشات مضافة كـ Sub-route
-          // GoRoute(
-          //   path: 'ticket-chat', // المسار هيكون /tickets/ticket-chat
-          //   builder: (context, state) {
-          //     // بنستلم الـ ticket entity اللي باعتينها من صفحة القائمة
-          //     // final ticket = state.extra as TicketEntity;
-          //     // return SupportChatPage(ticket: ticket);
-          //     final ticketId = state.extra as String;
-          //     return SupportChatPage(ticketId: ticketId);
-          //   },
-          // ),
           GoRoute(
             path: 'ticket-chat',
             builder: (context, state) {
               String id = "";
               String? status;
 
-              // 🚀 بنشيك على النوع اللي مبعوث في الـ extra
               if (state.extra is Map<String, dynamic>) {
                 final data = state.extra as Map<String, dynamic>;
                 id = data['id'];
@@ -782,28 +668,7 @@ abstract class AppRouter {
           ),
         ],
       ),
-      // في app_router.dart
-      // GoRoute(
-      //   path: kAllAchievements,
-      //   builder: (context, state) {
-      //     final extra = state.extra as Map<String, dynamic>;
-      //     final cubit = extra['cubit'] as DoctorRealProfileCubit;
 
-      //     return BlocProvider.value(
-      //       value: cubit,
-      //       child: const AllAchievementsView(),
-      //     );
-      //   },
-      // ),
-
-      // GoRoute(
-      //   path: kAllAchievements,
-      //   builder: (context, state) {
-      //     final achievements =
-      //         state.extra as List<AchievementProfileEntity>? ?? [];
-      //     return AllAchievementsView(achievements: achievements);
-      //   },
-      // ),
       GoRoute(
         path: kPublicDoctorProfile,
         builder: (context, state) {

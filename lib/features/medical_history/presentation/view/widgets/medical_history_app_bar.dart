@@ -39,12 +39,9 @@ class MedicalHistoryAppBar extends StatelessWidget
           color: Color(0xFF111827),
         ),
         onPressed: () {
-          // ❌ بدلاً من: context.go(AppRouter.kHomePatient)
-          // ✅ استخدم:
           if (Navigator.canPop(context)) {
             Navigator.pop(context);
           } else {
-            // لو مفيش شاشة يرجع لها (حالة احتياطية) يروح للهوم المناسب
             context.go(
               isDoctorView ? AppRouter.kHomeDoctor : AppRouter.kHomePatient,
             );

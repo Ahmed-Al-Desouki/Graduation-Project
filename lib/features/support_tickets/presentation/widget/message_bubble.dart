@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graduation_project/features/support_tickets/domain/entities/ticket_message_entity.dart';
-import 'package:intl/intl.dart'; // تأكد من إضافة intl في الـ pubspec
+import 'package:intl/intl.dart';
 
 class MessageBubble extends StatelessWidget {
   final TicketMessageEntity message;

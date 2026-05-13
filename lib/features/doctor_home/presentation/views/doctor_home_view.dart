@@ -159,7 +159,10 @@ class _DoctorHomeViewState extends State<DoctorHomeView> {
                           imageAsset: Assets.imagesSchedule,
                           isSvg: false,
                           onTap: () {
-                            AppRouter.router.push(AppRouter.kDoctorSchedule);
+                            AppRouter.router.go(
+                              AppRouter.kDoctorSchedule,
+                              extra: {'isEditing': false},
+                            );
                           },
                         ),
                         SizedBox(height: 20.h),

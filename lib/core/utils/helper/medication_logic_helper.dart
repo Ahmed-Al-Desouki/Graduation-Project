@@ -1,7 +1,6 @@
 import 'package:intl/intl.dart';
 
 class MedicationLogicHelper {
-  // 1. ميثود حساب الكمية الكلية
   static String calculateQuantity({
     required int durationValue,
     required String durationType,
@@ -19,7 +18,7 @@ class MedicationLogicHelper {
     } else if (durationType == "Months") {
       days = durationValue * 30.0;
     } else {
-      days = 30.0; // الافتراضي للـ Ongoing
+      days = 30.0;
     }
 
     double calculatedQty = 0;
@@ -50,7 +49,6 @@ class MedicationLogicHelper {
     return calculatedQty.ceil().toString();
   }
 
-  // 2. ميثود توليد ملخص التردد
   static String generateSummary({
     required int frequencyType,
     required DateTime selectedStartDate,
@@ -58,15 +56,15 @@ class MedicationLogicHelper {
     required int monthlyDaysCount,
     required int intervalHours,
   }) {
-    if (frequencyType == 0)
+    if (frequencyType == 0) {
       return "Once on ${DateFormat('MMM dd').format(selectedStartDate)}";
+    }
     if (frequencyType == 1) return "Daily";
     if (frequencyType == 2) return "$weeklyDaysCount days/week";
     if (frequencyType == 3) return "$monthlyDaysCount days/month";
     return "Every $intervalHours hours";
   }
 
-  // 3. ميثود حساب مدة العلاج بالأيام
   static int calculateDurationInDays(int val, String type) {
     if (type == "Weeks") return val * 7;
     if (type == "Months") return val * 30;

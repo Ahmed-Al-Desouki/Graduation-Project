@@ -1,20 +1,17 @@
 import 'package:equatable/equatable.dart';
 
-// تمثل الإشعار الواحد
 class NotificationEntity extends Equatable {
   final String id;
   final String title;
   final String message;
-  final String
-  type; // مثل: AppointmentUpdated, TicketUpdated, PrescriptionCreated
+  final String type;
   final bool isRead;
   final DateTime createdAt;
-  final String?
-  relatedEntityType; // لنعرف هذا الإشعار يخص أي قسم (ticket, appointment, etc.)
-  final String? relatedEntityId; // معرف الكيان المرتبط للذهاب إليه عند الضغط
-  final String? relatedEntityKey; // 🚀 الحقل الجديد
-  final String? navigationTarget; // 🚀 هدف التوجيه
-  final Map<String, dynamic>? navigationPayload; // 🚀 البيانات الإضافية
+  final String? relatedEntityType;
+  final String? relatedEntityId;
+  final String? relatedEntityKey;
+  final String? navigationTarget;
+  final Map<String, dynamic>? navigationPayload;
 
   const NotificationEntity({
     required this.id,
@@ -34,7 +31,6 @@ class NotificationEntity extends Equatable {
   List<Object?> get props => [id, isRead];
 }
 
-// تمثل نتيجة جلب الإشعارات (للدعم الـ Pagination والـ Counter)
 class NotificationsResultEntity {
   final List<NotificationEntity> notifications;
   final int unreadCount;

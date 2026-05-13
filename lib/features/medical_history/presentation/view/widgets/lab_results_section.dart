@@ -72,7 +72,7 @@ class LabResultsSection extends StatelessWidget {
             'radiologyFiles': radiologyFiles,
             'historyId': medicalHistoryId,
             'cubit': context.read<PatientProfileCubit>(),
-            'isReadOnly': isReadOnly, // 👈 التعديل هنا
+            'isReadOnly': isReadOnly,
           },
         );
       },

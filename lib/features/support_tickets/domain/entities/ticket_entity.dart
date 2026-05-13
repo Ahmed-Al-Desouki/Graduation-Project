@@ -1,5 +1,5 @@
 class TicketEntity {
-  final String id; // تم التعديل لـ String
+  final String id;
   final String title;
   final String description;
   final String category;

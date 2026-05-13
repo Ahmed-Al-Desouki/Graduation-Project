@@ -180,7 +180,7 @@ class PatientProfileModel {
       'pastAppointments':
           pastAppointments.map((e) {
             if (e is AppointmentFullDetailsModel) return e.toJson();
-            return e; // لو هو أصلاً Map أو نوع تاني
+            return e;
           }).toList(),
       'medicalRecords': medicalRecords,
       'surgeries': surgeries.map((e) => e.toJson()).toList(),

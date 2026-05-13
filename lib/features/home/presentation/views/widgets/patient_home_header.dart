@@ -68,7 +68,7 @@ class PatientHomeHeader extends StatelessWidget {
                           const CircularProgressIndicator(strokeWidth: 2),
                   errorWidget: (context, url, error) => _buildErrorIcon(),
                 )
-                : _buildErrorIcon(), // لو الصورة null اعرض الأيقونة الافتراضية
+                : _buildErrorIcon(),
       ),
     );
   }
@@ -101,7 +101,6 @@ class PatientHomeHeader extends StatelessWidget {
   Widget _buildNotificationIcon(BuildContext context) {
     return BlocBuilder<NotificationCubit, NotificationState>(
       builder: (context, state) {
-        // بنجيب عدد الإشعارات غير المقروءة من الكيوبت
         final int count = context.read<NotificationCubit>().unreadCount;
 
         return Showcase.withWidget(
@@ -127,11 +126,9 @@ class PatientHomeHeader extends StatelessWidget {
                   size: 28.sp,
                 ),
                 onPressed: () {
-                  // 🚀 التوجيه لصفحة الإشعارات اللي عملناها
                   context.push('/notifications');
                 },
               ),
-              // لو فيه إشعارات، اظهر الدائرة الحمراء
               if (count > 0)
                 Positioned(
                   right: 8,

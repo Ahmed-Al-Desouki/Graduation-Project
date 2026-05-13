@@ -46,12 +46,6 @@ class FileViewerHelper {
 
       if (result.type != ResultType.done) {
         if (context.mounted) {
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   SnackBar(
-          //     content: Text("Could not open file: ${result.message}"),
-          //     backgroundColor: Colors.red,
-          //   ),
-          // );
           showSnackBar(
             context,
             "Could not open file: ${result.message}",
@@ -63,12 +57,6 @@ class FileViewerHelper {
       if (context.mounted) {
         Navigator.pop(context);
 
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text("Error opening file: $e"),
-        //     backgroundColor: Colors.red,
-        //   ),
-        // );
         showSnackBar(context, "Error opening file: $e", Colors.red);
         log("❌ Error downloading: $e");
       }

@@ -17,14 +17,11 @@ class NotificationModel extends NotificationEntity {
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
-      // نضمن أن الـ ID دائماً String بسبب الـ GUIDs المستخدمة في الباك-إند
       id: json['id']?.toString() ?? "",
       title: json['title'] ?? "",
       message: json['message'] ?? "",
-      // الـ Type يأتي كنص مباشر في النظام الجديد
       type: json['type']?.toString() ?? "General",
       isRead: json['isRead'] ?? false,
-      // التزاماً بالـ Guide نستخدم UTC-safe parsing
       createdAt:
           json['createdAt'] != null
               ? DateTime.parse(json['createdAt']).toLocal()

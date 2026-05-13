@@ -10,7 +10,7 @@ part 'chat_state.dart';
 class ChatCubit extends Cubit<ChatState> {
   final GetMyChatsUseCase getMyChatsUseCase;
   StreamSubscription? _chatsSubscription;
-  List<ChatEntity> _allChats = []; // القائمة الأصلية للفلترة
+  List<ChatEntity> _allChats = [];
 
   ChatCubit(this.getMyChatsUseCase) : super(ChatInitial());
 
@@ -18,7 +18,6 @@ class ChatCubit extends Cubit<ChatState> {
     emit(ChatLoading());
     _chatsSubscription?.cancel();
 
-    // بنسمع للـ Stream بتاع الفايربيز
     _chatsSubscription = getMyChatsUseCase(userId, isDoctor).listen((chats) {
       _allChats = chats;
       emit(ChatSuccess(chats));

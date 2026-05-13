@@ -51,7 +51,7 @@
     <category android:name="android.intent.category.BROWSABLE" />
     <data
         android:scheme="https"
-        android:host="medicare-plus.runasp.net"
+        android:host="wellora-healthcaremanagment.runasp.net"
         android:pathPrefix="/reset-password" />
             </intent-filter>
             <intent-filter android:autoVerify="true">

@@ -39,20 +39,17 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
           } else if (state is SharedHistoryFailure) {
             return _buildErrorWidget(state.errMessage);
           } else if (state is SharedHistorySuccess) {
-            final data = state.profile; // هذا هو PatientProfileModel الخاص بك
+            final data = state.profile;
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // 1. كارت المعلومات الشخصية
                   _buildHeaderInfo(data),
                   const SizedBox(height: 16),
 
-                  // 2. القياسات الحيوية
                   _buildVitalSigns(data),
                   const SizedBox(height: 16),
 
-                  // 3. الحساسية والأمراض المزمنة
                   _buildStatusSection(
                     "Conditions & Allergies",
                     Icons.warning_amber_rounded,
@@ -75,13 +72,11 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 4. التاريخ الاجتماعي (Social History)
                   if (data.socialHistory != null)
                     _buildSocialHistory(data.socialHistory!),
 
                   const SizedBox(height: 16),
 
-                  // 🔥 5. التحاليل الطبية (Lab Results) - جديد
                   _buildFilesSection(
                     "Lab Results",
                     data.labTests,
@@ -90,7 +85,6 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 🔥 6. الأشعة (Radiology Files) - جديد
                   _buildFilesSection(
                     "Radiology Reports",
                     data.radiologyFiles,
@@ -99,17 +93,14 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 5. الأدوية (Current + Self)
                   _buildMedicationsSection(data),
 
                   const SizedBox(height: 16),
 
-                  // 6. العمليات الجراحية
                   _buildSurgeriesSection(data.surgeries),
 
                   const SizedBox(height: 16),
 
-                  // 7. تاريخ العائلة
                   _buildFamilyHistorySection(data.familyHistory),
 
                   const SizedBox(height: 30),
@@ -313,11 +304,9 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
               onPressed: () async {
                 final Uri url = Uri.parse(file.fileUrl);
                 try {
-                  // في الويب، LaunchMode.externalApplication هي الأفضل لفتح الـ PDF في تبويب جديد
                   await launchUrl(url, mode: LaunchMode.externalApplication);
                 } catch (e) {
                   log('Could not launch $url, error: $e');
-                  // اختياري: أظهر SnackBar لو فشل
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Could not open the file")),
                   );
@@ -328,8 +317,6 @@ class _SharedHistoryViewState extends State<SharedHistoryView> {
         ),
     ]);
   }
-
-  // --- Helpers ---
 
   Widget _buildCard({required Widget child}) {
     return Container(

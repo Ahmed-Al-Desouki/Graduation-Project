@@ -1,4 +1,3 @@
-// widgets/chat_bottom_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:graduation_project/features/support_tickets/presentation/manager/ticket_chat_cubit/ticket_chat_cubit.dart';
@@ -29,7 +28,7 @@ class _ChatBottomBarState extends State<ChatBottomBar> {
         widget.ticketId,
         _controller.text.trim(),
       );
-      _controller.clear(); // تصفير الحقل بعد الإرسال
+      _controller.clear();
     }
   }
 
@@ -47,7 +46,7 @@ class _ChatBottomBarState extends State<ChatBottomBar> {
             Expanded(
               child: TextField(
                 controller: _controller,
-                maxLines: null, // بيخلي الحقل يكبر مع الكتابة
+                maxLines: null,
                 decoration: InputDecoration(
                   hintText: "Type your response...",
                   hintStyle: const TextStyle(fontSize: 14),

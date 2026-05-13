@@ -102,7 +102,7 @@ class _LoginFormContainerState extends State<LoginFormContainer> {
                           return 'Email is required!';
                         }
                         if (!_isValidEmail(value)) {
-                          return 'Enter a valid email (e.g. example@gmail.com)';
+                          return 'Enter a valid email (e.g. example@****.***)';
                         }
                         return null;
                       },

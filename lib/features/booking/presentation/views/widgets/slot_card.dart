@@ -41,21 +41,17 @@ class SlotCard extends StatelessWidget {
     // final Color statusColor = _getStatusColor(status);
     final String status = slot.status.trim().toLowerCase();
 
-    // 🚀 اللوجيك الجديد بناءً على بيانات السيرفر
     final bool isExpired = slot.isExpired;
     final bool canBook = slot.canBook;
-    // حالة خاصة: لو الوقت عدي ومفيش ID موعد (يعني السلوت ضاعت)
     final bool isTimePassed = isExpired && slot.appointmentId == null;
 
     final bool isAvailable = status == 'available' && !isExpired;
     final bool isBooked = status == 'booked' || status == 'confirmed';
     final bool isCompleted = status == 'completed';
     final bool isBlocked = status == 'blocked';
-    // الـ Cancelled الحقيقي هو اللي فيه مريض اتكنسل له
     final bool isDoctorCancelled =
         status == 'cancelled' && slot.appointmentId != null;
 
-    // اللون هيبقى رمادي لو الوقت عدي
     final Color statusColor =
         isTimePassed ? Colors.grey.shade400 : _getStatusColor(status);
 
@@ -129,7 +125,7 @@ class SlotCard extends StatelessWidget {
     required bool isCompleted,
     required bool isBlocked,
     required bool isCancelled,
-    required bool isTimePassed, // 👈 مررها هنا
+    required bool isTimePassed,
     required bool canBook,
     required BuildContext context,
   }) {
@@ -186,10 +182,9 @@ class SlotCard extends StatelessWidget {
     }
 
     if (isBlocked) {
-      // لو السلوت معمول لها بلوك يدوي (مفيش موعد مرتبط بيها)
       if (slot.appointmentId == null) {
         return IconButton(
-          onPressed: unblock, // 👈 الزرار الجديد
+          onPressed: unblock,
           icon: const Icon(
             Icons.settings_backup_restore_rounded,
             color: Colors.green,
@@ -198,14 +193,12 @@ class SlotCard extends StatelessWidget {
           tooltip: "Restore Slot",
         );
       } else {
-        // 💡 لو فيه appointmentId يبقى دي اتعمل لها بلوك عشان الدكتور كنسل ميعاد هناك
         return Padding(
           padding: EdgeInsets.only(right: 8.0),
           child: Tooltip(
             message: "Blocked due to appointment cancellation",
             child: IconButton(
               onPressed: () {
-                // إظهار رسالة توضيحية عند الضغط العادي
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text(
@@ -270,7 +263,7 @@ class SlotCard extends StatelessWidget {
               size: 22,
             ),
           ),
-          if (isBooked) // الدكتور يكنسل المحجوز بس، ميكنسلش اللي خلص أو اتكنسل أصلاً
+          if (isBooked)
             IconButton(
               onPressed: onCancelByDoctor,
               icon: const Icon(

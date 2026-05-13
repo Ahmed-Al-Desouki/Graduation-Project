@@ -88,7 +88,6 @@ class ExamSessionCubit extends Cubit<ExamSessionState> {
     );
   }
 
-  // داخل ExamSessionCubit
   Future<void> fetchPrescription(String appointmentId) async {
     emit(MedicalRecordLoading());
     final result = await getPrescriptionUseCase(appointmentId);

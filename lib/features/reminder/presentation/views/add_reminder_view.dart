@@ -355,48 +355,6 @@ class _AddReminderViewState extends State<AddReminderView> {
     );
   }
 
-  // Widget _buildTypeSelector() {
-  //   return Column(
-  //     children: [
-  //       _buildTypeRow("Medication", Icons.medication, Colors.blue),
-  //       const Divider(height: 10, thickness: 0.5),
-  //       _buildTypeRow("Appointment", Icons.calendar_month, kPrimaryColor),
-  //       const Divider(height: 10, thickness: 0.5),
-  //       _buildTypeRow("Custom", Icons.notifications, Colors.orange),
-  //     ],
-  //   );
-  // }
-
-  // Widget _buildTypeRow(String type, IconData icon, Color color) {
-  //   final isSelected = selectedType == type;
-  //   return InkWell(
-  //     onTap: () => setState(() => selectedType = type),
-  //     child: Container(
-  //       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-  //       decoration: BoxDecoration(
-  //         color: isSelected ? color.withValues(alpha:0.05) : Colors.transparent,
-  //         borderRadius: BorderRadius.circular(8),
-  //       ),
-  //       child: Row(
-  //         children: [
-  //           Icon(icon, color: color, size: 28),
-  //           const SizedBox(width: 15),
-  //           Text(
-  //             type,
-  //             style: TextStyle(
-  //               color: isSelected ? color : Colors.black87,
-  //               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-  //               fontSize: 16,
-  //             ),
-  //           ),
-  //           const Spacer(),
-  //           if (isSelected) Icon(Icons.check_circle, color: color, size: 20),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
   String _formatToICalString(DateTime dt) {
     String twoDigits(int n) => n.toString().padLeft(2, "0");
     return "${dt.year}${twoDigits(dt.month)}${twoDigits(dt.day)}T${twoDigits(dt.hour)}${twoDigits(dt.minute)}${twoDigits(dt.second)}";

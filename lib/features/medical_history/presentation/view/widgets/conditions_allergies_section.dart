@@ -119,7 +119,7 @@ class _ConditionsAllergiesSectionState
               isEditing: widget.isReadOnly ? false : _isEditing,
               onDelete:
                   widget.isReadOnly
-                      ? null // 👈 هنا الزتونة: السلة هتختفي
+                      ? null
                       : () => _updateList(
                         item.name,
                         HealthType.condition,
@@ -144,7 +144,7 @@ class _ConditionsAllergiesSectionState
               isEditing: widget.isReadOnly ? false : _isEditing,
               onDelete:
                   widget.isReadOnly
-                      ? null // 👈 هنا الزتونة: السلة هتختفي
+                      ? null
                       : () => _updateList(
                         item.name,
                         HealthType.allergy,

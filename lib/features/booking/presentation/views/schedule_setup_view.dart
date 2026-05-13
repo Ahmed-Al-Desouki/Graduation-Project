@@ -78,43 +78,36 @@ class _ScheduleSetupViewState extends State<ScheduleSetupView> {
   Widget build(BuildContext context) {
     return BlocConsumer<ScheduleManagementCubit, ScheduleManagementState>(
       listener: (context, state) {
-        if (state is SlotsGeneratedSuccess) {
-          // context.pushReplacement(
-          //   AppRouter.kBookingCalendar,
-          //   extra: {'isPatientView': false, ...?widget.followUpData},
-          // );
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context, true);
-          } else {
-            // لو دخلت الصفحة دي كأول صفحة (زي لو السكادول مش متظبط)، استخدم go عشان تمسح الـ stack
-            context.go(
-              AppRouter.kBookingCalendar,
-              extra: {'isPatientView': false},
-            );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+
+          if (state is SlotsGeneratedSuccess) {
+            if (widget.isEditing && Navigator.canPop(context)) {
+              Navigator.pop(context, true);
+            } else {
+              context.pushReplacement(
+                AppRouter.kBookingCalendar,
+                extra: {'isPatientView': false, ...?widget.followUpData},
+              );
+            }
+          } else if (state is ScheduleManagementFailure) {
+            showSnackBar(context, state.errMessage, Colors.red);
+          } else if (state is ScheduleFetchedSuccess) {
+            if (!widget.isEditing) {
+              context.pushReplacement(
+                AppRouter.kBookingCalendar,
+                extra: {'isPatientView': false, ...?widget.followUpData},
+              );
+            } else {
+              _populateFields(state.schedule);
+            }
           }
-        } else if (state is ScheduleManagementFailure) {
-          showSnackBar(context, state.errMessage, Colors.red);
-        } else if (state is ScheduleFetchedSuccess) {
-          if (!widget.isEditing) {
-            context.pushReplacement(
-              AppRouter.kBookingCalendar,
-              extra: {'isPatientView': false, ...?widget.followUpData},
-            );
-          } else {
-            _populateFields(state.schedule);
-          }
-        }
+        });
       },
       builder: (context, state) {
         if (state is ScheduleManagementLoading ||
             (state is ScheduleManagementInitial &&
                 durationController.text.isEmpty)) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (state is ScheduleFetchedSuccess && !widget.isEditing) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );

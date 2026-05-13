@@ -1,5 +1,3 @@
-// features/booking/domain/use_cases/get_appointment_full_details_use_case.dart
-
 import 'package:dartz/dartz.dart';
 import 'package:graduation_project/features/booking/domain/repositories/i_booking_repository.dart';
 import '../../../../core/errors/failures.dart';

@@ -6,7 +6,6 @@ class ReviewWebService {
   ReviewWebService(this._apiService);
 
   Future<Map<String, dynamic>> postReview(Map<String, dynamic> data) async {
-    // نداء الـ POST للأيند بوينت المحددة في طلبك
     return await _apiService.post('reviews', data);
   }
 }

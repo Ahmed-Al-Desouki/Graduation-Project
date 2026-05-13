@@ -8,7 +8,6 @@ class CreateChatRoomUseCase {
   CreateChatRoomUseCase(this.repository);
 
   Future<Either<Failure, void>> call(ChatEntity chatEntity) async {
-    // هنضيف الميثود دي في الـ Repository الأول طبعاً
     return await repository.createChatRoom(chatEntity);
   }
 }

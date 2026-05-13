@@ -1,4 +1,3 @@
-// widgets/support_category_insights.dart
 import 'package:flutter/material.dart';
 
 class SupportCategoryInsights extends StatelessWidget {

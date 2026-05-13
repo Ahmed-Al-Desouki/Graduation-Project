@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:graduation_project/core/utils/app_router.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
+import 'package:graduation_project/core/utils/helper/service_locator.dart';
+import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/presentation/manger/auth_cubit/auth_cubit.dart';
 import 'package:graduation_project/features/doctor_home/domain/entities/doctor_profile_status_entity.dart';
 import 'package:graduation_project/features/doctor_home/presentation/manager/doctor_profile_cubit.dart';
@@ -48,9 +50,25 @@ class _ProfileCompletionLoadingContentState
   void _startPolling() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+
       context.read<DoctorProfileCubit>().startPolling(
-        onApproved: () {
-          if (mounted) AppRouter.router.go(AppRouter.kHomeDoctor);
+        onApproved: () async {
+          if (!mounted) return;
+
+          final refreshed = await getIt<SessionManager>().forceManualRefresh();
+
+          if (refreshed && mounted) {
+            AppRouter.router.go(AppRouter.kHomeDoctor);
+          } else {
+            if (mounted) {
+              showSnackBar(
+                context,
+                "Session expired, please login again",
+                Colors.orange,
+              );
+              AppRouter.router.go(AppRouter.kLogin);
+            }
+          }
         },
         onRejected: (status) {
           if (mounted) setState(() => _currentStatus = status);

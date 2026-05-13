@@ -6,14 +6,12 @@ class ShimmerLoading extends StatelessWidget {
   final double height;
   final ShapeBorder shapeBorder;
 
-  // Constructor للـ Rectangular Shimmer (زي التكست)
   const ShimmerLoading.rectangular({
     super.key,
     this.width = double.infinity,
     required this.height,
   }) : shapeBorder = const RoundedRectangleBorder();
 
-  // Constructor للـ Circular Shimmer (زي الصورة الشخصية)
   const ShimmerLoading.circular({
     super.key,
     required this.width,
@@ -29,10 +27,7 @@ class ShimmerLoading extends StatelessWidget {
       child: Container(
         width: width,
         height: height,
-        decoration: ShapeDecoration(
-          color: Colors.grey, // لازم لون أساسي عشان الشيمر يظهر عليه
-          shape: shapeBorder,
-        ),
+        decoration: ShapeDecoration(color: Colors.grey, shape: shapeBorder),
       ),
     );
   }

@@ -6,7 +6,6 @@ import 'package:graduation_project/features/booking/domain/entities/day_slots_en
 import 'package:graduation_project/features/booking/domain/entities/schedule_entity.dart';
 
 abstract class IBookingRepository {
-  // --- Schedules & Generation ---
   Future<Either<Failure, String>> createSchedule(ScheduleEntity schedule);
   Future<Either<Failure, void>> generateSlots(
     String doctorId,
@@ -15,7 +14,6 @@ abstract class IBookingRepository {
     bool regenerate,
   );
 
-  // --- Exceptions ---
   Future<Either<Failure, void>> addDayOff(
     String doctorId,
     DateTime date,
@@ -30,7 +28,6 @@ abstract class IBookingRepository {
   );
   Future<Either<Failure, void>> removeException(String doctorId, DateTime date);
 
-  // --- Slots Management ---
   Future<Either<Failure, List<DaySlotsEntity>>> getSlotsRange(
     String doctorId,
     DateTime start,
@@ -46,7 +43,6 @@ abstract class IBookingRepository {
   Future<Either<Failure, void>> deleteSlot(String doctorId, String slotId);
   Future<Either<Failure, void>> blockSlot(String doctorId, String slotId);
 
-  // --- Appointments Control ---
   Future<Either<Failure, List<AppointmentFullDetailsEntity>>>
   getDoctorAppointments(DateTime? date, String? status);
   Future<Either<Failure, void>> confirmAppointment(String id);
@@ -62,7 +58,6 @@ abstract class IBookingRepository {
     String reason,
   );
 
-  // --- Follow-up ---
   Future<Either<Failure, void>> bookFollowUpExisting(
     String originalId,
     String slotId,

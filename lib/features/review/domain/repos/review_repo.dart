@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:graduation_project/core/errors/failures.dart'; // تأكد من المسار الصحيح لديك
+import 'package:graduation_project/core/errors/failures.dart';
 import 'package:graduation_project/features/review/data/models/review_model.dart';
 
 abstract class ReviewRepository {

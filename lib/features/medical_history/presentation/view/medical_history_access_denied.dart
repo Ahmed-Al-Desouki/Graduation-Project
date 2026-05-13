@@ -11,7 +11,6 @@ class MedicalHistoryAccessDenied extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // أيقونة قفل شيك
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(

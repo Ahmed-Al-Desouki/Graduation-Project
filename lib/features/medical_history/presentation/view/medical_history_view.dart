@@ -20,7 +20,7 @@ class MedicalHistoryView extends StatefulWidget {
   final String? appointmentId;
   const MedicalHistoryView({
     super.key,
-    this.isDoctorView = false, // القيمة الافتراضية مريض
+    this.isDoctorView = false,
     this.patientId,
     this.appointmentId,
   });
@@ -62,7 +62,6 @@ class _MedicalHistoryViewState extends State<MedicalHistoryView> {
           //     getIt<AppointmentsCenterCubit>()..getPatientAppointments(),
           {
             final cubit = getIt<AppointmentsCenterCubit>();
-            // 🚨 الزتونة: لو مريض نادي السيرفر، لو دكتور "استنى" الداتا اللي هتيجي في الـ Profile
             if (!widget.isDoctorView) {
               cubit.getPatientAppointments();
             }

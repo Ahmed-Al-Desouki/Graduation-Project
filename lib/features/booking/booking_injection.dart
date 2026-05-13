@@ -61,7 +61,6 @@ Future<void> initBookingInjection() async {
     () => MedicalRemoteDataSourceImpl(sl()),
   );
 
-  // 2. Repository
   sl.registerLazySingleton<IBookingRepository>(
     () => BookingRepositoryImpl(
       remoteDataSource: sl(),

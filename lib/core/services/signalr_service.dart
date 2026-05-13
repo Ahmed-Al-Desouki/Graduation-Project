@@ -1,4 +1,3 @@
-// core/services/signalr_service.dart
 import 'dart:developer';
 
 import 'package:signalr_netcore/signalr_client.dart';
@@ -7,12 +6,10 @@ class SignalRService {
   HubConnection? _hubConnection;
   final String _url = "https://wellora-healthcaremanagment.runasp.net/hubs/app";
 
-  // 🚀 قائمة لتخزين الـ Listeners اللي بيتم تسجيلهم قبل ما الاتصال يجهز
   final Map<String, List<void Function(List<Object?>?)>> _pendingListeners = {};
 
   Future<void> init(String token) async {
     try {
-      // 1. لو الاتصال موجود وشغال، مابنعملش حاجة
       if (_hubConnection != null &&
               _hubConnection?.state == HubConnectionState.Connected ||
           _hubConnection?.state == HubConnectionState.Connecting ||
@@ -21,7 +18,6 @@ class SignalRService {
         return;
       }
 
-      // 2. بناء الاتصال
       _hubConnection =
           HubConnectionBuilder()
               .withUrl(
@@ -36,20 +32,18 @@ class SignalRService {
       await _hubConnection!.start();
       log("✅ SignalR Started Successfully");
 
-      // 3. أول ما الـ Connection يجهز، سجل كل الـ Listeners اللي كانت مستنية في الـ Queue
       _pendingListeners.forEach((eventName, callbacks) {
         for (var callback in callbacks) {
           _hubConnection!.on(eventName, callback);
           log("✅ SignalR: Pending listener for '$eventName' registered.");
         }
       });
-      _pendingListeners.clear(); // فضي القائمة بعد التسجيل
+      _pendingListeners.clear();
 
       _hubConnection!.onclose(({error}) {
         log("⚠️ SignalR Connection Closed: $error");
       });
 
-      // 4. تشغيل الاتصال
       await _hubConnection!.start();
       log("✅ SignalR Started Successfully");
     } catch (e) {
@@ -57,23 +51,11 @@ class SignalRService {
     }
   }
 
-  // ✅ ميثود الـ On (مع ميزة الـ Queueing عشان التنبيهات)
-  // void on(String eventName, void Function(List<Object?>?) callback) {
-  //   if (_hubConnection != null) {
-  //     _hubConnection!.on(eventName, callback);
-  //   } else {
-  //     // لو الـ Hub لسه مجهزاش، شيل الـ listener عندك عشان تسجله أول ما يفتح
-  //     _pendingListeners.putIfAbsent(eventName, () => []).add(callback);
-  //     log("ℹ️ SignalR: Listener for '$eventName' queued (Hub not ready yet)");
-  //   }
-  // }
   void on(String eventName, void Function(List<Object?>?) callback) {
-    // 🚀 التعديل: سجل مباشرة فقط لو هو Connected فعلاً
     if (_hubConnection != null && isConnected) {
       _hubConnection!.on(eventName, callback);
       log("✅ SignalR: Listener for '$eventName' registered directly.");
     } else {
-      // لو لسه بيعمل Start أو null، حطه في الطابور
       _pendingListeners.putIfAbsent(eventName, () => []).add(callback);
       log(
         "ℹ️ SignalR: Listener for '$eventName' queued (Connection not ready yet)",
@@ -81,7 +63,6 @@ class SignalRService {
     }
   }
 
-  // ✅ ميثود الـ Invoke (اللي كانت ناقصة وسببت الأيرور في الـ Chat)
   Future<void> invoke(String methodName, {List<Object>? args}) async {
     if (isConnected) {
       try {
@@ -103,6 +84,5 @@ class SignalRService {
     _pendingListeners.remove(eventName);
   }
 
-  // ميثود للتأكد إن الاتصال جاهز
   bool get isConnected => _hubConnection?.state == HubConnectionState.Connected;
 }

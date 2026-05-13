@@ -16,11 +16,10 @@ class ChatDetailsFailure extends ChatDetailsState {
 
 class ChatDetailsSuccess extends ChatDetailsState {
   final List<MessageEntity> messages;
-  final bool isActive; // 🚀 دي اللي هتحل الأيرور
+  final bool isActive;
 
   ChatDetailsSuccess({required this.messages, this.isActive = true});
 
-  // ميثود مهمة جداً عشان نحدث جزء من الستيت ونحافظ على الباقي
   ChatDetailsSuccess copyWith({List<MessageEntity>? messages, bool? isActive}) {
     return ChatDetailsSuccess(
       messages: messages ?? this.messages,

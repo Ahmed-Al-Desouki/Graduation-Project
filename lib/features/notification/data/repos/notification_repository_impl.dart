@@ -27,7 +27,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         "notifications",
         queryParameters: {
           "page": page,
-          "pageSize": 15, // حجم الصفحة المفضل للموبايل
+          "pageSize": 15,
           "unreadOnly": unreadOnly,
         },
       );
@@ -53,7 +53,6 @@ class NotificationRepositoryImpl implements NotificationRepository {
   @override
   Future<Either<Failure, String>> markAsRead(String id) async {
     try {
-      // الـ Guide حدد الـ Endpoint ده لليوزر
       final response = await apiService.post("notifications/$id/mark-as-read");
       return Right(response['message'] ?? "Success");
     } catch (e) {

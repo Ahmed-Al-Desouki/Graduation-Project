@@ -18,8 +18,6 @@ import 'firebase_options.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
 
-  // 🚀 لازم نظهر الإشعار يدوياً هنا عشان يظهر والأبلكيشن مقفول (Terminated)
-  // لو السيرفر باعت Data Message
   if (message.data.isNotEmpty) {
     AwesomeNotifications().createNotification(
       content: NotificationContent(
@@ -40,7 +38,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. أمر تثبيت الأسبلاش (يمنع ظهور الشاشة البيضاء)
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,10 +62,12 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final AppLinks _appLinks;
+  Uri? _lastProcessedUri;
 
   @override
   void initState() {
     super.initState();
+
     _initDeepLinks();
   }
 
@@ -85,31 +84,76 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // void _handleIncomingLink(Uri uri) {
+  //   log('📩 Received app link: $uri');
+  //   final String fullPath = uri.toString();
+  //   // if (uri.path.contains('reset-password')) {
+  //   //   final email = uri.queryParameters['email'];
+  //   //   final token = uri.queryParameters['token'];
+
+  //   //   if (email != null && token != null) {
+  //   //     AppRouter.router.go(
+  //   //       '${AppRouter.kResetPassword}?email=$email&token=$token',
+  //   //     );
+  //   //   }
+  //   // }
+  //   if (fullPath.contains('reset-password')) {
+  //     final email = uri.queryParameters['email'];
+  //     final token = uri.queryParameters['token'];
+
+  //     log('🔑 Reset Attempt - Email: $email, Token: $token');
+
+  //     if (email != null && token != null) {
+  //       AppRouter.router.push(
+  //         '${AppRouter.kResetPassword}?email=${Uri.encodeComponent(email)}&token=${Uri.encodeComponent(token)}',
+  //       );
+  //     }
+  //   }
+  //   if (fullPath.contains('share-history')) {
+  //     String? token = uri.queryParameters['token'];
+
+  //     if (token == null && uri.fragment.contains('token=')) {
+  //       token = uri.fragment.split('token=').last;
+  //     }
+
+  //     if (token != null) {
+  //       log('✅ Navigating with token: $token');
+  //       AppRouter.router.push('/share-history?token=$token');
+  //     }
+  //   }
+  // }
+
   void _handleIncomingLink(Uri uri) {
+    if (_lastProcessedUri == uri) {
+      log('⚠️ Ignored duplicate app link: $uri');
+      return;
+    }
+    _lastProcessedUri = uri;
+
     log('📩 Received app link: $uri');
     final String fullPath = uri.toString();
-    if (uri.path.contains('reset-password')) {
+
+    if (fullPath.contains('reset-password')) {
       final email = uri.queryParameters['email'];
       final token = uri.queryParameters['token'];
 
       if (email != null && token != null) {
+        log('🔑 Navigating to Reset Password Screen');
         AppRouter.router.go(
-          '${AppRouter.kResetPassword}?email=$email&token=$token',
+          '${AppRouter.kResetPassword}?email=${Uri.encodeComponent(email)}&token=${Uri.encodeComponent(token)}',
         );
       }
     }
+
     if (fullPath.contains('share-history')) {
       String? token = uri.queryParameters['token'];
-
-      if (token == null && uri.fragment.contains('token=')) {
-        token = uri.fragment.split('token=').last;
-      }
-
       if (token != null) {
-        log('✅ Navigating with token: $token');
-        AppRouter.router.push('/share-history?token=$token');
+        log('✅ Navigating to Share History');
+        AppRouter.router.go('/share-history?token=$token');
       }
     }
+
+    Future.delayed(const Duration(seconds: 2), () => _lastProcessedUri = null);
   }
 
   @override

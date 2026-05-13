@@ -107,7 +107,6 @@ Future<void> setupServiceLocator() async {
     () => NetworkInfoImpl(InternetConnectionChecker.createInstance()),
   );
 
-  // 1. SignalR Service (بما إنها LazySingleton فهي موجودة عندك فعلاً)
   getIt.registerLazySingleton<SignalRService>(() => SignalRService());
 
   getIt.registerLazySingleton<LocalOccurrenceDataSource>(
@@ -118,15 +117,10 @@ Future<void> setupServiceLocator() async {
     () => AuthWebServices(getIt<ApiService>()),
   );
 
-  // --- Notifications Feature ---
-
-  // 1. Repository
   getIt.registerLazySingleton<NotificationRepository>(
     () => NotificationRepositoryImpl(getIt<ApiService>()),
   );
 
-  // 2. Cubit
-  // بنسجله كـ LazySingleton عشان يفضل محتفظ بالحالة والاتصال طول ما الأبب مفتوح
   getIt.registerLazySingleton<NotificationCubit>(
     () => NotificationCubit(
       getIt<NotificationRepository>(),
@@ -189,17 +183,14 @@ Future<void> setupServiceLocator() async {
     () => ReviewWebService(getIt<ApiService>()),
   );
 
-  // Repository
   getIt.registerLazySingleton<ReviewRepository>(
     () => ReviewRepositoryImpl(getIt<ReviewWebService>()),
   );
 
-  // Cubit
   getIt.registerFactory<ReviewCubit>(
     () => ReviewCubit(getIt<ReviewRepository>()),
   );
 
-  // Data
   getIt.registerLazySingleton<ChatRemoteDataSource>(
     () => ChatRemoteDataSourceImpl(),
   );
@@ -207,7 +198,6 @@ Future<void> setupServiceLocator() async {
     () => ChatRepositoryImpl(getIt()),
   );
 
-  // UseCases
   getIt.registerLazySingleton(() => GetMessagesUseCase(getIt()));
   getIt.registerLazySingleton(() => SendMessageUseCase(getIt()));
   getIt.registerLazySingleton(() => UploadChatFileUseCase(getIt()));
@@ -409,13 +399,11 @@ Future<void> setupServiceLocator() async {
     () => TicketRemoteDataSourceImpl(getIt<ApiService>()),
   );
 
-  // 3. Repositories
   getIt.registerLazySingleton<TicketRepository>(
     () =>
         TicketRepositoryImpl(remoteDataSource: getIt<TicketRemoteDataSource>()),
   );
 
-  // 4. Use Cases
   getIt.registerLazySingleton(
     () => GetMyTicketsUseCase(getIt<TicketRepository>()),
   );
@@ -429,7 +417,6 @@ Future<void> setupServiceLocator() async {
     () => SendTicketMessageUseCase(getIt<TicketRepository>()),
   );
 
-  // 5. Cubits (نستخدم Factory عشان الـ Cubit يتكريت جديد مع كل شاشة)
   getIt.registerFactory(
     () => TicketChatCubit(
       getMessagesUseCase: getIt<GetTicketMessagesUseCase>(),

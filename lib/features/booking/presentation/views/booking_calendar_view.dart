@@ -7,6 +7,7 @@ import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/booking/domain/entities/slot_entity.dart';
 import 'package:graduation_project/features/booking/presentation/views/add_manual_slot_sheet.dart';
+import 'package:graduation_project/features/booking/presentation/views/widgets/calendar_header.dart';
 import 'package:graduation_project/features/chat/domain/entities/chat_entity.dart';
 
 import 'widgets/slot_card.dart';
@@ -219,9 +220,20 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
           color: Colors.black,
           size: 20,
         ),
-        onPressed: () => context.pop(),
+        onPressed: () {
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            context.go(AppRouter.kHomeDoctor);
+          }
+        },
       ),
       title: _buildAppBarTitle(),
+
+      // title: CalendarHeader(
+      //   isPatientView: widget.isPatientView,
+      //   doctorName: _getDisplayName,
+      // ),
       centerTitle: true,
       actions: [
         if (!widget.isPatientView) _buildDoctorMenu(),
@@ -241,7 +253,6 @@ class _BookingCalendarViewState extends State<BookingCalendarView> {
   //         size: 20,
   //       ),
   //       onPressed: () {
-  //         // 💡 بدلاً من pop()، بنستخدم go() للمسار الصحيح
   //         if (widget.isPatientView) {
   //           context.go(AppRouter.kHomePatient);
   //         } else {

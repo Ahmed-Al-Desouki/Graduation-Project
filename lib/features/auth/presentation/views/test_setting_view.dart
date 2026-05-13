@@ -109,7 +109,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     size: 16,
                   ),
                   onTap: () {
-                    // التنقل لصفحة التذاكر
                     context.push(AppRouter.kTickets);
                   },
                 ),

@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:graduation_project/core/utils/functions/show_snack_bar.dart';
 import 'package:graduation_project/features/review/presentation/review_cubit/review_cubit.dart';
 
-// في ملف doctor_review_sheet.dart
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class DoctorReviewSheet extends StatefulWidget {
@@ -16,7 +15,7 @@ class DoctorReviewSheet extends StatefulWidget {
 }
 
 class _DoctorReviewSheetState extends State<DoctorReviewSheet> {
-  double _rating = 5.0; // الباك مستني int بس المكتبة بتعطي double
+  double _rating = 5.0;
   final _commentController = TextEditingController();
 
   @override
@@ -35,7 +34,6 @@ class _DoctorReviewSheetState extends State<DoctorReviewSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // خط صغير فوق لتوضيح إنه شيت بيتقفل
           Container(
             width: 40,
             height: 4,
@@ -52,12 +50,11 @@ class _DoctorReviewSheetState extends State<DoctorReviewSheet> {
           ),
           SizedBox(height: 15.h),
 
-          // 🌟 الـ Rating Bar الاحترافي
           RatingBar.builder(
             initialRating: 5,
             minRating: 1,
             direction: Axis.horizontal,
-            allowHalfRating: false, // الباك مستني رقم صحيح (1, 2, 3, 4, 5)
+            allowHalfRating: false,
             itemCount: 5,
             itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
             itemBuilder:
@@ -111,9 +108,7 @@ class _DoctorReviewSheetState extends State<DoctorReviewSheet> {
                         : () {
                           context.read<ReviewCubit>().submitReview(
                             doctorId: widget.doctorId,
-                            rating:
-                                _rating
-                                    .toInt(), // تحويل الـ double لـ int عشان الباك-إند
+                            rating: _rating.toInt(),
                             comment: _commentController.text,
                           );
                         },

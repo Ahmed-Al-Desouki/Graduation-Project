@@ -1,4 +1,3 @@
-// widgets/support_header.dart
 import 'package:flutter/material.dart';
 
 class SupportHeader extends StatelessWidget {
@@ -39,7 +38,7 @@ class _UrgentBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2), // bg-status-urgent/10
+        color: const Color(0xFFFEF2F2),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFFEE2E2)),
       ),

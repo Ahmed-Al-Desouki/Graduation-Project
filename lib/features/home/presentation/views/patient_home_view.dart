@@ -85,59 +85,9 @@ class _PatientHomeViewState extends State<PatientHomeView> {
     }
   }
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   return ShowCaseWidget(
-  //     autoPlay: false,
-  //     enableAutoScroll: true,
-  //     blurValue: 1,
-  //     builder: (context) {
-  //       WidgetsBinding.instance.addPostFrameCallback((_) {
-  //         _checkAndStartShowcase(context);
-  //       });
-
-  //       return Builder(
-  //         builder: (context) {
-  //           return Scaffold(
-  //             backgroundColor: const Color(0xffE8F7F2),
-  //             body: BlocListener<HomeCubit, HomeState>(
-  //               listener: (context, state) {
-  //                 if (state is HomeFailure) {
-  //                   showSnackBar(context, state.errMessage, Colors.red);
-  //                 }
-  //               },
-  //               child: SingleChildScrollView(
-  //                 padding: EdgeInsets.only(bottom: 20.h),
-  //                 child: Column(
-  //                   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   children: [
-  //                     _buildHeaderSection(),
-
-  //                     SizedBox(height: 20.h),
-  //                     const UpcomingAppointments(),
-  //                     const NextReminderCard(),
-  //                     SizedBox(height: 30.h),
-  //                     HomeQuickActionsList(
-  //                       searchDoctorKey: _searchDoctorKey,
-  //                       remindersKey: _remindersKey,
-  //                       historyKey: _historyKey,
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //             ),
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
-  // في ملف patient_home_view.dart
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      // 💡 بنوفر الكيوبت هنا عشان كل اللي تحت يشوفوه
       create:
           (context) =>
               getIt<AppointmentsCenterCubit>()..getPatientAppointments(),
@@ -146,7 +96,6 @@ class _PatientHomeViewState extends State<PatientHomeView> {
         enableAutoScroll: true,
         blurValue: 1,
         builder: (context) {
-          // 💡 بنستخدم الـ context اللي جاي من الـ builder ده
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _checkAndStartShowcase(context);
           });
@@ -154,7 +103,6 @@ class _PatientHomeViewState extends State<PatientHomeView> {
           return Scaffold(
             backgroundColor: const Color(0xffE8F7F2),
             body: MultiBlocListener(
-              // لو حابب تضيف أكتر من Listener
               listeners: [
                 BlocListener<HomeCubit, HomeState>(
                   listener: (context, state) {
@@ -163,7 +111,6 @@ class _PatientHomeViewState extends State<PatientHomeView> {
                     }
                   },
                 ),
-                // ممكن تضيف Listener للـ Appointments هنا لو حابب
               ],
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(bottom: 20.h),
@@ -173,7 +120,6 @@ class _PatientHomeViewState extends State<PatientHomeView> {
                     _buildHeaderSection(),
                     SizedBox(height: 20.h),
 
-                    // 💡 الويدجت دي دلوقتي هتلاقي الـ Cubit فوقيها علطول
                     const UpcomingAppointments(),
 
                     const NextReminderCard(),

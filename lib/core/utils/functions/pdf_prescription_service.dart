@@ -12,7 +12,6 @@ class PdfPrescriptionService {
     required List<MedicationItemEntity> items,
   }) async {
     final pdf = pw.Document();
-    // ✅ تحميل خط يدعم الـ Unicode (زي Roboto) عشان ميبوظش الـ PDF
     final font = await PdfGoogleFonts.robotoRegular();
     final boldFont = await PdfGoogleFonts.robotoBold();
 
@@ -22,7 +21,6 @@ class PdfPrescriptionService {
         pageFormat: PdfPageFormat.a4,
         build: (pw.Context context) {
           return [
-            // 1. Header (Logo & Clinic Info)
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -52,7 +50,6 @@ class PdfPrescriptionService {
             pw.Divider(thickness: 2, color: PdfColors.purple900),
             pw.SizedBox(height: 20),
 
-            // 2. Patient & Doctor Info
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -62,7 +59,6 @@ class PdfPrescriptionService {
             ),
             pw.SizedBox(height: 20),
 
-            // 3. Diagnosis Section
             pw.Container(
               padding: const pw.EdgeInsets.all(10),
               decoration: const pw.BoxDecoration(color: PdfColors.grey100),
@@ -81,7 +77,6 @@ class PdfPrescriptionService {
             ),
             pw.SizedBox(height: 30),
 
-            // 4. Medications Table
             pw.Text(
               "Prescribed Medications",
               style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
@@ -118,7 +113,6 @@ class PdfPrescriptionService {
             ),
 
             pw.Spacer(),
-            // 5. Footer (Signature & Instructions)
             pw.Divider(),
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -151,7 +145,6 @@ class PdfPrescriptionService {
       ),
     );
 
-    // عرض الـ Preview للمستخدم عشان يطبع أو يحمل
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
     );

@@ -21,9 +21,8 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
   final MarkAsReadUseCase markAsReadUseCase;
   StreamSubscription? _messagesSub;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  StreamSubscription? _roomSub; // 🚀 استريم جديد للغرفة
-  final String currentUserId =
-      getIt<SessionManager>().userId; // ✅ معرف المستخدم الحالي
+  StreamSubscription? _roomSub;
+  final String currentUserId = getIt<SessionManager>().userId;
   String? _recipientId; //
 
   ChatDetailsCubit(
@@ -33,20 +32,10 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     this.markAsReadUseCase,
   ) : super(ChatDetailsInitial());
 
-  // void listenToMessages(String chatId) {
-  //   emit(ChatDetailsLoading());
-  //   _messagesSubscription?.cancel();
-
-  //   _messagesSubscription = getMessagesUseCase(chatId).listen((messages) {
-  //     emit(ChatDetailsSuccess(messages));
-  //   }, onError: (error) => emit(ChatDetailsFailure(error.toString())));
-  // }
-
   void listenToMessages(String chatId) {
     emit(ChatDetailsLoading());
     _markChatAsRead(chatId, currentUserId);
 
-    // 1. مراقبة حالة الغرفة (Active/Closed + معرفة المستلم)
     _roomSub?.cancel();
     _roomSub = firestore.collection('chats').doc(chatId).snapshots().listen((
       doc,
@@ -66,15 +55,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       }
     });
 
-    // 2. مراقبة الرسائل (كما هي)
     _messagesSub?.cancel();
     _messagesSub = getMessagesUseCase(chatId).listen((messages) {
       if (messages.isNotEmpty) {
-        final lastMessage =
-            messages.first; // أول رسالة في اللستة هي الأحدث زمنياً
+        final lastMessage = messages.first;
 
         if (lastMessage.senderId != currentUserId) {
-          // لو الرسالة الأخيرة مش بتاعتي، يبقى أنا "قريتها" حالاً لأني فاتح الشات
           _markChatAsRead(chatId, currentUserId);
         }
       }
@@ -90,36 +76,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     await markAsReadUseCase(chatId, userId);
   }
 
-  // Future<void> sendNewMessage({
-  //   required String chatId,
-  //   required String senderId,
-  //   required String text,
-  // }) async {
-  //   // 💡 هنا مش محتاج تضيف للمجموعة محلياً لأن الـ Stream
-  //   // هيلقط التغيير من الفايربيز فوراً ويحدث الـ UI
-
-  //   final message = MessageEntity(
-  //     messageId: '', // الفايربيز هيكريه
-  //     senderId: senderId,
-  //     text: text,
-  //     timestamp: DateTime.now(),
-  //     type: MessageType.text,
-  //   );
-
-  //   final result = await sendMessageUseCase(chatId, message);
-
-  //   result.fold(
-  //     (failure) => emit(ChatDetailsFailure(failure.errmessage)),
-  //     (_) => null, // النجاح سيظهر تلقائياً عبر الـ Stream
-  //   );
-  // }
-
   Future<void> sendNewMessage({
     required String chatId,
     required String senderId,
     required String text,
   }) async {
-    if (_recipientId == null) return; // حماية لو الداتا لسه مجتش
+    if (_recipientId == null) return;
 
     final message = MessageEntity(
       messageId: '',
@@ -129,7 +91,6 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
       type: MessageType.text,
     );
 
-    // 💡 بنبعت الـ recipientId للـ UseCase عشان يزود عنده الـ Unread
     final result = await sendMessageUseCase(chatId, message, _recipientId!);
 
     result.fold(
@@ -138,14 +99,12 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     );
   }
 
-  // ميثود رفع وإرسال ملف
   Future<void> sendFileMessage({
     required String chatId,
     required String senderId,
     required File file,
     required MessageType type,
   }) async {
-    // 1. نطلع حالة الرفع عشان الـ UI يظهر Loading Spinner مثلاً
     emit(ChatDetailsUploading());
 
     final result = await uploadChatFileUseCase(file, chatId);
@@ -153,22 +112,19 @@ class ChatDetailsCubit extends Cubit<ChatDetailsState> {
     result.fold((failure) => emit(ChatDetailsFailure(failure.errmessage)), (
       imageUrl,
     ) async {
-      // 2. بعد ما الرفع يخلص وناخد الـ URL نبعت الرسالة كـ Document في Firestore
       final message = MessageEntity(
         messageId: '',
         senderId: senderId,
-        text: type == MessageType.image ? '📷 صورة' : '📄 ملف PDF',
+        text: type == MessageType.image ? '📷 Pic' : '📄 file PdF',
         timestamp: DateTime.now(),
         type: type,
         fileUrl: imageUrl,
       );
 
       await sendMessageUseCase(chatId, message, _recipientId!);
-      // مش محتاجين Emit هنا لأن الـ Stream هيلقط الرسالة الجديدة لوحده
     });
   }
 
-  // ميزة الدكتور: قفل أو فتح الشات
   Future<void> toggleChatStatus(String chatId, bool status) async {
     await firestore.collection('chats').doc(chatId).update({
       'isActive': status,

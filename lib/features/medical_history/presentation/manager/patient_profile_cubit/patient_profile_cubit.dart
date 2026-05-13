@@ -199,7 +199,6 @@ class PatientProfileCubit extends Cubit<PatientProfileState> {
     String? patientId,
     String? appointmentId,
   }) async {
-    // 1. لو وضع الدكتور: هننادي الـ UseCase الجديد ونعمل Emit هنا
     if (isDoctorView) {
       emit(PatientProfileLoading());
 
@@ -209,15 +208,11 @@ class PatientProfileCubit extends Cubit<PatientProfileState> {
       );
 
       result.fold(
-        // ✅ تصحيح: إضافة اسم الباراميتر errMessage
         (failure) =>
             emit(PatientProfileFailure(errMessage: failure.errmessage)),
-        // ✅ تصحيح: إضافة اسم الباراميتر profile
         (profile) => emit(PatientProfileSuccess(profile: profile)),
       );
-    }
-    // 2. لو وضع المريض: هننادي ميثود getProfile القديمة وهي هتتولى الـ Emit والـ Cache
-    else {
+    } else {
       await getProfile();
     }
   }

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:graduation_project/features/medical_history/domain/models/lab_result_model.dart'; // عشان الـ RecordType
+import 'package:graduation_project/features/medical_history/domain/models/lab_result_model.dart';
 import 'package:graduation_project/features/medical_history/presentation/manager/patient_profile_cubit/patient_profile_cubit.dart';
 import 'package:graduation_project/features/medical_history/presentation/view/widgets/medical_form_fields.dart';
 

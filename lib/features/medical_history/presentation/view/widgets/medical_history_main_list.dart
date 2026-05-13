@@ -103,23 +103,15 @@ class MedicalHistoryMainList extends StatelessWidget {
                   ),
                 ),
 
-                // _wrap(
-                //   appointmentsKey,
-                //   'Appointments',
-                //   6,
-                //   const PastAppointmentsSection(),
-                // ),
                 _wrap(
                   appointmentsKey,
                   'Appointments',
                   6,
                   PastAppointmentsSection(
-                    // 🚀 بنبعت المواعيد اللي جات في الـ Profile فعلاً
                     appointments:
                         profile.pastAppointments
                             .cast<AppointmentFullDetailsEntity>(),
-                    isDoctorView:
-                        isDoctorView, // بنبعت الفلاج ده عشان الكارت يعرف يعرض إيه
+                    isDoctorView: isDoctorView,
                   ),
                 ),
 

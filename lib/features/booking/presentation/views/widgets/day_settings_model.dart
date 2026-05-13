@@ -1,4 +1,3 @@
-// lib/features/booking/presentation/views/widgets/day_settings_model.dart
 import 'package:flutter/material.dart';
 
 class DaySettings {

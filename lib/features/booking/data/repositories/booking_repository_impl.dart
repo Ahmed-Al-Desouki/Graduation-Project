@@ -316,7 +316,6 @@ class BookingRepositoryImpl implements IBookingRepository {
   //   String doctorId,
   // ) async {
   //   try {
-  //     // 💡 شيلنا الكاش خالص، بنجيب من السيرفر علطول
   //     final remoteData = await remoteDataSource.getActiveSchedule(doctorId);
 
   //     return Right(ScheduleModel.fromV2List(remoteData));

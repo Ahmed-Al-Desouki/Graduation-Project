@@ -23,137 +23,27 @@ class _CreateTicketBottomSheetState extends State<CreateTicketBottomSheet> {
     'Other',
   ];
   final List<String> priorities = ['Low', 'Normal', 'High', 'Urgent'];
-  String selectedCategory = 'Technical'; // القيمة الافتراضية
-  String selectedPriority = 'Normal'; // القيمة الافتراضية
+  String selectedCategory = 'Technical';
+  String selectedPriority = 'Normal';
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Padding(
-  //     padding: EdgeInsets.only(
-  //       bottom:
-  //           MediaQuery.of(context).viewInsets.bottom, // عشان الكيبورد ميتغطيش
-  //       left: 20,
-  //       right: 20,
-  //       top: 20,
-  //     ),
-  //     child: Form(
-  //       key: _formKey,
-  //       child: SingleChildScrollView(
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             const Text(
-  //               "فتح تذكرة دعم جديدة",
-  //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //             ),
-  //             const SizedBox(height: 16),
-
-  //             TextFormField(
-  //               decoration: const InputDecoration(
-  //                 labelText: 'العنوان',
-  //                 border: OutlineInputBorder(),
-  //               ),
-  //               onChanged: (val) => title = val,
-  //               validator: (val) => val!.isEmpty ? 'مطلوب' : null,
-  //             ),
-  //             const SizedBox(height: 12),
-
-  //             TextFormField(
-  //               decoration: const InputDecoration(
-  //                 labelText: 'الوصف',
-  //                 border: OutlineInputBorder(),
-  //               ),
-  //               maxLines: 3,
-  //               onChanged: (val) => description = val,
-  //               validator: (val) => val!.isEmpty ? 'مطلوب' : null,
-  //             ),
-  //             const SizedBox(height: 12),
-
-  //             // Dropdowns للـ Category و Priority
-  //             Row(
-  //               children: [
-  //                 // 1. Dropdown للـ Category
-  //                 DropdownButtonFormField<String>(
-  //                   value: selectedCategory,
-  //                   items:
-  //                       categories
-  //                           .map(
-  //                             (e) => DropdownMenuItem(value: e, child: Text(e)),
-  //                           )
-  //                           .toList(),
-  //                   onChanged: (val) => setState(() => selectedCategory = val!),
-  //                   decoration: const InputDecoration(
-  //                     labelText: 'القسم',
-  //                     border: OutlineInputBorder(),
-  //                   ),
-  //                 ),
-
-  //                 // 2. Dropdown للـ Priority
-  //                 DropdownButtonFormField<String>(
-  //                   value: selectedPriority,
-  //                   items:
-  //                       priorities
-  //                           .map(
-  //                             (e) => DropdownMenuItem(value: e, child: Text(e)),
-  //                           )
-  //                           .toList(),
-  //                   onChanged: (val) => setState(() => selectedPriority = val!),
-  //                   decoration: const InputDecoration(
-  //                     labelText: 'الأهمية',
-  //                     border: OutlineInputBorder(),
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //             const SizedBox(height: 20),
-
-  //             SizedBox(
-  //               width: double.infinity,
-  //               child: ElevatedButton(
-  //                 onPressed: () {
-  //                   if (_formKey.currentState!.validate()) {
-  //                     context.read<TicketsCubit>().createNewTicket(
-  //                       title: title,
-  //                       description: description,
-  //                       category: selectedCategory,
-  //                       priority: selectedPriority,
-  //                     );
-  //                     Navigator.pop(context); // اقفل الشيت
-  //                   }
-  //                 },
-  //                 child: const Text("إرسال التذكرة"),
-  //               ),
-  //             ),
-  //             const SizedBox(height: 20),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
   @override
   Widget build(BuildContext context) {
     return Container(
-      // 1. نحدد عرض كامل عشان الـ RenderBox
       width: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20, // مساحة للكيبورد
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
         left: 20,
         right: 20,
         top: 20,
       ),
       child: Form(
         key: _formKey,
-        // 2. استخدمنا Wrap أو Column مع mainAxisSize: MainAxisSize.min
         child: Column(
-          mainAxisSize:
-              MainAxisSize
-                  .min, // مهم جداً عشان الـ BottomSheet مياخدش الشاشة كلها غصب
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
