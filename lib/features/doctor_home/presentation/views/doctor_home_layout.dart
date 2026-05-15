@@ -5,6 +5,8 @@ import 'package:graduation_project/core/utils/helper/service_locator.dart';
 import 'package:graduation_project/core/utils/helper/session_manager.dart';
 import 'package:graduation_project/features/auth/presentation/views/chat_view.dart';
 import 'package:graduation_project/features/auth/presentation/views/test_setting_view.dart';
+import 'package:graduation_project/features/booking/presentation/manager/schedule_management_cubit/schedule_management_cubit.dart';
+import 'package:graduation_project/features/booking/presentation/views/schedule_setup_view.dart';
 import 'package:graduation_project/features/chat/presentation/manager/chat_cubit/chat_cubit.dart';
 import 'package:graduation_project/features/doctor_home/domain/repositories/doctor_profile_repository.dart';
 import 'package:graduation_project/features/doctor_home/presentation/views/doctor_home_view.dart';
@@ -33,6 +35,10 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
 
     _screens = [
       DoctorHomeView(),
+      BlocProvider(
+        create: (context) => getIt<ScheduleManagementCubit>(),
+        child: ScheduleSetupView(isEditing: true),
+      ),
       ChatView(userId: userId, isDoctor: true),
       DoctorProfileView(),
       SettingsScreen(),
@@ -96,9 +102,10 @@ class _DoctorHomeLayoutState extends State<DoctorHomeLayout> {
           onTap: (index) => setState(() => _currentIndex = index),
           items: [
             _buildNavItem(Icons.home_filled, 'Home', 0),
-            _buildNavItem(Icons.chat, 'Chats', 1),
-            _buildNavItem(Icons.account_circle_outlined, 'Profile', 2),
-            _buildNavItem(Icons.settings, 'Settings', 3),
+            _buildNavItem(Icons.schedule, 'Schedule', 1),
+            _buildNavItem(Icons.chat, 'Chats', 2),
+            _buildNavItem(Icons.account_circle_outlined, 'Profile', 3),
+            _buildNavItem(Icons.settings, 'Settings', 4),
           ],
         ),
       ),
